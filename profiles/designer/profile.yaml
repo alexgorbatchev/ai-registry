@@ -1,0 +1,10 @@
+skills:
+  - agentic-workflow
+  - react-development
+  - bun-tailwind
+commands: []
+tools:
+  bash: false
+  task: false
+permission:
+  edit: ask

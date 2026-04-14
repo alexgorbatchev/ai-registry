@@ -1,0 +1,12 @@
+{
+  "name": "ai-registry",
+  "version": "1.0.0",
+  "description": "Global AI Catalog and Agent Profiles",
+  "private": true,
+  "scripts": {
+    "build": "bun run scripts/build.ts"
+  },
+  "dependencies": {
+    "rulesync": "^7.28.0"
+  }
+}

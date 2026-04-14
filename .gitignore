@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+bun.lockb
+bun.lock
+
+# Environment variables
+.env
+.env.local
+
+# Generated profile caches and outputs
+.opencode/
+profiles/*/.claude/
+profiles/*/.cline/
+profiles/*/.cursor/
+profiles/*/.opencode/
+profiles/*/.roo/
+profiles/*/.rulesync/
+profiles/*/.agents/
+profiles/*/.generated/
+
+# OS/Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp

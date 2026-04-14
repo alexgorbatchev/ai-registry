@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["./scripts/oxlint/reactPolicyPlugin.js"],
+  "rules": {
+    "eqeqeq": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.tsx"],
+      "rules": {
+        "repo-react/no-regular-create-element": "error",
+        "repo-react/require-component-root-testid": "error"
+      }
+    }
+  ]
+}

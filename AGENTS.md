@@ -14,6 +14,7 @@ This repository manages both the global catalog of AI skills and the configurati
   - Contains directories (e.g., `designer`, `developer`) with `profile.yaml` (or `profile.json`) manifests.
   - Manifests declare which skills and commands to include (supports globbing, e.g., `*`, `react-*`).
   - Manifests can explicitly toggle native harness tools (e.g., `bash: false`) and inject custom tool-level permissions.
+  - Manifests can define a custom `system_prompt` to give the agent specific baseline instructions.
 
 ## Architecture & Build Process
 This repository uses a custom build script (`scripts/build.ts`) to locally compile the registry into ready-to-use configurations for various agent harnesses (OpenCode, Cursor, Pi, etc.).

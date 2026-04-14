@@ -155,7 +155,8 @@ mode: primary
     
     agentMd += `---
 You are the **${profileName.toUpperCase()}** agent. 
-You have been specifically configured with a subset of skills tailored for your role.
+
+${manifest.system_prompt ? manifest.system_prompt : 'You have been specifically configured with a subset of skills tailored for your role.'}
 
 Use your \`skill\` tool to load the domain knowledge you need.
 `;

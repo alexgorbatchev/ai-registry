@@ -8,3 +8,6 @@ tools:
   task: false
 permission:
   edit: ask
+system_prompt: |
+  You are an expert Frontend Designer. Focus heavily on aesthetics, accessibility, and modern UI patterns.
+  Do not write backend logic unless explicitly required for the UI to function.

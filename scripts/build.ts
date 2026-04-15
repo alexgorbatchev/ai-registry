@@ -10,7 +10,7 @@ const CATALOG_DIR = join(REGISTRY_DIR, "catalog");
 const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
 
 // We now build to a single unified directory for OpenCode
-const UNIFIED_OPENCODE_DIR = join(REGISTRY_DIR, ".opencode");
+const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 
 async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> {
   if (!patterns || !Array.isArray(patterns) || patterns.length === 0) return [];
@@ -27,13 +27,13 @@ async function main() {
   console.log("🚀 Building Unified OpenCode Agents...\n");
 
   // 1. Prepare the unified target directory
-  await rm(UNIFIED_OPENCODE_DIR, { recursive: true, force: true });
-  await mkdir(UNIFIED_OPENCODE_DIR, { recursive: true });
+  await rm(UNIFIED_OUTPUT_DIR, { recursive: true, force: true });
+  await mkdir(UNIFIED_OUTPUT_DIR, { recursive: true });
   
-  const rulesyncDir = join(UNIFIED_OPENCODE_DIR, ".rulesync");
+  const rulesyncDir = join(UNIFIED_OUTPUT_DIR, ".rulesync");
   const rulesyncSkillsDir = join(rulesyncDir, "skills");
   const rulesyncCommandsDir = join(rulesyncDir, "commands");
-  const agentsOutputDir = join(UNIFIED_OPENCODE_DIR, "agents"); // Write to intermediate agents dir first
+  const agentsOutputDir = join(UNIFIED_OUTPUT_DIR, "agents"); // Write to intermediate agents dir first
   
   await mkdir(rulesyncSkillsDir, { recursive: true });
   await mkdir(rulesyncCommandsDir, { recursive: true });
@@ -181,16 +181,16 @@ Use your \`skill\` tool to load the domain knowledge you need.
   console.log(`\n⚙️  Running rulesync compiler...`);
   try {
     const targets = process.env.RULESYNC_TARGETS || '*';
-    await $`bunx rulesync generate --targets=${targets} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(UNIFIED_OPENCODE_DIR).quiet();
+    await $`bunx rulesync generate --targets=${targets} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(UNIFIED_OUTPUT_DIR).quiet();
     
     // Rename .opencode to opencode to match XDG standard for testing without symlinks
     try {
-      await $`mv ${join(UNIFIED_OPENCODE_DIR, ".opencode")} ${join(UNIFIED_OPENCODE_DIR, "opencode")}`.quiet();
+      await $`mv ${join(UNIFIED_OUTPUT_DIR, ".opencode")} ${join(UNIFIED_OUTPUT_DIR, "opencode")}`.quiet();
     } catch(e) {}
 
     // Copy the generated agents into the final opencode output directory manually
     // rulesync generate currently doesn't process `.rulesync/agents` out of the box
-    const opencodeAgentDir = join(UNIFIED_OPENCODE_DIR, "opencode", "agent");
+    const opencodeAgentDir = join(UNIFIED_OUTPUT_DIR, "opencode", "agent");
     await mkdir(opencodeAgentDir, { recursive: true });
     await $`cp ${agentsOutputDir}/*.md ${opencodeAgentDir}/`.quiet();
 
@@ -199,10 +199,10 @@ Use your \`skill\` tool to load the domain knowledge you need.
     if (existsSync(globalConfigPath)) {
       const harnessConfigs = await readdir(globalConfigPath, { withFileTypes: true });
       for (const configItem of harnessConfigs) {
-        // e.g. /harnesses/opencode/opencode.jsonc -> .opencode/opencode/opencode.jsonc
+        // e.g. /harnesses/opencode/opencode.jsonc -> .output/opencode/opencode.jsonc
         if (configItem.isDirectory()) {
           const sourceHarnessFolder = join(globalConfigPath, configItem.name);
-          const targetHarnessFolder = join(UNIFIED_OPENCODE_DIR, configItem.name);
+          const targetHarnessFolder = join(UNIFIED_OUTPUT_DIR, configItem.name);
           if (existsSync(targetHarnessFolder)) {
             await $`cp -R ${sourceHarnessFolder}/* ${targetHarnessFolder}/`.nothrow().quiet();
           }
@@ -218,9 +218,9 @@ Use your \`skill\` tool to load the domain knowledge you need.
 
   console.log("\n🎉 Unified configuration ready!");
   console.log("\nTo test this setup instantly via CLI, run:");
-  console.log("  XDG_CONFIG_HOME=~/.dotfiles/ai-registry/.opencode opencode --agent designer\n");
+  console.log("  XDG_CONFIG_HOME=~/.dotfiles/ai-registry/.output opencode --agent designer\n");
   console.log("To activate this setup permanently, symlink the unified output to OpenCode:");
-  console.log("  ln -sfn ~/.dotfiles/ai-registry/.opencode/opencode ~/.dotfiles/tools/opencode/config\n");
+  console.log("  ln -sfn ~/.dotfiles/ai-registry/.output/opencode ~/.dotfiles/tools/opencode/config\n");
   console.log("Once activated, you can open OpenCode and use the Tab key to switch between your profiles!");
   
   console.log("\n🥧 For Pi and other tools:");

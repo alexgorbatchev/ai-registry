@@ -21,7 +21,7 @@ This repository manages both the global catalog of AI skills and the configurati
 
 ## Architecture & Build Process
 This repository uses a custom build script (`scripts/build.ts`) to locally compile the registry into ready-to-use configurations for various agent harnesses (OpenCode, Cursor, Pi, etc.).
-- **OpenCode:** The script generates a single unified output directory (`.opencode/opencode`) containing all required skills and dynamic Markdown agent personas (which use OpenCode's native permissions to lock down skill access).
+- **OpenCode:** The script generates a single unified output directory (`.output/opencode`) containing all required skills and dynamic Markdown agent personas (which use OpenCode's native permissions to lock down skill access).
 - **Other Targets:** The script simultaneously generates isolated cache directories inside each profile folder (e.g., `profiles/designer/.agents/`) for tools that don't support native agent switching.
 
 ## Development Workflow

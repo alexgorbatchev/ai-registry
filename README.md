@@ -1,4 +1,4 @@
-# AI Registry
+# @alexgorbatchev/ai
 
 This repository serves as a unified registry for your AI tooling. It contains both a global library of knowledge (the Catalog) and specific, composable agent personas (the Profiles).
 
@@ -32,11 +32,11 @@ bun run build
 
 ### Using with OpenCode
 
-The build script generates a single unified OpenCode configuration at `.opencode/opencode`. This folder contains all skills and dynamically generated Markdown agent files enforcing strict profile permissions.
+The build script generates a single unified OpenCode configuration at `.output/opencode`. This folder contains all skills and dynamically generated Markdown agent files enforcing strict profile permissions.
 
 To activate it permanently:
 ```bash
-ln -sfn ~/.dotfiles/ai-registry/.opencode/opencode ~/.dotfiles/tools/opencode/config
+ln -sfn ~/.dotfiles/ai-registry/.output/opencode ~/.dotfiles/tools/opencode/config
 ```
 
 Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch between your `designer`, `developer`, and `default` personas on the fly.

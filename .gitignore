@@ -8,7 +8,7 @@ bun.lock
 .env.local
 
 # Generated profile caches and outputs
-.opencode/
+.output/
 profiles/*/.claude/
 profiles/*/.cline/
 profiles/*/.cursor/

@@ -21,8 +21,8 @@ This repository manages both the global catalog of AI skills and the configurati
 
 ## Architecture & Build Process
 This repository uses a custom build script (`scripts/build.ts`) to locally compile the registry into ready-to-use configurations for various agent harnesses (OpenCode, Cursor, Pi, etc.).
-- **OpenCode:** The script generates a single unified output directory (`.output/opencode`) containing all required skills and dynamic Markdown agent personas (which use OpenCode's native permissions to lock down skill access).
-- **Other Targets:** The script simultaneously generates isolated cache directories inside each profile folder (e.g., `profiles/designer/.agents/`) for tools that don't support native agent switching.
+- **Unified Outputs:** The script generates final unified outputs in `.output/` for supported shared targets. Today that includes `.output/opencode` for OpenCode and `.output/agents` for the AGENTS.md target. Intermediate rulesync inputs are cleaned up after the build so `.output` only contains final generated outputs.
+- **Other Targets:** The script simultaneously generates isolated cache directories inside each profile folder (e.g., `profiles/designer/.agents/`) for tools that don't support native agent switching. These isolated outputs are controlled by `RULESYNC_TARGETS`; `opencode` and `agentsmd` are produced in `.output/` instead.
 
 ## Development Workflow
 - **CRITICAL ANONYMIZATION RULE:** This registry is designed to be public and reusable. When creating or editing *any* file in this repository (especially skills, commands, prompts, and profiles), you MUST strictly anonymize and generalize all potentially Personal Identifiable Information (PII) and proprietary data. This includes, but is not limited to: company names, specific project names, employee names, locations, desk numbers, internal URLs, specific server hostnames, proprietary nomenclature, private API keys, or hardcoded passwords. Ensure all content added to this repository is globally applicable and scrubbed of private context.

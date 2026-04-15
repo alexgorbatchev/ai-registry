@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { readdir, readFile, rm, mkdir, writeFile } from "fs/promises";
+import { readdir, readFile, rm, mkdir, rename, writeFile } from "fs/promises";
 import { join, resolve } from "path";
 import { existsSync } from "fs";
 import { globby } from "globby";
@@ -9,8 +9,32 @@ const REGISTRY_DIR = resolve(import.meta.dir, "..");
 const CATALOG_DIR = join(REGISTRY_DIR, "catalog");
 const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
 
-// We now build to a single unified directory for OpenCode
+// We now build unified final outputs into a single directory
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
+const UNIFIED_TARGETS = new Set(["opencode", "agentsmd"]);
+
+function getConfiguredTargets(): string[] {
+  return (process.env.RULESYNC_TARGETS || "opencode,agentsmd")
+    .split(",")
+    .map((target) => target.trim())
+    .filter(Boolean);
+}
+
+function getUnifiedTargets(configuredTargets: string[]): string[] {
+  if (configuredTargets.includes("*")) {
+    return Array.from(UNIFIED_TARGETS);
+  }
+
+  return configuredTargets.filter((target) => UNIFIED_TARGETS.has(target));
+}
+
+function getIsolatedTargets(configuredTargets: string[]): string {
+  if (configuredTargets.includes("*")) {
+    return "*";
+  }
+
+  return configuredTargets.filter((target) => !UNIFIED_TARGETS.has(target)).join(",");
+}
 
 async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> {
   if (!patterns || !Array.isArray(patterns) || patterns.length === 0) return [];
@@ -24,7 +48,10 @@ async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> 
 }
 
 async function main() {
-  console.log("🚀 Building Unified OpenCode Agents...\n");
+  console.log("🚀 Building Unified Agent Outputs...\n");
+
+  const configuredTargets = getConfiguredTargets();
+  const unifiedTargets = getUnifiedTargets(configuredTargets);
 
   // 1. Prepare the unified target directory
   await rm(UNIFIED_OUTPUT_DIR, { recursive: true, force: true });
@@ -33,11 +60,11 @@ async function main() {
   const rulesyncDir = join(UNIFIED_OUTPUT_DIR, ".rulesync");
   const rulesyncSkillsDir = join(rulesyncDir, "skills");
   const rulesyncCommandsDir = join(rulesyncDir, "commands");
-  const agentsOutputDir = join(UNIFIED_OUTPUT_DIR, "agents"); // Write to intermediate agents dir first
+  const opencodeAgentStagingDir = join(UNIFIED_OUTPUT_DIR, ".opencode-agents");
   
   await mkdir(rulesyncSkillsDir, { recursive: true });
   await mkdir(rulesyncCommandsDir, { recursive: true });
-  await mkdir(agentsOutputDir, { recursive: true });
+  await mkdir(opencodeAgentStagingDir, { recursive: true });
 
   // Keep track of what we need to copy to the master catalog
   const masterSkills = new Set<string>();
@@ -106,14 +133,13 @@ async function main() {
       await $`cp -R "${join(CATALOG_DIR, "commands", cmd)}" "${join(legacyRulesyncDir, "commands", cmd)}"`.nothrow().quiet();
     }
     
-    // Generate isolated configurations for this profile (ignoring opencode since we unify it)
+    // Generate isolated configurations for this profile. Shared unified targets are built in .output.
     try {
-      const targets = process.env.RULESYNC_TARGETS || '*';
-      const isolatedTargets = targets.split(',').filter(t => t.trim() !== 'opencode').join(',');
+      const isolatedTargets = getIsolatedTargets(configuredTargets);
       if (isolatedTargets) {
         await $`bunx rulesync generate --targets=${isolatedTargets} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(profileDir).quiet();
       }
-    } catch (e) {}
+    } catch (error) {}
 
     // Generate the OpenCode Agent Markdown
     // We restrict skill access to ONLY the skills defined in this profile
@@ -161,8 +187,8 @@ ${manifest.system_prompt ? manifest.system_prompt : 'You have been specifically 
 Use your \`skill\` tool to load the domain knowledge you need.
 `;
 
-    // Save the agent definition into the .rulesync/agents dir so rulesync generate sees it
-    await writeFile(join(agentsOutputDir, `${profileName}.md`), agentMd);
+    // Stage the agent definition until the final OpenCode output exists
+    await writeFile(join(opencodeAgentStagingDir, `${profileName}.md`), agentMd);
   }
 
   // 3. Copy the unified sets into the rulesync cache
@@ -180,40 +206,67 @@ Use your \`skill\` tool to load the domain knowledge you need.
   // 4. Run rulesync generate ONCE on the unified directory
   console.log(`\n⚙️  Running rulesync compiler...`);
   try {
-    const targets = process.env.RULESYNC_TARGETS || '*';
-    await $`bunx rulesync generate --targets=${targets} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(UNIFIED_OUTPUT_DIR).quiet();
+    if (unifiedTargets.length > 0) {
+      await $`bunx rulesync generate --targets=${unifiedTargets.join(",")} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(UNIFIED_OUTPUT_DIR).quiet();
+    }
     
-    // Rename .opencode to opencode to match XDG standard for testing without symlinks
-    try {
-      await $`mv ${join(UNIFIED_OUTPUT_DIR, ".opencode")} ${join(UNIFIED_OUTPUT_DIR, "opencode")}`.quiet();
-    } catch(e) {}
+    if (unifiedTargets.includes("opencode")) {
+      // Rename .opencode to opencode to match XDG standard for testing without symlinks
+      try {
+        await rename(join(UNIFIED_OUTPUT_DIR, ".opencode"), join(UNIFIED_OUTPUT_DIR, "opencode"));
+      } catch (error) {}
 
-    // Copy the generated agents into the final opencode output directory manually
-    // rulesync generate currently doesn't process `.rulesync/agents` out of the box
-    const opencodeAgentDir = join(UNIFIED_OUTPUT_DIR, "opencode", "agent");
-    await mkdir(opencodeAgentDir, { recursive: true });
-    await $`cp ${agentsOutputDir}/*.md ${opencodeAgentDir}/`.quiet();
+      // Copy the generated agents into the final opencode output directory manually
+      // rulesync generate currently doesn't process OpenCode agent personas out of the box
+      const opencodeAgentDir = join(UNIFIED_OUTPUT_DIR, "opencode", "agent");
+      await mkdir(opencodeAgentDir, { recursive: true });
+      await $`cp ${opencodeAgentStagingDir}/*.md ${opencodeAgentDir}/`.quiet();
+    }
 
-    // 4.b Look for global harness configuration files (e.g., opencode.jsonc) and inject them
-    const globalConfigPath = join(REGISTRY_DIR, "harnesses");
-    if (existsSync(globalConfigPath)) {
-      const harnessConfigs = await readdir(globalConfigPath, { withFileTypes: true });
-      for (const configItem of harnessConfigs) {
-        // e.g. /harnesses/opencode/opencode.jsonc -> .output/opencode/opencode.jsonc
-        if (configItem.isDirectory()) {
-          const sourceHarnessFolder = join(globalConfigPath, configItem.name);
-          const targetHarnessFolder = join(UNIFIED_OUTPUT_DIR, configItem.name);
-          if (existsSync(targetHarnessFolder)) {
-            await $`cp -R ${sourceHarnessFolder}/* ${targetHarnessFolder}/`.nothrow().quiet();
+    const generatedAgentsRulePath = join(UNIFIED_OUTPUT_DIR, "AGENTS.md");
+    const generatedAgentsToolPath = join(UNIFIED_OUTPUT_DIR, ".agents");
+    const sourceAgentsRulePath = join(REGISTRY_DIR, "AGENTS.md");
+    if (unifiedTargets.includes("agentsmd") && (existsSync(generatedAgentsRulePath) || existsSync(generatedAgentsToolPath) || existsSync(sourceAgentsRulePath))) {
+      const agentsOutputDir = join(UNIFIED_OUTPUT_DIR, "agents");
+      await mkdir(agentsOutputDir, { recursive: true });
+
+      if (existsSync(generatedAgentsRulePath)) {
+        await rename(generatedAgentsRulePath, join(agentsOutputDir, "AGENTS.md"));
+      } else if (existsSync(sourceAgentsRulePath)) {
+        await writeFile(join(agentsOutputDir, "AGENTS.md"), await readFile(sourceAgentsRulePath, "utf-8"));
+      }
+
+      if (existsSync(generatedAgentsToolPath)) {
+        await rename(generatedAgentsToolPath, join(agentsOutputDir, ".agents"));
+      }
+    }
+
+    if (unifiedTargets.includes("opencode")) {
+      // Look for global harness configuration files (e.g., opencode.jsonc) and inject them
+      const globalConfigPath = join(REGISTRY_DIR, "harnesses");
+      if (existsSync(globalConfigPath)) {
+        const harnessConfigs = await readdir(globalConfigPath, { withFileTypes: true });
+        for (const configItem of harnessConfigs) {
+          // e.g. /harnesses/opencode/opencode.jsonc -> .output/opencode/opencode.jsonc
+          if (configItem.isDirectory()) {
+            const sourceHarnessFolder = join(globalConfigPath, configItem.name);
+            const targetHarnessFolder = join(UNIFIED_OUTPUT_DIR, configItem.name);
+            if (existsSync(targetHarnessFolder)) {
+              await $`cp -R ${sourceHarnessFolder}/* ${targetHarnessFolder}/`.nothrow().quiet();
+            }
           }
         }
       }
     }
 
-    console.log(`   ✅ Successfully compiled OpenCode configuration!`);
+    console.log(`   ✅ Successfully compiled unified outputs!`);
   } catch (error: any) {
     console.error(`   ❌ Failed to compile:`);
     if (error.stderr) console.error(error.stderr.toString());
+  } finally {
+    // Keep .output limited to final harness outputs.
+    await rm(rulesyncDir, { recursive: true, force: true });
+    await rm(opencodeAgentStagingDir, { recursive: true, force: true });
   }
 
   console.log("\n🎉 Unified configuration ready!");

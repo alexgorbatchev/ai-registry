@@ -28,11 +28,16 @@ bun install
 bun run build
 ```
 
-*(You can limit the output targets by creating a `.env` file with `RULESYNC_TARGETS="opencode,cursor"`).*
+*Use `.env` `RULESYNC_TARGETS` to choose generated outputs. `opencode` is written to `.output/opencode`, `agentsmd` is written to `.output/agents`, and other targets are generated inside each profile folder.*
 
 ### Using with OpenCode
 
-The build script generates a single unified OpenCode configuration at `.output/opencode`. This folder contains all skills and dynamically generated Markdown agent files enforcing strict profile permissions.
+The build script generates unified final outputs in `.output/` for the targets that belong there:
+
+- `.output/opencode`: OpenCode config with skills, commands, and generated persona files.
+- `.output/agents`: `AGENTS.md` plus the generated `.agents/` directory for AGENTS.md-compatible tooling.
+
+Intermediate rulesync inputs are cleaned up after the build, so `.output` only contains final generated outputs.
 
 To activate it permanently:
 ```bash

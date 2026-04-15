@@ -10,6 +10,9 @@ This repository manages both the global catalog of AI skills and the configurati
   - **Skills (`/catalog/skills`)**: Each skill must reside in its own isolated folder and contain at least a `SKILL.md` file detailing the domain knowledge, workflows, and rules.
   - **Commands (`/catalog/commands`)**: Slash commands and reusable task prompts belong here.
   - **Self-Contained Logic**: Each skill or command must be self-contained. Do not assume other skills are present.
+- **The Harnesses (`/harnesses`)**:
+  - Global configuration overrides for specific tools (e.g., `harnesses/opencode/opencode.jsonc`).
+  - These files are cleanly injected directly into the target output directories during the build process.
 - **The Profiles (`/profiles`)**:
   - Contains directories (e.g., `designer`, `developer`) with `profile.yaml` (or `profile.json`) manifests.
   - Manifests declare which skills and commands to include (supports globbing, e.g., `*`, `react-*`).

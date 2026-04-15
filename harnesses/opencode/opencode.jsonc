@@ -1,0 +1,13 @@
+{
+  "$schema": "./schemas/opencode.json",
+
+  "instructions": [
+    "AGENTS.md",
+    "../../pi/config/APPEND_SYSTEM.md"
+  ],
+
+  "disabled_providers": [],
+  "experimental": {
+    "mcp_timeout": 420000
+  },
+}

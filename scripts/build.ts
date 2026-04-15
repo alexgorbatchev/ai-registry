@@ -194,6 +194,22 @@ Use your \`skill\` tool to load the domain knowledge you need.
     await mkdir(opencodeAgentDir, { recursive: true });
     await $`cp ${agentsOutputDir}/*.md ${opencodeAgentDir}/`.quiet();
 
+    // 4.b Look for global harness configuration files (e.g., opencode.jsonc) and inject them
+    const globalConfigPath = join(REGISTRY_DIR, "harnesses");
+    if (existsSync(globalConfigPath)) {
+      const harnessConfigs = await readdir(globalConfigPath, { withFileTypes: true });
+      for (const configItem of harnessConfigs) {
+        // e.g. /harnesses/opencode/opencode.jsonc -> .opencode/opencode/opencode.jsonc
+        if (configItem.isDirectory()) {
+          const sourceHarnessFolder = join(globalConfigPath, configItem.name);
+          const targetHarnessFolder = join(UNIFIED_OPENCODE_DIR, configItem.name);
+          if (existsSync(targetHarnessFolder)) {
+            await $`cp -R ${sourceHarnessFolder}/* ${targetHarnessFolder}/`.nothrow().quiet();
+          }
+        }
+      }
+    }
+
     console.log(`   ✅ Successfully compiled OpenCode configuration!`);
   } catch (error: any) {
     console.error(`   ❌ Failed to compile:`);

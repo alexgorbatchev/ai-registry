@@ -1,9 +1,11 @@
 {
-  "$schema": "./schemas/opencode.json",
+  "$schema": "https://opencode.ai/config.json",
+  "autoupdate": false,
+  "formatter": false,
 
   "instructions": [
     "AGENTS.md",
-    "../../pi/config/APPEND_SYSTEM.md"
+    "./APPEND_SYSTEM.md"
   ],
 
   "disabled_providers": [],

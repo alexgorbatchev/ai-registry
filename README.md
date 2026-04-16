@@ -1,6 +1,6 @@
 # @alexgorbatchev/ai
 
-This repository serves as a canonical registry for your AI tooling. It keeps reusable skills, commands, profiles, harness overrides, and bootstrap guidance in one repo, then generates the harness-specific outputs from that source of truth.
+This repository serves as a canonical registry for your AI tooling. It keeps reusable skills, commands, profiles, harness overrides, and setup workflow in one repo, then generates the harness-specific outputs from that source of truth.
 
 It is designed to be consumed by [rulesync](https://github.com/alexgorbatchev/rulesync) to dynamically construct highly-specialized AI agent environments without overloading context windows.
 
@@ -18,8 +18,8 @@ The assembled agents. These folders contain `profile.yaml` manifests that cherry
 - **`developer/`**: Backend/Fullstack focused agent.
 - **`default/`**: General-purpose baseline agent.
 
-### 3. Bootstrap (`/bootstrap`)
-Bootstrap guidance for applying this repo across machines. `chezmoi` is the recommended outer layer, with `stow` and `home-manager` examples documented as alternatives.
+### 3. Setup (`bun run bootstrap`)
+`bun run bootstrap` is the repo-local clone-and-run entrypoint for this repository.
 
 ### 4. Generated Outputs (`/.output`)
 The final generated harness artifacts. This directory is rebuilt from source and should only contain consumable outputs.
@@ -27,6 +27,26 @@ The final generated harness artifacts. This directory is rebuilt from source and
 ## Building and Usage
 
 This repository includes a custom local compiler (`scripts/build.ts`) that resolves the profiles and builds configurations for various agent harnesses using `rulesync` under the hood.
+
+For the normal machine setup flow after cloning, run:
+
+```bash
+bun run bootstrap
+```
+
+To smoke test that flow without touching your real XDG config paths, run:
+
+```bash
+bun run bootstrap:smoke
+```
+
+That command:
+
+- runs `bun install`
+- builds the generated outputs
+- preserves any extra `RULESYNC_TARGETS` targets while always generating `opencode` and `agentsmd`
+- links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
+- backs up any existing conflicting target directories before replacing them
 
 To compile the configurations, simply run:
 
@@ -58,18 +78,14 @@ The build script generates unified final outputs in `.output/` for the targets t
 
 Intermediate rulesync inputs are cleaned up after the build, so `.output` only contains final generated outputs.
 
-### Bootstrap Guidance
+### Bootstrap Overrides
 
-See `bootstrap/` for recommended cross-machine setup patterns:
+Override the default target locations with:
 
-- `bootstrap/chezmoi/`: recommended bootstrap flow
-- `bootstrap/stow/`: simple symlink-based setup
-- `bootstrap/home-manager/`: declarative Nix/Home Manager example
+- `OPENCODE_CONFIG_DIR`
 
-To activate it permanently:
-```bash
-ln -sfn ~/.dotfiles/ai-registry/.output/opencode ~/.dotfiles/tools/opencode/config
-```
+The smoke test uses `.tmp/bootstrap-smoke/` inside this repository for that path.
+Treat `.tmp/bootstrap-smoke/` as a fake `HOME`, with a fresh repo copy staged at `.tmp/bootstrap-smoke/development/ai-registry`.
 
 Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch between your `designer`, `developer`, and `default` personas on the fly.
 

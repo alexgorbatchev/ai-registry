@@ -6,6 +6,7 @@
   "scripts": {
     "build": "bun run scripts/build.ts",
     "bootstrap": "bun run scripts/bootstrap.ts",
+    "bootstrap:smoke": "bun run scripts/smoke-bootstrap.ts",
     "skills:list": "npx skills add . --list"
   },
   "dependencies": {

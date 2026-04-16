@@ -9,6 +9,7 @@ bun.lock
 
 # Local skills-cli installs and state
 .agents/
+.tmp/
 
 # Generated profile caches and outputs
 .output/

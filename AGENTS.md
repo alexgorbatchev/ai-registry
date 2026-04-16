@@ -3,7 +3,7 @@
 This repository is a central registry for AI skills, commands, rules, and agent profiles. As an AI assistant working in this repository, you must adhere to the following rules:
 
 ## Purpose
-This repository manages reusable AI skills and commands plus the configurations (profiles) that assemble them. It serves as the single source of truth for your agent personas, generated harness outputs, and bootstrap guidance.
+This repository manages reusable AI skills and commands plus the configurations (profiles) that assemble them. It serves as the single source of truth for your agent personas, generated harness outputs, and setup workflow.
 
 ## File Conventions
 - **Reusable Assets**:
@@ -19,14 +19,12 @@ This repository manages reusable AI skills and commands plus the configurations 
   - Manifests can explicitly toggle native harness tools (e.g., `bash: false`) and inject custom tool-level permissions.
   - Manifests can define a custom `system_prompt` to give the agent specific baseline instructions.
 
-- **Bootstrap (`/bootstrap`)**:
-  - Cross-machine installation and apply guidance lives here.
-  - Prefer `bootstrap/chezmoi/` when updating the recommended bootstrap flow.
-
 ## Architecture & Build Process
 This repository uses a custom build script (`scripts/build.ts`) to locally compile the registry into ready-to-use configurations for various agent harnesses (OpenCode, Cursor, Pi, etc.).
 - **Unified Outputs:** The script generates final unified outputs in `.output/` for supported shared targets. Today that includes `.output/opencode` for OpenCode and `.output/agents` for the AGENTS.md target. Intermediate rulesync inputs are cleaned up after the build so `.output` only contains final generated outputs.
 - **Other Targets:** The script simultaneously generates isolated cache directories inside each profile folder (e.g., `profiles/designer/.agents/`) for tools that don't support native agent switching. These isolated outputs are controlled by `RULESYNC_TARGETS`; `opencode` and `agentsmd` are produced in `.output/` instead.
+- **Bootstrap Command:** `bun run bootstrap` is the repo-local setup entrypoint. It installs dependencies, builds the generated outputs, and links the default machine-local OpenCode target using an XDG-style path unless `OPENCODE_CONFIG_DIR` is set.
+- **Smoke Test:** `bun run bootstrap:smoke` validates the bootstrap flow against `.tmp/bootstrap-smoke/`, treating that directory as a fake `HOME` with the repo staged at `development/ai-registry`.
 
 ## Development Workflow
 - **CRITICAL ANONYMIZATION RULE:** This registry is designed to be public and reusable. When creating or editing *any* file in this repository (especially skills, commands, prompts, and profiles), you MUST strictly anonymize and generalize all potentially Personal Identifiable Information (PII) and proprietary data. This includes, but is not limited to: company names, specific project names, employee names, locations, desk numbers, internal URLs, specific server hostnames, proprietary nomenclature, private API keys, or hardcoded passwords. Ensure all content added to this repository is globally applicable and scrubbed of private context.

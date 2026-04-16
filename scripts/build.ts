@@ -277,8 +277,8 @@ Use your \`skill\` tool to load the domain knowledge you need.
   console.log("\n🎉 Unified configuration ready!");
   console.log("\nTo test this setup instantly via CLI, run:");
   console.log("  XDG_CONFIG_HOME=~/.dotfiles/ai-registry/.output opencode --agent designer\n");
-  console.log("To activate this setup permanently, symlink the unified output to OpenCode:");
-  console.log("  ln -sfn ~/.dotfiles/ai-registry/.output/opencode ~/.dotfiles/tools/opencode/config\n");
+  console.log("To apply the generated outputs to your machine, run:");
+  console.log("  bun run bootstrap\n");
   console.log("Once activated, you can open OpenCode and use the Tab key to switch between your profiles!");
   
   console.log("\n🥧 For Pi and other tools:");

@@ -7,6 +7,9 @@ bun.lock
 .env
 .env.local
 
+# Local skills-cli installs and state
+.agents/
+
 # Generated profile caches and outputs
 .output/
 profiles/*/.claude/

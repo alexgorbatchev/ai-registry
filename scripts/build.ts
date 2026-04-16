@@ -6,7 +6,8 @@ import { globby } from "globby";
 
 // Resolve paths relative to the ai-registry root
 const REGISTRY_DIR = resolve(import.meta.dir, "..");
-const CATALOG_DIR = join(REGISTRY_DIR, "catalog");
+const SKILLS_DIR = join(REGISTRY_DIR, "skills");
+const COMMANDS_DIR = join(REGISTRY_DIR, "commands");
 const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
 
 // We now build unified final outputs into a single directory
@@ -34,6 +35,10 @@ function getIsolatedTargets(configuredTargets: string[]): string {
   }
 
   return configuredTargets.filter((target) => !UNIFIED_TARGETS.has(target)).join(",");
+}
+
+function hasStderr(error: unknown): error is { stderr: { toString(): string } } {
+  return typeof error === "object" && error !== null && "stderr" in error;
 }
 
 async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> {
@@ -66,7 +71,7 @@ async function main() {
   await mkdir(rulesyncCommandsDir, { recursive: true });
   await mkdir(opencodeAgentStagingDir, { recursive: true });
 
-  // Keep track of what we need to copy to the master catalog
+  // Keep track of what we need to copy into the shared build inputs
   const masterSkills = new Set<string>();
   const masterCommands = new Set<string>();
 
@@ -119,18 +124,18 @@ async function main() {
     await mkdir(join(legacyRulesyncDir, "commands"), { recursive: true });
 
     // Resolve skills and commands for THIS profile
-    const matchedSkills = manifest.skills ? await resolveGlobs(manifest.skills, join(CATALOG_DIR, "skills")) : [];
-    const matchedCommands = manifest.commands ? await resolveGlobs(manifest.commands, join(CATALOG_DIR, "commands")) : [];
+    const matchedSkills = manifest.skills ? await resolveGlobs(manifest.skills, SKILLS_DIR) : [];
+    const matchedCommands = manifest.commands ? await resolveGlobs(manifest.commands, COMMANDS_DIR) : [];
 
     // Add them to the master sets AND the legacy isolated profile folders
     for (const skill of matchedSkills) {
       masterSkills.add(skill);
-      await $`cp -R "${join(CATALOG_DIR, "skills", skill)}" "${join(legacyRulesyncDir, "skills", skill)}"`.nothrow().quiet();
+      await $`cp -R "${join(SKILLS_DIR, skill)}" "${join(legacyRulesyncDir, "skills", skill)}"`.nothrow().quiet();
     }
     
     for (const cmd of matchedCommands) {
       masterCommands.add(cmd);
-      await $`cp -R "${join(CATALOG_DIR, "commands", cmd)}" "${join(legacyRulesyncDir, "commands", cmd)}"`.nothrow().quiet();
+      await $`cp -R "${join(COMMANDS_DIR, cmd)}" "${join(legacyRulesyncDir, "commands", cmd)}"`.nothrow().quiet();
     }
     
     // Generate isolated configurations for this profile. Shared unified targets are built in .output.
@@ -192,14 +197,14 @@ Use your \`skill\` tool to load the domain knowledge you need.
   }
 
   // 3. Copy the unified sets into the rulesync cache
-  console.log("\n📚 Assembling global catalog...");
+  console.log("\n📚 Assembling shared assets...");
   for (const skill of masterSkills) {
-    const sourcePath = join(CATALOG_DIR, "skills", skill);
+    const sourcePath = join(SKILLS_DIR, skill);
     await $`cp -R "${sourcePath}" "${join(rulesyncSkillsDir, skill)}"`.nothrow().quiet();
   }
   
   for (const cmd of masterCommands) {
-    const sourcePath = join(CATALOG_DIR, "commands", cmd);
+    const sourcePath = join(COMMANDS_DIR, cmd);
     await $`cp -R "${sourcePath}" "${join(rulesyncCommandsDir, cmd)}"`.nothrow().quiet();
   }
 
@@ -260,9 +265,9 @@ Use your \`skill\` tool to load the domain knowledge you need.
     }
 
     console.log(`   ✅ Successfully compiled unified outputs!`);
-  } catch (error: any) {
+  } catch (error) {
     console.error(`   ❌ Failed to compile:`);
-    if (error.stderr) console.error(error.stderr.toString());
+    if (hasStderr(error)) console.error(error.stderr.toString());
   } finally {
     // Keep .output limited to final harness outputs.
     await rm(rulesyncDir, { recursive: true, force: true });

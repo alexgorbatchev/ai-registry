@@ -64,6 +64,11 @@ const GENERATED_OUTPUT_IGNORED_BASENAMES = new Set([
   "bun.lockb",
   "package-lock.json",
 ]);
+const AUTO_CONFIRM_FLAGS = new Set(["-y", "--yes"]);
+
+function hasAutoConfirmFlag(): boolean {
+  return process.argv.some((argument) => AUTO_CONFIRM_FLAGS.has(argument));
+}
 
 function getConfiguredTargets(): string[] {
   return (process.env.RULESYNC_TARGETS || "opencode,agentsmd")
@@ -232,6 +237,7 @@ function getGeneratedOutputDrift(
 
 async function confirmGeneratedOutputOverwrite(
   drift: IGeneratedOutputDrift[],
+  hasAutoConfirm: boolean,
 ): Promise<void> {
   if (drift.length === 0) {
     return;
@@ -240,6 +246,11 @@ async function confirmGeneratedOutputOverwrite(
   console.error("\n⚠️ Detected external changes in generated outputs:");
   for (const entry of drift) {
     console.error(`  - ${entry.path} (${entry.reason})`);
+  }
+
+  if (hasAutoConfirm) {
+    console.error("\nAuto-confirm enabled via -y/--yes. Overwriting generated files.");
+    return;
   }
 
   if (!stdin.isTTY || !stdout.isTTY) {
@@ -265,7 +276,7 @@ async function confirmGeneratedOutputOverwrite(
   }
 }
 
-async function assertGeneratedOutputsAreSafeToReplace(): Promise<void> {
+async function assertGeneratedOutputsAreSafeToReplace(hasAutoConfirm: boolean): Promise<void> {
   const manifest = await readGeneratedOutputManifest();
   if (!manifest) {
     return;
@@ -273,7 +284,7 @@ async function assertGeneratedOutputsAreSafeToReplace(): Promise<void> {
 
   const currentChecksums = await collectGeneratedOutputChecksums(UNIFIED_OUTPUT_DIR);
   const drift = getGeneratedOutputDrift(manifest, currentChecksums);
-  await confirmGeneratedOutputOverwrite(drift);
+  await confirmGeneratedOutputOverwrite(drift, hasAutoConfirm);
 }
 
 async function writeGeneratedOutputManifest(): Promise<void> {
@@ -413,7 +424,9 @@ async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> 
 async function main() {
   console.log("🚀 Building Unified Agent Outputs...\n");
 
-  await assertGeneratedOutputsAreSafeToReplace();
+  const hasAutoConfirm = hasAutoConfirmFlag();
+
+  await assertGeneratedOutputsAreSafeToReplace(hasAutoConfirm);
 
   const configuredTargets = getConfiguredTargets();
   const unifiedTargets = getUnifiedTargets(configuredTargets);

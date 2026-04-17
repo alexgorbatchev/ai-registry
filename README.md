@@ -51,7 +51,7 @@ That command:
 - runs `bun install`
 - builds the generated outputs
 - verifies the previous generated-output manifest before replacing `.output/`
-- stops for confirmation when generated files drift from the last manifest, with `no` as the default
+- stops for confirmation when generated files drift from the last manifest, with `no` as the default; use `bun run build -- -y` or `bun run bootstrap -- -y` to auto-confirm
 - preserves any extra `RULESYNC_TARGETS` targets while always generating `opencode` and `agentsmd`
 - links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
 - backs up any existing conflicting target directories before replacing them

@@ -40,6 +40,10 @@ function getBuildTargets(): string {
   return Array.from(new Set([...configuredTargets, "opencode", "agentsmd"])).join(",");
 }
 
+function hasAutoConfirmFlag(): boolean {
+  return process.argv.includes("-y") || process.argv.includes("--yes");
+}
+
 function getBackupPath(targetPath: string): string {
   return `${targetPath}.backup-${getTimestamp()}`;
 }
@@ -124,7 +128,9 @@ async function main(): Promise<void> {
   await $`bun install`.cwd(REGISTRY_DIR);
 
   console.log("Building generated outputs...");
-  await $`bun run build`
+  const buildCommand = hasAutoConfirmFlag() ? $`bun run build -- -y` : $`bun run build`;
+
+  await buildCommand
     .cwd(REGISTRY_DIR)
     .env({
       ...process.env,

@@ -16,7 +16,7 @@ Pin down:
 - audience or decision to support
 - required deliverable such as `research.md`, memo, comparison table, or recommendation
 - constraints such as time horizon, platforms, languages, or tooling
-- whether the user wants exhaustive coverage or a practical recommendation
+- any explicit scope limits; otherwise assume exhaustive coverage and still end with a recommendation
 
 Turn vague requests into a small set of research questions. Useful defaults:
 
@@ -102,13 +102,15 @@ Weak:
 
 ## Shape The Output
 
-When writing a full report, default to `docs/research/<topic-slug>.md` unless the user explicitly asks for a different path.
+When writing a full report, default to `{{repo_root}}/wiki/research/<topic-slug>.md` unless the user explicitly asks for a different path.
+
+Create `{{repo_root}}/wiki/research/` first if it does not already exist.
 
 Generate `<topic-slug>` from the subject of the research using concise hyphen-case.
 
 Example:
 
-- `docs/research/ai-agent-harness-configuration.md`
+- `{{repo_root}}/wiki/research/ai-agent-harness-configuration.md`
 
 Do not literally use `topic.md` as the filename unless the user explicitly insists on that exact basename.
 
@@ -165,13 +167,13 @@ Avoid:
 - treating videos as the only evidence source for technical facts
 - giving scores without published criteria
 
-## Escalate Depth When Needed
+## Default To Exhaustive Depth
 
-Go deeper when:
+Treat research requests as exhaustive by default, not surface-level surveys.
 
-- the user asks for exhaustive research
-- the topic involves many competing tools or architectures
-- sources disagree materially
-- the recommendation would drive a long-lived technical decision
+Only narrow the depth when:
 
-In those cases, broaden the source pool, compare more options, and spend more effort on disagreement analysis and evidence strength.
+- the user explicitly asks for a quick, practical, or high-level answer
+- time, source availability, or other stated constraints materially limit the evidence you can gather
+
+When you do narrow the depth, say so explicitly and note what deeper follow-up would still be worth checking.

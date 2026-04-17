@@ -79,19 +79,15 @@ async function packageSkill(
     const files = await getAllFiles(resolvedPath);
     const parentDir = resolve(resolvedPath, '..');
 
-    // Use Bun's native zip support
-    const zipEntries: { path: string; data: Uint8Array; }[] = [];
-
+    // List the files that will be included before invoking the system zip command.
     for (const filePath of files) {
       const arcname = relative(parentDir, filePath);
-      const data = await Bun.file(filePath).arrayBuffer();
-      zipEntries.push({ path: arcname, data: new Uint8Array(data) });
       console.log(`  Added: ${arcname}`);
     }
 
-    // Write zip file using Bun's writer
+    // Create the .skill archive with the system zip command.
     const proc = Bun.spawn(
-      ['zip', '-r', skillFilename, skillName],
+      ['zip', '-rq', skillFilename, skillName],
       {
         cwd: parentDir,
         stdout: 'pipe',
@@ -101,7 +97,8 @@ async function packageSkill(
     await proc.exited;
 
     if (proc.exitCode !== 0) {
-      throw new Error('Failed to create zip file');
+      const stderrText = (await new Response(proc.stderr).text()).trim();
+      throw new Error(stderrText || 'Failed to create zip file');
     }
 
     console.log(`\n✅ Successfully packaged skill to: ${skillFilename}`);

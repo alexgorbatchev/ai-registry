@@ -19,11 +19,12 @@ const REGISTRY_DIR = resolve(import.meta.dir, "..");
 const SKILLS_DIR = join(REGISTRY_DIR, "skills");
 const COMMANDS_DIR = join(REGISTRY_DIR, "commands");
 const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
+const TEMPLATE_VARIABLE_PATTERN = /{{\s*([a-z0-9_]+)\s*}}/gi;
 
 // We now build unified final outputs into a single directory
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 const UNIFIED_TARGETS = new Set(["opencode", "agentsmd"]);
-const SKILL_TEMPLATE_CONTEXT = {
+const TEMPLATE_CONTEXT = {
   repo_root: REGISTRY_DIR,
   skills_dir: SKILLS_DIR,
   commands_dir: COMMANDS_DIR,
@@ -58,17 +59,13 @@ function hasStderr(error: unknown): error is { stderr: { toString(): string } } 
   return typeof error === "object" && error !== null && "stderr" in error;
 }
 
-function isTemplateableFile(filePath: string): boolean {
-  return basename(filePath) === "SKILL.md";
-}
-
 function applyTemplateVariables(
   content: string,
   sourcePath: string,
   templateContext: Record<string, string>,
 ): string {
   const placeholders = Array.from(
-    new Set(content.match(/{{\s*([a-z0-9_]+)\s*}}/gi) ?? []),
+    new Set(content.match(TEMPLATE_VARIABLE_PATTERN) ?? []),
   );
 
   if (placeholders.length === 0) {
@@ -85,7 +82,7 @@ function applyTemplateVariables(
     );
   }
 
-  return content.replace(/{{\s*([a-z0-9_]+)\s*}}/gi, (_, key: string) => {
+  return content.replace(TEMPLATE_VARIABLE_PATTERN, (_, key: string) => {
     return templateContext[key] ?? _;
   });
 }
@@ -115,20 +112,59 @@ async function copyDirectoryWithTemplateVariables(
       continue;
     }
 
-    if (isTemplateableFile(sourcePath)) {
+    const isSkillDefinition = basename(sourcePath) === "SKILL.md";
+    if (isSkillDefinition) {
       const sourceContent = await readFile(sourcePath, "utf-8");
-      const renderedContent = applyTemplateVariables(
-        sourceContent,
-        sourcePath,
-        templateContext,
+      await writeFile(
+        targetPath,
+        applyTemplateVariables(sourceContent, sourcePath, templateContext),
+        "utf-8",
       );
-      await writeFile(targetPath, renderedContent, "utf-8");
     } else {
       await copyFile(sourcePath, targetPath);
     }
 
     const sourceStats = await stat(sourcePath);
     await chmod(targetPath, sourceStats.mode);
+  }
+}
+
+async function applyTemplateVariablesToGeneratedOutput(
+  outputDir: string,
+  templateContext: Record<string, string>,
+): Promise<void> {
+  if (!existsSync(outputDir)) {
+    return;
+  }
+
+  const entries = await readdir(outputDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const entryPath = join(outputDir, entry.name);
+
+    if (entry.isDirectory()) {
+      await applyTemplateVariablesToGeneratedOutput(entryPath, templateContext);
+      continue;
+    }
+
+    if (!entry.isFile()) {
+      continue;
+    }
+
+    const fileBuffer = await readFile(entryPath);
+    if (fileBuffer.includes(0)) {
+      continue;
+    }
+
+    const sourceContent = fileBuffer.toString("utf-8");
+    const renderedContent = applyTemplateVariables(
+      sourceContent,
+      entryPath,
+      templateContext,
+    );
+
+    if (renderedContent !== sourceContent) {
+      await writeFile(entryPath, renderedContent, "utf-8");
+    }
   }
 }
 
@@ -224,7 +260,7 @@ async function main() {
       await copyDirectoryWithTemplateVariables(
         join(SKILLS_DIR, skill),
         join(legacyRulesyncDir, "skills", skill),
-        SKILL_TEMPLATE_CONTEXT,
+        TEMPLATE_CONTEXT,
       );
     }
     
@@ -238,6 +274,22 @@ async function main() {
       const isolatedTargets = getIsolatedTargets(configuredTargets);
       if (isolatedTargets) {
         await $`bun run rulesync generate --targets=${isolatedTargets} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(profileDir).quiet();
+
+        const generatedProfileOutputs = await readdir(profileDir, {
+          withFileTypes: true,
+        });
+        for (const item of generatedProfileOutputs) {
+          if (
+            item.isDirectory() &&
+            item.name.startsWith(".") &&
+            item.name !== ".rulesync"
+          ) {
+            await applyTemplateVariablesToGeneratedOutput(
+              join(profileDir, item.name),
+              TEMPLATE_CONTEXT,
+            );
+          }
+        }
       }
     } catch (error) {}
 
@@ -298,7 +350,7 @@ Use your \`skill\` tool to load the domain knowledge you need.
     await copyDirectoryWithTemplateVariables(
       sourcePath,
       join(rulesyncSkillsDir, skill),
-      SKILL_TEMPLATE_CONTEXT,
+      TEMPLATE_CONTEXT,
     );
   }
   
@@ -349,24 +401,39 @@ Use your \`skill\` tool to load the domain knowledge you need.
       // Look for global harness configuration files (e.g., opencode.jsonc) and inject them
       const globalConfigPath = join(REGISTRY_DIR, "harnesses");
       if (existsSync(globalConfigPath)) {
-        const harnessConfigs = await readdir(globalConfigPath, { withFileTypes: true });
+        const harnessConfigs = await readdir(globalConfigPath, {
+          withFileTypes: true,
+        });
         for (const configItem of harnessConfigs) {
           // e.g. /harnesses/opencode/opencode.jsonc -> .output/opencode/opencode.jsonc
           if (configItem.isDirectory()) {
             const sourceHarnessFolder = join(globalConfigPath, configItem.name);
             const targetHarnessFolder = join(UNIFIED_OUTPUT_DIR, configItem.name);
             if (existsSync(targetHarnessFolder)) {
-              await $`cp -R ${sourceHarnessFolder}/* ${targetHarnessFolder}/`.nothrow().quiet();
+              await $`cp -R ${sourceHarnessFolder}/* ${targetHarnessFolder}/`
+                .nothrow()
+                .quiet();
             }
           }
         }
       }
     }
 
+    await applyTemplateVariablesToGeneratedOutput(
+      UNIFIED_OUTPUT_DIR,
+      TEMPLATE_CONTEXT,
+    );
+
     console.log(`   ✅ Successfully compiled unified outputs!`);
   } catch (error) {
     console.error(`   ❌ Failed to compile:`);
-    if (hasStderr(error)) console.error(error.stderr.toString());
+    if (hasStderr(error) && error.stderr.toString().trim()) {
+      console.error(error.stderr.toString());
+    } else if (error instanceof Error) {
+      console.error(error.message);
+    } else {
+      console.error(String(error));
+    }
   } finally {
     // Keep .output limited to final harness outputs.
     await rm(rulesyncDir, { recursive: true, force: true });

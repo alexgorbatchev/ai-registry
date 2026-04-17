@@ -5,7 +5,7 @@
 
   "instructions": [
     "AGENTS.md",
-    "./APPEND_SYSTEM.md"
+    "{{output_dir}}/opencode/APPEND_SYSTEM.md"
   ],
 
   "disabled_providers": [],

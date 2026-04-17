@@ -26,7 +26,7 @@ The final generated harness artifacts. This directory is rebuilt from source and
 
 This repository includes a custom local compiler (`scripts/build.ts`) that resolves the profiles and builds configurations for various agent harnesses using `rulesync` under the hood.
 
-`SKILL.md` files may use a small set of build-time template variables. These are expanded during `bun run build` when selected skills are staged into generated outputs. Unknown variables fail the build. Current variables:
+Generated output files may use a small set of build-time template variables. `bun run build` now scans generated text outputs recursively and replaces known variables wherever they appear. Unknown variables fail the build. Example: `&#123;&#123;repo_root&#125;&#125;`. Current variables:
 
 - `{{repo_root}}`
 - `{{skills_dir}}`

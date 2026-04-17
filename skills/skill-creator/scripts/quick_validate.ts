@@ -3,11 +3,10 @@
  * Quick validation script for skills - minimal version
  */
 
-import { parse as parseYaml } from 'yaml';
-
 const ALLOWED_PROPERTIES = new Set([
   'name',
   'description',
+  'author',
   'license',
   'allowed-tools',
   'metadata',
@@ -44,10 +43,15 @@ export async function validateSkill(skillPath: string): Promise<ValidationResult
   // Parse YAML frontmatter
   let frontmatter: Record<string, unknown>;
   try {
-    frontmatter = parseYaml(frontmatterText);
-    if (typeof frontmatter !== 'object' || frontmatter === null) {
+    const parsedFrontmatter = Bun.YAML.parse(frontmatterText);
+    if (
+      typeof parsedFrontmatter !== 'object' ||
+      parsedFrontmatter === null ||
+      Array.isArray(parsedFrontmatter)
+    ) {
       return { valid: false, message: 'Frontmatter must be a YAML dictionary' };
     }
+    frontmatter = parsedFrontmatter;
   } catch (e) {
     return {
       valid: false,

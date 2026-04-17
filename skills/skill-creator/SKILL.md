@@ -4,6 +4,7 @@ description: >-
   Guide for creating effective skills. This skill should be used when users want
   to create a new skill (or update an existing skill) that extends Claude's
   capabilities with specialized knowledge, workflows, or tool integrations.
+author: alexgorbatchev
 ---
 
 # Skill Creator
@@ -55,7 +56,8 @@ skill-name/
 ├── SKILL.md (required)
 │   ├── YAML frontmatter metadata (required)
 │   │   ├── name: (required)
-│   │   └── description: (required)
+│   │   ├── description: (required)
+│   │   └── author: alexgorbatchev (repo convention)
 │   └── Markdown instructions (required)
 └── Bundled Resources (optional)
     ├── scripts/          - Executable code (Bun/Bash/etc.)
@@ -67,7 +69,7 @@ skill-name/
 
 Every SKILL.md consists of:
 
-- **Frontmatter** (YAML): `name` and `description` are the important triggering fields. Keep frontmatter minimal. In this toolchain, the validator requires `name` and `description` and currently permits only `license`, `allowed-tools`, and `metadata` as additional keys. Use only `name` and `description` unless you have a validated reason to add one of those supported extras.
+- **Frontmatter** (YAML): `name` and `description` are the important triggering fields. In this repo, also include `author: alexgorbatchev` in skill frontmatter. Keep frontmatter minimal. In this toolchain, the validator requires `name` and `description`, permits `author`, and currently permits only `license`, `allowed-tools`, and `metadata` as additional keys beyond those. Default to `name`, `description`, and `author` unless you have a validated reason to add one of those supported extras.
 - **Body** (Markdown): Instructions and guidance for using the skill. Only loaded AFTER the skill triggers (if at all).
 
 #### Bundled Resources (optional)
@@ -308,16 +310,17 @@ Any example files and directories not needed for the skill should be deleted. Th
 
 ##### Frontmatter
 
-Write the YAML frontmatter with `name` and `description`:
+Write the YAML frontmatter with `name`, `description`, and `author`:
 
 - `name`: The skill name
 - `description`: This is the primary triggering mechanism for your skill, and helps Claude understand when to use it.
   - Include both what the Skill does and specific triggers/contexts for when to use it.
   - Include all "when to use" information here - Not in the body. The body is only loaded after triggering, so "When to Use This Skill" sections in the body are not helpful to Claude.
   - Example description for a `docx` skill: "Comprehensive document creation, editing, and analysis with support for tracked changes, comments, formatting preservation, and text extraction. Use when Claude needs to work with professional documents (.docx files) for: (1) Creating new documents, (2) Modifying or editing content, (3) Working with tracked changes, (4) Adding comments, or any other document tasks"
+- `author`: Use `alexgorbatchev` for skills maintained in this registry.
 
-Default to only `name` and `description`.
-If you need extra frontmatter for a specific distribution flow, verify first that the local validator accepts it. In this toolchain, the allowed extra keys are currently `license`, `allowed-tools`, and `metadata`.
+Default to `name`, `description`, and `author`.
+If you need extra frontmatter for a specific distribution flow, verify first that the local validator accepts it. In this toolchain, the allowed extra keys beyond those are currently `license`, `allowed-tools`, and `metadata`.
 
 ##### Body
 
@@ -325,7 +328,9 @@ Write instructions for using the skill and its bundled resources.
 
 ### Step 5: Packaging a Skill
 
-Once development of the skill is complete, it must be packaged into a distributable .skill file that gets shared with the user. Run the validator explicitly first when iterating quickly, then package. Packaging also validates automatically.
+Once development of the skill is complete, it must be packaged into a distributable .skill file that gets shared with the user. Run the validator explicitly first with Bun when iterating quickly, then package with Bun. Packaging also validates automatically.
+
+These entrypoint scripts are Bun scripts. Invoke them as `bun <script> ...`.
 
 Quick validation:
 

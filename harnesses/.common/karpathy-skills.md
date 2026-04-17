@@ -18,6 +18,8 @@ Before implementing:
 
 **Minimum code that solves the problem. Nothing speculative.**
 
+Simple does not mean sloppy: prefer the smallest correct solution, not a shortcut that leaves correctness, maintainability, or requirements unmet.
+
 - No features beyond what was asked.
 - No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
@@ -63,4 +65,3 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
-

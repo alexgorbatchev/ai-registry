@@ -11,7 +11,8 @@
 
   "instructions": [
     "AGENTS.md",
-    "{{output_dir}}/opencode/APPEND_SYSTEM.md"
+    "{{repo_root}}/harnesses/.common/system.md",
+    "{{repo_root}}/harnesses/.common/karpathy-skills.md"
   ],
 
   "disabled_providers": [],

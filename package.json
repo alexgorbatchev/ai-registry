@@ -1,5 +1,5 @@
 {
-  "name": "ai-registry",
+  "name": "@alexgorbatchev/ai-registry",
   "version": "1.0.0",
   "description": "Canonical AI skills, commands, and harness profiles",
   "private": true,
@@ -7,7 +7,9 @@
     "build": "bun run scripts/build.ts",
     "bootstrap": "bun run scripts/bootstrap.ts",
     "bootstrap:smoke": "bun run scripts/smoke-bootstrap.ts",
-    "skills:list": "npx skills add . --list"
+    "skills:add": "bun run scripts/addVendoredSkill.ts",
+    "skills:list": "npx skills add . --list",
+    "skills:update": "bun run scripts/updateVendoredSkills.ts && bun run build"
   },
   "dependencies": {
     "rulesync": "^7.28.0"

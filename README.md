@@ -1,8 +1,6 @@
-# @alexgorbatchev/ai
+# @alexgorbatchev/ai-registry
 
-This repository serves as a canonical registry for your AI tooling. It keeps reusable skills, commands, profiles, harness overrides, and setup workflow in one repo, then generates the harness-specific outputs from that source of truth.
-
-It is designed to be consumed by [rulesync](https://github.com/alexgorbatchev/rulesync) to dynamically construct highly-specialized AI agent environments without overloading context windows.
+This repository serves as a canonical registry for my AI tooling. It keeps reusable skills, commands, profiles, harness overrides, and setup workflow in one repo, then generates the harness-specific outputs from that source of truth.
 
 ## Structure
 
@@ -68,6 +66,33 @@ npx skills add owner/repo --skill react-development
 ```
 
 Use `--agent` to target specific harnesses and `-g` to install globally.
+
+### Vendoring External Skills with `npx skills`
+
+This repo can also vendor third-party skills into its canonical top-level `skills/` directory.
+
+Use the repo wrapper as the normal interface:
+
+```bash
+bun run skills:add 'npx skills add https://github.com/shadcn/ui --skill shadcn'
+```
+
+```bash
+npx skills add https://github.com/shadcn/ui --skill shadcn -a openclaw --copy -y
+```
+
+`bun run skills:add` parses the raw `npx skills add ...` command, forces the repo-safe vendoring flags behind the scenes, and rebuilds the generated outputs afterward.
+
+Why `-a openclaw` under the hood? The Skills CLI uses `skills/` as OpenClaw's project-local skill directory, so this is the cleanest way to copy an external skill straight into this repo's canonical `skills/` surface.
+
+When you vendor or update external skills:
+
+- commit both `skills/<name>/` and `skills-lock.json`
+- use `bun run skills:update` to refresh all vendored external skills safely
+- use `bun run scripts/updateVendoredSkills.ts <name>` to refresh only one vendored skill
+- run `bun run build` afterward so generated outputs stay current
+
+Avoid plain `npx skills update` in this repo. The upstream project-update flow does not preserve the `openclaw --copy` target and may create extra agent directories such as `.claude/` or `.pi/`.
 
 ### Using with OpenCode
 

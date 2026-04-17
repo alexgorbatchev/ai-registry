@@ -1,11 +1,9 @@
 ---
 name: bun-tailwind
 description: >-
-  Tailwind CSS v4 workflow for Bun projects that use Bun.serve or Bun.build,
-  CSS-first configuration, shared theme.css token files, and package-consumer
-  scanning via @source. Use when adding Tailwind to a Bun app, fixing missing
-  utilities in Bun-built assets, defining Tailwind v4 theme tokens with @theme,
-  or documenting how consumers must import and scan a Bun component library.
+  Use when adding Tailwind to a Bun app, fixing missing utilities in Bun-built
+  assets, defining Tailwind v4 theme tokens with @theme, or documenting how
+  consumers must import and scan a Bun component library.
 ---
 
 # Bun Tailwind

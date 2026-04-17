@@ -18,6 +18,9 @@ This repository manages reusable AI skills and commands plus the configurations 
   - Manifests declare which skills and commands to include (supports globbing, e.g., `*`, `react-*`).
   - Manifests can explicitly toggle native harness tools (e.g., `bash: false`) and inject custom tool-level permissions.
   - Manifests can define a custom `system_prompt` to give the agent specific baseline instructions.
+- **External Skill Lock (`skills-lock.json`)**:
+  - Records third-party skills vendored into `skills/` via the Skills CLI.
+  - Commit it whenever you add or update external skills.
 
 ## Architecture & Build Process
 This repository uses a custom build script (`scripts/build.ts`) to locally compile the registry into ready-to-use configurations for various agent harnesses (OpenCode, Cursor, Pi, etc.).
@@ -29,7 +32,9 @@ This repository uses a custom build script (`scripts/build.ts`) to locally compi
 ## Development Workflow
 - **CRITICAL ANONYMIZATION RULE:** This registry is designed to be public and reusable. When creating or editing *any* file in this repository (especially skills, commands, prompts, and profiles), you MUST strictly anonymize and generalize all potentially Personal Identifiable Information (PII) and proprietary data. This includes, but is not limited to: company names, specific project names, employee names, locations, desk numbers, internal URLs, specific server hostnames, proprietary nomenclature, private API keys, or hardcoded passwords. Ensure all content added to this repository is globally applicable and scrubbed of private context.
 - When asked to create a new skill, create a new directory under `skills/`. Keep concerns separated.
+- When vendoring an external skill, use `bun run skills:add 'npx skills add <source> --skill <name>'`. That wrapper applies `-a openclaw --copy -y` behind the scenes so the skill is copied into the canonical `skills/` directory and tracked in `skills-lock.json`.
+- When updating vendored external skills, use `bun run skills:update` instead of plain `npx skills update`, because the upstream update command does not preserve the canonical `skills/` target in this repo.
 - When creating a new command, add it under `commands/`.
 - When creating a new profile, create a folder under `profiles/` and add a `profile.yaml` file that cherry-picks from the reusable assets.
-- After modifying any skill, command, profile, or harness file, ALWAYS run `bun run build` to regenerate the configurations.
+- After modifying any skill, command, profile, harness file, or `skills-lock.json`, ALWAYS run `bun run build` to regenerate the configurations.
 - **CRITICAL:** This `AGENTS.md` and the `README.md` must be kept strictly up to date whenever structural or architectural changes are made to this repository. Do not leave documentation stale.

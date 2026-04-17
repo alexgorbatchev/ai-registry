@@ -210,9 +210,9 @@ Skill creation involves these steps:
 
 1. Understand the skill with concrete examples
 2. Plan reusable skill contents (scripts, references, assets)
-3. Initialize the skill (run `bun scripts/init_skill.ts`)
+3. Initialize the skill (run `bun {{skills_dir}}/skill-creator/scripts/init_skill.ts`)
 4. Edit the skill (implement resources and write SKILL.md)
-5. Validate and package the skill (run `bun scripts/quick_validate.ts` and `bun scripts/package_skill.ts`)
+5. Validate and package the skill (run `bun {{skills_dir}}/skill-creator/scripts/quick_validate.ts` and `bun {{skills_dir}}/skill-creator/scripts/package_skill.ts`)
 6. Iterate based on real usage
 
 Follow these steps in order, skipping only if there is a clear reason why they are not applicable.
@@ -264,12 +264,12 @@ At this point, it is time to actually create the skill.
 
 Skip this step only if the skill being developed already exists, and iteration or packaging is needed. In this case, continue to the next step.
 
-When creating a new skill from scratch, always run the `init_skill.ts` script with Bun. The script conveniently generates a new template skill directory that automatically includes everything a skill requires, making the skill creation process much more efficient and reliable.
+When creating a new skill from scratch in this registry, always run the `init_skill.ts` script with Bun and create the new skill under `{{skills_dir}}`. The script conveniently generates a new template skill directory that automatically includes everything a skill requires, making the skill creation process much more efficient and reliable.
 
 Usage:
 
 ```bash
-bun scripts/init_skill.ts <skill-name> --path <output-directory>
+bun {{skills_dir}}/skill-creator/scripts/init_skill.ts <skill-name> --path {{skills_dir}}
 ```
 
 The script:
@@ -330,19 +330,19 @@ Once development of the skill is complete, it must be packaged into a distributa
 Quick validation:
 
 ```bash
-bun scripts/quick_validate.ts <path/to/skill-folder>
+bun {{skills_dir}}/skill-creator/scripts/quick_validate.ts <path/to/skill-folder>
 ```
 
 Packaging:
 
 ```bash
-bun scripts/package_skill.ts <path/to/skill-folder>
+bun {{skills_dir}}/skill-creator/scripts/package_skill.ts <path/to/skill-folder>
 ```
 
 Optional output directory specification:
 
 ```bash
-bun scripts/package_skill.ts <path/to/skill-folder> ./dist
+bun {{skills_dir}}/skill-creator/scripts/package_skill.ts <path/to/skill-folder> ./dist
 ```
 
 The packaging script will:

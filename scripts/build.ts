@@ -1,6 +1,16 @@
 import { $ } from "bun";
-import { readdir, readFile, rm, mkdir, rename, writeFile } from "fs/promises";
-import { join, resolve } from "path";
+import {
+  chmod,
+  copyFile,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from "fs/promises";
+import { basename, join, resolve } from "path";
 import { existsSync } from "fs";
 import { globby } from "globby";
 
@@ -13,6 +23,13 @@ const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
 // We now build unified final outputs into a single directory
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 const UNIFIED_TARGETS = new Set(["opencode", "agentsmd"]);
+const SKILL_TEMPLATE_CONTEXT = {
+  repo_root: REGISTRY_DIR,
+  skills_dir: SKILLS_DIR,
+  commands_dir: COMMANDS_DIR,
+  profiles_dir: PROFILES_DIR,
+  output_dir: UNIFIED_OUTPUT_DIR,
+} as const;
 
 function getConfiguredTargets(): string[] {
   return (process.env.RULESYNC_TARGETS || "opencode,agentsmd")
@@ -39,6 +56,80 @@ function getIsolatedTargets(configuredTargets: string[]): string {
 
 function hasStderr(error: unknown): error is { stderr: { toString(): string } } {
   return typeof error === "object" && error !== null && "stderr" in error;
+}
+
+function isTemplateableFile(filePath: string): boolean {
+  return basename(filePath) === "SKILL.md";
+}
+
+function applyTemplateVariables(
+  content: string,
+  sourcePath: string,
+  templateContext: Record<string, string>,
+): string {
+  const placeholders = Array.from(
+    new Set(content.match(/{{\s*([a-z0-9_]+)\s*}}/gi) ?? []),
+  );
+
+  if (placeholders.length === 0) {
+    return content;
+  }
+
+  const unknownKeys = placeholders
+    .map((placeholder) => placeholder.replace(/[{}\s]/g, ""))
+    .filter((key) => !(key in templateContext));
+
+  if (unknownKeys.length > 0) {
+    throw new Error(
+      `Unknown template variable(s) in ${sourcePath}: ${unknownKeys.join(", ")}`,
+    );
+  }
+
+  return content.replace(/{{\s*([a-z0-9_]+)\s*}}/gi, (_, key: string) => {
+    return templateContext[key] ?? _;
+  });
+}
+
+async function copyDirectoryWithTemplateVariables(
+  sourceDir: string,
+  targetDir: string,
+  templateContext: Record<string, string>,
+): Promise<void> {
+  await mkdir(targetDir, { recursive: true });
+
+  const entries = await readdir(sourceDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const sourcePath = join(sourceDir, entry.name);
+    const targetPath = join(targetDir, entry.name);
+
+    if (entry.isDirectory()) {
+      await copyDirectoryWithTemplateVariables(
+        sourcePath,
+        targetPath,
+        templateContext,
+      );
+      continue;
+    }
+
+    if (!entry.isFile()) {
+      continue;
+    }
+
+    if (isTemplateableFile(sourcePath)) {
+      const sourceContent = await readFile(sourcePath, "utf-8");
+      const renderedContent = applyTemplateVariables(
+        sourceContent,
+        sourcePath,
+        templateContext,
+      );
+      await writeFile(targetPath, renderedContent, "utf-8");
+    } else {
+      await copyFile(sourcePath, targetPath);
+    }
+
+    const sourceStats = await stat(sourcePath);
+    await chmod(targetPath, sourceStats.mode);
+  }
 }
 
 async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> {
@@ -130,7 +221,11 @@ async function main() {
     // Add them to the master sets AND the legacy isolated profile folders
     for (const skill of matchedSkills) {
       masterSkills.add(skill);
-      await $`cp -R "${join(SKILLS_DIR, skill)}" "${join(legacyRulesyncDir, "skills", skill)}"`.nothrow().quiet();
+      await copyDirectoryWithTemplateVariables(
+        join(SKILLS_DIR, skill),
+        join(legacyRulesyncDir, "skills", skill),
+        SKILL_TEMPLATE_CONTEXT,
+      );
     }
     
     for (const cmd of matchedCommands) {
@@ -142,7 +237,7 @@ async function main() {
     try {
       const isolatedTargets = getIsolatedTargets(configuredTargets);
       if (isolatedTargets) {
-        await $`bunx rulesync generate --targets=${isolatedTargets} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(profileDir).quiet();
+        await $`bun run rulesync generate --targets=${isolatedTargets} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(profileDir).quiet();
       }
     } catch (error) {}
 
@@ -200,7 +295,11 @@ Use your \`skill\` tool to load the domain knowledge you need.
   console.log("\n📚 Assembling shared assets...");
   for (const skill of masterSkills) {
     const sourcePath = join(SKILLS_DIR, skill);
-    await $`cp -R "${sourcePath}" "${join(rulesyncSkillsDir, skill)}"`.nothrow().quiet();
+    await copyDirectoryWithTemplateVariables(
+      sourcePath,
+      join(rulesyncSkillsDir, skill),
+      SKILL_TEMPLATE_CONTEXT,
+    );
   }
   
   for (const cmd of masterCommands) {
@@ -212,7 +311,7 @@ Use your \`skill\` tool to load the domain knowledge you need.
   console.log(`\n⚙️  Running rulesync compiler...`);
   try {
     if (unifiedTargets.length > 0) {
-      await $`bunx rulesync generate --targets=${unifiedTargets.join(",")} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(UNIFIED_OUTPUT_DIR).quiet();
+      await $`bun run rulesync generate --targets=${unifiedTargets.join(",")} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(UNIFIED_OUTPUT_DIR).quiet();
     }
     
     if (unifiedTargets.includes("opencode")) {

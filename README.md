@@ -8,7 +8,7 @@ This repository serves as a canonical registry for my AI tooling. It keeps reusa
 The reusable source-of-truth layer.
 - **`/skills`**: Domain-specific AI skills. Each skill lives in its own folder with a `SKILL.md`. This directory is also the repo's install surface for `npx skills`.
 - **`/commands`**: Reusable slash commands, system prompts, and task blueprints.
-- **`/harnesses`**: Harness-specific config overrides that are injected into generated outputs.
+- **`/harnesses`**: Harness-specific config overrides plus repo-local harness maintenance guidance. Only files inside `harnesses/<target>/` are injected into generated outputs for that target.
 
 ### 2. The Profiles (`/profiles`)
 The assembled agents. These folders contain `profile.yaml` manifests that cherry-pick from the reusable assets using globs to create specific AI personas. You can also define custom tool toggles and granular tool permissions in these files.
@@ -50,6 +50,8 @@ That command:
 
 - runs `bun install`
 - builds the generated outputs
+- verifies the previous generated-output manifest before replacing `.output/`
+- stops for confirmation when generated files drift from the last manifest, with `no` as the default
 - preserves any extra `RULESYNC_TARGETS` targets while always generating `opencode` and `agentsmd`
 - links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
 - backs up any existing conflicting target directories before replacing them
@@ -106,8 +108,9 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
-- `.output/opencode`: OpenCode config with skills, commands, and generated persona files.
+- `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files.
 - `.output/agents`: `AGENTS.md` plus the generated `.agents/` directory for AGENTS.md-compatible tooling.
+- `.output/manifest.json`: SHA-256 manifest for the generated files. The next `bun run build` checks it before deleting `.output/` so externally edited generated files are not overwritten silently.
 
 Intermediate rulesync inputs are cleaned up after the build, so `.output` only contains final generated outputs.
 

@@ -3,6 +3,12 @@
   "autoupdate": false,
   "formatter": false,
 
+  "plugin": [
+    "@tarquinen/opencode-dcp@3.1.9",
+    // Unpublished package: install directly from Git and pin the commit.
+    "git+https://github.com/gscalzo/opencode-context-inspector.git#9f725fa524442be53951c6961ce4f036af5eb0fe"
+  ],
+
   "instructions": [
     "AGENTS.md",
     "{{output_dir}}/opencode/APPEND_SYSTEM.md"

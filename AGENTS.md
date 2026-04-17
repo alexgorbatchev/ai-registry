@@ -12,7 +12,8 @@ This repository manages reusable AI skills and commands plus the configurations 
   - **Self-Contained Logic**: Each skill or command must be self-contained. Do not assume other skills are present.
 - **The Harnesses (`/harnesses`)**:
   - Global configuration overrides for specific tools (e.g., `harnesses/opencode/opencode.jsonc`).
-  - These files are cleanly injected directly into the target output directories during the build process.
+  - Repository-local harness maintenance guidance belongs in `harnesses/AGENTS.md`.
+  - Only files inside `harnesses/<target>/` are injected directly into the matching target output directories during the build process.
 - **The Profiles (`/profiles`)**:
   - Contains directories (e.g., `designer`, `developer`) with `profile.yaml` (or `profile.json`) manifests.
   - Manifests declare which skills and commands to include (supports globbing, e.g., `*`, `react-*`).
@@ -25,6 +26,7 @@ This repository manages reusable AI skills and commands plus the configurations 
 ## Architecture & Build Process
 This repository uses a custom build script (`scripts/build.ts`) to locally compile the registry into ready-to-use configurations for various agent harnesses (OpenCode, Cursor, Pi, etc.).
 - **Unified Outputs:** The script generates final unified outputs in `.output/` for supported shared targets. Today that includes `.output/opencode` for OpenCode and `.output/agents` for the AGENTS.md target. Intermediate rulesync inputs are cleaned up after the build so `.output` only contains final generated outputs.
+- **Generated Output Manifest:** Each successful unified build also writes `.output/manifest.json` with SHA-256 checksums for the generated files. Before replacing `.output/` on the next run, the build verifies that manifest and stops for confirmation if any managed generated file drifted externally.
 - **Other Targets:** The script simultaneously generates isolated cache directories inside each profile folder (e.g., `profiles/designer/.agents/`) for tools that don't support native agent switching. These isolated outputs are controlled by `RULESYNC_TARGETS`; `opencode` and `agentsmd` are produced in `.output/` instead.
 - **Bootstrap Command:** `bun run bootstrap` is the repo-local setup entrypoint. It installs dependencies, builds the generated outputs, and links the default machine-local OpenCode target using an XDG-style path unless `OPENCODE_CONFIG_DIR` is set.
 - **Smoke Test:** `bun run bootstrap:smoke` validates the bootstrap flow against `.tmp/bootstrap-smoke/`, treating that directory as a fake `HOME` with the repo staged at `development/ai-registry`.

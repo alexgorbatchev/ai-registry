@@ -8,6 +8,11 @@ const SMOKE_REPO_DIR = join(SMOKE_HOME, "development", "ai-registry");
 const CONFIG_HOME = join(SMOKE_HOME, ".config");
 const OPENCODE_TARGET = join(CONFIG_HOME, "opencode");
 const OPENCODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "opencode");
+const OUTPUT_MANIFEST = join(
+  SMOKE_REPO_DIR,
+  ".output",
+  "manifest.json",
+);
 
 const EXCLUDED_ROOT_ENTRIES = new Set([
   ".agents",
@@ -89,6 +94,7 @@ async function verifyBootstrapOutputs(): Promise<void> {
 
   await Promise.all([
     assertPathExists(join(opencodeBackupDir, "existing.txt")),
+    assertPathExists(OUTPUT_MANIFEST),
     assertSymlinkTarget(OPENCODE_TARGET, OPENCODE_SOURCE),
   ]);
 }

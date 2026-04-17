@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import { createHash } from "crypto";
 import {
   chmod,
   copyFile,
@@ -13,6 +14,8 @@ import {
 import { basename, join, resolve } from "path";
 import { existsSync } from "fs";
 import { globby } from "globby";
+import { stdin, stdout } from "process";
+import { createInterface } from "readline/promises";
 
 // Resolve paths relative to the ai-registry root
 const REGISTRY_DIR = resolve(import.meta.dir, "..");
@@ -24,6 +27,17 @@ const TEMPLATE_VARIABLE_PATTERN = /{{\s*([a-z0-9_]+)\s*}}/gi;
 // We now build unified final outputs into a single directory
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 const UNIFIED_TARGETS = new Set(["opencode", "agentsmd"]);
+const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
+const LEGACY_GENERATED_OUTPUT_MANIFEST_NAME = ".generated-output-manifest.json";
+const GENERATED_OUTPUT_MANIFEST_PATH = join(
+  UNIFIED_OUTPUT_DIR,
+  GENERATED_OUTPUT_MANIFEST_NAME,
+);
+const LEGACY_GENERATED_OUTPUT_MANIFEST_PATH = join(
+  UNIFIED_OUTPUT_DIR,
+  LEGACY_GENERATED_OUTPUT_MANIFEST_NAME,
+);
+const GENERATED_OUTPUT_MANIFEST_VERSION = 1;
 const TEMPLATE_CONTEXT = {
   repo_root: REGISTRY_DIR,
   skills_dir: SKILLS_DIR,
@@ -31,6 +45,25 @@ const TEMPLATE_CONTEXT = {
   profiles_dir: PROFILES_DIR,
   output_dir: UNIFIED_OUTPUT_DIR,
 } as const;
+
+type IGeneratedOutputManifest = {
+  version: number;
+  generatedAt: string;
+  files: Record<string, string>;
+};
+
+type IGeneratedOutputDrift = {
+  path: string;
+  reason: "missing" | "modified" | "unexpected";
+};
+
+const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
+const GENERATED_OUTPUT_IGNORED_BASENAMES = new Set([
+  ".gitignore",
+  "bun.lock",
+  "bun.lockb",
+  "package-lock.json",
+]);
 
 function getConfiguredTargets(): string[] {
   return (process.env.RULESYNC_TARGETS || "opencode,agentsmd")
@@ -57,6 +90,204 @@ function getIsolatedTargets(configuredTargets: string[]): string {
 
 function hasStderr(error: unknown): error is { stderr: { toString(): string } } {
   return typeof error === "object" && error !== null && "stderr" in error;
+}
+
+function getObjectValue(object: object, key: string): unknown {
+  return Reflect.get(object, key);
+}
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  return Object.values(value).every((entry) => typeof entry === "string");
+}
+
+function isGeneratedOutputManifest(
+  value: unknown,
+): value is IGeneratedOutputManifest {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const version = getObjectValue(value, "version");
+  const generatedAt = getObjectValue(value, "generatedAt");
+  const files = getObjectValue(value, "files");
+
+  return (
+    version === GENERATED_OUTPUT_MANIFEST_VERSION &&
+    typeof generatedAt === "string" &&
+    isStringRecord(files)
+  );
+}
+
+function createFileChecksum(fileBuffer: Buffer): string {
+  return createHash("sha256").update(fileBuffer).digest("hex");
+}
+
+function normalizeRelativePath(filePath: string): string {
+  return filePath.replaceAll("\\", "/");
+}
+
+function shouldIgnoreGeneratedOutputPath(relativePath: string): boolean {
+  const pathParts = relativePath.split("/");
+  const basename = pathParts[pathParts.length - 1];
+
+  return (
+    GENERATED_OUTPUT_IGNORED_BASENAMES.has(basename) ||
+    pathParts.some((part) => GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(part))
+  );
+}
+
+async function collectGeneratedOutputChecksums(
+  rootDir: string,
+  currentDir: string = rootDir,
+): Promise<Record<string, string>> {
+  if (!existsSync(currentDir)) {
+    return {};
+  }
+
+  const checksums: Record<string, string> = {};
+  const entries = await readdir(currentDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const entryPath = join(currentDir, entry.name);
+
+    if (entry.isDirectory()) {
+      Object.assign(
+        checksums,
+        await collectGeneratedOutputChecksums(rootDir, entryPath),
+      );
+      continue;
+    }
+
+    if (!entry.isFile()) {
+      continue;
+    }
+
+    const relativePath = normalizeRelativePath(entryPath.slice(rootDir.length + 1));
+    if (
+      relativePath === GENERATED_OUTPUT_MANIFEST_NAME ||
+      relativePath === LEGACY_GENERATED_OUTPUT_MANIFEST_NAME ||
+      shouldIgnoreGeneratedOutputPath(relativePath)
+    ) {
+      continue;
+    }
+
+    const fileBuffer = await readFile(entryPath);
+    checksums[relativePath] = createFileChecksum(fileBuffer);
+  }
+
+  return checksums;
+}
+
+async function readGeneratedOutputManifest(): Promise<IGeneratedOutputManifest | null> {
+  const manifestPath = existsSync(GENERATED_OUTPUT_MANIFEST_PATH)
+    ? GENERATED_OUTPUT_MANIFEST_PATH
+    : existsSync(LEGACY_GENERATED_OUTPUT_MANIFEST_PATH)
+      ? LEGACY_GENERATED_OUTPUT_MANIFEST_PATH
+      : null;
+
+  if (!manifestPath) {
+    return null;
+  }
+
+  const manifestContent = await readFile(manifestPath, "utf-8");
+  const parsedManifest = JSON.parse(manifestContent);
+  if (!isGeneratedOutputManifest(parsedManifest)) {
+    throw new Error(
+      `Invalid generated output manifest: ${manifestPath}`,
+    );
+  }
+
+  return parsedManifest;
+}
+
+function getGeneratedOutputDrift(
+  manifest: IGeneratedOutputManifest,
+  currentChecksums: Record<string, string>,
+): IGeneratedOutputDrift[] {
+  const drift: IGeneratedOutputDrift[] = [];
+
+  for (const [relativePath, expectedChecksum] of Object.entries(manifest.files)) {
+    const actualChecksum = currentChecksums[relativePath];
+    if (!actualChecksum) {
+      drift.push({ path: relativePath, reason: "missing" });
+      continue;
+    }
+
+    if (actualChecksum !== expectedChecksum) {
+      drift.push({ path: relativePath, reason: "modified" });
+    }
+  }
+
+  for (const relativePath of Object.keys(currentChecksums)) {
+    if (!(relativePath in manifest.files)) {
+      drift.push({ path: relativePath, reason: "unexpected" });
+    }
+  }
+
+  return drift.sort((left, right) => left.path.localeCompare(right.path));
+}
+
+async function confirmGeneratedOutputOverwrite(
+  drift: IGeneratedOutputDrift[],
+): Promise<void> {
+  if (drift.length === 0) {
+    return;
+  }
+
+  console.error("\n⚠️ Detected external changes in generated outputs:");
+  for (const entry of drift) {
+    console.error(`  - ${entry.path} (${entry.reason})`);
+  }
+
+  if (!stdin.isTTY || !stdout.isTTY) {
+    throw new Error(
+      "Build cancelled. Generated outputs changed outside the build and no interactive terminal is available to confirm overwrite.",
+    );
+  }
+
+  const readline = createInterface({ input: stdin, output: stdout });
+  try {
+    const answer = (await readline
+      .question("\nProceed and overwrite these generated files? [y/N] "))
+      .trim()
+      .toLowerCase();
+
+    if (answer !== "y" && answer !== "yes") {
+      throw new Error(
+        "Build cancelled. Generated outputs were modified outside the build.",
+      );
+    }
+  } finally {
+    readline.close();
+  }
+}
+
+async function assertGeneratedOutputsAreSafeToReplace(): Promise<void> {
+  const manifest = await readGeneratedOutputManifest();
+  if (!manifest) {
+    return;
+  }
+
+  const currentChecksums = await collectGeneratedOutputChecksums(UNIFIED_OUTPUT_DIR);
+  const drift = getGeneratedOutputDrift(manifest, currentChecksums);
+  await confirmGeneratedOutputOverwrite(drift);
+}
+
+async function writeGeneratedOutputManifest(): Promise<void> {
+  const manifest: IGeneratedOutputManifest = {
+    version: GENERATED_OUTPUT_MANIFEST_VERSION,
+    generatedAt: new Date().toISOString(),
+    files: await collectGeneratedOutputChecksums(UNIFIED_OUTPUT_DIR),
+  };
+
+  await writeFile(
+    GENERATED_OUTPUT_MANIFEST_PATH,
+    `${JSON.stringify(manifest, null, 2)}\n`,
+    "utf-8",
+  );
 }
 
 function applyTemplateVariables(
@@ -182,8 +413,11 @@ async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> 
 async function main() {
   console.log("🚀 Building Unified Agent Outputs...\n");
 
+  await assertGeneratedOutputsAreSafeToReplace();
+
   const configuredTargets = getConfiguredTargets();
   const unifiedTargets = getUnifiedTargets(configuredTargets);
+  let didBuildSucceed = false;
 
   // 1. Prepare the unified target directory
   await rm(UNIFIED_OUTPUT_DIR, { recursive: true, force: true });
@@ -423,8 +657,7 @@ Use your \`skill\` tool to load the domain knowledge you need.
       UNIFIED_OUTPUT_DIR,
       TEMPLATE_CONTEXT,
     );
-
-    console.log(`   ✅ Successfully compiled unified outputs!`);
+    didBuildSucceed = true;
   } catch (error) {
     console.error(`   ❌ Failed to compile:`);
     if (hasStderr(error) && error.stderr.toString().trim()) {
@@ -434,10 +667,16 @@ Use your \`skill\` tool to load the domain knowledge you need.
     } else {
       console.error(String(error));
     }
+    throw error;
   } finally {
     // Keep .output limited to final harness outputs.
     await rm(rulesyncDir, { recursive: true, force: true });
     await rm(opencodeAgentStagingDir, { recursive: true, force: true });
+  }
+
+  if (didBuildSucceed) {
+    await writeGeneratedOutputManifest();
+    console.log(`   ✅ Successfully compiled unified outputs!`);
   }
 
   console.log("\n🎉 Unified configuration ready!");
@@ -452,4 +691,7 @@ Use your \`skill\` tool to load the domain knowledge you need.
   console.log("  ln -sfn ~/.dotfiles/ai-registry/profiles/designer/.agents ~/.dotfiles/tools/pi/config/skills");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

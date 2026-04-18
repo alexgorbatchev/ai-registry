@@ -1,7 +1,5 @@
 ---
-name: research-topic
 description: Research a topic thoroughly across official documentation, engineering blogs, practitioner writeups, case studies, changelogs, and relevant videos, then synthesize the findings into a cited report with recommendations and optional 1-10 ratings. Use when asked to research a subject, survey best practices, compare tools or architectures, identify common patterns, or produce a comprehensive research.md-style writeup.
-author: alexgorbatchev
 ---
 
 # Research Topic
@@ -94,7 +92,9 @@ Prefer concrete recommendations over generic summaries. If the best answer is co
 
 ## Cite Inline
 
-Add citations inline wherever you make a factual claim, quote a recommendation, or reference an approach. Do not batch all citations at the end and leave the body unsupported.
+Add citations inline every time you refer to a source or use a source-backed point. That includes factual claims, recommendations, benchmarks, quotes, approaches, disagreements, and any phrasing like "according to" or "X argues." Do not mention a source in the body without an inline citation in that same sentence or bullet.
+
+Do not batch all citations at the end and leave the body unsupported. A source list is supplemental; it does not replace inline citations throughout the writeup.
 
 Good:
 

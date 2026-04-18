@@ -8,6 +8,7 @@
     "bootstrap": "bun run scripts/bootstrap.ts",
     "bootstrap:smoke": "bun run scripts/smoke-bootstrap.ts",
     "prepare": "bun run scripts/installGitHooks.ts",
+    "sync:opencode-docs": "bun run harnesses/opencode/scripts/sync-docs.ts",
     "skills:add": "bun run scripts/addVendoredSkill.ts",
     "skills:list": "npx skills add . --list",
     "skills:update": "bun run scripts/updateVendoredSkills.ts && bun run build"

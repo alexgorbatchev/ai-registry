@@ -35,6 +35,8 @@ Generated output files may use a small set of build-time template variables. `bu
 - `{{profiles_dir}}`
 - `{{output_dir}}`
 
+When the build stages files from `skills/`, `commands/`, or `harnesses/<target>/`, it also honors nested `.registry-ignore` files using `.gitignore`-style matching. Use those files to keep repo-local scratch assets or other non-shipping files out of generated outputs.
+
 When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/scripts/...`.
 
 For the normal machine setup flow after cloning, run:

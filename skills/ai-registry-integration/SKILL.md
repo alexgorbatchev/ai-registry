@@ -15,6 +15,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Prefer the most specific canonical-folder token available: `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...`. For canonical folders without a dedicated token, anchor the path from `{{repo_root}}`, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, `{{repo_root}}/scripts/...`, `{{repo_root}}/README.md`, and `{{repo_root}}/AGENTS.md`.
 - Put reusable assets in `{{repo_root}}/skills/`, `{{repo_root}}/commands/`, `{{repo_root}}/profiles/`, or `{{repo_root}}/harnesses/`.
 - Put vendored third-party code packages that need Bun workspace installs in `{{repo_root}}/vendor/`.
+- When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
 - Treat `{{repo_root}}/.output/` as generated output, not an editing surface.
 - After modifying any file under `{{repo_root}}/skills/`, `{{repo_root}}/commands/`, `{{repo_root}}/profiles/`, `{{repo_root}}/harnesses/`, or `{{repo_root}}/skills-lock.json`, run `bun run build` from `{{repo_root}}`.
 - If a change alters repo structure, build architecture, or workflow contracts, update `{{repo_root}}/AGENTS.md` and `{{repo_root}}/README.md` in the same change.

@@ -3,17 +3,18 @@ import { createHash } from "crypto";
 import {
   chmod,
   copyFile,
+  lstat,
   mkdir,
   readdir,
   readFile,
   rename,
   rm,
-  stat,
   writeFile,
 } from "fs/promises";
-import { basename, join, relative, resolve } from "path";
+import { basename, dirname, join, relative, resolve } from "path";
 import { existsSync } from "fs";
 import { globby } from "globby";
+import walk from "ignore-walk";
 import { stdin, stdout } from "process";
 import { createInterface } from "readline/promises";
 
@@ -44,6 +45,7 @@ const LEGACY_GENERATED_OUTPUT_MANIFEST_PATH = join(
 );
 const GENERATED_OUTPUT_MANIFEST_VERSION = 1;
 const NULL_DEVICE_PATH = "/dev/null";
+const REGISTRY_IGNORE_FILE_NAME = ".registry-ignore";
 const TEMPLATE_CONTEXT = {
   repo_root: REGISTRY_DIR,
   skills_dir: SKILLS_DIR,
@@ -139,6 +141,28 @@ function createFileChecksum(fileBuffer: Buffer): string {
 
 function normalizeRelativePath(filePath: string): string {
   return filePath.replaceAll("\\", "/");
+}
+
+function shouldIgnoreSourceCopyPath(relativePath: string): boolean {
+  const pathParts = normalizeRelativePath(relativePath).split("/");
+  const entryBasename = pathParts[pathParts.length - 1];
+
+  return (
+    entryBasename === REGISTRY_IGNORE_FILE_NAME ||
+    pathParts.some((part) => GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(part))
+  );
+}
+
+async function getSourceCopyEntries(sourceDir: string): Promise<string[]> {
+  const entries = await walk({
+    path: sourceDir,
+    ignoreFiles: [REGISTRY_IGNORE_FILE_NAME],
+    includeEmpty: true,
+  });
+
+  return entries
+    .map((entry) => normalizeRelativePath(entry))
+    .filter((entry) => entry.length > 0 && !shouldIgnoreSourceCopyPath(entry));
 }
 
 function shouldIgnoreGeneratedOutputPath(relativePath: string): boolean {
@@ -435,6 +459,27 @@ function applyTemplateVariables(
   });
 }
 
+async function copyFileWithTemplateVariables(
+  sourcePath: string,
+  targetPath: string,
+  templateContext: Record<string, string>,
+): Promise<void> {
+  await mkdir(dirname(targetPath), { recursive: true });
+
+  const isSkillDefinition = basename(sourcePath) === "SKILL.md";
+  if (isSkillDefinition) {
+    const sourceContent = await readFile(sourcePath, "utf-8");
+    await writeFile(
+      targetPath,
+      applyTemplateVariables(sourceContent, sourcePath, templateContext),
+      "utf-8",
+    );
+    return;
+  }
+
+  await copyFile(sourcePath, targetPath);
+}
+
 async function copyDirectoryWithTemplateVariables(
   sourceDir: string,
   targetDir: string,
@@ -442,43 +487,54 @@ async function copyDirectoryWithTemplateVariables(
 ): Promise<void> {
   await mkdir(targetDir, { recursive: true });
 
-  const entries = await readdir(sourceDir, { withFileTypes: true });
-  for (const entry of entries) {
-    if (entry.isDirectory() && GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(entry.name)) {
+  const entries = await getSourceCopyEntries(sourceDir);
+  for (const relativePath of entries) {
+    const sourcePath = join(sourceDir, relativePath);
+    const targetPath = join(targetDir, relativePath);
+    const sourceStats = await lstat(sourcePath);
+
+    if (sourceStats.isSymbolicLink()) {
       continue;
     }
 
-    const sourcePath = join(sourceDir, entry.name);
-    const targetPath = join(targetDir, entry.name);
-
-    if (entry.isDirectory()) {
-      await copyDirectoryWithTemplateVariables(
-        sourcePath,
-        targetPath,
-        templateContext,
-      );
+    if (sourceStats.isDirectory()) {
+      await mkdir(targetPath, { recursive: true });
+      await chmod(targetPath, sourceStats.mode);
       continue;
     }
 
-    if (!entry.isFile()) {
+    if (!sourceStats.isFile()) {
       continue;
     }
 
-    const isSkillDefinition = basename(sourcePath) === "SKILL.md";
-    if (isSkillDefinition) {
-      const sourceContent = await readFile(sourcePath, "utf-8");
-      await writeFile(
-        targetPath,
-        applyTemplateVariables(sourceContent, sourcePath, templateContext),
-        "utf-8",
-      );
-    } else {
-      await copyFile(sourcePath, targetPath);
-    }
+    await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext);
 
-    const sourceStats = await stat(sourcePath);
     await chmod(targetPath, sourceStats.mode);
   }
+}
+
+async function copyPathWithTemplateVariables(
+  sourcePath: string,
+  targetPath: string,
+  templateContext: Record<string, string>,
+): Promise<void> {
+  const sourceStats = await lstat(sourcePath);
+
+  if (sourceStats.isSymbolicLink()) {
+    return;
+  }
+
+  if (sourceStats.isDirectory()) {
+    await copyDirectoryWithTemplateVariables(sourcePath, targetPath, templateContext);
+    return;
+  }
+
+  if (!sourceStats.isFile()) {
+    return;
+  }
+
+  await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext);
+  await chmod(targetPath, sourceStats.mode);
 }
 
 async function applyTemplateVariablesToGeneratedOutput(
@@ -621,7 +677,11 @@ async function buildUnifiedOutputs(
 
     for (const cmd of matchedCommands) {
       masterCommands.add(cmd);
-      await $`cp -R "${join(COMMANDS_DIR, cmd)}" "${join(legacyRulesyncDir, "commands", cmd)}"`.nothrow().quiet();
+      await copyPathWithTemplateVariables(
+        join(COMMANDS_DIR, cmd),
+        join(legacyRulesyncDir, "commands", cmd),
+        TEMPLATE_CONTEXT,
+      );
     }
 
     // Generate isolated configurations for this profile. Shared unified targets are built in .output.
@@ -711,7 +771,11 @@ Use your \`skill\` tool to load the domain knowledge you need.
 
   for (const cmd of masterCommands) {
     const sourcePath = join(COMMANDS_DIR, cmd);
-    await $`cp -R "${sourcePath}" "${join(rulesyncCommandsDir, cmd)}"`.nothrow().quiet();
+    await copyPathWithTemplateVariables(
+      sourcePath,
+      join(rulesyncCommandsDir, cmd),
+      TEMPLATE_CONTEXT,
+    );
   }
 
   // 4. Run rulesync generate ONCE on the unified directory
@@ -765,9 +829,11 @@ Use your \`skill\` tool to load the domain knowledge you need.
             const sourceHarnessFolder = join(globalConfigPath, configItem.name);
             const targetHarnessFolder = join(outputDir, configItem.name);
             if (existsSync(targetHarnessFolder)) {
-              await $`cp -R ${sourceHarnessFolder}/* ${targetHarnessFolder}/`
-                .nothrow()
-                .quiet();
+              await copyDirectoryWithTemplateVariables(
+                sourceHarnessFolder,
+                targetHarnessFolder,
+                TEMPLATE_CONTEXT,
+              );
             }
           }
         }

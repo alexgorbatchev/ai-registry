@@ -52,9 +52,8 @@ It's your absolute prime directive and duty to report to the user whenever you s
 - Optimization opportunities
 - API and design gaps
 
-Use this format to get user's attention (including ---):
+Use this format to get user's attention:
 
----
-> # DUE DILIGENCE
-> ...
----
+# DUE DILIGENCE
+...
+

@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+set -eu
+
+command_name="${1:-}"
+
+if [ "$command_name" != "rebase" ]; then
+  exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+printf '%s\n' "post-rewrite (rebase): running bun run bootstrap -- -y"
+bun run bootstrap -- -y

@@ -1,0 +1,104 @@
+---
+name: ai-registry-integration
+description: Add or update content in the AI registry. Use when an user needs to add/integrate or modify skills, commands, profiles, harness overrides, vendored skills, or related registry documentation in ai-registry.
+author: alexgorbatchev
+---
+
+# AI Registry Integration
+
+Treat this repository as the source of truth. Add things to the reusable source directories first, then rebuild generated outputs. Do not hand-edit `{{repo_root}}/.output/`.
+
+## Core Rules
+
+- Keep new content anonymized and reusable. Do not introduce private company names, internal URLs, secrets, or personal details.
+- Put reusable assets in `{{repo_root}}/skills/`, `{{repo_root}}/commands/`, `{{repo_root}}/profiles/`, or `{{repo_root}}/harnesses/`.
+- Treat `{{repo_root}}/.output/` as generated output, not an editing surface.
+- After modifying any file under `{{repo_root}}/skills/`, `{{repo_root}}/commands/`, `{{repo_root}}/profiles/`, `{{repo_root}}/harnesses/`, or `{{repo_root}}/skills-lock.json`, run `bun run build` from `{{repo_root}}`.
+- If a change alters repo structure, build architecture, or workflow contracts, update `{{repo_root}}/AGENTS.md` and `{{repo_root}}/README.md` in the same change.
+
+## Workflow
+
+1. Identify what kind of thing is being added.
+2. Create or edit the source-of-truth file in the matching section below.
+3. Update any dependent manifest or lock file.
+4. Run the narrowest relevant validation.
+5. Run `bun run build` from `{{repo_root}}`.
+6. Inspect the generated output in `{{repo_root}}/.output/` if the change affects shipped harness content.
+
+## Add A Skill
+
+- Create a folder at `{{repo_root}}/skills/<skill-name>/`.
+- Put the main instructions in `{{repo_root}}/skills/<skill-name>/SKILL.md`.
+- Start `SKILL.md` with YAML frontmatter containing `name`, `description`, and `author: alexgorbatchev`.
+- Keep each skill self-contained. Do not assume another skill is present.
+- Add bundled resources only when needed, inside the same skill folder:
+  - `{{repo_root}}/skills/<skill-name>/scripts/`
+  - `{{repo_root}}/skills/<skill-name>/references/`
+  - `{{repo_root}}/skills/<skill-name>/assets/`
+- Keep the body procedural and specific for another AI agent.
+- Validate the skill with `bun {{repo_root}}/skills/skill-creator/scripts/quick_validate.ts {{repo_root}}/skills/<skill-name>`.
+- Run `bun run build` from `{{repo_root}}` after the skill change.
+
+## Add A Command
+
+- Create the command at `{{repo_root}}/commands/<command-name>.md`.
+- Use commands for slash-command prompts, reusable task blueprints, and prompt templates.
+- Keep the command self-contained rather than relying on unstated repo context.
+- If the command is meant to be available in a profile, make sure the profile manifest includes it directly or via an existing glob in `{{repo_root}}/profiles/<profile-name>/profile.yaml`.
+- Run `bun run build` from `{{repo_root}}` after the command change.
+
+## Add A Profile
+
+- Create a profile folder at `{{repo_root}}/profiles/<profile-name>/`.
+- Put the manifest at `{{repo_root}}/profiles/<profile-name>/profile.yaml`.
+- Use the manifest to select skills and commands, plus any tool toggles, permissions, or `system_prompt` overrides.
+- Keep reusable knowledge in `{{repo_root}}/skills/` and reusable prompts in `{{repo_root}}/commands/`; profiles should assemble those pieces instead of duplicating them.
+- Run `bun run build` from `{{repo_root}}` after the profile change.
+- Check generated profile-local outputs when the selected targets write files inside `{{repo_root}}/profiles/<profile-name>/`.
+
+## Add Harness Overrides
+
+- Put harness-specific shipped files in `{{repo_root}}/harnesses/<target>/`.
+- Put shared harness guidance in `{{repo_root}}/harnesses/.common/` or `{{repo_root}}/harnesses/AGENTS.md`.
+- Only files under `{{repo_root}}/harnesses/<target>/` are copied into generated output for that harness.
+- Do not place repo-only notes inside `{{repo_root}}/harnesses/<target>/` unless they are intentionally meant to ship.
+- Prefer the harness's native configuration surface over local wrappers when the harness already supports the feature directly.
+- Run `bun run build` from `{{repo_root}}` and verify the corresponding files under `{{repo_root}}/.output/`.
+- Existing harnesses:
+  - OpenCode: `{{repo_root}}/harnesses/opencode`.
+
+## Vendor An External Skill
+
+- Vendored skills live in `{{repo_root}}/skills/<skill-name>/`.
+- Track the vendored source in `{{repo_root}}/skills-lock.json`.
+- Add a third-party skill with `bun run skills:add 'npx skills add <source> --skill <skill-name>'` from `{{repo_root}}`.
+- Do not use plain `npx skills add ...` for vendoring into this repo; the wrapper enforces the repo's canonical destination and flags.
+- Update vendored skills with `bun run skills:update` from `{{repo_root}}`.
+- Commit both `{{repo_root}}/skills/<skill-name>/` and `{{repo_root}}/skills-lock.json` when vendoring or updating an external skill.
+- Run `bun run build` from `{{repo_root}}` afterward.
+
+## Build And Generated Output
+
+- The local build entrypoint is `{{repo_root}}/scripts/build.ts`.
+- Generated outputs are written under `{{repo_root}}/.output/`.
+- Verify generated files that match the change, especially:
+  - `{{repo_root}}/.output/opencode/`
+  - `{{repo_root}}/.output/agents/`
+  - `{{repo_root}}/.output/manifest.json`
+- Never move source-of-truth edits into `{{repo_root}}/.output/`; rebuild instead.
+
+## Repo Docs And Maintenance
+
+- Update `{{repo_root}}/README.md` when public usage, repository structure, build behavior, or setup flow changes.
+- Update `{{repo_root}}/AGENTS.md` when repository operating rules or architecture change.
+- If a new skill or command overlaps existing instructions, resolve the duplication instead of leaving conflicting guidance in multiple places.
+
+## Quick Routing
+
+- Add reusable agent behavior: `{{repo_root}}/skills/<skill-name>/SKILL.md`
+- Add reusable slash command or prompt: `{{repo_root}}/commands/<command-name>.md`
+- Add or adjust an assembled persona: `{{repo_root}}/profiles/<profile-name>/profile.yaml`
+- Add harness-specific shipped config: `{{repo_root}}/harnesses/<target>/...`
+- Add shared harness guidance: `{{repo_root}}/harnesses/.common/...` or `{{repo_root}}/harnesses/AGENTS.md`
+- Add or update a vendored third-party skill: `{{repo_root}}/skills/<skill-name>/` plus `{{repo_root}}/skills-lock.json`
+- OpenCode configuration file: `{{repo_root}}/harnesses/opencode/opencode.jsonc`

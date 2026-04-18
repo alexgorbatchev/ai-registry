@@ -41,3 +41,4 @@ This repository uses a custom build script (`scripts/build.ts`) to locally compi
 - When creating a new profile, create a folder under `profiles/` and add a `profile.yaml` file that cherry-picks from the reusable assets.
 - After modifying any skill, command, profile, harness file, or `skills-lock.json`, ALWAYS run `bun run build` to regenerate the configurations.
 - **CRITICAL:** This `AGENTS.md` and the `README.md` must be kept strictly up to date whenever structural or architectural changes are made to this repository. Do not leave documentation stale.
+- When structural, workflow, or location changes affect how agents should add things to this registry, update `skills/ai-registry-integration/SKILL.md` in the same change so the registry-integration guidance stays accurate.

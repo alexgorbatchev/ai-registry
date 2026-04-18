@@ -15,6 +15,12 @@
     "{{repo_root}}/harnesses/.common/karpathy-skills.md"
   ],
 
+  "permission": {
+    "external_directory": {
+      "{{repo_root}}/**": "allow"
+    },
+  },
+
   "disabled_providers": [],
   "experimental": {
     "mcp_timeout": 420000

@@ -49,12 +49,15 @@ bun run bootstrap:smoke
 That command:
 
 - runs `bun install`
+- installs the repo-local Git hooks from `.githooks`
 - builds the generated outputs
 - verifies the previous generated-output manifest before replacing `.output/`
 - stops for confirmation when generated files drift from the last manifest, with `no` as the default; use `bun run build -- -y` or `bun run bootstrap -- -y` to auto-confirm
 - preserves any extra `RULESYNC_TARGETS` targets while always generating `opencode` and `agentsmd`
 - links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
 - backs up any existing conflicting target directories before replacing them
+
+After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`.
 
 To compile the configurations, simply run:
 

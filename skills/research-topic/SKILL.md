@@ -39,6 +39,10 @@ Prefer this mix when available:
 
 If videos are relevant, review more than a token sample. Use captions or transcripts when possible. If only metadata is available, say so and treat it as weaker evidence.
 
+For YouTube videos, use `youtube-captions-dl '<video-url>'` to fetch closed captions as plain text instead of relying on the watch page alone. The tool prefers human-created caption tracks and falls back to the first auto-generated track when needed.
+
+Treat YouTube captions as supporting evidence, not the strongest source for precise technical facts. Cite the video URL in the report, and say explicitly when captions were unavailable or only auto-generated.
+
 ## Gather Evidence
 
 For each source, capture:

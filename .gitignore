@@ -27,3 +27,4 @@ profiles/*/.generated/
 .idea/
 .vscode/
 *.swp
+/.opencode-analysis

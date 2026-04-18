@@ -11,7 +11,10 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Core Rules
 
 - Keep new content anonymized and reusable. Do not introduce private company names, internal URLs, secrets, or personal details.
+- When checked-in guidance or generated text refers to repository paths, use the build-time template variables instead of machine-specific absolute paths. Current supported variables are `{{repo_root}}`, `{{skills_dir}}`, `{{commands_dir}}`, `{{profiles_dir}}`, and `{{output_dir}}`.
+- Prefer the most specific canonical-folder token available: `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...`. For canonical folders without a dedicated token, anchor the path from `{{repo_root}}`, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, `{{repo_root}}/scripts/...`, `{{repo_root}}/README.md`, and `{{repo_root}}/AGENTS.md`.
 - Put reusable assets in `{{repo_root}}/skills/`, `{{repo_root}}/commands/`, `{{repo_root}}/profiles/`, or `{{repo_root}}/harnesses/`.
+- Put vendored third-party code packages that need Bun workspace installs in `{{repo_root}}/vendor/`.
 - Treat `{{repo_root}}/.output/` as generated output, not an editing surface.
 - After modifying any file under `{{repo_root}}/skills/`, `{{repo_root}}/commands/`, `{{repo_root}}/profiles/`, `{{repo_root}}/harnesses/`, or `{{repo_root}}/skills-lock.json`, run `bun run build` from `{{repo_root}}`.
 - If a change alters repo structure, build architecture, or workflow contracts, update `{{repo_root}}/AGENTS.md` and `{{repo_root}}/README.md` in the same change.
@@ -59,10 +62,12 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Add Harness Overrides
 
 - Put harness-specific shipped files in `{{repo_root}}/harnesses/<target>/`.
+- Put repo-local vendored code packages that a harness references by file path in `{{repo_root}}/vendor/`.
 - Put shared harness guidance in `{{repo_root}}/harnesses/.common/` or `{{repo_root}}/harnesses/AGENTS.md`.
 - Only files under `{{repo_root}}/harnesses/<target>/` are copied into generated output for that harness.
 - Do not place repo-only notes inside `{{repo_root}}/harnesses/<target>/` unless they are intentionally meant to ship.
 - Prefer the harness's native configuration surface over local wrappers when the harness already supports the feature directly.
+- If a local file-based harness dependency needs installed runtime imports, vendor it under `{{repo_root}}/vendor/<name>/`, add it to the root Bun workspaces, and reference it from the harness config with `file://{{repo_root}}/...`.
 - Run `bun run build` from `{{repo_root}}` and verify the corresponding files under `{{repo_root}}/.output/`.
 - Existing harnesses:
   - OpenCode: `{{repo_root}}/harnesses/opencode`.
@@ -99,6 +104,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Add reusable slash command or prompt: `{{repo_root}}/commands/<command-name>.md`
 - Add or adjust an assembled persona: `{{repo_root}}/profiles/<profile-name>/profile.yaml`
 - Add harness-specific shipped config: `{{repo_root}}/harnesses/<target>/...`
+- Add a vendored third-party code package for a harness: `{{repo_root}}/vendor/<name>/`
 - Add shared harness guidance: `{{repo_root}}/harnesses/.common/...` or `{{repo_root}}/harnesses/AGENTS.md`
 - Add or update a vendored third-party skill: `{{repo_root}}/skills/<skill-name>/` plus `{{repo_root}}/skills-lock.json`
 - OpenCode configuration file: `{{repo_root}}/harnesses/opencode/opencode.jsonc`

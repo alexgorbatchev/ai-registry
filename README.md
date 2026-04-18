@@ -9,6 +9,7 @@ The reusable source-of-truth layer.
 - **`/skills`**: Domain-specific AI skills. Each skill lives in its own folder with a `SKILL.md`. This directory is also the repo's install surface for `npx skills`.
 - **`/commands`**: Reusable slash commands, system prompts, and task blueprints.
 - **`/harnesses`**: Harness-specific config overrides plus repo-local harness maintenance guidance. Only files inside `harnesses/<target>/` are injected into generated outputs for that target.
+- **`/vendor`**: Third-party code packages vendored into this repo as Bun workspaces when a harness needs a repo-local file path with installed runtime dependencies.
 
 ### 2. The Profiles (`/profiles`)
 The assembled agents. These folders contain `profile.yaml` manifests that cherry-pick from the reusable assets using globs to create specific AI personas. You can also define custom tool toggles and granular tool permissions in these files.
@@ -34,6 +35,8 @@ Generated output files may use a small set of build-time template variables. `bu
 - `{{profiles_dir}}`
 - `{{output_dir}}`
 
+When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/scripts/...`.
+
 For the normal machine setup flow after cloning, run:
 
 ```bash
@@ -49,6 +52,7 @@ bun run bootstrap:smoke
 That command:
 
 - runs `bun install`
+- installs dependencies for any root workspaces under `vendor/*`
 - installs the repo-local Git hooks from `.githooks`
 - builds the generated outputs
 - verifies the previous generated-output manifest before replacing `.output/`
@@ -116,6 +120,8 @@ The build script generates unified final outputs in `.output/` for the targets t
 - `.output/manifest.json`: SHA-256 manifest for the generated files. The next `bun run build` checks it before deleting `.output/` so externally edited generated files are not overwritten silently.
 
 Intermediate rulesync inputs are cleaned up after the build, so `.output` only contains final generated outputs.
+
+For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://{{repo_root}}/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.
 
 ### Bootstrap Overrides
 

@@ -11,7 +11,7 @@ import {
   stat,
   writeFile,
 } from "fs/promises";
-import { basename, join, resolve } from "path";
+import { basename, join, relative, resolve } from "path";
 import { existsSync } from "fs";
 import { globby } from "globby";
 import { stdin, stdout } from "process";
@@ -33,11 +33,17 @@ const GENERATED_OUTPUT_MANIFEST_PATH = join(
   UNIFIED_OUTPUT_DIR,
   GENERATED_OUTPUT_MANIFEST_NAME,
 );
+const GENERATED_OUTPUT_STAGING_DIR = join(
+  REGISTRY_DIR,
+  ".tmp",
+  "generated-output-staging",
+);
 const LEGACY_GENERATED_OUTPUT_MANIFEST_PATH = join(
   UNIFIED_OUTPUT_DIR,
   LEGACY_GENERATED_OUTPUT_MANIFEST_NAME,
 );
 const GENERATED_OUTPUT_MANIFEST_VERSION = 1;
+const NULL_DEVICE_PATH = "/dev/null";
 const TEMPLATE_CONTEXT = {
   repo_root: REGISTRY_DIR,
   skills_dir: SKILLS_DIR,
@@ -235,18 +241,115 @@ function getGeneratedOutputDrift(
   return drift.sort((left, right) => left.path.localeCompare(right.path));
 }
 
+function indentBlock(content: string, indent: string): string {
+  return content
+    .split("\n")
+    .map((line) => `${indent}${line}`)
+    .join("\n");
+}
+
+function getGeneratedOutputDiffPaths(
+  entry: IGeneratedOutputDrift,
+  nextOutputDir: string,
+): { currentPath: string; nextPath: string } {
+  const currentPath = join(UNIFIED_OUTPUT_DIR, entry.path);
+  const nextPath = join(nextOutputDir, entry.path);
+
+  if (entry.reason === "missing") {
+    return { currentPath: NULL_DEVICE_PATH, nextPath };
+  }
+
+  if (entry.reason === "unexpected") {
+    return { currentPath, nextPath: NULL_DEVICE_PATH };
+  }
+
+  return { currentPath, nextPath };
+}
+
+function normalizeDiffPathLabel(filePath: string, label: string): string {
+  if (filePath === NULL_DEVICE_PATH) {
+    return filePath;
+  }
+
+  const relativePath = normalizeRelativePath(relative(REGISTRY_DIR, filePath));
+  return `${label}/${relativePath}`;
+}
+
+async function getGeneratedOutputDiff(
+  entry: IGeneratedOutputDrift,
+  nextOutputDir: string,
+): Promise<string> {
+  const { currentPath, nextPath } = getGeneratedOutputDiffPaths(entry, nextOutputDir);
+  const diffCurrentPath = currentPath === NULL_DEVICE_PATH
+    ? currentPath
+    : normalizeRelativePath(relative(REGISTRY_DIR, currentPath));
+  const diffNextPath = nextPath === NULL_DEVICE_PATH
+    ? nextPath
+    : normalizeRelativePath(relative(REGISTRY_DIR, nextPath));
+  const diffProcess = Bun.spawn({
+    cmd: [
+      "git",
+      "diff",
+      "--no-index",
+      "--no-color",
+      "--text",
+      "--src-prefix=current/",
+      "--dst-prefix=next/",
+      "--",
+      diffCurrentPath,
+      diffNextPath,
+    ],
+    cwd: REGISTRY_DIR,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+
+  const stdoutText = (await new Response(diffProcess.stdout).text()).trim();
+  const stderrText = (await new Response(diffProcess.stderr).text()).trim();
+  const exitCode = await diffProcess.exited;
+  if (exitCode > 1) {
+    throw new Error(
+      `Failed to generate diff for ${entry.path}: ${stderrText || stdoutText || `exit code ${exitCode}`}`,
+    );
+  }
+
+  return stdoutText
+    .replaceAll(
+      normalizeDiffPathLabel(currentPath, "current"),
+      `current/${entry.path}`,
+    )
+    .replaceAll(normalizeDiffPathLabel(nextPath, "next"), `next/${entry.path}`);
+}
+
+async function formatGeneratedOutputDrift(
+  drift: IGeneratedOutputDrift[],
+  nextOutputDir: string,
+): Promise<string> {
+  const sections: string[] = [];
+
+  for (const entry of drift) {
+    const diff = await getGeneratedOutputDiff(entry, nextOutputDir);
+    const sectionLines = [`  - ${entry.path} (${entry.reason})`];
+    if (diff) {
+      sectionLines.push(indentBlock(diff, "    "));
+    }
+    sections.push(sectionLines.join("\n"));
+  }
+
+  return `\n⚠️ Detected external changes in generated outputs:\n${sections.join("\n")}`;
+}
+
 async function confirmGeneratedOutputOverwrite(
   drift: IGeneratedOutputDrift[],
+  nextOutputDir: string,
   hasAutoConfirm: boolean,
 ): Promise<void> {
   if (drift.length === 0) {
     return;
   }
 
-  console.error("\n⚠️ Detected external changes in generated outputs:");
-  for (const entry of drift) {
-    console.error(`  - ${entry.path} (${entry.reason})`);
-  }
+  const driftMessage = await formatGeneratedOutputDrift(drift, nextOutputDir);
+  console.error(driftMessage);
 
   if (hasAutoConfirm) {
     console.error("\nAuto-confirm enabled via -y/--yes. Overwriting generated files.");
@@ -255,7 +358,7 @@ async function confirmGeneratedOutputOverwrite(
 
   if (!stdin.isTTY || !stdout.isTTY) {
     throw new Error(
-      "Build cancelled. Generated outputs changed outside the build and no interactive terminal is available to confirm overwrite.",
+      `Build cancelled. Generated outputs changed outside the build and no interactive terminal is available to confirm overwrite.${driftMessage}`,
     );
   }
 
@@ -268,7 +371,7 @@ async function confirmGeneratedOutputOverwrite(
 
     if (answer !== "y" && answer !== "yes") {
       throw new Error(
-        "Build cancelled. Generated outputs were modified outside the build.",
+        `Build cancelled. Generated outputs were modified outside the build.${driftMessage}`,
       );
     }
   } finally {
@@ -276,7 +379,10 @@ async function confirmGeneratedOutputOverwrite(
   }
 }
 
-async function assertGeneratedOutputsAreSafeToReplace(hasAutoConfirm: boolean): Promise<void> {
+async function assertGeneratedOutputsAreSafeToReplace(
+  nextOutputDir: string,
+  hasAutoConfirm: boolean,
+): Promise<void> {
   const manifest = await readGeneratedOutputManifest();
   if (!manifest) {
     return;
@@ -284,7 +390,7 @@ async function assertGeneratedOutputsAreSafeToReplace(hasAutoConfirm: boolean): 
 
   const currentChecksums = await collectGeneratedOutputChecksums(UNIFIED_OUTPUT_DIR);
   const drift = getGeneratedOutputDrift(manifest, currentChecksums);
-  await confirmGeneratedOutputOverwrite(drift, hasAutoConfirm);
+  await confirmGeneratedOutputOverwrite(drift, nextOutputDir, hasAutoConfirm);
 }
 
 async function writeGeneratedOutputManifest(): Promise<void> {
@@ -421,26 +527,20 @@ async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> 
   return matches;
 }
 
-async function main() {
-  console.log("🚀 Building Unified Agent Outputs...\n");
-
-  const hasAutoConfirm = hasAutoConfirmFlag();
-
-  await assertGeneratedOutputsAreSafeToReplace(hasAutoConfirm);
-
-  const configuredTargets = getConfiguredTargets();
-  const unifiedTargets = getUnifiedTargets(configuredTargets);
-  let didBuildSucceed = false;
-
+async function buildUnifiedOutputs(
+  outputDir: string,
+  configuredTargets: string[],
+  unifiedTargets: string[],
+): Promise<void> {
   // 1. Prepare the unified target directory
-  await rm(UNIFIED_OUTPUT_DIR, { recursive: true, force: true });
-  await mkdir(UNIFIED_OUTPUT_DIR, { recursive: true });
-  
-  const rulesyncDir = join(UNIFIED_OUTPUT_DIR, ".rulesync");
+  await rm(outputDir, { recursive: true, force: true });
+  await mkdir(outputDir, { recursive: true });
+
+  const rulesyncDir = join(outputDir, ".rulesync");
   const rulesyncSkillsDir = join(rulesyncDir, "skills");
   const rulesyncCommandsDir = join(rulesyncDir, "commands");
-  const opencodeAgentStagingDir = join(UNIFIED_OUTPUT_DIR, ".opencode-agents");
-  
+  const opencodeAgentStagingDir = join(outputDir, ".opencode-agents");
+
   await mkdir(rulesyncSkillsDir, { recursive: true });
   await mkdir(rulesyncCommandsDir, { recursive: true });
   await mkdir(opencodeAgentStagingDir, { recursive: true });
@@ -457,7 +557,7 @@ async function main() {
 
     const profileName = dirent.name;
     const profileDir = join(PROFILES_DIR, profileName);
-    
+
     // Check for either json or yaml
     const hasJson = existsSync(join(profileDir, "profile.json"));
     const hasYaml = existsSync(join(profileDir, "profile.yaml"));
@@ -510,12 +610,12 @@ async function main() {
         TEMPLATE_CONTEXT,
       );
     }
-    
+
     for (const cmd of matchedCommands) {
       masterCommands.add(cmd);
       await $`cp -R "${join(COMMANDS_DIR, cmd)}" "${join(legacyRulesyncDir, "commands", cmd)}"`.nothrow().quiet();
     }
-    
+
     // Generate isolated configurations for this profile. Shared unified targets are built in .output.
     try {
       const isolatedTargets = getIsolatedTargets(configuredTargets);
@@ -565,8 +665,8 @@ mode: primary
     if (manifest.permission && typeof manifest.permission === "object") {
       for (const [permKey, permValue] of Object.entries(manifest.permission)) {
         // Skip 'skill' since we already manage it tightly above
-        if (permKey === "skill") continue; 
-        
+        if (permKey === "skill") continue;
+
         agentMd += `  ${permKey}:\n`;
         if (typeof permValue === "object" && permValue !== null) {
           for (const [pattern, action] of Object.entries(permValue)) {
@@ -577,9 +677,9 @@ mode: primary
         }
       }
     }
-    
+
     agentMd += `---
-You are the **${profileName.toUpperCase()}** agent. 
+You are the **${profileName.toUpperCase()}** agent.
 
 ${manifest.system_prompt ? manifest.system_prompt : 'You have been specifically configured with a subset of skills tailored for your role.'}
 
@@ -600,7 +700,7 @@ Use your \`skill\` tool to load the domain knowledge you need.
       TEMPLATE_CONTEXT,
     );
   }
-  
+
   for (const cmd of masterCommands) {
     const sourcePath = join(COMMANDS_DIR, cmd);
     await $`cp -R "${sourcePath}" "${join(rulesyncCommandsDir, cmd)}"`.nothrow().quiet();
@@ -610,27 +710,27 @@ Use your \`skill\` tool to load the domain knowledge you need.
   console.log(`\n⚙️  Running rulesync compiler...`);
   try {
     if (unifiedTargets.length > 0) {
-      await $`bun run rulesync generate --targets=${unifiedTargets.join(",")} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(UNIFIED_OUTPUT_DIR).quiet();
+      await $`bun run rulesync generate --targets=${unifiedTargets.join(",")} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(outputDir).quiet();
     }
-    
+
     if (unifiedTargets.includes("opencode")) {
       // Rename .opencode to opencode to match XDG standard for testing without symlinks
       try {
-        await rename(join(UNIFIED_OUTPUT_DIR, ".opencode"), join(UNIFIED_OUTPUT_DIR, "opencode"));
+        await rename(join(outputDir, ".opencode"), join(outputDir, "opencode"));
       } catch (error) {}
 
       // Copy the generated agents into the final opencode output directory manually
       // rulesync generate currently doesn't process OpenCode agent personas out of the box
-      const opencodeAgentDir = join(UNIFIED_OUTPUT_DIR, "opencode", "agent");
+      const opencodeAgentDir = join(outputDir, "opencode", "agent");
       await mkdir(opencodeAgentDir, { recursive: true });
       await $`cp ${opencodeAgentStagingDir}/*.md ${opencodeAgentDir}/`.quiet();
     }
 
-    const generatedAgentsRulePath = join(UNIFIED_OUTPUT_DIR, "AGENTS.md");
-    const generatedAgentsToolPath = join(UNIFIED_OUTPUT_DIR, ".agents");
+    const generatedAgentsRulePath = join(outputDir, "AGENTS.md");
+    const generatedAgentsToolPath = join(outputDir, ".agents");
     const sourceAgentsRulePath = join(REGISTRY_DIR, "AGENTS.md");
     if (unifiedTargets.includes("agentsmd") && (existsSync(generatedAgentsRulePath) || existsSync(generatedAgentsToolPath) || existsSync(sourceAgentsRulePath))) {
-      const agentsOutputDir = join(UNIFIED_OUTPUT_DIR, "agents");
+      const agentsOutputDir = join(outputDir, "agents");
       await mkdir(agentsOutputDir, { recursive: true });
 
       if (existsSync(generatedAgentsRulePath)) {
@@ -655,7 +755,7 @@ Use your \`skill\` tool to load the domain knowledge you need.
           // e.g. /harnesses/opencode/opencode.jsonc -> .output/opencode/opencode.jsonc
           if (configItem.isDirectory()) {
             const sourceHarnessFolder = join(globalConfigPath, configItem.name);
-            const targetHarnessFolder = join(UNIFIED_OUTPUT_DIR, configItem.name);
+            const targetHarnessFolder = join(outputDir, configItem.name);
             if (existsSync(targetHarnessFolder)) {
               await $`cp -R ${sourceHarnessFolder}/* ${targetHarnessFolder}/`
                 .nothrow()
@@ -667,10 +767,10 @@ Use your \`skill\` tool to load the domain knowledge you need.
     }
 
     await applyTemplateVariablesToGeneratedOutput(
-      UNIFIED_OUTPUT_DIR,
+      outputDir,
       TEMPLATE_CONTEXT,
     );
-    didBuildSucceed = true;
+    console.log(`   ✅ Successfully compiled unified outputs!`);
   } catch (error) {
     console.error(`   ❌ Failed to compile:`);
     if (hasStderr(error) && error.stderr.toString().trim()) {
@@ -682,14 +782,36 @@ Use your \`skill\` tool to load the domain knowledge you need.
     }
     throw error;
   } finally {
-    // Keep .output limited to final harness outputs.
+    // Keep the output limited to final harness outputs.
     await rm(rulesyncDir, { recursive: true, force: true });
     await rm(opencodeAgentStagingDir, { recursive: true, force: true });
   }
+}
 
-  if (didBuildSucceed) {
+async function main() {
+  console.log("🚀 Building Unified Agent Outputs...\n");
+
+  const hasAutoConfirm = hasAutoConfirmFlag();
+
+  const configuredTargets = getConfiguredTargets();
+  const unifiedTargets = getUnifiedTargets(configuredTargets);
+
+  try {
+    await buildUnifiedOutputs(
+      GENERATED_OUTPUT_STAGING_DIR,
+      configuredTargets,
+      unifiedTargets,
+    );
+    await assertGeneratedOutputsAreSafeToReplace(
+      GENERATED_OUTPUT_STAGING_DIR,
+      hasAutoConfirm,
+    );
+
+    await rm(UNIFIED_OUTPUT_DIR, { recursive: true, force: true });
+    await rename(GENERATED_OUTPUT_STAGING_DIR, UNIFIED_OUTPUT_DIR);
     await writeGeneratedOutputManifest();
-    console.log(`   ✅ Successfully compiled unified outputs!`);
+  } finally {
+    await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
   }
 
   console.log("\n🎉 Unified configuration ready!");

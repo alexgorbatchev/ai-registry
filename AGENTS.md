@@ -12,6 +12,7 @@ This repository manages reusable AI skills and commands plus the configurations 
   - **Self-Contained Logic**: Each skill or command must be self-contained. Do not assume other skills are present.
 - **The Harnesses (`/harnesses`)**:
   - Global configuration overrides for specific tools (e.g., `harnesses/opencode/opencode.jsonc`).
+  - When a task says to change OpenCode config "in ai-registry", edit the checked-in source file under `harnesses/opencode/`, not the machine-local installed config under `~/.config/opencode/`.
   - Repository-local harness maintenance guidance belongs in `harnesses/AGENTS.md`.
   - Only files inside `harnesses/<target>/` are injected directly into the matching target output directories during the build process.
 - **The Profiles (`/profiles`)**:

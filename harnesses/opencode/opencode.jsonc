@@ -15,10 +15,22 @@
     "{{repo_root}}/harnesses/.common/karpathy-skills.md"
   ],
 
+  "mcp": {
+    "graymatter": {
+      "type": "local",
+      "command": ["graymatter", "mcp", "serve"],
+      "enabled": true
+    }
+  },
+
   "permission": {
     "external_directory": {
       "{{repo_root}}/**": "allow"
     },
+    "bash": {
+      "git checkout *": "ask",
+      "git reset *": "ask",
+    }
   },
 
   "disabled_providers": [],

@@ -5,8 +5,8 @@
 
   "plugin": [
     "@tarquinen/opencode-dcp@3.1.9",
-    // Unpublished package: install directly from Git and pin the commit.
-    "git+https://github.com/gscalzo/opencode-context-inspector.git#9f725fa524442be53951c6961ce4f036af5eb0fe"
+    // Vendored as a repo workspace and loaded from source so root bun install satisfies runtime imports.
+    "file://{{repo_root}}/vendor/opencode-context-inspector/src/index.ts"
   ],
 
   "instructions": [

@@ -1,0 +1,35 @@
+{
+  "name": "opencode-context-inspector",
+  "version": "0.1.0",
+  "description": "OpenCode plugin that gives full visibility into how your context window budget is consumed by MCP servers, agents, skills, rules, and conversation history",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "context-window",
+    "token-budget",
+    "mcp",
+    "llm",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.2.5",
+    "tiktoken": "^1.0.21",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "tiktoken": "^1.0.21"
+  }
+}

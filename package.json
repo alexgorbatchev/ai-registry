@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Canonical AI skills, commands, and harness profiles",
   "private": true,
+  "workspaces": [
+    "vendor/*"
+  ],
   "scripts": {
     "build": "bun run scripts/build.ts",
     "bootstrap": "bun run scripts/bootstrap.ts",
@@ -14,6 +17,7 @@
     "skills:update": "bun run scripts/updateVendoredSkills.ts && bun run build"
   },
   "dependencies": {
+    "globby": "^16.1.1",
     "rulesync": "^7.28.0"
   }
 }

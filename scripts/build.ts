@@ -444,6 +444,10 @@ async function copyDirectoryWithTemplateVariables(
 
   const entries = await readdir(sourceDir, { withFileTypes: true });
   for (const entry of entries) {
+    if (entry.isDirectory() && GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(entry.name)) {
+      continue;
+    }
+
     const sourcePath = join(sourceDir, entry.name);
     const targetPath = join(targetDir, entry.name);
 
@@ -487,6 +491,10 @@ async function applyTemplateVariablesToGeneratedOutput(
 
   const entries = await readdir(outputDir, { withFileTypes: true });
   for (const entry of entries) {
+    if (entry.isDirectory() && GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(entry.name)) {
+      continue;
+    }
+
     const entryPath = join(outputDir, entry.name);
 
     if (entry.isDirectory()) {

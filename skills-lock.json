@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "opencode-conversation-analysis": {
+      "source": "connorads/dotfiles",
+      "sourceType": "github",
+      "computedHash": "fcfd2e64c453be1e0eabd88ea4b28e9b86e7da9cbb126fd779fd8683ba7c6d7e"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",

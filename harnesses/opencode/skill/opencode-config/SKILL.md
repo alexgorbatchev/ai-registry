@@ -17,16 +17,16 @@ Inside these directories, OpenCode expects the following structure:
 - `opencode.json` (or `.jsonc`): The main configuration file.
 - `agents/*.md`: Markdown files defining custom agents (Primary or Subagents).
 - `commands/*.md`: Markdown files defining custom slash commands (e.g., `/test`).
-- `skills/<name>/SKILL.md`: Markdown files defining dynamic skills loaded via the `skill` tool.
+- `skill/<name>/SKILL.md`: Markdown files defining dynamic skills loaded via the `skill` tool.
 
 ## 1. Skills
 Skills are reusable behavior definitions.
-- Must be located at `skills/<skill-name>/SKILL.md`.
+- Must be located at `skill/<skill-name>/SKILL.md`.
 - `SKILL.md` must start with YAML frontmatter containing `name` and `description`.
 - `name` must be 1-64 characters, lowercase alphanumeric with single hyphens (`^[a-z0-9]+(-[a-z0-9]+)*$`).
 - The agent loads them on-demand via the native `skill({ name: "..." })` tool.
 
-Example `skills/git-release/SKILL.md`:
+Example `skill/git-release/SKILL.md`:
 ```yaml
 ---
 name: git-release
@@ -114,4 +114,4 @@ Example `opencode.json`:
 ## Best Practices
 1. **Prefer `permission` over `tools`:** The `tools: { write: false }` format is deprecated. Use `permission: { edit: deny }` instead.
 2. **Subagents for Specific Tasks:** Keep your primary context clean by defining specialized `subagent`s with limited permissions.
-3. **Use Skills for Knowledge:** Don't bloat system prompts. Put domain knowledge in `skills/` so agents can retrieve it *only* when needed.
+3. **Use Skills for Knowledge:** Don't bloat system prompts. Put domain knowledge in `skill/` so agents can retrieve it *only* when needed.

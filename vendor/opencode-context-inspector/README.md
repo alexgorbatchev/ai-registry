@@ -163,13 +163,17 @@ Available: 125,800 tokens (62.9%)
 
 ### Hooks
 
-The plugin uses three OpenCode hook points:
+The plugin uses five OpenCode integration points:
 
-1. **`experimental.chat.system.transform`** -- Fires before every message. Captures the full assembled system prompt, segments it into categories, counts tokens per segment, and logs the budget breakdown.
+1. **`chat.message`** -- Fires for the current user message before the model runs. This is used for cumulative session input totals in the idle summary.
 
-2. **`tool.execute.after`** -- Fires after each tool call. Tracks the token cost of MCP tool call responses (the dynamic cost on top of the static definition cost).
+2. **`experimental.chat.messages.transform`** -- Fires with the full retained message list before it is converted into model input. This is used to estimate the full retained conversation budget for the active session.
 
-3. **`event`** -- Subscribes to `session.idle` for session summaries, `message.updated` for conversation token tracking, and `session.compacted` for compaction detection.
+3. **`experimental.chat.system.transform`** -- Fires before every message. Captures the full assembled system prompt, segments it into categories, counts tokens per segment, and logs the budget breakdown.
+
+4. **`tool.execute.after`** -- Fires after each tool call. Tracks the token cost of MCP tool call responses (the dynamic cost on top of the static definition cost).
+
+5. **`event`** -- Subscribes to `session.idle`, `session.compacted`, and `session.deleted` so summaries, compaction warnings, and tracker cleanup stay aligned with the active session.
 
 ### Segmentation
 
@@ -177,7 +181,7 @@ The system prompt is parsed using regex patterns to identify:
 
 - **MCP tool definitions** -- Tool schemas with server-prefixed names (e.g., `github_list_repos`)
 - **Agent instructions** -- The core system prompt for the active agent
-- **Skills** -- Loaded from `.opencode/skills/`
+- **Skills** -- Loaded from `.opencode/skill/`
 - **Rules/Instructions** -- From `AGENTS.md`, instruction files, custom rules
 - **Built-in tools** -- OpenCode's native tools
 - **Custom tools** -- Plugin-defined tools

@@ -11,11 +11,12 @@ Use this skill for evidence-based repository policy audits that must follow a fi
 
 1. Read `references/policy-rubric.md` before auditing anything. That file is the authoritative rubric.
 2. Capture the current git SHA before the audit begins.
-3. Inspect the repository conservatively and prefer checked-in evidence over convention.
+3. Inspect the repository conservatively, prefer checked-in evidence over convention, and be very diligent when changing existing documentation so you do not regress or weaken prior instructions.
 4. Follow wrapper commands until the real validation, test, CI, hook, and deploy or release paths are clear.
 5. Run canonical validation and test commands in a read-only manner whenever feasible.
-6. Create `.review/` if it does not exist, then write the final Markdown report to `.review/policy.md`.
-7. Return the same Markdown report with no extra commentary.
+6. After making fixes, perform a post-fix review of the changed documentation and surrounding instructions to verify there were no regressions.
+7. Create `.review/` if it does not exist, then write the final Markdown report to `.review/policy.md`, including the quality checks that were run and their results.
+8. Return the same Markdown report with no extra commentary.
 
 ## Reference
 

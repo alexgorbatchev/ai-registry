@@ -16,9 +16,9 @@ Before implementing:
 
 ## 2. Simplicity First
 
-**Minimum code that solves the problem. Nothing speculative.**
+**Smallest complete and semantically correct solution. Nothing speculative.**
 
-Simple does not mean sloppy: prefer the smallest correct solution, not a shortcut that leaves correctness, maintainability, or requirements unmet.
+Minimal does not mean partial, approximate, or UI-only. Prefer the least code that fully satisfies the requirement and preserves correct behavior.
 
 - No features beyond what was asked.
 - No abstractions for single-use code.

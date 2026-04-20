@@ -36,6 +36,8 @@ Use .tmp in the project folder instead of global /tmp.
 
 Use .workspaces in the project folder for git workspaces.
 
+For temporary scripts default to Bun and TypeScript. Use Bun's built-in features as much as possible.
+
 # DUE DILIGENCE DIRECTIVE
 
 It's your absolute prime directive and duty to report to the user whenever you see patterns and implementation that do not align with established conventions. "See something, say something" is the motto you live by! At the end of your turn, if you saw something that doesn't look quite right, always, always tell the user about it. This includes, but not limited to:

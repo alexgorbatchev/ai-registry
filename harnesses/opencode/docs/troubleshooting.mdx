@@ -27,13 +27,17 @@ opencode stores session data and other application data on disk at:
 - **macOS/Linux**: `~/.local/share/opencode/`
 - **Windows**: Press `WIN+R` and paste `%USERPROFILE%\.local\share\opencode`
 
-This directory contains:
+This directory typically contains:
 
-- `auth.json` - Authentication data like API keys, OAuth tokens
+- `opencode.db` - Main SQLite database for persisted OpenCode data
+- `opencode.db-shm` and `opencode.db-wal` - SQLite companion files while the database is active
 - `log/` - Application logs
-- `project/` - Project-specific data like session and message data
-  - If the project is within a Git repo, it is stored in `./<project-slug>/storage/`
-  - If it is not a Git repo, it is stored in `./global/storage/`
+
+Session history is stored in the SQLite database, primarily in the `session`, `message`, and `part` tables.
+
+If you are troubleshooting a specific Git worktree, OpenCode may also create a repo-local `.git/opencode` file. That file is not the full session history. It stores the OpenCode `project.id` that links the repo back to rows in `~/.local/share/opencode/opencode.db`.
+
+Some older installs may still have legacy JSON files under `~/.local/share/opencode/storage/`, but current OpenCode session storage is SQLite-backed.
 
 ---
 

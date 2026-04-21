@@ -11,7 +11,9 @@
 
   "instructions": [
     "{{repo_root}}/harnesses/.common/system.md",
-    "{{repo_root}}/harnesses/.common/karpathy-skills.md"
+    "{{repo_root}}/harnesses/.common/karpathy-skills.md",
+    "{{repo_root}}/harnesses/.common/memory-read.md",
+    "{{repo_root}}/harnesses/.common/memory-writeback.md"
   ],
 
   "mcp": {

@@ -16,16 +16,17 @@
   ],
 
   "mcp": {
-    "graymatter": {
-      "type": "local",
-      "command": ["graymatter", "mcp", "serve"],
-      "enabled": true
-    }
+    // "graymatter": {
+    //   "type": "local",
+    //   "command": ["graymatter", "mcp", "serve"],
+    //   "enabled": true
+    // }
   },
 
   "permission": {
     "external_directory": {
-      "{{repo_root}}/**": "allow"
+      "{{repo_root}}/**": "allow",
+      "~/**": "allow",
     },
     "bash": {
       "git checkout *": "ask",

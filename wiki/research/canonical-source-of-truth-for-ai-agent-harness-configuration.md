@@ -326,7 +326,7 @@ The point of the canonical repo is not to force every harness into one abstracti
 | --- | --- | --- | --- | --- | --- | --- |
 | Always-on project instructions | `CLAUDE.md` or `.claude/CLAUDE.md` | root `AGENTS.md` and/or `.cursor/rules` | `.github/copilot-instructions.md` and optionally `AGENTS.md` | root `AGENTS.md` | root `AGENTS.md` | `read: AGENTS.md` or `CONVENTIONS.md` in `.aider.conf.yml` |
 | Path-scoped instructions | `.claude/rules/*.md` with `paths` | `.cursor/rules/*.mdc` with `globs` | `.github/instructions/*.instructions.md` with `applyTo` | nested `AGENTS.md` | `opencode.json` `instructions` and nested `AGENTS.md` | separate read-only convention files |
-| Reusable skills | `.claude/skills/...` | project rules or tool-specific skill patterns | prompt files for task-specific reuse | `.agents/skills/...` | built-in skills plus `.opencode/commands` / agents | convention files and CLI composition |
+| Reusable skills | `.claude/skills/...` | project rules or tool-specific skill patterns | prompt files for task-specific reuse | `.agents/skills/...` | built-in skills plus `.opencode/skills` / agents | convention files and CLI composition |
 | Custom commands/prompts | tool-specific commands or skills | tool-specific commands/rules | `.github/prompts/*.prompt.md` | workflow skills and commands | `.opencode/commands/*.md` | `.aider.conf.yml`, `/read`, command-line flags |
 | Agent personas | `.claude/agents/*.md` | agent/rule composition | agent instructions + prompt files | subagents and AGENTS layering | `.opencode/agents/*.md` | mostly outside aider's core model |
 

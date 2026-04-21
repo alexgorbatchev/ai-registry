@@ -74,7 +74,7 @@ This is the strongest evidence-backed answer because it is not hypothetical. It 
 
 OpenCode officially supports:
 
-- Skills loaded on demand from `.opencode/skill`, `.agents/skills`, `.claude/skills`, and global equivalents ([Skills](https://opencode.ai/docs/skills/)).
+- Skills loaded on demand from `.opencode/skills`, `.agents/skills`, `.claude/skills`, and global equivalents ([Skills](https://opencode.ai/docs/skills/)).
 - Custom commands that wrap prompts, shell output, and file references ([Commands](https://opencode.ai/docs/commands/)).
 - Plugins that can subscribe to events like `session.created`, `session.compacted`, `message.updated`, `session.idle`, and `tool.execute.*`, and can add custom tools ([Plugins](https://opencode.ai/docs/plugins/)).
 - A server and SDK exposing session listing, session messages, session summarize, events, and more ([Server](https://opencode.ai/docs/server/), [SDK](https://opencode.ai/docs/sdk)).

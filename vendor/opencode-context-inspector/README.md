@@ -181,7 +181,7 @@ The system prompt is parsed using regex patterns to identify:
 
 - **MCP tool definitions** -- Tool schemas with server-prefixed names (e.g., `github_list_repos`)
 - **Agent instructions** -- The core system prompt for the active agent
-- **Skills** -- Loaded from `.opencode/skill/`
+- **Skills** -- Loaded from `.opencode/skills/`
 - **Rules/Instructions** -- From `AGENTS.md`, instruction files, custom rules
 - **Built-in tools** -- OpenCode's native tools
 - **Custom tools** -- Plugin-defined tools

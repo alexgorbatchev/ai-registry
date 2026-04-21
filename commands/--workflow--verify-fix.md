@@ -1,7 +1,6 @@
 ---
 description: Verify fix by temporarily disabling it and running tests
 targets: ['*']
-copilot: { agent: agent }
 ---
 
 Lets temporarily disable the fix and run the tests to verify that our fix and tests are correct. We should expect to see failures.

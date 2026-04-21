@@ -1,7 +1,6 @@
 ---
 description: Commit only the files changed by the agent
 targets: ['*']
-copilot: { agent: agent }
 ---
 
 Commit only the files you changed. Keep in mind there are other agents working in the same repository. So make sure not to mess up any files that you haven't touched. 
@@ -22,5 +21,4 @@ Each commit message should be structured as follows:
 [optional body]
 
 [optional footer(s)]
-
 

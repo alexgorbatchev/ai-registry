@@ -1,7 +1,6 @@
 ---
 description: Perform a remote GitHub repository security audit (malware, supply-chain abuse, suspicious binaries, social-engineering docs)
 targets: ['*']
-copilot: { agent: agent }
 ---
 
 Perform a **security-first code audit** of the target GitHub repository. Focus on:

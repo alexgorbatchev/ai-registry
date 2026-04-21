@@ -1,7 +1,6 @@
 ---
 description: Prepare a GitHub issue
 targets: ['*']
-copilot: { agent: agent }
 ---
 
 Lets prepare an GitHub issue for this problem:
@@ -19,4 +18,3 @@ Wait for the user to review. When the user approves, create a new issue in the G
 - Do not use emojis.
 - Do not add AI signature.
 - Do not include URLs in responses. Reference issues by number/title only.
-

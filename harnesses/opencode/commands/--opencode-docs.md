@@ -1,6 +1,5 @@
 ---
 description: Tell the user where the OpenCode docs live in this repository
-targets: ['*']
 ---
 
 When the user asks where the OpenCode docs are located, answer with these paths:

@@ -1,7 +1,6 @@
 ---
 description: Analyze git history and write a high-level project evolution report with timestamps, major shifts, deprecations, and a slide-ready summary
 name: 'repo-history'
-targets: ['*']
 ---
 
 Write a repository history report that reconstructs the **evolution of the product and codebase from git history**.

@@ -1,6 +1,5 @@
 ---
 description: Extract durable learnings from the just-finished task and offer concrete documentation follow-ups
-targets: ['*']
 ---
 
 Review the current conversation only and identify whether this task produced any real learnings that should have been documented before the task started.

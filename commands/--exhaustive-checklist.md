@@ -1,6 +1,5 @@
 ---
 description: Write a target markdown file as an exhaustive completion checklist without implementation guidance
-targets: ['*']
 ---
 
 Write a target Markdown file containing an exhaustive completion checklist.

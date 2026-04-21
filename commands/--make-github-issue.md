@@ -1,6 +1,5 @@
 ---
 description: Prepare a GitHub issue
-targets: ['*']
 ---
 
 Lets prepare an GitHub issue for this problem:

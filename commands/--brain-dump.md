@@ -1,6 +1,5 @@
 ---
 description: Enter a listening mode to capture a stream of consciousness or requirements without interrupting or providing feedback until the user is done.
-targets: ['*']
 ---
 
 Enter "Brain Dump" mode. 

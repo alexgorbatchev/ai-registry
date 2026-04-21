@@ -1,6 +1,5 @@
 ---
 description: Prepare a GitHub pull request
-targets: ['*']
 ---
 
 Lets prepare a GitHub pull request for this change:

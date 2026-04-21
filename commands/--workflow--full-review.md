@@ -1,6 +1,5 @@
 ---
 description: Comprehensive code review — full on first run, incremental on subsequent runs, writes REVIEW.md
-targets: ['*']
 ---
 
 Perform a comprehensive code review of this codebase. The output is always a holistic review of the entire project — but the exploration scope depends on whether a previous review exists.

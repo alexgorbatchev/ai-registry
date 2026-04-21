@@ -1,6 +1,5 @@
 ---
 description: Identify changes and make commits
-targets: ['*']
 ---
 
 We have forgotten to make commits while we were making changes and now there's a bunch of unrelated changes.

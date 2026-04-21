@@ -1,7 +1,6 @@
 ---
 description: Draft or harden an implementation-ready engineering design document with repo grounding and independent review validation
 name: 'engdesign:write'
-targets: ['*']
 ---
 
 Write or harden an engineering design document that another engineer can implement without re-deriving architecture, contracts, or sequencing.

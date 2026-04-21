@@ -6,13 +6,13 @@ author: alexgorbatchev
 
 # Prompt Composer
 
-Turn vague prompt requests into explicit prompt contracts that another model can execute reliably. Keep the guidance universal and interface-agnostic. Focus on clear structure, grounding, output contracts, and iteration instead of vendor-specific tuning.
+Turn vague prompt requests into explicit prompt contracts that another model can execute reliably. Keep the guidance universal and interface-agnostic. Focus on stable prompt design principles such as structure, grounding, output contracts, and iteration. Treat every prompt as a reusable starting point that still needs validation in its target runtime.
 
 ## Workflow
 
 1. Identify the target runtime.
 - Determine the interface constraints before drafting: system/developer/user roles, reusable prompt templates, tool calling, structured outputs, long context, or prompt caching.
-- If the execution environment is unspecified, write a general-purpose prompt and state that assumption.
+- If the execution environment is unspecified, write a general-purpose prompt, label it as a starting point, and re-test it in the target runtime before treating it as stable.
 
 2. Define the contract before writing the prompt.
 - Capture the task, audience, inputs, constraints, grounding boundary, output format, tone, and completion criteria.
@@ -20,7 +20,7 @@ Turn vague prompt requests into explicit prompt contracts that another model can
 - If success cannot be checked, tighten the request before drafting.
 
 3. Choose the smallest prompt shape that can work.
-- Start with a minimal structure. Add examples, verification rules, or tool policies only when the task or prior failures justify them.
+- Start with a minimal structure. Add examples, verification rules, or tool policies when they clarify the target behavior, reduce ambiguity, or improve reliability.
 - Separate stable instructions from variable inputs so the prompt can be reused and versioned.
 - Pick one delimiter style, usually Markdown headings or XML-style tags, and use it consistently.
 - Prefer clear sections, numbered steps, and explicit delimiters over dense prose.
@@ -30,7 +30,7 @@ Turn vague prompt requests into explicit prompt contracts that another model can
 - `task`: the job to perform
 - `context`: source material, background, or retrieved documents
 - `constraints`: rules, non-goals, or limits
-- `examples`: only when they materially improve behavior
+- `examples`: representative examples that define behavior, format, or edge cases
 - `output_contract`: exact return shape
 - `grounding_rules`, `tool_rules`, or `fallback_rules`: only when needed
 
@@ -38,11 +38,19 @@ Turn vague prompt requests into explicit prompt contracts that another model can
 - Remove duplicated or contradictory instructions.
 - Define vague words like `concise`, `important`, `better`, or `complete`.
 - Check that examples match the actual task and output contract.
-- Remove runtime-specific knobs unless the user explicitly asks for them.
+- Separate prompt text from runtime controls. Do not bake runtime-specific knobs into reusable prompt text unless the target environment requires them.
 
 6. Recommend an evaluation loop.
 - Propose representative test cases, edge cases, and failure cases.
 - Treat prompt writing as iterative engineering. Revise against observed failures instead of adding random extra instructions.
+
+## Portability
+
+- A reusable prompt is a portable starting point, not a portability guarantee.
+- When moving a prompt between runtimes or model versions, preserve the task contract but re-test the prompt on a small eval set.
+- Prompt text is only one control surface. Check whether the target environment exposes native controls for reasoning, verbosity, or tool behavior before compensating with extra prompt scaffolding.
+- Watch for shifts in instruction-following, verbosity, formatting, grounding, and tool behavior.
+- Adjust examples, scaffolding, and output constraints based on observed behavior.
 
 ## Runtime And State Management
 
@@ -55,43 +63,44 @@ Turn vague prompt requests into explicit prompt contracts that another model can
 
 ## Prompt Skeleton
 
-Use a simple block structure like this unless the target environment requires a different wrapper:
+Use a simple labeled structure like this. Markdown headings, bullets, or XML-style tags can all work; choose the lightest wrapper that keeps boundaries clear in the target environment.
 
-```xml
-<role>
-You are [[role]].
-</role>
+```md
+## Role
 
-<task>
+[[role]]
+
+## Task
+
 [[task]]
-</task>
 
-<context>
+## Context
+
 [[context]]
-</context>
 
-<constraints>
+## Constraints
+
 - [[constraint_1]]
 - [[constraint_2]]
-</constraints>
 
-<output_contract>
+## Output Contract
+
 - Return [[required_sections_or_schema]].
 - Use [[format]].
 - If information is missing or unsupported, [[fallback_behavior]].
-</output_contract>
 ```
 
 Keep placeholders explicit, for example `[[variable_name]]`. If the prompt will be reused, isolate variable fields instead of hardcoding them into the instruction text.
 
 ## Decision Rules
 
-### Use examples only when they buy reliability
+### Use examples to define target behavior
 
-- Start zero-shot for straightforward tasks.
-- Add few-shot examples when format, tone, classification boundaries, or edge cases matter.
-- Keep examples close to the real task, varied enough to avoid accidental overfitting, and formatted consistently.
-- Do not let examples quietly override the instructions.
+- Examples are a useful way to specify format, tone, boundary cases, and decision criteria.
+- For trivial tasks, direct instructions may be enough.
+- For other tasks, representative examples may improve consistency.
+- If unsure, compare a direct-instruction version and an example-based version on a small eval set.
+- Keep examples relevant, consistent, and aligned with the instructions.
 
 ### Ground the model instead of hoping
 
@@ -113,15 +122,17 @@ Keep placeholders explicit, for example `[[variable_name]]`. If the prompt will 
 
 - If the prompt controls tools, define when tools are required, when to stop, and what must be verified before finalizing.
 - Make dependency checks explicit when later actions rely on earlier retrieval or validation steps.
-- Allow parallel work only for independent retrieval or lookup steps.
+- Allow parallel work only for independent steps or workstreams.
 - Add permission checks before irreversible or external actions.
 
-### Do not force chain-of-thought by default
+### Use reasoning scaffolds deliberately
 
-- Do not generically ask the model to "think step by step" or expose its full reasoning.
-- Ask for the final deliverable plus any brief, externally useful rationale or verification notes.
-- Keep the distinction clear: avoid visible chain-of-thought by default, but allow light internal reasoning cues or runtime reasoning controls when the execution environment clearly supports and benefits from them.
-- Only request visible intermediate reasoning when the workflow truly needs it.
+- Treat reasoning scaffolds as optional controls, not universal defaults.
+- Check whether the target environment already exposes native controls for reasoning or effort before adding more prompt scaffolding.
+- For simple tasks, use direct instructions.
+- For complex or error-prone tasks, consider decomposition, checkpoints, or explicit verification steps.
+- Request visible intermediate reasoning only when the workflow actually needs that artifact.
+- Keep or remove a reasoning scaffold based on eval results, not doctrine.
 
 ## Prompt Assets And Optimization Loop
 
@@ -158,7 +169,7 @@ When the user gives you an existing prompt to improve:
 - Contradictory instructions or examples that teach a different behavior than the rules
 - One giant prompt that mixes reusable policy, volatile context, and the user turn with no boundaries
 - Prompt-only JSON constraints when the API already offers structured outputs
-- Generic chain-of-thought requests copied across unrelated tasks
+- Cargo-cult reasoning scaffolds copied across unrelated tasks
 - Runtime-specific tuning copied into reusable prompts without a concrete need
 - Assuming one interface's role hierarchy or caching semantics apply everywhere
 
@@ -171,6 +182,7 @@ Before finalizing a prompt, verify:
 - The grounding boundary is clear.
 - Ambiguous terms are defined.
 - Examples, if present, are relevant and consistently formatted.
+- The prompt has been treated as a starting point and re-tested in its target runtime.
 - The prompt uses only interface features that the target runtime actually supports.
 - The prompt includes a plan for handling missing information or unsupported requests.
 - The prompt has at least a small eval set or test plan.

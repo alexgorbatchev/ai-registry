@@ -10,7 +10,6 @@
   ],
 
   "instructions": [
-    "AGENTS.md",
     "{{repo_root}}/harnesses/.common/system.md",
     "{{repo_root}}/harnesses/.common/karpathy-skills.md"
   ],

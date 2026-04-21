@@ -4,7 +4,8 @@
   "description": "Canonical AI skills, commands, and harness profiles",
   "private": true,
   "workspaces": [
-    "vendor/*"
+    "vendor/*",
+    "packages/*"
   ],
   "scripts": {
     "build": "bun run scripts/build.ts",

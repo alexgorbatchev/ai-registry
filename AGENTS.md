@@ -16,6 +16,9 @@ This repository manages reusable AI skills and commands plus the configurations 
   - The checked-in OpenCode docs snapshot lives under `harnesses/opencode/docs/`; refresh it with `bun run sync:opencode-docs`, which runs `harnesses/opencode/scripts/sync-docs.ts`.
   - Repository-local harness maintenance guidance belongs in `harnesses/AGENTS.md`.
   - Only files inside `harnesses/<target>/` are injected directly into the matching target output directories during the build process.
+- **Standalone Packages (`packages/<package-name>/`)**:
+  - Publishable repo-local packages that are distributed independently from generated harness outputs live under `packages/`.
+  - Add each standalone package to the root `package.json` workspaces so `bun install` manages it consistently.
 - **Vendored Packages (`vendor/`)**:
   - Third-party code packages that need to live in this repo as Bun workspaces belong here.
   - Use this for repo-local harness dependencies such as file-based OpenCode plugins with runtime imports.
@@ -47,6 +50,7 @@ This repository uses a custom build script (`scripts/build.ts`) to locally compi
 - When updating vendored external skills, use `bun run skills:update` instead of plain `npx skills update`, because the upstream update command does not preserve the canonical `skills/` target in this repo.
 - When creating a new command, add it under `commands/`.
 - When creating a new profile, create a folder under `profiles/` and add a `profile.yaml` file that cherry-picks from the reusable assets.
+- When creating a publishable standalone package, place it under `packages/<package-name>/` and add it to the root Bun workspaces.
 - When vendoring a third-party code package for a harness integration, place it under `vendor/` and wire it through the root Bun workspaces instead of placing installable package source inside a generated harness directory.
 - After modifying any skill, command, profile, harness file, or `skills-lock.json`, ALWAYS run `bun run build` to regenerate the configurations.
 - **CRITICAL:** This `AGENTS.md` and the `README.md` must be kept strictly up to date whenever structural or architectural changes are made to this repository. Do not leave documentation stale.

@@ -16,20 +16,41 @@ Older installs may still have legacy JSON files.
 
 ### Core Tables
 
+- `project`
+  - `id`
+  - `worktree` (normalized git worktree root, or `/` for the global project)
+  - `name`
+  - `sandboxes`
 - `session`
   - `id` (session id, e.g. `ses_xxx`)
+  - `project_id`
   - `parent_id` (`NULL` for main sessions, set for subagent sessions)
+  - `directory`
   - `title`
   - `time_created`, `time_updated`
 - `message`
   - `id` (message id, e.g. `msg_xxx`)
   - `session_id`
-  - `data` (JSON blob; includes `role`, agent/model metadata)
+  - `data` (JSON blob; includes `role`, model metadata, cost, token counts, timing, cwd/root paths)
 - `part`
   - `id` (part id, e.g. `prt_xxx`)
   - `message_id`
   - `session_id`
   - `data` (JSON blob; includes `type`, `text`, tool payloads)
+
+### Additional JSON Fields Used by Session Reporting
+
+- Assistant message cost: `json_extract(message.data, '$.cost')`
+- Assistant model: `json_extract(message.data, '$.modelID')`, `json_extract(message.data, '$.providerID')`
+- Assistant timing: `json_extract(message.data, '$.time.created')`, `json_extract(message.data, '$.time.completed')`
+- Token totals:
+  - `json_extract(message.data, '$.tokens.input')`
+  - `json_extract(message.data, '$.tokens.output')`
+  - `json_extract(message.data, '$.tokens.cache.read')`
+  - `json_extract(message.data, '$.tokens.cache.write')`
+  - `json_extract(message.data, '$.tokens.total')`
+- Tool call name: `json_extract(part.data, '$.tool')`
+- Optional MCP/server metadata when present: `json_extract(part.data, '$.server')` and `json_extract(part.data, '$.state.metadata.*')`
 
 ### JSON Fields Used by This Skill
 

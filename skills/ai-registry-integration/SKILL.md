@@ -14,6 +14,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - When checked-in guidance or generated text refers to repository paths, use the build-time template variables instead of machine-specific absolute paths. Current supported variables are `{{repo_root}}`, `{{skills_dir}}`, `{{commands_dir}}`, `{{profiles_dir}}`, and `{{output_dir}}`.
 - Prefer the most specific canonical-folder token available: `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...`. For canonical folders without a dedicated token, anchor the path from `{{repo_root}}`, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, `{{repo_root}}/scripts/...`, `{{repo_root}}/README.md`, and `{{repo_root}}/AGENTS.md`.
 - Put reusable assets in `{{repo_root}}/skills/`, `{{repo_root}}/commands/`, `{{repo_root}}/profiles/`, or `{{repo_root}}/harnesses/`.
+- Put publishable standalone packages that are meant to be distributed from this repo under `{{repo_root}}/packages/<package-name>/`.
 - Put vendored third-party code packages that need Bun workspace installs in `{{repo_root}}/vendor/`.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
 - Treat `{{repo_root}}/.output/` as generated output, not an editing surface.
@@ -73,6 +74,14 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Existing harnesses:
   - OpenCode: `{{repo_root}}/harnesses/opencode`.
 
+## Add A Standalone Package
+
+- Create the package under `{{repo_root}}/packages/<package-name>/`.
+- Use this for publishable tools that are distributed independently from generated harness outputs.
+- Add the package folder to the root `{{repo_root}}/package.json` workspaces.
+- Keep publishable package docs inside the package folder, such as `README.md`.
+- Run the package's narrowest validation plus any affected repo-level validation.
+
 ## Vendor An External Skill
 
 - Vendored skills live in `{{repo_root}}/skills/<skill-name>/`.
@@ -105,6 +114,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Add reusable slash command or prompt: `{{repo_root}}/commands/<command-name>.md`
 - Add or adjust an assembled persona: `{{repo_root}}/profiles/<profile-name>/profile.yaml`
 - Add harness-specific shipped config: `{{repo_root}}/harnesses/<target>/...`
+- Add a publishable standalone package: `{{repo_root}}/packages/<package-name>/`
 - Add a vendored third-party code package for a harness: `{{repo_root}}/vendor/<name>/`
 - Add shared harness guidance: `{{repo_root}}/harnesses/.common/...` or `{{repo_root}}/harnesses/AGENTS.md`
 - Add or update a vendored third-party skill: `{{repo_root}}/skills/<skill-name>/` plus `{{repo_root}}/skills-lock.json`

@@ -10,6 +10,8 @@ The reusable source-of-truth layer.
 - **`/commands`**: Reusable slash commands, system prompts, and task blueprints.
 - **`/harnesses`**: Harness-specific config overrides plus repo-local harness maintenance guidance. Only files inside `harnesses/<target>/` are injected into generated outputs for that target.
 - **`/vendor`**: Third-party code packages vendored into this repo as Bun workspaces when a harness needs a repo-local file path with installed runtime dependencies.
+- **`/packages`**: Publishable repo-local packages distributed independently from the generated harness outputs.
+- **`/packages/opencode-session-analysis`**: Bun CLI package for OpenCode session reporting.
 
 ### 2. The Profiles (`/profiles`)
 The assembled agents. These folders contain `profile.yaml` manifests that cherry-pick from the reusable assets using globs to create specific AI personas. You can also define custom tool toggles and granular tool permissions in these files.
@@ -54,7 +56,7 @@ bun run bootstrap:smoke
 That command:
 
 - runs `bun install`
-- installs dependencies for any root workspaces under `vendor/*`
+- installs dependencies for all root workspaces declared in `package.json`, including `vendor/*` and `packages/*`
 - installs the repo-local Git hooks from `.githooks`
 - builds the generated outputs
 - verifies the previous generated-output manifest before replacing `.output/`

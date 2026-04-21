@@ -1,5 +1,5 @@
 ---
-description: Draft or harden an implementation-ready engineering design document with repo grounding and review-agent validation
+description: Draft or harden an implementation-ready engineering design document with repo grounding and independent review validation
 name: 'engdesign:write'
 targets: ['*']
 copilot: { agent: agent }
@@ -22,7 +22,7 @@ If the target path is not provided, stop and ask for it.
 
 - Follow all project instructions and mandatory skills before writing or editing files.
 - Read the `engineering-design-docs` skill and its template before drafting or hardening.
-- Use the repository-mapping tool available in the environment before broad file reading. Prefer `repoguide` when it is available; otherwise use the best project-approved structural discovery tool.
+- Use repository structure discovery before broad file reading. If the active environment provides a dedicated repository-mapping capability, use it; otherwise use the best project-approved structural discovery workflow.
 - Ground the design in the actual repository, not assumptions.
 - Separate verified current-state baseline from proposed target-state requirements.
 - Do not leave architectural choices as options when the design needs a chosen implementation.
@@ -51,10 +51,10 @@ If a critical product or architecture decision is still unresolved, stop and ask
 ## Step 2: Read the governing instructions first
 
 Before drafting:
-1. read project instruction files (`AGENTS.md`, `CLAUDE.md`, `.rulesync` rules, or equivalent repository guidance)
+1. read repository instruction files recognized by the active workflow (`AGENTS.md`, `CLAUDE.md`, `.rulesync` rules, or equivalent repository guidance)
 2. identify applicable mandatory skills from the project and read them fully
 3. read the `engineering-design-docs` skill and its template
-4. before broad file reading, use the repository-mapping tool available in the environment for structure discovery; prefer `repoguide` when available. If the task is narrow, keep this pass lightweight and then move to targeted reads
+4. before broad file reading, use the strongest repository-structure discovery capability available in the active environment. If the task is narrow, keep this pass lightweight and then move to targeted reads
 
 If the repository has topic-specific docs that the requested feature depends on, read those too.
 
@@ -73,7 +73,7 @@ Read the current implementation and record only verified facts about:
 Do not mix these facts with target-state requirements.
 
 When the repo is large, start with:
-1. the repository-mapping tool available in the environment for structure discovery; prefer `repoguide` when available
+1. the strongest repository-structure discovery capability available in the active environment
 2. focused symbol/file lookups
 3. targeted reads of the exact files that own the current behavior
 
@@ -149,10 +149,10 @@ Fix these before the review pass.
 ## Step 7: Run the required review pass
 
 After drafting, run a separate review pass.
-Use a review agent when one is available; otherwise perform an explicit self-review and label it as such.
+Use the strongest independent review workflow available in the active environment. If the platform supports a separate reviewer or review mode, use it; otherwise perform an explicit self-review and label it as such.
 
 Required workflow:
-1. ask a review agent to review the design doc against the repository and the request when a review agent is available; otherwise perform the same audit yourself as an explicit self-review section
+1. run the strongest available independent review workflow against the design doc, the repository, and the request. If the platform supports a separate reviewer or review mode, use it; otherwise perform the same audit yourself as an explicit self-review section
 2. focus the review on:
    - baseline mismatches
    - ambiguity
@@ -181,7 +181,7 @@ Before you finish, confirm all of the following:
 When done:
 - write the design doc to `<design-doc-path>`
 - summarize the file written
-- summarize the review findings you addressed and say whether they came from a review agent or self-review
+- summarize the review findings you addressed and say whether they came from an independent reviewer/workflow or self-review
 - call out any remaining repository/documentation mismatches that were observed but not changed because the user did not ask for source-doc edits
 
 ## What not to do
@@ -189,5 +189,5 @@ When done:
 - Do not implement the feature unless the user explicitly asks for implementation.
 - Do not produce a recommendation memo when the user asked for an engineering design.
 - Do not leave core behavior unspecified and expect the implementer to infer it.
-- Do not skip the required review pass. Use a review agent when available; otherwise perform the explicit self-review defined above.
+- Do not skip the required review pass. Use the strongest available independent review workflow; otherwise perform the explicit self-review defined above.
 - Do not silently repair unrelated source docs unless the user explicitly asks for that too.

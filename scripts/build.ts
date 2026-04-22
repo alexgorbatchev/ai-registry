@@ -1,9 +1,6 @@
 import { $ } from "bun";
 import { createHash } from "crypto";
 import {
-  chmod,
-  copyFile,
-  lstat,
   mkdir,
   readdir,
   readFile,
@@ -11,23 +8,32 @@ import {
   rm,
   writeFile,
 } from "fs/promises";
-import { basename, dirname, join, relative, resolve } from "path";
+import { join, relative, resolve } from "path";
+import { pathToFileURL } from "url";
 import { existsSync } from "fs";
 import { globby } from "globby";
-import walk from "ignore-walk";
 import { stdin, stdout } from "process";
 import { createInterface } from "readline/promises";
 
+import {
+  type IBuildSupport,
+  type IProfileManifest,
+  type IUnifiedHarnessPlugin,
+  applyTemplateVariablesToGeneratedOutput,
+  copyDirectoryWithTemplateVariables,
+  copyPathWithTemplateVariables,
+} from "./harnessBuild";
+
 // Resolve paths relative to the ai-registry root
 const REGISTRY_DIR = resolve(import.meta.dir, "..");
+const HARNESSES_DIR = join(REGISTRY_DIR, "harnesses");
 const SKILLS_DIR = join(REGISTRY_DIR, "skills");
 const COMMANDS_DIR = join(REGISTRY_DIR, "commands");
 const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
-const TEMPLATE_VARIABLE_PATTERN = /{{\s*([a-z0-9_]+)\s*}}/gi;
 
 // We now build unified final outputs into a single directory
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
-const UNIFIED_TARGETS = new Set(["opencode", "agentsmd"]);
+const STATIC_UNIFIED_TARGETS = new Set(["agentsmd"]);
 const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
 const LEGACY_GENERATED_OUTPUT_MANIFEST_NAME = ".generated-output-manifest.json";
 const GENERATED_OUTPUT_MANIFEST_PATH = join(
@@ -45,7 +51,6 @@ const LEGACY_GENERATED_OUTPUT_MANIFEST_PATH = join(
 );
 const GENERATED_OUTPUT_MANIFEST_VERSION = 1;
 const NULL_DEVICE_PATH = "/dev/null";
-const REGISTRY_IGNORE_FILE_NAME = ".registry-ignore";
 const TEMPLATE_CONTEXT = {
   repo_root: REGISTRY_DIR,
   skills_dir: SKILLS_DIR,
@@ -85,20 +90,29 @@ function getConfiguredTargets(): string[] {
     .filter(Boolean);
 }
 
-function getUnifiedTargets(configuredTargets: string[]): string[] {
-  if (configuredTargets.includes("*")) {
-    return Array.from(UNIFIED_TARGETS);
+function getUnifiedTargets(
+  configuredTargets: string[],
+  availableHarnessBuildTargets: string[],
+): string[] {
+  const unifiedTargets = new Set<string>(availableHarnessBuildTargets);
+  for (const target of STATIC_UNIFIED_TARGETS) {
+    unifiedTargets.add(target);
   }
 
-  return configuredTargets.filter((target) => UNIFIED_TARGETS.has(target));
+  if (configuredTargets.includes("*")) {
+    return Array.from(unifiedTargets);
+  }
+
+  return configuredTargets.filter((target) => unifiedTargets.has(target));
 }
 
-function getIsolatedTargets(configuredTargets: string[]): string {
+function getIsolatedTargets(configuredTargets: string[], unifiedTargets: string[]): string {
   if (configuredTargets.includes("*")) {
     return "*";
   }
 
-  return configuredTargets.filter((target) => !UNIFIED_TARGETS.has(target)).join(",");
+  const unifiedTargetSet = new Set(unifiedTargets);
+  return configuredTargets.filter((target) => !unifiedTargetSet.has(target)).join(",");
 }
 
 function hasStderr(error: unknown): error is { stderr: { toString(): string } } {
@@ -107,6 +121,26 @@ function hasStderr(error: unknown): error is { stderr: { toString(): string } } 
 
 function getObjectValue(object: object, key: string): unknown {
   return Reflect.get(object, key);
+}
+
+function isProfileManifest(value: unknown): value is IProfileManifest {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isUnifiedHarnessPlugin(value: unknown): value is IUnifiedHarnessPlugin {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const target = getObjectValue(value, "target");
+  const stageProfile = getObjectValue(value, "stageProfile");
+  const finalizeOutput = getObjectValue(value, "finalizeOutput");
+
+  return (
+    typeof target === "string" &&
+    (stageProfile === undefined || typeof stageProfile === "function") &&
+    (finalizeOutput === undefined || typeof finalizeOutput === "function")
+  );
 }
 
 function isStringRecord(value: unknown): value is Record<string, string> {
@@ -141,28 +175,6 @@ function createFileChecksum(fileBuffer: Buffer): string {
 
 function normalizeRelativePath(filePath: string): string {
   return filePath.replaceAll("\\", "/");
-}
-
-function shouldIgnoreSourceCopyPath(relativePath: string): boolean {
-  const pathParts = normalizeRelativePath(relativePath).split("/");
-  const entryBasename = pathParts[pathParts.length - 1];
-
-  return (
-    entryBasename === REGISTRY_IGNORE_FILE_NAME ||
-    pathParts.some((part) => GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(part))
-  );
-}
-
-async function getSourceCopyEntries(sourceDir: string): Promise<string[]> {
-  const entries = await walk({
-    path: sourceDir,
-    ignoreFiles: [REGISTRY_IGNORE_FILE_NAME],
-    includeEmpty: true,
-  });
-
-  return entries
-    .map((entry) => normalizeRelativePath(entry))
-    .filter((entry) => entry.length > 0 && !shouldIgnoreSourceCopyPath(entry));
 }
 
 function shouldIgnoreGeneratedOutputPath(relativePath: string): boolean {
@@ -431,153 +443,52 @@ async function writeGeneratedOutputManifest(): Promise<void> {
   );
 }
 
-function applyTemplateVariables(
-  content: string,
-  sourcePath: string,
-  templateContext: Record<string, string>,
-): string {
-  const placeholders = Array.from(
-    new Set(content.match(TEMPLATE_VARIABLE_PATTERN) ?? []),
-  );
-
-  if (placeholders.length === 0) {
-    return content;
+async function getAvailableHarnessBuildTargets(): Promise<string[]> {
+  if (!existsSync(HARNESSES_DIR)) {
+    return [];
   }
 
-  const unknownKeys = placeholders
-    .map((placeholder) => placeholder.replace(/[{}\s]/g, ""))
-    .filter((key) => !(key in templateContext));
-
-  if (unknownKeys.length > 0) {
-    throw new Error(
-      `Unknown template variable(s) in ${sourcePath}: ${unknownKeys.join(", ")}`,
-    );
-  }
-
-  return content.replace(TEMPLATE_VARIABLE_PATTERN, (_, key: string) => {
-    return templateContext[key] ?? _;
-  });
+  const harnessEntries = await readdir(HARNESSES_DIR, { withFileTypes: true });
+  return harnessEntries
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+    .map((entry) => entry.name)
+    .filter((entryName) => existsSync(join(HARNESSES_DIR, entryName, "scripts", "build.ts")));
 }
 
-async function copyFileWithTemplateVariables(
-  sourcePath: string,
-  targetPath: string,
-  templateContext: Record<string, string>,
-): Promise<void> {
-  await mkdir(dirname(targetPath), { recursive: true });
+async function loadUnifiedHarnessPlugins(targets: string[]): Promise<IUnifiedHarnessPlugin[]> {
+  const plugins: IUnifiedHarnessPlugin[] = [];
 
-  const isSkillDefinition = basename(sourcePath) === "SKILL.md";
-  if (isSkillDefinition) {
-    const sourceContent = await readFile(sourcePath, "utf-8");
-    await writeFile(
-      targetPath,
-      applyTemplateVariables(sourceContent, sourcePath, templateContext),
-      "utf-8",
-    );
-    return;
-  }
-
-  await copyFile(sourcePath, targetPath);
-}
-
-async function copyDirectoryWithTemplateVariables(
-  sourceDir: string,
-  targetDir: string,
-  templateContext: Record<string, string>,
-): Promise<void> {
-  await mkdir(targetDir, { recursive: true });
-
-  const entries = await getSourceCopyEntries(sourceDir);
-  for (const relativePath of entries) {
-    const sourcePath = join(sourceDir, relativePath);
-    const targetPath = join(targetDir, relativePath);
-    const sourceStats = await lstat(sourcePath);
-
-    if (sourceStats.isSymbolicLink()) {
+  for (const target of targets) {
+    const pluginPath = join(HARNESSES_DIR, target, "scripts", "build.ts");
+    if (!existsSync(pluginPath)) {
       continue;
     }
 
-    if (sourceStats.isDirectory()) {
-      await mkdir(targetPath, { recursive: true });
-      await chmod(targetPath, sourceStats.mode);
-      continue;
+    const moduleValue = await import(pathToFileURL(pluginPath).href);
+    const defaultExport = getObjectValue(moduleValue, "default");
+    const namedPlugin = getObjectValue(moduleValue, "plugin");
+    const plugin = isUnifiedHarnessPlugin(defaultExport)
+      ? defaultExport
+      : isUnifiedHarnessPlugin(namedPlugin)
+        ? namedPlugin
+        : null;
+
+    if (!plugin) {
+      throw new Error(
+        `Harness build plugin at ${pluginPath} must export a plugin object as default or named \"plugin\".`,
+      );
     }
 
-    if (!sourceStats.isFile()) {
-      continue;
+    if (plugin.target !== target) {
+      throw new Error(
+        `Harness build plugin at ${pluginPath} declared target \"${plugin.target}\", expected \"${target}\".`,
+      );
     }
 
-    await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext);
-
-    await chmod(targetPath, sourceStats.mode);
-  }
-}
-
-async function copyPathWithTemplateVariables(
-  sourcePath: string,
-  targetPath: string,
-  templateContext: Record<string, string>,
-): Promise<void> {
-  const sourceStats = await lstat(sourcePath);
-
-  if (sourceStats.isSymbolicLink()) {
-    return;
+    plugins.push(plugin);
   }
 
-  if (sourceStats.isDirectory()) {
-    await copyDirectoryWithTemplateVariables(sourcePath, targetPath, templateContext);
-    return;
-  }
-
-  if (!sourceStats.isFile()) {
-    return;
-  }
-
-  await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext);
-  await chmod(targetPath, sourceStats.mode);
-}
-
-async function applyTemplateVariablesToGeneratedOutput(
-  outputDir: string,
-  templateContext: Record<string, string>,
-): Promise<void> {
-  if (!existsSync(outputDir)) {
-    return;
-  }
-
-  const entries = await readdir(outputDir, { withFileTypes: true });
-  for (const entry of entries) {
-    if (entry.isDirectory() && GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(entry.name)) {
-      continue;
-    }
-
-    const entryPath = join(outputDir, entry.name);
-
-    if (entry.isDirectory()) {
-      await applyTemplateVariablesToGeneratedOutput(entryPath, templateContext);
-      continue;
-    }
-
-    if (!entry.isFile()) {
-      continue;
-    }
-
-    const fileBuffer = await readFile(entryPath);
-    if (fileBuffer.includes(0)) {
-      continue;
-    }
-
-    const sourceContent = fileBuffer.toString("utf-8");
-    const renderedContent = applyTemplateVariables(
-      sourceContent,
-      entryPath,
-      templateContext,
-    );
-
-    if (renderedContent !== sourceContent) {
-      await writeFile(entryPath, renderedContent, "utf-8");
-    }
-  }
+  return plugins;
 }
 
 async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> {
@@ -595,6 +506,7 @@ async function buildUnifiedOutputs(
   outputDir: string,
   configuredTargets: string[],
   unifiedTargets: string[],
+  unifiedHarnessPlugins: IUnifiedHarnessPlugin[],
 ): Promise<void> {
   // 1. Prepare the unified target directory
   await rm(outputDir, { recursive: true, force: true });
@@ -603,11 +515,14 @@ async function buildUnifiedOutputs(
   const rulesyncDir = join(outputDir, ".rulesync");
   const rulesyncSkillsDir = join(rulesyncDir, "skills");
   const rulesyncCommandsDir = join(rulesyncDir, "commands");
-  const opencodeAgentStagingDir = join(outputDir, ".opencode-agents");
 
   await mkdir(rulesyncSkillsDir, { recursive: true });
   await mkdir(rulesyncCommandsDir, { recursive: true });
-  await mkdir(opencodeAgentStagingDir, { recursive: true });
+
+  const buildSupport: IBuildSupport = {
+    copyDirectoryWithTemplateVariables,
+    copyPathWithTemplateVariables,
+  };
 
   // Keep track of what we need to copy into the shared build inputs
   const masterSkills = new Set<string>();
@@ -629,7 +544,7 @@ async function buildUnifiedOutputs(
     if (!hasJson && !hasYaml) continue;
 
     console.log(`📦 Processing persona: ${profileName}`);
-    let manifest;
+    let manifest: IProfileManifest | null = null;
 
     // Support both .yaml and .json files natively using Bun
     const yamlPath = join(profileDir, "profile.yaml");
@@ -638,13 +553,22 @@ async function buildUnifiedOutputs(
     if (existsSync(yamlPath)) {
       // Bun natively parses YAML on dynamic import
       const module = await import(yamlPath);
-      manifest = module.default;
+      if (isProfileManifest(module.default)) {
+        manifest = module.default;
+      }
     } else if (existsSync(jsonPath)) {
       const manifestContent = await readFile(jsonPath, "utf-8");
-      manifest = JSON.parse(manifestContent);
+      const parsedManifest = JSON.parse(manifestContent);
+      if (isProfileManifest(parsedManifest)) {
+        manifest = parsedManifest;
+      }
     } else {
       console.warn(`   ⚠️ Skipping: Neither profile.yaml nor profile.json found.`);
       continue;
+    }
+
+    if (!manifest) {
+      throw new Error(`Profile manifest for ${profileName} must be a JSON/YAML object.`);
     }
 
     // Clean out old generated directories for this profile (for non-OpenCode targets)
@@ -686,7 +610,7 @@ async function buildUnifiedOutputs(
 
     // Generate isolated configurations for this profile. Shared unified targets are built in .output.
     try {
-      const isolatedTargets = getIsolatedTargets(configuredTargets);
+      const isolatedTargets = getIsolatedTargets(configuredTargets, unifiedTargets);
       if (isolatedTargets) {
         await $`bun run rulesync generate --targets=${isolatedTargets} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(profileDir).quiet();
 
@@ -708,54 +632,23 @@ async function buildUnifiedOutputs(
       }
     } catch (error) {}
 
-    // Generate the OpenCode Agent Markdown
-    // We restrict skill access to ONLY the skills defined in this profile
-    let agentMd = `---
-description: Auto-generated agent persona for the ${profileName} profile
-mode: primary
-`;
-
-    // 1. Inject tool toggles if defined in profile.json
-    if (manifest.tools && typeof manifest.tools === "object") {
-      agentMd += `tools:\n`;
-      for (const [toolName, isEnabled] of Object.entries(manifest.tools)) {
-        agentMd += `  ${toolName}: ${isEnabled}\n`;
+    for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
+      if (!unifiedHarnessPlugin.stageProfile) {
+        continue;
       }
+
+      await unifiedHarnessPlugin.stageProfile({
+        harnessDir: join(HARNESSES_DIR, unifiedHarnessPlugin.target),
+        profileName,
+        profileDir,
+        manifest,
+        matchedSkills,
+        matchedCommands,
+        outputDir,
+        templateContext: TEMPLATE_CONTEXT,
+        buildSupport,
+      });
     }
-
-    // 2. Inject permissions (start with skills)
-    agentMd += `permission:\n  skill:\n    "*": deny\n`;
-    for (const skill of matchedSkills) {
-      agentMd += `    "${skill}": allow\n`;
-    }
-
-    // 3. Inject any custom permissions defined in profile.json
-    if (manifest.permission && typeof manifest.permission === "object") {
-      for (const [permKey, permValue] of Object.entries(manifest.permission)) {
-        // Skip 'skill' since we already manage it tightly above
-        if (permKey === "skill") continue;
-
-        agentMd += `  ${permKey}:\n`;
-        if (typeof permValue === "object" && permValue !== null) {
-          for (const [pattern, action] of Object.entries(permValue)) {
-            agentMd += `    "${pattern}": ${action}\n`;
-          }
-        } else {
-          agentMd += `    "*": ${permValue}\n`;
-        }
-      }
-    }
-
-    agentMd += `---
-You are the **${profileName.toUpperCase()}** agent.
-
-${manifest.system_prompt ? manifest.system_prompt : 'You have been specifically configured with a subset of skills tailored for your role.'}
-
-Use your \`skill\` tool to load the domain knowledge you need.
-`;
-
-    // Stage the agent definition until the final OpenCode output exists
-    await writeFile(join(opencodeAgentStagingDir, `${profileName}.md`), agentMd);
   }
 
   // 3. Copy the unified sets into the rulesync cache
@@ -785,17 +678,17 @@ Use your \`skill\` tool to load the domain knowledge you need.
       await $`bun run rulesync generate --targets=${unifiedTargets.join(",")} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(outputDir).quiet();
     }
 
-    if (unifiedTargets.includes("opencode")) {
-      // Rename .opencode to opencode to match XDG standard for testing without symlinks
-      try {
-        await rename(join(outputDir, ".opencode"), join(outputDir, "opencode"));
-      } catch (error) {}
+    for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
+      if (!unifiedHarnessPlugin.finalizeOutput) {
+        continue;
+      }
 
-      // Copy the generated agents into the final opencode output directory manually
-      // rulesync generate currently doesn't process OpenCode agent personas out of the box
-      const opencodeAgentDir = join(outputDir, "opencode", "agent");
-      await mkdir(opencodeAgentDir, { recursive: true });
-      await $`cp ${opencodeAgentStagingDir}/*.md ${opencodeAgentDir}/`.quiet();
+      await unifiedHarnessPlugin.finalizeOutput({
+        harnessDir: join(HARNESSES_DIR, unifiedHarnessPlugin.target),
+        outputDir,
+        templateContext: TEMPLATE_CONTEXT,
+        buildSupport,
+      });
     }
 
     const generatedAgentsRulePath = join(outputDir, "AGENTS.md");
@@ -815,31 +708,6 @@ Use your \`skill\` tool to load the domain knowledge you need.
         await rename(generatedAgentsToolPath, join(agentsOutputDir, ".agents"));
       }
     }
-
-    if (unifiedTargets.includes("opencode")) {
-      // Look for global harness configuration files (e.g., opencode.jsonc) and inject them
-      const globalConfigPath = join(REGISTRY_DIR, "harnesses");
-      if (existsSync(globalConfigPath)) {
-        const harnessConfigs = await readdir(globalConfigPath, {
-          withFileTypes: true,
-        });
-        for (const configItem of harnessConfigs) {
-          // e.g. /harnesses/opencode/opencode.jsonc -> .output/opencode/opencode.jsonc
-          if (configItem.isDirectory()) {
-            const sourceHarnessFolder = join(globalConfigPath, configItem.name);
-            const targetHarnessFolder = join(outputDir, configItem.name);
-            if (existsSync(targetHarnessFolder)) {
-              await copyDirectoryWithTemplateVariables(
-                sourceHarnessFolder,
-                targetHarnessFolder,
-                TEMPLATE_CONTEXT,
-              );
-            }
-          }
-        }
-      }
-    }
-
     await applyTemplateVariablesToGeneratedOutput(
       outputDir,
       TEMPLATE_CONTEXT,
@@ -858,7 +726,6 @@ Use your \`skill\` tool to load the domain knowledge you need.
   } finally {
     // Keep the output limited to final harness outputs.
     await rm(rulesyncDir, { recursive: true, force: true });
-    await rm(opencodeAgentStagingDir, { recursive: true, force: true });
   }
 }
 
@@ -868,13 +735,16 @@ async function main() {
   const hasAutoConfirm = hasAutoConfirmFlag();
 
   const configuredTargets = getConfiguredTargets();
-  const unifiedTargets = getUnifiedTargets(configuredTargets);
+  const availableHarnessBuildTargets = await getAvailableHarnessBuildTargets();
+  const unifiedTargets = getUnifiedTargets(configuredTargets, availableHarnessBuildTargets);
+  const unifiedHarnessPlugins = await loadUnifiedHarnessPlugins(unifiedTargets);
 
   try {
     await buildUnifiedOutputs(
       GENERATED_OUTPUT_STAGING_DIR,
       configuredTargets,
       unifiedTargets,
+      unifiedHarnessPlugins,
     );
     await assertGeneratedOutputsAreSafeToReplace(
       GENERATED_OUTPUT_STAGING_DIR,

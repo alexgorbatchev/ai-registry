@@ -64,9 +64,10 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Add Harness Overrides
 
 - Put harness-specific shipped files in `{{repo_root}}/harnesses/<target>/`.
+- Put unified harness-specific build logic in `{{repo_root}}/harnesses/<target>/scripts/build.ts` when that harness needs custom output shaping beyond the shared root build flow.
 - Put repo-local vendored code packages that a harness references by file path in `{{repo_root}}/vendor/`.
 - Put shared harness guidance in `{{repo_root}}/harnesses/.common/` or `{{repo_root}}/harnesses/AGENTS.md`.
-- Only files under `{{repo_root}}/harnesses/<target>/` are copied into generated output for that harness.
+- Only files under `{{repo_root}}/harnesses/<target>/` are copied into generated output for that harness, subject to `.registry-ignore`.
 - Do not place repo-only notes inside `{{repo_root}}/harnesses/<target>/` unless they are intentionally meant to ship.
 - Prefer the harness's native configuration surface over local wrappers when the harness already supports the feature directly.
 - If a local file-based harness dependency needs installed runtime imports, vendor it under `{{repo_root}}/vendor/<name>/`, add it to the root Bun workspaces, and reference it from the harness config with `file://{{repo_root}}/...`.
@@ -95,6 +96,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Build And Generated Output
 
 - The local build entrypoint is `{{repo_root}}/scripts/build.ts`.
+- Unified harness plugins are discovered from `{{repo_root}}/harnesses/<target>/scripts/build.ts`.
 - Generated outputs are written under `{{repo_root}}/.output/`.
 - Verify generated files that match the change, especially:
   - `{{repo_root}}/.output/opencode/`

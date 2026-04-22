@@ -8,7 +8,7 @@ This repository serves as a canonical registry for my AI tooling. It keeps reusa
 The reusable source-of-truth layer.
 - **`/skills`**: Domain-specific AI skills. Each skill lives in its own folder with a `SKILL.md`. This directory is also the repo's install surface for `npx skills`.
 - **`/commands`**: Reusable slash commands, system prompts, and task blueprints.
-- **`/harnesses`**: Harness-specific config overrides plus repo-local harness maintenance guidance. Only files inside `harnesses/<target>/` are injected into generated outputs for that target.
+- **`/harnesses`**: Harness-specific config overrides, optional unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic can live under `harnesses/<target>/scripts/` when excluded via `.registry-ignore`.
 - **`/vendor`**: Third-party code packages vendored into this repo as Bun workspaces when a harness needs a repo-local file path with installed runtime dependencies.
 - **`/packages`**: Publishable repo-local packages distributed independently from the generated harness outputs.
 - **`/packages/opencode-session-analysis`**: Bun CLI package for OpenCode session reporting.
@@ -29,6 +29,8 @@ The final generated harness artifacts. This directory is rebuilt from source and
 
 This repository includes a custom local compiler (`scripts/build.ts`) that resolves the profiles and builds configurations for various agent harnesses using `rulesync` under the hood.
 
+Harnesses that need extra output shaping can expose a plugin entrypoint at `harnesses/<target>/scripts/build.ts`. The root build discovers those plugins dynamically for unified targets and lets them stage per-profile artifacts plus finalize the generated harness output after `rulesync` runs.
+
 Generated output files may use a small set of build-time template variables. `bun run build` now scans generated text outputs recursively and replaces known variables wherever they appear. Unknown variables fail the build. Example: `&#123;&#123;repo_root&#125;&#125;`. Current variables:
 
 - `{{repo_root}}`
@@ -37,7 +39,7 @@ Generated output files may use a small set of build-time template variables. `bu
 - `{{profiles_dir}}`
 - `{{output_dir}}`
 
-When the build stages files from `skills/`, `commands/`, or `harnesses/<target>/`, it also honors nested `.registry-ignore` files using `.gitignore`-style matching. Use those files to keep repo-local scratch assets or other non-shipping files out of generated outputs.
+When the build stages files from `skills/`, `commands/`, or `harnesses/<target>/`, it also honors nested `.registry-ignore` files using `.gitignore`-style matching. Use those files to keep repo-local scratch assets, harness build scripts, or other non-shipping files out of generated outputs.
 
 When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/scripts/...`.
 
@@ -119,7 +121,7 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
-- `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files.
+- `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/scripts/build.ts`.
 - `.output/agents`: `AGENTS.md` plus the generated `.agents/` directory for AGENTS.md-compatible tooling.
 - `.output/manifest.json`: SHA-256 manifest for the generated files. The next `bun run build` checks it before deleting `.output/` so externally edited generated files are not overwritten silently.
 

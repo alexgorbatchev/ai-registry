@@ -18,6 +18,7 @@
     "skills:update": "bun run scripts/updateVendoredSkills.ts && bun run build"
   },
   "dependencies": {
+    "@alexgorbatchev/dedent-string": "^1.0.1",
     "@types/ignore-walk": "^4.0.3",
     "globby": "^16.1.1",
     "ignore-walk": "^8.0.0",

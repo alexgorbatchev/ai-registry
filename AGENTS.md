@@ -12,10 +12,11 @@ This repository manages reusable AI skills and commands plus the configurations 
   - **Self-Contained Logic**: Each skill or command must be self-contained. Do not assume other skills are present.
 - **The Harnesses (`harnesses/`)**:
   - Global configuration overrides for specific tools (e.g., `harnesses/opencode/opencode.jsonc`).
+  - Unified harnesses can also provide repo-local build plugins at `harnesses/<target>/scripts/build.ts`; `scripts/build.ts` discovers and imports those plugins dynamically.
   - When a task says to change OpenCode config "in ai-registry", edit the checked-in source file under `harnesses/opencode/`, not the machine-local installed config under `~/.config/opencode/`.
   - The checked-in OpenCode docs snapshot lives under `harnesses/opencode/docs/`; refresh it with `bun run sync:opencode-docs`, which runs `harnesses/opencode/scripts/sync-docs.ts`.
   - Repository-local harness maintenance guidance belongs in `harnesses/AGENTS.md`.
-  - Only files inside `harnesses/<target>/` are injected directly into the matching target output directories during the build process.
+  - Only files inside `harnesses/<target>/` are injected directly into the matching target output directories during the build process, subject to `.registry-ignore` rules.
 - **Standalone Packages (`packages/<package-name>/`)**:
   - Publishable repo-local packages that are distributed independently from generated harness outputs live under `packages/`.
   - Add each standalone package to the root `package.json` workspaces so `bun install` manages it consistently.
@@ -35,6 +36,7 @@ This repository manages reusable AI skills and commands plus the configurations 
 ## Architecture & Build Process
 This repository uses a custom build script (`scripts/build.ts`) to locally compile the registry into ready-to-use configurations for various agent harnesses (OpenCode, Cursor, Pi, etc.).
 - **Unified Outputs:** The script generates final unified outputs in `.output/` for supported shared targets. Today that includes `.output/opencode` for OpenCode and `.output/agents` for the AGENTS.md target. Intermediate rulesync inputs are cleaned up after the build so `.output` only contains final generated outputs.
+- **Harness Plugins:** A unified harness can keep target-specific output shaping in `harnesses/<target>/scripts/build.ts`. The root build discovers those plugins dynamically, runs a per-profile staging hook before unified `rulesync`, then runs a finalize hook after `rulesync` to produce the harness's final file layout.
 - **Generated Output Manifest:** Each successful unified build also writes `.output/manifest.json` with SHA-256 checksums for the generated files. Before replacing `.output/` on the next run, the build verifies that manifest and stops for confirmation if any managed generated file drifted externally.
 - **Other Targets:** The script simultaneously generates isolated cache directories inside each profile folder (e.g., `profiles/designer/.agents/`) for tools that don't support native agent switching. These isolated outputs are controlled by `RULESYNC_TARGETS`; `opencode` and `agentsmd` are produced in `.output/` instead.
 - **Source Tree Ignores:** When the build stages files from `skills/`, `commands/`, and `harnesses/<target>/`, it honors nested `.registry-ignore` files with `.gitignore`-style matching so repo-local scratch files can stay out of generated outputs.

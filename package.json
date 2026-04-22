@@ -11,12 +11,12 @@
     "build": "bun run typecheck && bun run scripts/build.ts",
     "bootstrap": "bun run scripts/bootstrap.ts",
     "bootstrap:smoke": "bun run scripts/smoke-bootstrap.ts",
-    "prepare": "bun run scripts/installGitHooks.ts",
+    "prepare": "bun run scripts/install-git-hooks.ts",
     "typecheck": "tsgo -p tsconfig.json",
     "sync:opencode-docs": "bun run harnesses/opencode/scripts/sync-docs.ts",
-    "skills:add": "bun run scripts/addVendoredSkill.ts",
+    "skills:add": "bun run scripts/add-vendored-skill.ts",
     "skills:list": "npx skills add . --list",
-    "skills:update": "bun run scripts/updateVendoredSkills.ts && bun run build"
+    "skills:update": "bun run scripts/update-vendored-skills.ts && bun run build"
   },
   "dependencies": {
     "@alexgorbatchev/dedent-string": "^1.0.1",

@@ -8,7 +8,7 @@ This directory contains downloaded official prompt-writing and context-engineeri
 
 ## Regenerate
 
-- Run `bun wiki/prompt-writing/scripts/downloadPromptWriting.ts`.
+- Run `bun wiki/prompt-writing/scripts/download-prompt-writing.ts`.
 
 ## Inclusion criteria
 

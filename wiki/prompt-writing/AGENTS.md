@@ -9,12 +9,12 @@ This directory stores a generated corpus of official prompt-writing and context-
 
 ## Commands
 
-- Regenerate corpus: `bun wiki/prompt-writing/scripts/downloadPromptWriting.ts`
+- Regenerate corpus: `bun wiki/prompt-writing/scripts/download-prompt-writing.ts`
 - Inspect changed files: `git status --short wiki/prompt-writing`
 
 ## Local Conventions
 
-- Treat provider article files and `README.md` as generated output from `wiki/prompt-writing/scripts/downloadPromptWriting.ts`.
+- Treat provider article files and `README.md` as generated output from `wiki/prompt-writing/scripts/download-prompt-writing.ts`.
 - Parent `wiki/AGENTS.md` still applies: generated article files must include `created_on` and `source_url` when available.
 - Omit `author` on script-generated pages; keep it on hand-written docs in this subtree.
 - Keep `published` truthful. If a source does not expose a trustworthy publish date, leave `published: "unavailable"` and preserve the official metadata in `date_status` and `source_date`.
@@ -29,4 +29,4 @@ This directory stores a generated corpus of official prompt-writing and context-
 
 - `wiki/AGENTS.md`
 - `wiki/prompt-writing/README.md`
-- `wiki/prompt-writing/scripts/downloadPromptWriting.ts`
+- `wiki/prompt-writing/scripts/download-prompt-writing.ts`

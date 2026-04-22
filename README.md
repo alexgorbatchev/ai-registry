@@ -22,6 +22,8 @@ The assembled agents. These folders contain `profile.yaml` manifests that cherry
 ### 3. Setup (`bun run bootstrap`)
 `bun run bootstrap` is the repo-local clone-and-run entrypoint for this repository.
 
+Root script entrypoints live directly under `scripts/` and use dash-based filenames. Helper modules that are imported by those entrypoints and are not intended to be executed directly belong under `scripts/lib/`.
+
 ### 4. Generated Outputs (`/.output`)
 The final generated harness artifacts. This directory is rebuilt from source and should only contain consumable outputs.
 
@@ -111,7 +113,7 @@ When you vendor or update external skills:
 
 - commit both `skills/<name>/` and `skills-lock.json`
 - use `bun run skills:update` to refresh all vendored external skills safely
-- use `bun run scripts/updateVendoredSkills.ts <name>` to refresh only one vendored skill
+- use `bun run scripts/update-vendored-skills.ts <name>` to refresh only one vendored skill
 - run `bun run build` afterward so generated outputs stay current
 
 Avoid plain `npx skills update` in this repo. The upstream project-update flow does not preserve the `openclaw --copy` target and may create extra agent directories such as `.claude/` or `.pi/`.

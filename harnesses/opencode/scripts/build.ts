@@ -28,7 +28,7 @@ import type {
   IProfileBuildContext,
   IUnifiedHarnessBuildContext,
   IUnifiedHarnessPlugin,
-} from "../../../scripts/harnessBuild";
+} from "../../../scripts/lib/harnessBuild";
 
 const AGENT_STAGING_DIR_NAME = ".opencode-agents";
 const COMMAND_STAGING_DIR_NAME = ".opencode-commands";

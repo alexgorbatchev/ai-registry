@@ -1,6 +1,4 @@
-skills:
-  - agentic-workflow
-  - golang
-  - typescript-code-quality
-  - typescript-testing
-commands: []
+description: 'Primary engineer agent'
+skills: ['*']
+commands: ['*']
+system_prompt: '{{ include "system/system.md" }}'

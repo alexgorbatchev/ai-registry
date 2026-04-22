@@ -67,7 +67,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Put harness-specific shipped files in `{{repo_root}}/harnesses/<target>/`.
 - Put unified harness-specific build logic in `{{repo_root}}/harnesses/<target>/scripts/build.ts` when that harness needs custom output shaping beyond the shared root build flow.
 - Put repo-local vendored code packages that a harness references by file path in `{{repo_root}}/vendor/`.
-- Put shared harness guidance in `{{repo_root}}/harnesses/.common/` or `{{repo_root}}/harnesses/AGENTS.md`.
+- Put shared repo-level system guidance in `{{repo_root}}/system/` and harness-specific guidance in `{{repo_root}}/harnesses/AGENTS.md` or the relevant `{{repo_root}}/harnesses/<target>/` directory.
 - Only files under `{{repo_root}}/harnesses/<target>/` are copied into generated output for that harness, subject to `.registry-ignore`.
 - Do not place repo-only notes inside `{{repo_root}}/harnesses/<target>/` unless they are intentionally meant to ship.
 - Prefer the harness's native configuration surface over local wrappers when the harness already supports the feature directly.
@@ -118,6 +118,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Add harness-specific shipped config: `{{repo_root}}/harnesses/<target>/...`
 - Add a publishable standalone package: `{{repo_root}}/packages/<package-name>/`
 - Add a vendored third-party code package for a harness: `{{repo_root}}/vendor/<name>/`
-- Add shared harness guidance: `{{repo_root}}/harnesses/.common/...` or `{{repo_root}}/harnesses/AGENTS.md`
+- Add shared system guidance: `{{repo_root}}/system/...`
+- Add shared harness guidance: `{{repo_root}}/harnesses/AGENTS.md`
 - Add or update a vendored third-party skill: `{{repo_root}}/skills/<skill-name>/` plus `{{repo_root}}/skills-lock.json`
 - OpenCode configuration file: `{{repo_root}}/harnesses/opencode/opencode.jsonc`

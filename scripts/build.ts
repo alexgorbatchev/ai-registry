@@ -1,4 +1,3 @@
-import { $ } from "bun";
 import { createHash } from "crypto";
 import {
   mkdir,
@@ -31,9 +30,7 @@ const SKILLS_DIR = join(REGISTRY_DIR, "skills");
 const COMMANDS_DIR = join(REGISTRY_DIR, "commands");
 const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
 
-// We now build unified final outputs into a single directory
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
-const STATIC_UNIFIED_TARGETS = new Set(["agentsmd"]);
 const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
 const LEGACY_GENERATED_OUTPUT_MANIFEST_NAME = ".generated-output-manifest.json";
 const GENERATED_OUTPUT_MANIFEST_PATH = join(
@@ -81,42 +78,6 @@ const AUTO_CONFIRM_FLAGS = new Set(["-y", "--yes"]);
 
 function hasAutoConfirmFlag(): boolean {
   return process.argv.some((argument) => AUTO_CONFIRM_FLAGS.has(argument));
-}
-
-function getConfiguredTargets(): string[] {
-  return (process.env.RULESYNC_TARGETS || "opencode,agentsmd")
-    .split(",")
-    .map((target) => target.trim())
-    .filter(Boolean);
-}
-
-function getUnifiedTargets(
-  configuredTargets: string[],
-  availableHarnessBuildTargets: string[],
-): string[] {
-  const unifiedTargets = new Set<string>(availableHarnessBuildTargets);
-  for (const target of STATIC_UNIFIED_TARGETS) {
-    unifiedTargets.add(target);
-  }
-
-  if (configuredTargets.includes("*")) {
-    return Array.from(unifiedTargets);
-  }
-
-  return configuredTargets.filter((target) => unifiedTargets.has(target));
-}
-
-function getIsolatedTargets(configuredTargets: string[], unifiedTargets: string[]): string {
-  if (configuredTargets.includes("*")) {
-    return "*";
-  }
-
-  const unifiedTargetSet = new Set(unifiedTargets);
-  return configuredTargets.filter((target) => !unifiedTargetSet.has(target)).join(",");
-}
-
-function hasStderr(error: unknown): error is { stderr: { toString(): string } } {
-  return typeof error === "object" && error !== null && "stderr" in error;
 }
 
 function getObjectValue(object: object, key: string): unknown {
@@ -504,40 +465,24 @@ async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> 
 
 async function buildUnifiedOutputs(
   outputDir: string,
-  configuredTargets: string[],
-  unifiedTargets: string[],
   unifiedHarnessPlugins: IUnifiedHarnessPlugin[],
 ): Promise<void> {
-  // 1. Prepare the unified target directory
   await rm(outputDir, { recursive: true, force: true });
   await mkdir(outputDir, { recursive: true });
-
-  const rulesyncDir = join(outputDir, ".rulesync");
-  const rulesyncSkillsDir = join(rulesyncDir, "skills");
-  const rulesyncCommandsDir = join(rulesyncDir, "commands");
-
-  await mkdir(rulesyncSkillsDir, { recursive: true });
-  await mkdir(rulesyncCommandsDir, { recursive: true });
 
   const buildSupport: IBuildSupport = {
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
   };
 
-  // Keep track of what we need to copy into the shared build inputs
-  const masterSkills = new Set<string>();
-  const masterCommands = new Set<string>();
-
   const profiles = await readdir(PROFILES_DIR, { withFileTypes: true });
 
-  // We need to keep generating isolated .rulesync directories per-profile for legacy/other tools like Pi
   for (const dirent of profiles) {
     if (!dirent.isDirectory()) continue;
 
     const profileName = dirent.name;
     const profileDir = join(PROFILES_DIR, profileName);
 
-    // Check for either json or yaml
     const hasJson = existsSync(join(profileDir, "profile.json"));
     const hasYaml = existsSync(join(profileDir, "profile.yaml"));
 
@@ -546,12 +491,10 @@ async function buildUnifiedOutputs(
     console.log(`📦 Processing persona: ${profileName}`);
     let manifest: IProfileManifest | null = null;
 
-    // Support both .yaml and .json files natively using Bun
     const yamlPath = join(profileDir, "profile.yaml");
     const jsonPath = join(profileDir, "profile.json");
 
     if (existsSync(yamlPath)) {
-      // Bun natively parses YAML on dynamic import
       const module = await import(yamlPath);
       if (isProfileManifest(module.default)) {
         manifest = module.default;
@@ -571,66 +514,8 @@ async function buildUnifiedOutputs(
       throw new Error(`Profile manifest for ${profileName} must be a JSON/YAML object.`);
     }
 
-    // Clean out old generated directories for this profile (for non-OpenCode targets)
-    const items = await readdir(profileDir, { withFileTypes: true });
-    for (const item of items) {
-      if (item.isDirectory() && item.name.startsWith('.') && item.name !== '.rulesync') {
-        await rm(join(profileDir, item.name), { recursive: true, force: true });
-      }
-    }
-
-    // Ensure we still build isolated outputs for legacy targets like Pi
-    const legacyRulesyncDir = join(profileDir, ".rulesync");
-    await rm(legacyRulesyncDir, { recursive: true, force: true });
-    await mkdir(join(legacyRulesyncDir, "skills"), { recursive: true });
-    await mkdir(join(legacyRulesyncDir, "commands"), { recursive: true });
-
-    // Resolve skills and commands for THIS profile
     const matchedSkills = manifest.skills ? await resolveGlobs(manifest.skills, SKILLS_DIR) : [];
     const matchedCommands = manifest.commands ? await resolveGlobs(manifest.commands, COMMANDS_DIR) : [];
-
-    // Add them to the master sets AND the legacy isolated profile folders
-    for (const skill of matchedSkills) {
-      masterSkills.add(skill);
-      await copyDirectoryWithTemplateVariables(
-        join(SKILLS_DIR, skill),
-        join(legacyRulesyncDir, "skills", skill),
-        TEMPLATE_CONTEXT,
-      );
-    }
-
-    for (const cmd of matchedCommands) {
-      masterCommands.add(cmd);
-      await copyPathWithTemplateVariables(
-        join(COMMANDS_DIR, cmd),
-        join(legacyRulesyncDir, "commands", cmd),
-        TEMPLATE_CONTEXT,
-      );
-    }
-
-    // Generate isolated configurations for this profile. Shared unified targets are built in .output.
-    try {
-      const isolatedTargets = getIsolatedTargets(configuredTargets, unifiedTargets);
-      if (isolatedTargets) {
-        await $`bun run rulesync generate --targets=${isolatedTargets} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(profileDir).quiet();
-
-        const generatedProfileOutputs = await readdir(profileDir, {
-          withFileTypes: true,
-        });
-        for (const item of generatedProfileOutputs) {
-          if (
-            item.isDirectory() &&
-            item.name.startsWith(".") &&
-            item.name !== ".rulesync"
-          ) {
-            await applyTemplateVariablesToGeneratedOutput(
-              join(profileDir, item.name),
-              TEMPLATE_CONTEXT,
-            );
-          }
-        }
-      }
-    } catch (error) {}
 
     for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
       if (!unifiedHarnessPlugin.stageProfile) {
@@ -651,82 +536,22 @@ async function buildUnifiedOutputs(
     }
   }
 
-  // 3. Copy the unified sets into the rulesync cache
-  console.log("\n📚 Assembling shared assets...");
-  for (const skill of masterSkills) {
-    const sourcePath = join(SKILLS_DIR, skill);
-    await copyDirectoryWithTemplateVariables(
-      sourcePath,
-      join(rulesyncSkillsDir, skill),
-      TEMPLATE_CONTEXT,
-    );
-  }
-
-  for (const cmd of masterCommands) {
-    const sourcePath = join(COMMANDS_DIR, cmd);
-    await copyPathWithTemplateVariables(
-      sourcePath,
-      join(rulesyncCommandsDir, cmd),
-      TEMPLATE_CONTEXT,
-    );
-  }
-
-  // 4. Run rulesync generate ONCE on the unified directory
-  console.log(`\n⚙️  Running rulesync compiler...`);
-  try {
-    if (unifiedTargets.length > 0) {
-      await $`bun run rulesync generate --targets=${unifiedTargets.join(",")} --features='*' --simulate-skills --simulate-commands --simulate-subagents`.cwd(outputDir).quiet();
+  console.log("\n🧩 Finalizing harness outputs...");
+  for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
+    if (!unifiedHarnessPlugin.finalizeOutput) {
+      continue;
     }
 
-    for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
-      if (!unifiedHarnessPlugin.finalizeOutput) {
-        continue;
-      }
-
-      await unifiedHarnessPlugin.finalizeOutput({
-        harnessDir: join(HARNESSES_DIR, unifiedHarnessPlugin.target),
-        outputDir,
-        templateContext: TEMPLATE_CONTEXT,
-        buildSupport,
-      });
-    }
-
-    const generatedAgentsRulePath = join(outputDir, "AGENTS.md");
-    const generatedAgentsToolPath = join(outputDir, ".agents");
-    const sourceAgentsRulePath = join(REGISTRY_DIR, "AGENTS.md");
-    if (unifiedTargets.includes("agentsmd") && (existsSync(generatedAgentsRulePath) || existsSync(generatedAgentsToolPath) || existsSync(sourceAgentsRulePath))) {
-      const agentsOutputDir = join(outputDir, "agents");
-      await mkdir(agentsOutputDir, { recursive: true });
-
-      if (existsSync(generatedAgentsRulePath)) {
-        await rename(generatedAgentsRulePath, join(agentsOutputDir, "AGENTS.md"));
-      } else if (existsSync(sourceAgentsRulePath)) {
-        await writeFile(join(agentsOutputDir, "AGENTS.md"), await readFile(sourceAgentsRulePath, "utf-8"));
-      }
-
-      if (existsSync(generatedAgentsToolPath)) {
-        await rename(generatedAgentsToolPath, join(agentsOutputDir, ".agents"));
-      }
-    }
-    await applyTemplateVariablesToGeneratedOutput(
+    await unifiedHarnessPlugin.finalizeOutput({
+      harnessDir: join(HARNESSES_DIR, unifiedHarnessPlugin.target),
       outputDir,
-      TEMPLATE_CONTEXT,
-    );
-    console.log(`   ✅ Successfully compiled unified outputs!`);
-  } catch (error) {
-    console.error(`   ❌ Failed to compile:`);
-    if (hasStderr(error) && error.stderr.toString().trim()) {
-      console.error(error.stderr.toString());
-    } else if (error instanceof Error) {
-      console.error(error.message);
-    } else {
-      console.error(String(error));
-    }
-    throw error;
-  } finally {
-    // Keep the output limited to final harness outputs.
-    await rm(rulesyncDir, { recursive: true, force: true });
+      templateContext: TEMPLATE_CONTEXT,
+      buildSupport,
+    });
   }
+
+  await applyTemplateVariablesToGeneratedOutput(outputDir, TEMPLATE_CONTEXT);
+  console.log("   ✅ Successfully compiled unified outputs!");
 }
 
 async function main() {
@@ -734,16 +559,12 @@ async function main() {
 
   const hasAutoConfirm = hasAutoConfirmFlag();
 
-  const configuredTargets = getConfiguredTargets();
   const availableHarnessBuildTargets = await getAvailableHarnessBuildTargets();
-  const unifiedTargets = getUnifiedTargets(configuredTargets, availableHarnessBuildTargets);
-  const unifiedHarnessPlugins = await loadUnifiedHarnessPlugins(unifiedTargets);
+  const unifiedHarnessPlugins = await loadUnifiedHarnessPlugins(availableHarnessBuildTargets);
 
   try {
     await buildUnifiedOutputs(
       GENERATED_OUTPUT_STAGING_DIR,
-      configuredTargets,
-      unifiedTargets,
       unifiedHarnessPlugins,
     );
     await assertGeneratedOutputsAreSafeToReplace(
@@ -764,10 +585,6 @@ async function main() {
   console.log("To apply the generated outputs to your machine, run:");
   console.log("  bun run bootstrap\n");
   console.log("Once activated, you can open OpenCode and use the Tab key to switch between your profiles!");
-  
-  console.log("\n🥧 For Pi and other tools:");
-  console.log("Isolated profile directories are still generated. Symlink them normally:");
-  console.log("  ln -sfn ~/.dotfiles/ai-registry/profiles/designer/.agents ~/.dotfiles/tools/pi/config/skills");
 }
 
 main().catch((error) => {

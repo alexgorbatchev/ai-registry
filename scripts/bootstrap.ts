@@ -27,19 +27,6 @@ function getTimestamp(): string {
   return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
 
-function getBuildTargets(): string {
-  const configuredTargets = (process.env.RULESYNC_TARGETS || "")
-    .split(",")
-    .map((target) => target.trim())
-    .filter(Boolean);
-
-  if (configuredTargets.includes("*")) {
-    return "*";
-  }
-
-  return Array.from(new Set([...configuredTargets, "opencode", "agentsmd"])).join(",");
-}
-
 function hasAutoConfirmFlag(): boolean {
   return process.argv.includes("-y") || process.argv.includes("--yes");
 }
@@ -122,20 +109,12 @@ async function applyTarget(target: IBootstrapTarget): Promise<IApplyResult> {
 async function main(): Promise<void> {
   console.log("🚀 Bootstrapping ai-registry...\n");
 
-  const buildTargets = getBuildTargets();
-
   console.log("Installing dependencies...");
   await $`bun install`.cwd(REGISTRY_DIR);
 
   console.log("Building generated outputs...");
   const buildCommand = hasAutoConfirmFlag() ? $`bun run build -- -y` : $`bun run build`;
-
-  await buildCommand
-    .cwd(REGISTRY_DIR)
-    .env({
-      ...process.env,
-      RULESYNC_TARGETS: buildTargets,
-    });
+  await buildCommand.cwd(REGISTRY_DIR);
 
   const bootstrapTargets = getBootstrapTargets();
 

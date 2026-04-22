@@ -100,7 +100,6 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Generated outputs are written under `{{repo_root}}/.output/`.
 - Verify generated files that match the change, especially:
   - `{{repo_root}}/.output/opencode/`
-  - `{{repo_root}}/.output/agents/`
   - `{{repo_root}}/.output/manifest.json`
 - Never move source-of-truth edits into `{{repo_root}}/.output/`; rebuild instead.
 

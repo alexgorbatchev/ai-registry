@@ -27,9 +27,9 @@ The final generated harness artifacts. This directory is rebuilt from source and
 
 ## Building and Usage
 
-This repository includes a custom local compiler (`scripts/build.ts`) that resolves the profiles and builds configurations for various agent harnesses using `rulesync` under the hood.
+This repository includes a custom local compiler (`scripts/build.ts`) that resolves the profiles and builds generated harness outputs directly from the checked-in source tree.
 
-Harnesses that need extra output shaping can expose a plugin entrypoint at `harnesses/<target>/scripts/build.ts`. The root build discovers those plugins dynamically for unified targets and lets them stage per-profile artifacts plus finalize the generated harness output after `rulesync` runs.
+Harnesses that need extra output shaping can expose a plugin entrypoint at `harnesses/<target>/scripts/build.ts`. The root build discovers those plugins dynamically and lets them stage per-profile artifacts plus finalize the generated harness output.
 
 Generated output files may use a small set of build-time template variables. `bun run build` now scans generated text outputs recursively and replaces known variables wherever they appear. Unknown variables fail the build. Example: `&#123;&#123;repo_root&#125;&#125;`. Current variables:
 
@@ -63,7 +63,6 @@ That command:
 - builds the generated outputs
 - verifies the previous generated-output manifest before replacing `.output/`
 - stops for confirmation when generated files drift from the last manifest, with `no` as the default; use `bun run build -- -y` or `bun run bootstrap -- -y` to auto-confirm
-- preserves any extra `RULESYNC_TARGETS` targets while always generating `opencode` and `agentsmd`
 - links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
 - backs up any existing conflicting target directories before replacing them
 
@@ -76,7 +75,7 @@ bun install
 bun run build
 ```
 
-*Use `.env` `RULESYNC_TARGETS` to choose generated outputs. `opencode` is written to `.output/opencode`, `agentsmd` is written to `.output/agents`, and other targets are generated inside each profile folder.*
+*Generated outputs are discovered from the checked-in harness build plugins under `harnesses/<target>/scripts/build.ts`. Today that produces `.output/opencode`.*
 
 ### Installing a Skill with `npx skills`
 
@@ -122,10 +121,9 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
 - `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/scripts/build.ts`.
-- `.output/agents`: `AGENTS.md` plus the generated `.agents/` directory for AGENTS.md-compatible tooling.
 - `.output/manifest.json`: SHA-256 manifest for the generated files. The next `bun run build` checks it before deleting `.output/` so externally edited generated files are not overwritten silently.
 
-Intermediate rulesync inputs are cleaned up after the build, so `.output` only contains final generated outputs.
+The build writes only final generated outputs into `.output/`.
 
 For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://{{repo_root}}/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.
 
@@ -140,11 +138,6 @@ Treat `.tmp/bootstrap-smoke/` as a fake `HOME`, with a fresh repo copy staged at
 
 Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch between your `designer`, `developer`, and `default` personas on the fly.
 
-### Using with Pi, Cursor, and Claude Code
+### Other Harnesses
 
-For tools that require isolated configurations, the build script generates the required files (e.g. `.agents/`, `.cursor/`) directly inside the respective profile folder. 
-
-To activate one of these profiles, symlink the target output:
-```bash
-ln -sfn ~/.dotfiles/ai-registry/profiles/designer/.agents ~/.dotfiles/tools/pi/config/skills
-```
+Add other generated harness outputs by putting the source of truth under `harnesses/<target>/` and, when needed, a build plugin at `harnesses/<target>/scripts/build.ts`.

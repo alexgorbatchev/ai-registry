@@ -86,9 +86,51 @@ async function getSourceCopyEntries(sourceDir: string): Promise<string[]> {
     includeEmpty: true,
   });
 
+  const supplementalIgnorePrefixes = await getSupplementalIgnorePrefixes(sourceDir);
+
   return entries
     .map((entry) => normalizeRelativePath(entry))
-    .filter((entry) => entry.length > 0 && !shouldIgnoreSourceCopyPath(entry));
+    .filter((entry) => entry.length > 0 && !shouldIgnoreSourceCopyPath(entry))
+    .filter((entry) => !isIgnoredBySupplementalPrefixes(entry, supplementalIgnorePrefixes));
+}
+
+async function getSupplementalIgnorePrefixes(
+  sourceDir: string,
+  currentDir: string = sourceDir,
+): Promise<string[]> {
+  const prefixes: string[] = [];
+  const ignoreFilePath = join(currentDir, REGISTRY_IGNORE_FILE_NAME);
+
+  if (existsSync(ignoreFilePath)) {
+    const relativeBaseDir = normalizeRelativePath(currentDir.slice(sourceDir.length + 1));
+    const ignoreFileContent = await readFile(ignoreFilePath, "utf-8");
+    for (const rawLine of ignoreFileContent.split("\n")) {
+      const line = rawLine.trim();
+      if (!line.startsWith("./")) {
+        continue;
+      }
+
+      const normalizedPrefix = normalizeRelativePath(join(relativeBaseDir, line.slice(2))).replace(/\/$/, "");
+      if (normalizedPrefix.length > 0) {
+        prefixes.push(normalizedPrefix);
+      }
+    }
+  }
+
+  const entries = await readdir(currentDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith(".") || GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(entry.name)) {
+      continue;
+    }
+
+    prefixes.push(...await getSupplementalIgnorePrefixes(sourceDir, join(currentDir, entry.name)));
+  }
+
+  return prefixes;
+}
+
+function isIgnoredBySupplementalPrefixes(relativePath: string, prefixes: string[]): boolean {
+  return prefixes.some((prefix) => relativePath === prefix || relativePath.startsWith(`${prefix}/`));
 }
 
 function applyTemplateVariables(

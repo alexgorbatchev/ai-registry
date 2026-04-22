@@ -8,10 +8,11 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "bun run scripts/build.ts",
+    "build": "bun run typecheck && bun run scripts/build.ts",
     "bootstrap": "bun run scripts/bootstrap.ts",
     "bootstrap:smoke": "bun run scripts/smoke-bootstrap.ts",
     "prepare": "bun run scripts/installGitHooks.ts",
+    "typecheck": "tsgo -p tsconfig.typecheck.json",
     "sync:opencode-docs": "bun run harnesses/opencode/scripts/sync-docs.ts",
     "skills:add": "bun run scripts/addVendoredSkill.ts",
     "skills:list": "npx skills add . --list",
@@ -23,5 +24,9 @@
     "globby": "^16.1.1",
     "ignore-walk": "^8.0.0",
     "rulesync": "^7.28.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.12",
+    "@typescript/native-preview": "^7.0.0-dev.20260422.1"
   }
 }

@@ -17,6 +17,10 @@ interface ValidationResult {
   message: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export async function validateSkill(skillPath: string): Promise<ValidationResult> {
   const skillMdPath = `${skillPath}/SKILL.md`;
   const file = Bun.file(skillMdPath);
@@ -44,11 +48,7 @@ export async function validateSkill(skillPath: string): Promise<ValidationResult
   let frontmatter: Record<string, unknown>;
   try {
     const parsedFrontmatter = Bun.YAML.parse(frontmatterText);
-    if (
-      typeof parsedFrontmatter !== 'object' ||
-      parsedFrontmatter === null ||
-      Array.isArray(parsedFrontmatter)
-    ) {
+    if (!isRecord(parsedFrontmatter)) {
       return { valid: false, message: 'Frontmatter must be a YAML dictionary' };
     }
     frontmatter = parsedFrontmatter;
@@ -67,8 +67,8 @@ export async function validateSkill(skillPath: string): Promise<ValidationResult
     return {
       valid: false,
       message: `Unexpected key(s) in SKILL.md frontmatter: ${
-        unexpectedKeys.toSorted().join(', ')
-      }. Allowed properties are: ${[...ALLOWED_PROPERTIES].toSorted().join(', ')}`,
+        [...unexpectedKeys].sort().join(', ')
+      }. Allowed properties are: ${[...ALLOWED_PROPERTIES].sort().join(', ')}`,
     };
   }
 

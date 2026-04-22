@@ -29,6 +29,9 @@ This repository manages reusable AI skills and commands plus the configurations 
 - **The Profiles (`profiles/`)**:
   - Contains directories (e.g., `designer`, `developer`) with `profile.yaml` (or `profile.json`) manifests.
   - Manifests declare which skills and commands to include (supports globbing, e.g., `*`, `react-*`).
+  - Profiles may also define top-level local assets at `profiles/<name>/commands/*.md` and `profiles/<name>/skills/<skill-name>/SKILL.md`.
+  - Profile-local OpenCode commands are emitted as namespaced shared commands named `--<profile>-<filename>.md`.
+  - Profile-local skills keep their normal names and must not collide with global skills or another profile's local skills.
   - Manifests can explicitly toggle native harness tools (e.g., `bash: false`) and inject custom tool-level permissions.
   - Manifests can define a custom `system_prompt` to give the agent specific baseline instructions.
 - **External Skill Lock (`skills-lock.json`)**:

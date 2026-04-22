@@ -22,6 +22,7 @@ import {
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
 } from "./lib/harnessBuild";
+import { discoverProfileLocalAssets } from "./lib/discoverProfileLocalAssets";
 
 // Resolve paths relative to the ai-registry root
 const REGISTRY_DIR = resolve(import.meta.dir, "..");
@@ -514,8 +515,11 @@ async function buildUnifiedOutputs(
       throw new Error(`Profile manifest for ${profileName} must be a JSON/YAML object.`);
     }
 
-    const matchedSkills = manifest.skills ? await resolveGlobs(manifest.skills, SKILLS_DIR) : [];
-    const matchedCommands = manifest.commands ? await resolveGlobs(manifest.commands, COMMANDS_DIR) : [];
+    const [globalMatchedSkills, globalMatchedCommands, localAssets] = await Promise.all([
+      manifest.skills ? resolveGlobs(manifest.skills, SKILLS_DIR) : [],
+      manifest.commands ? resolveGlobs(manifest.commands, COMMANDS_DIR) : [],
+      discoverProfileLocalAssets(profileDir),
+    ]);
 
     for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
       if (!unifiedHarnessPlugin.stageProfile) {
@@ -527,8 +531,10 @@ async function buildUnifiedOutputs(
         profileName,
         profileDir,
         manifest,
-        matchedSkills,
-        matchedCommands,
+        globalMatchedSkills,
+        globalMatchedCommands,
+        profileLocalSkills: localAssets.profileLocalSkills,
+        profileLocalCommands: localAssets.profileLocalCommands,
         outputDir,
         templateContext: TEMPLATE_CONTEXT,
         buildSupport,

@@ -58,6 +58,8 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Create a profile folder at `{{repo_root}}/profiles/<profile-name>/`.
 - Put the manifest at `{{repo_root}}/profiles/<profile-name>/profile.yaml`.
 - Use the manifest to select skills and commands, plus any tool toggles, permissions, or `system_prompt` overrides.
+- Optional profile-local commands live at `{{repo_root}}/profiles/<profile-name>/commands/*.md` and are emitted as namespaced shared commands named `--<profile>-<filename>.md` in OpenCode outputs.
+- Optional profile-local skills live at `{{repo_root}}/profiles/<profile-name>/skills/<skill-name>/SKILL.md` and must not collide with global skills or another profile's local skills.
 - Keep reusable knowledge in `{{repo_root}}/skills/` and reusable prompts in `{{repo_root}}/commands/`; profiles should assemble those pieces instead of duplicating them.
 - Run `bun run build` from `{{repo_root}}` after the profile change.
 - Check generated profile-local outputs when the selected targets write files inside `{{repo_root}}/profiles/<profile-name>/`.

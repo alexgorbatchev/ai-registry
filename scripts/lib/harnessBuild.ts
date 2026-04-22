@@ -44,8 +44,10 @@ export type IProfileBuildContext = {
   profileName: string;
   profileDir: string;
   manifest: IProfileManifest;
-  matchedSkills: string[];
-  matchedCommands: string[];
+  globalMatchedSkills: string[];
+  globalMatchedCommands: string[];
+  profileLocalSkills: string[];
+  profileLocalCommands: string[];
   outputDir: string;
   templateContext: ITemplateContext;
   buildSupport: IBuildSupport;

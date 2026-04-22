@@ -16,6 +16,11 @@ The reusable source-of-truth layer.
 
 ### 2. The Profiles (`/profiles`)
 The assembled agents. These folders contain `profile.yaml` manifests that cherry-pick from the reusable assets using globs to create specific AI personas. You can also define custom tool toggles and granular tool permissions in these files.
+- Profiles may also define top-level local assets:
+  - `profiles/<name>/commands/*.md` for profile-owned commands
+  - `profiles/<name>/skills/<skill-name>/SKILL.md` for profile-owned skills
+- Profile-local commands are emitted into OpenCode as namespaced shared commands named `--<profile>-<filename>.md`.
+- Profile-local skills keep their normal skill names and therefore must not collide with global skills or another profile's local skills.
 - **`designer/`**: UI/UX focused agent.
 - **`developer/`**: Backend/Fullstack focused agent.
 - **`default/`**: General-purpose baseline agent.

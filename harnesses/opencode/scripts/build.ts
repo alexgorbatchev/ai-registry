@@ -29,6 +29,10 @@ import type {
   IUnifiedHarnessBuildContext,
   IUnifiedHarnessPlugin,
 } from "../../../scripts/lib/harnessBuild";
+import {
+  createSkillPermission,
+  getProfileLocalCommandOutputName,
+} from "./lib/profileLocalAssetRules";
 
 const AGENT_STAGING_DIR_NAME = ".opencode-agents";
 const COMMAND_STAGING_DIR_NAME = ".opencode-commands";
@@ -44,6 +48,12 @@ function getCommandStagingDir(outputDir: string): string {
 
 function getSkillStagingDir(outputDir: string): string {
   return join(outputDir, SKILL_STAGING_DIR_NAME);
+}
+
+function assertMissingOutputPath(outputPath: string, assetDescription: string): void {
+  if (existsSync(outputPath)) {
+    throw new Error(`Cannot stage ${assetDescription} because the output path already exists: ${outputPath}`);
+  }
 }
 
 async function mergeDirectoryContents(sourceDir: string, destinationDir: string): Promise<void> {
@@ -104,24 +114,13 @@ function createAgentMarkdown(context: IProfileBuildContext): string {
     frontmatter.tools = context.manifest.tools;
   }
 
-  const allowsAllSkills = Array.isArray(context.manifest.skills) &&
-    context.manifest.skills.length === 1 &&
-    context.manifest.skills[0] === "*";
-
   const permission: Record<string, string | Record<string, string>> = {
-    skill: allowsAllSkills
-      ? { "*": "allow" }
-      : { "*": "deny" },
+    skill: createSkillPermission(
+      context.manifest.skills,
+      context.globalMatchedSkills,
+      context.profileLocalSkills,
+    ),
   };
-
-  if (!allowsAllSkills) {
-    const skillPermission = permission.skill;
-    if (typeof skillPermission === "object" && skillPermission !== null) {
-      for (const skill of context.matchedSkills) {
-        skillPermission[skill] = "allow";
-      }
-    }
-  }
 
   if (context.manifest.permission && typeof context.manifest.permission === "object") {
     for (const [permKey, permValue] of Object.entries(context.manifest.permission)) {
@@ -161,7 +160,7 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   await mkdir(agentStagingDir, { recursive: true });
   await writeFile(join(agentStagingDir, `${context.profileName}.md`), createAgentMarkdown(context), "utf-8");
 
-  for (const matchedCommand of context.matchedCommands) {
+  for (const matchedCommand of context.globalMatchedCommands) {
     await context.buildSupport.copyPathWithTemplateVariables(
       join(context.templateContext.commands_dir, matchedCommand),
       join(commandStagingDir, matchedCommand),
@@ -169,10 +168,33 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
     );
   }
 
-  for (const matchedSkill of context.matchedSkills) {
+  for (const profileLocalCommand of context.profileLocalCommands) {
+    const outputName = getProfileLocalCommandOutputName(context.profileName, profileLocalCommand);
+    const outputPath = join(commandStagingDir, outputName);
+    assertMissingOutputPath(outputPath, `profile-local command ${profileLocalCommand} for profile ${context.profileName}`);
+
+    await context.buildSupport.copyPathWithTemplateVariables(
+      join(context.profileDir, "commands", profileLocalCommand),
+      outputPath,
+      context.templateContext,
+    );
+  }
+
+  for (const matchedSkill of context.globalMatchedSkills) {
     await context.buildSupport.copyDirectoryWithTemplateVariables(
       join(context.templateContext.skills_dir, matchedSkill),
       join(skillStagingDir, matchedSkill),
+      context.templateContext,
+    );
+  }
+
+  for (const profileLocalSkill of context.profileLocalSkills) {
+    const outputPath = join(skillStagingDir, profileLocalSkill);
+    assertMissingOutputPath(outputPath, `profile-local skill ${profileLocalSkill} for profile ${context.profileName}`);
+
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
+      join(context.profileDir, "skills", profileLocalSkill),
+      outputPath,
       context.templateContext,
     );
   }

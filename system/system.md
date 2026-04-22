@@ -28,7 +28,7 @@ Do not pass multi-line scripts to interpreters via stdin, heredocs, pipes, or -e
 
 Use .tmp in the project folder instead of global /tmp.
 
-Use .workspaces in the project folder for git workspaces.
+Use .workspaces in the project folder for git workspaces. By default, worktrees should be created from main branch.
 
 For temporary scripts default to Bun and TypeScript. Use Bun's built-in features as much as possible.
 

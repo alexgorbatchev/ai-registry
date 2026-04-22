@@ -1,4 +1,6 @@
-description: 'Primary engineer agent'
+description: '[reg] engineer'
 skills: ['*']
 commands: ['*']
-system_prompt: '{{ include "system/system.md" }}'
+system_prompt: |
+  {{ include "system/system.md" }}
+

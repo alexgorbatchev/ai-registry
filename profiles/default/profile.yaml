@@ -1,2 +1,6 @@
+description: '[reg] default'
 skills: ['*']
 commands: ['*']
+system_prompt: |
+  {{ include "system/system.md" }}
+

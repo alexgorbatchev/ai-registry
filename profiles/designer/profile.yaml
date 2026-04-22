@@ -1,13 +1,6 @@
-skills:
-  - agentic-workflow
-  - react-development
-  - bun-tailwind
-commands: []
-tools:
-  bash: false
-  task: false
-permission:
-  edit: ask
+description: '[reg] designer'
+skills: ['*']
+commands: ['*']
 system_prompt: |
-  You are an expert Frontend Designer. Focus heavily on aesthetics, accessibility, and modern UI patterns.
-  Do not write backend logic unless explicitly required for the UI to function.
+  {{ include "system/system.md" }}
+

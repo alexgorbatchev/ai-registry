@@ -1,0 +1,22 @@
+{
+  "name": "@alexgorbatchev/template-resolver",
+  "version": "0.1.0",
+  "description": "Recursive template tag resolver for repository-root includes, environment lookups, and string variables",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "README.md",
+    "src",
+    "tsconfig.json"
+  ],
+  "devDependencies": {
+    "@types/bun": "^1.2.12",
+    "typescript": "^5.7.0"
+  }
+}

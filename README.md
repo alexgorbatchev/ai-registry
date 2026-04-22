@@ -33,7 +33,18 @@ This repository includes a custom local compiler (`scripts/build.ts`) that resol
 
 Harnesses that need extra output shaping can expose a plugin entrypoint at `harnesses/<target>/scripts/build.ts`. The root build discovers those plugins dynamically and lets them stage per-profile artifacts plus finalize the generated harness output.
 
-Generated output files may use a small set of build-time template variables. `bun run build` now scans generated text outputs recursively and replaces known variables wherever they appear. Unknown variables fail the build. Example: `&#123;&#123;repo_root&#125;&#125;`. Current variables:
+Generated output files may use a small set of build-time template tags. `bun run build` scans generated text outputs recursively and resolves them wherever they appear. Unsupported tags, unknown variables, missing include files, circular includes, and missing environment variables all fail the build. Supported forms:
+
+- `{{repo_root}}`
+- `{{skills_dir}}`
+- `{{commands_dir}}`
+- `{{profiles_dir}}`
+- `{{output_dir}}`
+- `&#123;&#123; include "path/from/repo/root.md" &#125;&#125;`
+- `&#123;&#123; env "VAR_NAME" &#125;&#125;`
+- `&#123;&#123; env "VAR_NAME" default "fallback" &#125;&#125;`
+
+Current built-in string variables:
 
 - `{{repo_root}}`
 - `{{skills_dir}}`
@@ -43,7 +54,7 @@ Generated output files may use a small set of build-time template variables. `bu
 
 When the build stages files from `skills/`, `commands/`, or `harnesses/<target>/`, it also honors nested `.registry-ignore` files using `.gitignore`-style matching. Use those files to keep repo-local scratch assets, harness build scripts, or other non-shipping files out of generated outputs.
 
-When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/scripts/...`.
+When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/scripts/...`. Includes are always repository-root-relative, so `&#123;&#123; include "harnesses/.common/system.md" &#125;&#125;` resolves from the repo root no matter which source file contains it.
 
 For the normal machine setup flow after cloning, run:
 

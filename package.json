@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@alexgorbatchev/dedent-string": "^1.0.1",
+    "@alexgorbatchev/template-resolver": "workspace:*",
     "@types/ignore-walk": "^4.0.3",
     "globby": "^16.1.1",
     "ignore-walk": "^8.0.0"

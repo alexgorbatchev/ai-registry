@@ -10,9 +10,8 @@ import {
 import { existsSync } from "fs";
 import { basename, dirname, join } from "path";
 
+import { renderTemplate } from "@alexgorbatchev/template-resolver";
 import walk from "ignore-walk";
-
-const TEMPLATE_VARIABLE_PATTERN = /{{\s*([a-z0-9_]+)\s*}}/gi;
 const REGISTRY_IGNORE_FILE_NAME = ".registry-ignore";
 const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
 
@@ -133,31 +132,17 @@ function isIgnoredBySupplementalPrefixes(relativePath: string, prefixes: string[
   return prefixes.some((prefix) => relativePath === prefix || relativePath.startsWith(`${prefix}/`));
 }
 
-function applyTemplateVariables(
+async function applyTemplateVariables(
   content: string,
   sourcePath: string,
   templateContext: ITemplateContext,
-): string {
-  const placeholders = Array.from(
-    new Set(content.match(TEMPLATE_VARIABLE_PATTERN) ?? []),
-  );
-
-  if (placeholders.length === 0) {
-    return content;
-  }
-
-  const unknownKeys = placeholders
-    .map((placeholder) => placeholder.replace(/[{}\s]/g, ""))
-    .filter((key) => !(key in templateContext));
-
-  if (unknownKeys.length > 0) {
-    throw new Error(
-      `Unknown template variable(s) in ${sourcePath}: ${unknownKeys.join(", ")}`,
-    );
-  }
-
-  return content.replace(TEMPLATE_VARIABLE_PATTERN, (_, key: string) => {
-    return templateContext[key] ?? _;
+): Promise<string> {
+  return renderTemplate({
+    content,
+    sourcePath,
+    repositoryRoot: templateContext.repo_root,
+    variables: templateContext,
+    environment: process.env,
   });
 }
 
@@ -171,9 +156,10 @@ async function copyFileWithTemplateVariables(
   const isSkillDefinition = basename(sourcePath) === "SKILL.md";
   if (isSkillDefinition) {
     const sourceContent = await readFile(sourcePath, "utf-8");
+    const renderedContent = await applyTemplateVariables(sourceContent, sourcePath, templateContext);
     await writeFile(
       targetPath,
-      applyTemplateVariables(sourceContent, sourcePath, templateContext),
+      renderedContent,
       "utf-8",
     );
     return;
@@ -269,7 +255,7 @@ export async function applyTemplateVariablesToGeneratedOutput(
     }
 
     const sourceContent = fileBuffer.toString("utf-8");
-    const renderedContent = applyTemplateVariables(
+    const renderedContent = await applyTemplateVariables(
       sourceContent,
       entryPath,
       templateContext,

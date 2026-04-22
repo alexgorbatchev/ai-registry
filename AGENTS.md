@@ -20,6 +20,7 @@ This repository manages reusable AI skills and commands plus the configurations 
 - **Standalone Packages (`packages/<package-name>/`)**:
   - Publishable repo-local packages that are distributed independently from generated harness outputs live under `packages/`.
   - Add each standalone package to the root `package.json` workspaces so `bun install` manages it consistently.
+  - Package-local guidance belongs in `packages/<package-name>/AGENTS.md` when a package has non-obvious contracts or validation rules. For the template resolver package, see `packages/template-resolver/AGENTS.md`.
 - **Vendored Packages (`vendor/`)**:
   - Third-party code packages that need to live in this repo as Bun workspaces belong here.
   - Use this for repo-local harness dependencies such as file-based OpenCode plugins with runtime imports.
@@ -42,7 +43,7 @@ This repository uses a custom build script (`scripts/build.ts`) to locally compi
 - **Script Layout:** Executable repo entrypoints stay directly under `scripts/` and use dash-based filenames. TypeScript helpers that are imported by other scripts and are not meant to be run directly belong under `scripts/lib/`.
 - **Bootstrap Command:** `bun run bootstrap` is the repo-local setup entrypoint. It installs dependencies, builds the generated outputs, and links the default machine-local OpenCode target using an XDG-style path unless `OPENCODE_CONFIG_DIR` is set.
 - **Smoke Test:** `bun run bootstrap:smoke` validates the bootstrap flow against `.tmp/bootstrap-smoke/`, treating that directory as a fake `HOME` with the repo staged at `development/ai-registry`.
-- **Generated Output Template Variables:** Generated output files may use the current build-time placeholders `{{repo_root}}`, `{{skills_dir}}`, `{{commands_dir}}`, `{{profiles_dir}}`, and `{{output_dir}}`. Expansion happens during `bun run build` as generated text outputs are scanned recursively. Unknown placeholders must fail the build instead of being left unresolved.
+- **Generated Output Template Tags:** Generated output files may use build-time template tags. Supported forms are string variables like `{{repo_root}}`, `{{skills_dir}}`, `{{commands_dir}}`, `{{profiles_dir}}`, and `{{output_dir}}`, plus `&#123;&#123; include "path/from/repo/root.md" &#125;&#125;` and `&#123;&#123; env "VAR_NAME" &#125;&#125;` with optional `default`. Expansion happens during `bun run build` as generated text outputs are scanned recursively. Unsupported tags, unknown variables, circular includes, missing include files, and missing environment variables without defaults must fail the build instead of being left unresolved.
 - **Canonical Path References:** When checked-in guidance or generated text needs a canonical path inside this repository that would otherwise be machine-specific and absolute, use template variables instead of hardcoded absolute paths. Prefer the most specific token available for canonical folders: `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...`. For canonical folders without a dedicated token, anchor the path from `{{repo_root}}`, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, `{{repo_root}}/scripts/...`, `{{repo_root}}/README.md`, and `{{repo_root}}/AGENTS.md`. Use normal repo-relative paths elsewhere in checked-in docs.
 
 ## Development Workflow

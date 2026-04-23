@@ -1,5 +1,7 @@
 # Engineering Design Doc Template
 
+Default new design docs to `docs/internal/eng-designs/<topic>/DESIGN.md` and create the topic directory if needed.
+
 ## Table of contents
 - [1. Required sections](#1-required-sections)
 - [2. Language rules](#2-language-rules)

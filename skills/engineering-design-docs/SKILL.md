@@ -1,12 +1,19 @@
 ---
 name: engineering-design-docs
-description: Write or tighten implementation-ready engineering design documents, technical design specs, and exact implementation plans. Use when drafting a new eng design doc, converting a recommendation-style doc into an exact build spec, defining file-level architecture, API/schema/state contracts, validation rules, implementation order, or reviewing a design doc for ambiguity, stale assumptions, wildcards, and prose-only contracts before engineering starts.
+description: Write or tighten implementation-ready engineering design documents, technical design specs, and exact implementation plans. Use when drafting a new eng design doc at `docs/internal/eng-designs/topic-name/DESIGN.md`, converting a recommendation-style doc into an exact build spec, defining file-level architecture, API/schema/state contracts, validation rules, implementation order, or reviewing a design doc for ambiguity, stale assumptions, wildcards, and prose-only contracts before engineering starts.
 ---
 
 # Engineering Design Docs
 
 Produce docs that another engineer can implement without design interpretation.
 Prefer exact contracts over recommendations.
+
+## Default output path
+
+- Write new engineering design docs to `docs/internal/eng-designs/<topic>/DESIGN.md`.
+- Derive `<topic>` from the feature, subsystem, or initiative name and use descriptive `kebab-case`.
+- Create the topic directory if it does not exist.
+- When tightening an existing design doc, keep its canonical path unless the user explicitly asks to move it.
 
 ## Choose the mode
 

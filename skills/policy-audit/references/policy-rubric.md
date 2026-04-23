@@ -13,7 +13,7 @@ Audit the current repository and determine whether its testing, CI, pre-commit, 
 
 Global audit rules
 
-- Do not modify repository files except to create `.review/` if needed and write the final audit report to `.review/policy.md`.
+- Do not modify repository files except to create `docs/internal/audit/` if needed and write the final audit report to `docs/internal/audit/policy.md`.
 - Capture the current git SHA before the audit begins and preserve that exact SHA in the final report.
 - Do not switch branches, commit, reset, amend, stash, or otherwise change the current git state during the audit.
 - Do not assume the language, package manager, CI provider, or deploy platform. Infer them from the repository.
@@ -44,7 +44,7 @@ Global audit rules
 - Agent instructions about local skills only pass if they explicitly name the path to the local skills folder used by the repository, or the path where repository-local skills are expected to be stored when added.
 - A strong done policy should require the agent to complete required checks, finish required verification, update required documentation, complete required deploy or release steps when in scope, and avoid claiming completion when any required part is still missing or failing.
 - AGENTS files are stale if they reference commands, paths, workflows, policies, ownership boundaries, validation steps, or behavioral expectations that no longer match the checked-in repository.
-- Return Markdown only, and write the same Markdown report to `.review/policy.md`.
+- Return Markdown only, and write the same Markdown report to `docs/internal/audit/policy.md`.
 - Do not add tables, numbered lists, IDs, findings, appendices, or extra commentary in the final report. The only list allowed is the required `## Action checklist` section.
 - `Overall` is `PASS` only if every check is `PASS`. Otherwise `FAIL`.
 - If `Status` is `PASS`, `Recommendations` must be exactly `None`.

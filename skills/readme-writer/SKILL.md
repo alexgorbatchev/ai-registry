@@ -18,6 +18,7 @@ Write README content for current and future users of the repository. A README is
 - Read the existing `README.md` plus the code, package manifests, examples, config files, scripts, tests, and checked-in docs that support the claims you plan to make.
 - Do not infer features from filenames alone.
 - If a fact cannot be verified, leave it out or label the uncertainty.
+- Identify the canonical product name before writing, especially when the repository name, package name, and CLI command differ.
 
 3. Choose the smallest section set that fits.
 - Common sections: title and value proposition, status or requirements, installation, quick start, usage, configuration, development, contributing, license.
@@ -45,6 +46,13 @@ These are mandatory for normal README sections:
 - State what the project does, how to install it, and how to use it without reference to the prior state.
 - Treat the README as timeless within the current version of the repository.
 - Write from the perspective of a user reading the repository today, not from the perspective of an assistant explaining what changed.
+
+## Naming Consistency
+
+- Pick one canonical product name from the available source materials and use it consistently throughout the README.
+- If the project is a CLI, refer to it by the exact command name and wrap that name in backticks each time it is used as the tool name.
+- Do not alternate casually between repo slug, package name, marketing name, and CLI name.
+- If different names refer to different things, explain the distinction once and then use each name only for its specific role.
 
 ## Banned Changelog Tone
 
@@ -122,4 +130,5 @@ Before finishing, verify:
 - Every factual claim is grounded in the repository.
 - Commands and file paths are valid.
 - Section order matches the likely user journey.
+- Product naming is consistent across the full document, with CLI tool names written exactly and wrapped in backticks.
 - No evergreen section reads like a changelog, PR summary, or assistant note.

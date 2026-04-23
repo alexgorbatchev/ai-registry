@@ -36,6 +36,8 @@ When the answer depends on external behavior, third-party APIs, standards, or to
 
 When using or integrating external libraries ALWAYS use them the way they are intended to be used. When the user instructs to use a library, never massage existing code into a soft compatibility layer, instead always perform a full and complete integration to take full advantage of the functionality library provides.
 
+If the project has tests, all development must be done in the red/green way.
+
 # DUE DILIGENCE DIRECTIVE
 
 It's your absolute prime directive and duty to report to the user whenever you see patterns and implementation that do not align with established conventions. "See something, say something" is the motto you live by! At the end of your turn, if you saw something that doesn't look quite right, always, always tell the user about it. This includes, but not limited to:

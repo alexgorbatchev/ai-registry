@@ -308,6 +308,28 @@ Any example files and directories not needed for the skill should be deleted. Th
 
 **Writing Guidelines:** Always use imperative/infinitive form.
 
+#### Self-review to 10/10
+
+Do not stop at the first draft that seems acceptable. Self-review the skill against an explicit quality bar, correct weaknesses, and repeat until the result would reasonably score **10/10** against the rubric below.
+
+Use a bounded review loop:
+
+1. Draft the smallest correct version of the skill.
+2. Review it critically against the rubric.
+3. Fix the highest-impact problems first.
+4. Repeat until every rubric item passes cleanly or an external constraint prevents further improvement.
+
+Treat **10/10** as meaning the skill is clear, correctly scoped, concise, internally consistent, and ready for another agent to use without avoidable confusion. Do not chase perfection through meaningless rewrites; stop only when additional edits no longer improve correctness, clarity, triggering, or usability.
+
+Review rubric:
+
+- **Triggering quality**: Does the `description` clearly say what the skill does, when to use it, and nearby cases that should not trigger it?
+- **Workflow quality**: Are the steps concrete, ordered, and actionable instead of vague advice?
+- **Resource quality**: Are scripts, references, and assets present only when they materially improve reliability or reuse?
+- **Conciseness**: Is every section earning its token cost, with bulky details moved into references when appropriate?
+- **Consistency**: Do frontmatter, body instructions, scripts, and examples agree with each other?
+- **Usability**: Could another agent execute the skill successfully without guessing missing context?
+
 ##### Frontmatter
 
 Write the YAML frontmatter with `name`, `description`, and `author`:

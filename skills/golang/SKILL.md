@@ -1,6 +1,11 @@
 ---
 name: golang
-description: Mandatory instructions for working in golang projects.
+description: >-
+  Apply Go coding rules, design principles, and project conventions for
+  maintainable Go code and repositories. Use when writing, reviewing, refactoring,
+  or releasing Go code, or when working on Go-specific project structure, APIs,
+  tests, CI, or binaries. Do not use for non-Go codebases or for language-agnostic
+  tasks that do not depend on Go conventions.
 ---
 
 # Go Baseline Skill

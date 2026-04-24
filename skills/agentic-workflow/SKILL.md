@@ -1,5 +1,12 @@
 ---
-description: Use this skill when asked to work on tickets.
+description: >-
+  Execute ticket-driven work in isolated branches or worktrees with separate
+  implementation and review passes, bounded forward-sync, and real verification
+  before integration. Use when asked to work on tickets or task lanes that need
+  structured implementation, independent review, verification discipline, or
+  controlled merge-back to the primary branch. Do not use for trivial one-off
+  edits that do not need ticket workflow, isolated lanes, or separate acceptance
+  review.
 name: 'agentic-workflow'
 ---
 ## Mission

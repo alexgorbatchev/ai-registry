@@ -1,11 +1,12 @@
 ---
 name: bun
 description: >-
-  Bun runtime and bundler API reference. Use when working with Bun for HTTP
-  servers, WebSockets, routing, file I/O, databases (SQL, SQLite, Redis, S3),
-  bundling, HMR, CSS, plugins, shell scripting, or other Bun-specific APIs.
-targets:
-  - '*'
+  Use Bun runtime and bundler APIs for servers, routing, WebSockets, file I/O,
+  databases, bundling, HMR, CSS, plugins, and shell scripting. Use when
+  implementing or debugging Bun-specific behavior, choosing Bun APIs, or checking
+  Bun runtime and bundler capabilities in a Bun project. Do not use for generic
+  JavaScript or TypeScript work that does not depend on Bun-specific APIs or
+  runtime behavior.
 ---
 
 # Bun

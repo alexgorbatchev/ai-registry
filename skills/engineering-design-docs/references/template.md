@@ -1,6 +1,6 @@
 # Engineering Design Doc Template
 
-Default new design docs to `docs/internal/eng-designs/<topic>/DESIGN.md` and create the topic directory if needed.
+Default new design docs to `docs/internal/eng-designs/<topic>/DESIGN.md` and create the topic directory if needed. Start `DESIGN.md` with `created_on`, `last_modified`, and `status` YAML frontmatter. Archive superseded design doc sets by moving the whole topic directory to `docs/internal/eng-designs/archived/<topic>/`.
 
 ## Table of contents
 - [1. Required sections](#1-required-sections)

@@ -13,7 +13,17 @@ Prefer exact contracts over recommendations.
 - Write new engineering design docs to `docs/internal/eng-designs/<topic>/DESIGN.md`.
 - Derive `<topic>` from the feature, subsystem, or initiative name and use descriptive `kebab-case`.
 - Create the topic directory if it does not exist.
+- Start `DESIGN.md` with `created_on`, `last_modified`, and `status` YAML frontmatter so the doc follows the internal-doc lifecycle contract.
 - When tightening an existing design doc, keep its canonical path unless the user explicitly asks to move it.
+
+## Archive superseded design sets
+
+- Do not archive a design doc set only because the implementation shipped.
+- Archive a design doc set when it is superseded or no longer the active design reference.
+- Move the whole topic folder to `docs/internal/eng-designs/archived/<topic>/`.
+- Keep `DESIGN.md` and any supporting files together in the archived folder.
+- Preserve `created_on`, update `last_modified`, and set `status: archived` when archiving the design set.
+- Make the archived state obvious in `DESIGN.md` and point to the replacement doc when one exists.
 
 ## Choose the mode
 

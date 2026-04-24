@@ -1,6 +1,6 @@
 ---
 name: internal-docs-writer
-description: 'Write, rewrite, and update internal Markdown documentation for maintainers, operators, and collaborators. Use when creating repo-local process docs, runbooks, decision notes, or reference material that should default to `docs/internal/` and must include `created_on`, `last_modified`, and `status: current|archived` frontmatter.'
+description: 'Write, rewrite, reorganize, and archive internal Markdown documentation for maintainers, operators, and collaborators. Use when creating repo-local process docs, runbooks, decision notes, reference material, or folder-based doc sets that should default to `docs/internal/`, move archived content into the nearest `archived/` folder, and include `created_on`, `last_modified`, and `status: current|archived` frontmatter.'
 author: alexgorbatchev
 ---
 
@@ -19,6 +19,7 @@ Write internal documentation for people who work inside the repository or organi
 - Create `docs/internal/` if it does not exist.
 - Use descriptive `kebab-case` filenames such as `docs/internal/deploy-runbook.md` or `docs/internal/auth/session-lifecycle.md`.
 - Create subdirectories only when they improve navigation for multiple related documents.
+- When one topic needs multiple Markdown files, create a folder-based doc set and keep the related files together under the same active collection root.
 
 3. Build from source material.
 - Read the code, configuration, scripts, tests, and existing docs that support the content.
@@ -58,12 +59,23 @@ status: current
 - Rewrite surrounding sections so the document reads as one maintained artifact, not a stack of patches.
 - Archive or replace stale guidance instead of adding contradictory footnotes.
 - When archiving, add a short note near the top that points to the current replacement if one exists.
+- When archiving a folder-based doc set, move the whole folder intact instead of scattering individual files into different archive locations.
 
 ## Default Output Rule
 
 - Default new files to `docs/internal/`.
 - Deviate only when the user explicitly requests another location or repository conventions clearly assign the topic elsewhere.
 - Treat `docs/internal/` as the canonical home for internal-only Markdown docs, not public product docs such as `README.md`.
+
+## Archive Location Rule
+
+- Move archived content to the nearest `archived/` folder instead of leaving active and archived docs mixed together.
+- If an active file lives directly under `docs/internal/`, archive it under `docs/internal/archived/`.
+- If an active file lives under a collection root such as `docs/internal/auth/`, archive it under that collection root's `archived/` folder, for example `docs/internal/auth/session-lifecycle.md` -> `docs/internal/auth/archived/session-lifecycle.md`.
+- If a topic is a folder-based doc set, move the whole folder under the nearest collection root's `archived/` folder and preserve the internal layout, for example `docs/internal/eng-designs/auth-refresh/` -> `docs/internal/eng-designs/archived/auth-refresh/`.
+- If the repository keeps ticket docs as folder-based sets, archive the whole ticket folder the same way, for example `docs/internal/tickets/ENG-123-session-cleanup/` -> `docs/internal/tickets/archived/ENG-123-session-cleanup/`.
+- Update links that point to the old active path after moving a file or folder.
+- Do not leave a duplicate copy at the old active path unless the user explicitly asks for a redirect stub.
 
 ## Current And Archived States
 
@@ -72,13 +84,18 @@ status: current
 - Do not invent extra lifecycle values such as `draft`, `deprecated`, or `final` unless the user explicitly changes the schema.
 - For a current doc, describe the expected present-state process or system behavior.
 - For an archived doc, keep the historical content intact but make its archived state obvious near the top.
+- Keep current docs out of `archived/` paths.
+- Move archived docs into the correct nearest `archived/` folder so the path matches the archived lifecycle state.
+- For archived folder-based doc sets, move the entire folder rather than cherry-picking files out of it.
 
 ## Final Checklist
 
 - File lives under `docs/internal/` unless there is a verified exception.
+- Archived files or doc sets live under the correct nearest `archived/` folder.
 - Frontmatter includes `created_on`, `last_modified`, and `status`.
 - Timestamps use `YYYY-MM-DD HH:MM`.
 - `status` is exactly `current` or `archived`.
 - Claims are grounded in the repository or supplied materials.
 - Sensitive values are omitted or sanitized.
+- Links were updated if an archived file or folder moved.
 - The document reads as a maintained internal reference, not a PR summary or assistant note.

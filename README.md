@@ -21,6 +21,7 @@ The assembled agents. These folders contain `profile.yaml` manifests that cherry
   - `profiles/<name>/skills/<skill-name>/SKILL.md` for profile-owned skills
 - Profile-local commands are emitted into OpenCode as namespaced shared commands named `--<profile>-<filename>.md`.
 - Profile-local skills keep their normal skill names and therefore must not collide with global skills or another profile's local skills.
+- **`personal-assistant/`**: General-purpose personal assistant with stronger defaults for practical consumer tasks such as showtime searches.
 - **`designer/`**: UI/UX focused agent.
 - **`developer/`**: Backend/Fullstack focused agent.
 - **`default/`**: General-purpose baseline agent.

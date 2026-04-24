@@ -11,17 +11,25 @@ function formatInteger(value: number): string {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
 
+function formatDecimal(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 function formatSkillUsageTable(section: ISkillUsageSection): string {
   const rows = [
-    ["Skill", "Usages"],
-    ...section.skills.map((skill) => [skill.name, formatInteger(skill.count)]),
-    ["Total", formatInteger(section.totalUsages)],
+    ["Skill", "Usages", "Avg/day"],
+    ...section.skills.map((skill) => [skill.name, formatInteger(skill.count), formatDecimal(skill.averagePerDay)]),
+    ["Total", formatInteger(section.totalUsages), formatDecimal(section.averageUsagesPerDay)],
   ];
 
   return table(rows, {
     border: getBorderCharacters("norc"),
     columns: {
       1: { alignment: "right" },
+      2: { alignment: "right" },
     },
   });
 }

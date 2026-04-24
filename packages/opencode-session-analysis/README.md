@@ -63,7 +63,7 @@ For each root workflow session, the CLI reports:
 
 With `--skills`, the CLI reports:
 
-- one aggregate all-projects skill-usage table sorted by usage count descending
+- one aggregate all-projects skill-usage table sorted by usage count descending, including an average-per-day column over the observed usage span
 
 With `--skills --all-projects`, the CLI reports:
 

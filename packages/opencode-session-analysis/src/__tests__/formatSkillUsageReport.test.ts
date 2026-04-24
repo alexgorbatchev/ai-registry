@@ -6,30 +6,36 @@ const FIXTURE_SKILL_USAGE_REPORT = {
   overall: {
     label: "All projects",
     totalUsages: 5,
+    averageUsagesPerDay: 1.67,
     distinctSkills: 3,
+    usageDays: 3,
     skills: [
-      { name: "bun", count: 3 },
-      { name: "opencode-sessions", count: 1 },
-      { name: "typescript-code-quality", count: 1 },
+      { name: "bun", count: 3, averagePerDay: 1 },
+      { name: "opencode-sessions", count: 1, averagePerDay: 0.33 },
+      { name: "typescript-code-quality", count: 1, averagePerDay: 0.33 },
     ],
   },
   byProject: [
     {
       label: "/repo-a",
       totalUsages: 3,
+      averageUsagesPerDay: 1.5,
       distinctSkills: 2,
+      usageDays: 2,
       skills: [
-        { name: "bun", count: 2 },
-        { name: "typescript-code-quality", count: 1 },
+        { name: "bun", count: 2, averagePerDay: 1 },
+        { name: "typescript-code-quality", count: 1, averagePerDay: 0.5 },
       ],
     },
     {
       label: "/repo-b",
       totalUsages: 2,
+      averageUsagesPerDay: 2,
       distinctSkills: 2,
+      usageDays: 1,
       skills: [
-        { name: "bun", count: 1 },
-        { name: "opencode-sessions", count: 1 },
+        { name: "bun", count: 1, averagePerDay: 1 },
+        { name: "opencode-sessions", count: 1, averagePerDay: 1 },
       ],
     },
   ],
@@ -44,17 +50,17 @@ describe("formatSkillUsageReport", () => {
 
     expect(output).toMatchInlineSnapshot(`
 "All projects
-┌─────────────────────────┬────────┐
-│ Skill                   │ Usages │
-├─────────────────────────┼────────┤
-│ bun                     │      3 │
-├─────────────────────────┼────────┤
-│ opencode-sessions       │      1 │
-├─────────────────────────┼────────┤
-│ typescript-code-quality │      1 │
-├─────────────────────────┼────────┤
-│ Total                   │      5 │
-└─────────────────────────┴────────┘
+┌─────────────────────────┬────────┬─────────┐
+│ Skill                   │ Usages │ Avg/day │
+├─────────────────────────┼────────┼─────────┤
+│ bun                     │      3 │    1.00 │
+├─────────────────────────┼────────┼─────────┤
+│ opencode-sessions       │      1 │    0.33 │
+├─────────────────────────┼────────┼─────────┤
+│ typescript-code-quality │      1 │    0.33 │
+├─────────────────────────┼────────┼─────────┤
+│ Total                   │      5 │    1.67 │
+└─────────────────────────┴────────┴─────────┘
 "
 `);
   });
@@ -67,26 +73,26 @@ describe("formatSkillUsageReport", () => {
 
     expect(output).toMatchInlineSnapshot(`
 "/repo-a
-┌─────────────────────────┬────────┐
-│ Skill                   │ Usages │
-├─────────────────────────┼────────┤
-│ bun                     │      2 │
-├─────────────────────────┼────────┤
-│ typescript-code-quality │      1 │
-├─────────────────────────┼────────┤
-│ Total                   │      3 │
-└─────────────────────────┴────────┘
+┌─────────────────────────┬────────┬─────────┐
+│ Skill                   │ Usages │ Avg/day │
+├─────────────────────────┼────────┼─────────┤
+│ bun                     │      2 │    1.00 │
+├─────────────────────────┼────────┼─────────┤
+│ typescript-code-quality │      1 │    0.50 │
+├─────────────────────────┼────────┼─────────┤
+│ Total                   │      3 │    1.50 │
+└─────────────────────────┴────────┴─────────┘
 
 /repo-b
-┌───────────────────┬────────┐
-│ Skill             │ Usages │
-├───────────────────┼────────┤
-│ bun               │      1 │
-├───────────────────┼────────┤
-│ opencode-sessions │      1 │
-├───────────────────┼────────┤
-│ Total             │      2 │
-└───────────────────┴────────┘
+┌───────────────────┬────────┬─────────┐
+│ Skill             │ Usages │ Avg/day │
+├───────────────────┼────────┼─────────┤
+│ bun               │      1 │    1.00 │
+├───────────────────┼────────┼─────────┤
+│ opencode-sessions │      1 │    1.00 │
+├───────────────────┼────────┼─────────┤
+│ Total             │      2 │    2.00 │
+└───────────────────┴────────┴─────────┘
 "
 `);
   });

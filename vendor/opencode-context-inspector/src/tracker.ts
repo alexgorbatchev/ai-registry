@@ -7,8 +7,99 @@ import type {
   ToolCallRecord,
 } from "./types.js"
 import { getContextWindow } from "./models.js"
-import { countTokens } from "./tokenizer.js"
+import { countTokens, countTokensMultiple } from "./tokenizer.js"
 import { mergeSegments, segmentSystemPrompt } from "./segmenter.js"
+
+type RetainedToolState =
+  | { status: "pending"; input: Record<string, unknown>; raw: string }
+  | { status: "running"; input: Record<string, unknown>; title?: string }
+  | {
+      status: "completed"
+      input: Record<string, unknown>
+      output: string
+      title: string
+      time: { compacted?: number }
+    }
+  | {
+      status: "error"
+      input: Record<string, unknown>
+      error: string
+      metadata?: { interrupted?: boolean; output?: unknown }
+    }
+
+type RetainedMessagePart =
+  | { type: "text"; text: string; ignored?: boolean; synthetic?: boolean }
+  | { type: "reasoning"; text: string }
+  | { type: "compaction" }
+  | { type: "subtask" }
+  | { type: "tool"; state: RetainedToolState }
+  | { type: "file"; mime: string; filename?: string }
+  | { type: "step-start" }
+  | { type: "step-finish" }
+  | { type: "snapshot" }
+  | { type: "patch" }
+  | { type: "agent" }
+  | { type: "retry" }
+
+type RetainedMessage = {
+  info: {
+    role: "user" | "assistant"
+    sessionID?: string
+  }
+  parts: RetainedMessagePart[]
+}
+
+function isNonEmptyString(value: string | undefined): value is string {
+  return Boolean(value)
+}
+
+function stringifyUnknown(value: unknown): string {
+  if (typeof value === "string") return value
+
+  try {
+    return JSON.stringify(value) ?? ""
+  } catch {
+    return String(value)
+  }
+}
+
+function extractRetainedPartTexts(role: RetainedMessage["info"]["role"], part: RetainedMessagePart): string[] {
+  if (part.type === "text") {
+    if (role === "user" && part.ignored) return []
+    return part.text ? [part.text] : []
+  }
+
+  if (part.type === "reasoning") return [part.text]
+
+  if (role === "user") {
+    if (part.type === "compaction") return ["What did we do so far?"]
+    if (part.type === "subtask") return ["The following tool was executed by the user"]
+    if (part.type === "file" && part.mime !== "text/plain" && part.mime !== "application/x-directory") {
+      return part.filename ? [`[Attached ${part.mime}: ${part.filename}]`] : [`[Attached ${part.mime}: file]`]
+    }
+    return []
+  }
+
+  if (part.type !== "tool") return []
+
+  if (part.state.status === "completed") {
+    return [
+      stringifyUnknown(part.state.input),
+      part.state.time.compacted ? "[Old tool result content cleared]" : part.state.output,
+    ].filter(isNonEmptyString)
+  }
+
+  if (part.state.status === "error") {
+    const interruptedOutput = typeof part.state.metadata?.output === "string" ? part.state.metadata.output : undefined
+    return [stringifyUnknown(part.state.input), interruptedOutput ?? part.state.error].filter(isNonEmptyString)
+  }
+
+  return [stringifyUnknown(part.state.input), "[Tool execution was interrupted]"].filter(isNonEmptyString)
+}
+
+export function getSessionIdFromMessages(messages: RetainedMessage[]): string | undefined {
+  return messages.find((message) => Boolean(message.info.sessionID))?.info.sessionID
+}
 
 /**
  * Session-level token usage tracker.
@@ -80,6 +171,33 @@ export class SessionTracker {
   }
 
   /**
+   * Get the latest snapshot using the current retained conversation estimate.
+   */
+  getBudgetSnapshot(): BudgetSnapshot | null {
+    if (this.lastSegments.length === 0) return null
+
+    const entries: BudgetEntry[] = this.lastSegments
+      .map((segment) => ({
+        label: segment.label,
+        tokens: segment.tokens,
+        percentage: (segment.tokens / this.contextWindow) * 100,
+      }))
+      .sort((a, b) => b.tokens - a.tokens)
+
+    const systemPromptTotal = this.stats.lastSystemPromptTokens
+    const conversationTokens = this.stats.lastConversationTokens
+
+    return {
+      model: this.model,
+      contextWindow: this.contextWindow,
+      entries,
+      systemPromptTotal,
+      conversationTokens,
+      availableTokens: Math.max(0, this.contextWindow - systemPromptTotal - conversationTokens),
+    }
+  }
+
+  /**
    * Record a tool call response and its token cost.
    */
   recordToolCall(toolName: string, server: string, responseText: string): void {
@@ -95,12 +213,22 @@ export class SessionTracker {
   }
 
   /**
-   * Update conversation token estimate from message content.
+   * Update the retained conversation token estimate from the full message list.
    */
-  updateConversationTokens(messageContent: string): void {
-    const tokens = countTokens(messageContent)
-    this.stats.lastConversationTokens = tokens
-    this.stats.totalInputTokens += tokens
+  updateConversationTokensFromMessages(messages: RetainedMessage[]): void {
+    const texts = messages.flatMap((message) =>
+      message.parts.flatMap((part) => extractRetainedPartTexts(message.info.role, part)),
+    )
+    this.stats.lastConversationTokens = countTokensMultiple(texts)
+  }
+
+  /**
+   * Record the current user message for cumulative session input totals.
+   */
+  recordInputMessage(parts: RetainedMessagePart[]): void {
+    this.stats.totalInputTokens += countTokensMultiple(
+      parts.flatMap((part) => extractRetainedPartTexts("user", part)),
+    )
   }
 
   /**
@@ -168,6 +296,13 @@ export function getTracker(
     trackers.set(sessionId, tracker)
   }
   return tracker
+}
+
+/**
+ * Get an existing tracker for a session without creating one.
+ */
+export function findTracker(sessionId: string): SessionTracker | undefined {
+  return trackers.get(sessionId)
 }
 
 /**

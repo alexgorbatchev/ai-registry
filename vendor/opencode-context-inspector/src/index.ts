@@ -7,10 +7,10 @@ import {
   formatSessionSummary,
   formatThresholdWarning,
 } from "./formatter.js"
-import { getTracker, removeTracker } from "./tracker.js"
+import { findTracker, getSessionIdFromMessages, getTracker, removeTracker } from "./tracker.js"
 import { extractServerPrefix } from "./segmenter.js"
 import { countTokens } from "./tokenizer.js"
-import type { BudgetSnapshot, Logger, PluginConfig } from "./types.js"
+import type { Logger, PluginConfig } from "./types.js"
 
 /**
  * opencode-context-inspector plugin.
@@ -21,9 +21,6 @@ import type { BudgetSnapshot, Logger, PluginConfig } from "./types.js"
 const plugin: Plugin = async ({ client }) => {
   const config = parseConfig()
   const defaultModel = config.model || "default"
-
-  // Last snapshot for the context_budget tool to reference
-  let lastSnapshot: BudgetSnapshot | null = null
 
   /**
    * Create a logger that respects the configured log level.
@@ -49,6 +46,36 @@ const plugin: Plugin = async ({ client }) => {
   const logger = createLogger()
 
   return {
+    /**
+     * Capture the current user message so session summaries can report cumulative input cost.
+     */
+    "chat.message": async (input, output) => {
+      try {
+        const tracker = getTracker(input.sessionID, config, input.model?.modelID || defaultModel)
+        tracker.recordInputMessage(output.parts)
+      } catch (err) {
+        logger.debug(
+          `Error processing current message: ${err instanceof Error ? err.message : String(err)}`,
+        )
+      }
+    },
+
+    /**
+     * Capture the full retained conversation before it is converted into model messages.
+     * This gives us a much better estimate than only counting the latest message event.
+     */
+    "experimental.chat.messages.transform": async (_input, output) => {
+      try {
+        const sessionId = getSessionIdFromMessages(output.messages) || "current"
+        const tracker = getTracker(sessionId, config, defaultModel)
+        tracker.updateConversationTokensFromMessages(output.messages)
+      } catch (err) {
+        logger.debug(
+          `Error processing retained messages: ${err instanceof Error ? err.message : String(err)}`,
+        )
+      }
+    },
+
     /**
      * Core hook: fires before every message with the full assembled system prompt.
      * This is where all injected context lives: MCP tool schemas, agent instructions,
@@ -81,7 +108,6 @@ const plugin: Plugin = async ({ client }) => {
         const modelContextWindow = input.model?.limit?.context
         const tracker = getTracker(sessionId, config, modelId, modelContextWindow)
         const snapshot = tracker.processSystemPrompt(systemParts)
-        lastSnapshot = snapshot
 
         // Log budget table if configured
         if (config.logOnEveryMessage) {
@@ -143,8 +169,7 @@ const plugin: Plugin = async ({ client }) => {
     event: async ({ event }) => {
       try {
         if (event.type === "session.idle") {
-          const sessionId = "current"
-          const tracker = getTracker(sessionId, config, defaultModel)
+          const tracker = getTracker(event.properties.sessionID, config, defaultModel)
           const stats = tracker.getStats()
 
           if (stats.messageCount > 0) {
@@ -153,34 +178,14 @@ const plugin: Plugin = async ({ client }) => {
           }
         }
 
-        if (event.type === "message.updated") {
-          try {
-            const messageData = event as Record<string, unknown>
-            const content =
-              typeof messageData.content === "string"
-                ? messageData.content
-                : typeof messageData.text === "string"
-                  ? messageData.text
-                  : ""
-            if (content) {
-              const sessionId = "current"
-              const tracker = getTracker(sessionId, config, defaultModel)
-              tracker.updateConversationTokens(content)
-            }
-          } catch {
-            // Degrade gracefully
-          }
-        }
-
         if (event.type === "session.compacted") {
-          const sessionId = "current"
-          const tracker = getTracker(sessionId, config, defaultModel)
+          const tracker = getTracker(event.properties.sessionID, config, defaultModel)
           tracker.recordCompaction()
           logger.info("Session compacted — context window was full")
         }
 
         if (event.type === "session.deleted") {
-          removeTracker("current")
+          removeTracker(event.properties.info.id)
         }
       } catch (err) {
         logger.debug(
@@ -204,11 +209,12 @@ const plugin: Plugin = async ({ client }) => {
             .optional()
             .describe("Output format: 'table' for detailed breakdown, 'summary' for brief overview"),
         },
-        async execute(_args, _context) {
-          if (!lastSnapshot) {
+        async execute(_args, context) {
+          const snapshot = findTracker(context.sessionID)?.getBudgetSnapshot()
+          if (!snapshot) {
             return "No context budget data available yet. The budget is analyzed on each message — try asking again after your next message."
           }
-          return formatBudgetToolResponse(lastSnapshot)
+          return formatBudgetToolResponse(snapshot)
         },
       }),
     },

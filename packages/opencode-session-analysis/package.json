@@ -1,7 +1,7 @@
 {
   "name": "@alexgorbatchev/opencode-session-analysis",
   "version": "0.1.0",
-  "description": "Bun CLI for reporting OpenCode session history, costs, tokens, tools, and project-scoped workflows",
+  "description": "Bun CLI for reporting OpenCode sessions, skill usage, costs, tokens, and project-scoped workflows",
   "type": "module",
   "publishConfig": {
     "access": "public"
@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "check": "bun run src/cli.ts --help",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "bun test src"
   },
   "keywords": [
     "bun",
@@ -24,6 +25,7 @@
     "opencode",
     "sqlite",
     "session-analysis",
+    "skills",
     "tokens",
     "cost"
   ],

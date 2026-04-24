@@ -12,7 +12,7 @@ The reusable source-of-truth layer.
 - **`/harnesses`**: Harness-specific config overrides, optional unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic can live under `harnesses/<target>/scripts/` when excluded via `.registry-ignore`.
 - **`/vendor`**: Third-party code packages vendored into this repo as Bun workspaces when a harness needs a repo-local file path with installed runtime dependencies.
 - **`/packages`**: Publishable repo-local packages distributed independently from the generated harness outputs.
-- **`/packages/opencode-session-analysis`**: Bun CLI package for OpenCode session reporting.
+- **`/packages/opencode-session-analysis`**: Bun CLI package for OpenCode session and skill-usage reporting.
 
 ### 2. The Profiles (`/profiles`)
 The assembled agents. These folders contain `profile.yaml` manifests that cherry-pick from the reusable assets using globs to create specific AI personas. You can also define custom tool toggles and granular tool permissions in these files.

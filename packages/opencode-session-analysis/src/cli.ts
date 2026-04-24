@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
 
+import { createSkillUsageReport } from "./createSkillUsageReport";
+import { formatSkillUsageReport } from "./formatSkillUsageReport";
 import { Database } from "bun:sqlite";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -7,7 +9,9 @@ import { getBorderCharacters, table } from "table";
 
 interface IOptions {
   allKnown: boolean;
+  allProjects: boolean;
   groupByProject: boolean;
+  skills: boolean;
   sessionId?: string;
   help: boolean;
 }
@@ -103,7 +107,7 @@ const TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("sv-SE", {
 const HELP_TEXT = [
   "Usage: opencode-session-analysis [options]",
   "",
-  "Reports OpenCode sessions using the current SQLite storage.",
+  "Reports OpenCode sessions and skill usage using the current SQLite storage.",
   "Project scoping follows OpenCode's git worktree resolution.",
   `Active time uses a default idle-gap threshold of ${DEFAULT_IDLE_GAP_LABEL}.`,
   "Run with bunx @alexgorbatchev/opencode-session-analysis after publishing.",
@@ -111,7 +115,9 @@ const HELP_TEXT = [
   "Options:",
   "  --all           Include all known sessions across all projects",
   "  --all-known     Include all known sessions across all projects",
+  "  --all-projects  With --skills, print one skill-usage table per project",
   "  --by-project    Group all-known output by project",
+  "  --skills        Show aggregate skill-usage totals across all projects",
   "  --session <id>  Show detailed output for one session",
   "  --help          Show this help text",
 ].join("\n");
@@ -258,7 +264,9 @@ function sumMergedIntervals(intervals: ITimeInterval[], idleGapMs: number): numb
 function parseArgs(argv: string[]): IOptions {
   const options: IOptions = {
     allKnown: false,
+    allProjects: false,
     groupByProject: false,
+    skills: false,
     help: false,
   };
 
@@ -281,8 +289,16 @@ function parseArgs(argv: string[]): IOptions {
       options.allKnown = true;
       continue;
     }
+    if (argument === "--all-projects") {
+      options.allProjects = true;
+      continue;
+    }
     if (argument === "--by-project") {
       options.groupByProject = true;
+      continue;
+    }
+    if (argument === "--skills") {
+      options.skills = true;
       continue;
     }
     if (argument === "--help" || argument === "-h") {
@@ -290,6 +306,19 @@ function parseArgs(argv: string[]): IOptions {
       continue;
     }
     throw new Error(`Unknown argument: ${argument}`);
+  }
+
+  if (options.skills && options.allKnown) {
+    throw new Error("--skills already includes all projects; remove --all/--all-known");
+  }
+  if (options.skills && options.groupByProject) {
+    throw new Error("Use --skills --all-projects instead of --skills --by-project");
+  }
+  if (options.skills && options.sessionId) {
+    throw new Error("--skills cannot be combined with --session");
+  }
+  if (options.allProjects && !options.skills) {
+    throw new Error("--all-projects requires --skills");
   }
 
   return options;
@@ -796,6 +825,20 @@ function main(): void {
 
   using database = new Database(DB_PATH, { readonly: true, strict: true });
   const sessions = readSessions(database);
+  if (options.skills) {
+    const report = createSkillUsageReport({
+      sessions,
+      toolParts: readToolParts(database),
+    });
+    process.stdout.write(
+      formatSkillUsageReport({
+        report,
+        showAllProjects: options.allProjects,
+      }),
+    );
+    return;
+  }
+
   const rootSessions = selectRootSessions(sessions, resolution, options);
 
   if (rootSessions.length === 0) {

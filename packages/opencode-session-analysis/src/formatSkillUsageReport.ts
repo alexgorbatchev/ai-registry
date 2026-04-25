@@ -18,6 +18,10 @@ function formatDecimal(value: number): string {
   }).format(value);
 }
 
+function shouldDrawSkillUsageHorizontalLine(lineIndex: number, rowCount: number): boolean {
+  return lineIndex === 0 || lineIndex === 1 || lineIndex === rowCount - 1 || lineIndex === rowCount;
+}
+
 function formatSkillUsageTable(section: ISkillUsageSection): string {
   const rows = [
     ["Skill", "Usages", "Avg/day"],
@@ -31,6 +35,7 @@ function formatSkillUsageTable(section: ISkillUsageSection): string {
       1: { alignment: "right" },
       2: { alignment: "right" },
     },
+    drawHorizontalLine: (lineIndex) => shouldDrawSkillUsageHorizontalLine(lineIndex, rows.length),
   });
 }
 

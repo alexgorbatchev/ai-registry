@@ -13,6 +13,7 @@ interface ISkillUsagePart {
 }
 
 interface ICreateSkillUsageReportArgs {
+  overallLabel?: string;
   sessions: readonly ISkillUsageSession[];
   toolParts: readonly ISkillUsagePart[];
 }
@@ -172,7 +173,7 @@ export function createSkillUsageReport(args: ICreateSkillUsageReportArgs): ISkil
     .sort((left, right) => right.totalUsages - left.totalUsages || left.label.localeCompare(right.label));
 
   return {
-    overall: buildSection("All projects", overallCounts, overallFirstUsageAt, overallLastUsageAt),
+    overall: buildSection(args.overallLabel ?? "All projects", overallCounts, overallFirstUsageAt, overallLastUsageAt),
     byProject,
   };
 }

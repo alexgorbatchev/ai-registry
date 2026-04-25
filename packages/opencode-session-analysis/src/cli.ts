@@ -3,17 +3,18 @@
 import { createSkillUsageReport } from "./createSkillUsageReport";
 import { formatSkillUsageReport } from "./formatSkillUsageReport";
 import { Database } from "bun:sqlite";
+import { Command } from "commander";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { getBorderCharacters, table } from "table";
 
-interface IOptions {
-  allKnown: boolean;
-  allProjects: boolean;
-  groupByProject: boolean;
-  skills: boolean;
+interface ISkillsCommandOptions {
+  all?: boolean;
+}
+
+interface ISessionsCommandOptions {
+  all?: boolean;
   sessionId?: string;
-  help: boolean;
 }
 
 interface ISessionRow {
@@ -105,26 +106,6 @@ const TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("sv-SE", {
   minute: "2-digit",
   hour12: false,
 });
-
-function getHelpText(): string {
-  return [
-    `Usage: ${COMMAND_NAME} [options]`,
-    "",
-    "Reports OpenCode sessions and skill usage using the current SQLite storage.",
-    "Project scoping follows OpenCode's git worktree resolution.",
-    `Active time uses a default idle-gap threshold of ${DEFAULT_IDLE_GAP_LABEL}.`,
-    "Run with bunx @alexgorbatchev/opencode-session-analysis after publishing.",
-    "",
-    "Options:",
-    "  --all           Include all known sessions across all projects",
-    "  --all-known     Include all known sessions across all projects",
-    "  --all-projects  With --skills, print one skill-usage table per project",
-    "  --by-project    Group all-known output by project",
-    "  --skills        Show aggregate skill-usage totals across all projects",
-    "  --session <id>  Show detailed output for one session",
-    "  --help          Show this help text",
-  ].join("\n");
-}
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null;
@@ -263,69 +244,6 @@ function sumMergedIntervals(intervals: ITimeInterval[], idleGapMs: number): numb
 
   totalDurationMs += Math.max(0, mergedEnd - mergedStart);
   return totalDurationMs;
-}
-
-function parseArgs(argv: string[]): IOptions {
-  const options: IOptions = {
-    allKnown: false,
-    allProjects: false,
-    groupByProject: false,
-    skills: false,
-    help: false,
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index];
-    if (argument === "--all") {
-      options.allKnown = true;
-      continue;
-    }
-    if (argument === "--session") {
-      const sessionId = argv[index + 1];
-      if (!sessionId) {
-        throw new Error("Missing value for --session");
-      }
-      options.sessionId = sessionId;
-      index += 1;
-      continue;
-    }
-    if (argument === "--all-known") {
-      options.allKnown = true;
-      continue;
-    }
-    if (argument === "--all-projects") {
-      options.allProjects = true;
-      continue;
-    }
-    if (argument === "--by-project") {
-      options.groupByProject = true;
-      continue;
-    }
-    if (argument === "--skills") {
-      options.skills = true;
-      continue;
-    }
-    if (argument === "--help" || argument === "-h") {
-      options.help = true;
-      continue;
-    }
-    throw new Error(`Unknown argument: ${argument}`);
-  }
-
-  if (options.skills && options.allKnown) {
-    throw new Error("--skills already includes all projects; remove --all/--all-known");
-  }
-  if (options.skills && options.groupByProject) {
-    throw new Error("Use --skills --all-projects instead of --skills --by-project");
-  }
-  if (options.skills && options.sessionId) {
-    throw new Error("--skills cannot be combined with --session");
-  }
-  if (options.allProjects && !options.skills) {
-    throw new Error("--all-projects requires --skills");
-  }
-
-  return options;
 }
 
 function findGitDirectory(startDirectory: string): string | undefined {
@@ -484,6 +402,28 @@ function buildChildrenMap(sessions: ISessionRow[]): Map<string, string[]> {
   return children;
 }
 
+function matchesProjectResolution(session: ISessionRow, resolution: IProjectResolution): boolean {
+  if (resolution.isGlobal) {
+    return session.project_worktree === "/" && resolve(session.directory) === resolution.directory;
+  }
+
+  return session.project_worktree === resolution.worktree;
+}
+
+function selectScopedSessions(
+  sessions: readonly ISessionRow[],
+  resolution: IProjectResolution,
+  includeAllProjects: boolean,
+): ISessionRow[] {
+  if (includeAllProjects) {
+    return [...sessions].sort((left, right) => right.time_updated - left.time_updated);
+  }
+
+  return sessions
+    .filter((session) => matchesProjectResolution(session, resolution))
+    .sort((left, right) => right.time_updated - left.time_updated);
+}
+
 function collectDescendantSessionIds(rootId: string, childrenByParentId: Map<string, string[]>): string[] {
   const sessionIds: string[] = [];
   const pending = [rootId];
@@ -503,21 +443,16 @@ function collectDescendantSessionIds(rootId: string, childrenByParentId: Map<str
   return sessionIds;
 }
 
-function selectRootSessions(sessions: ISessionRow[], resolution: IProjectResolution, options: IOptions): ISessionRow[] {
-  const rootSessions = sessions.filter((session) => session.parent_id === null);
-  if (options.allKnown) {
-    return rootSessions.sort((left, right) => right.time_updated - left.time_updated);
-  }
-
-  if (resolution.isGlobal) {
-    return rootSessions
-      .filter((session) => session.project_worktree === "/" && resolve(session.directory) === resolution.directory)
-      .sort((left, right) => right.time_updated - left.time_updated);
-  }
-
-  return rootSessions
-    .filter((session) => session.project_worktree === resolution.worktree)
-    .sort((left, right) => right.time_updated - left.time_updated);
+function selectRootSessions(
+  sessions: readonly ISessionRow[],
+  resolution: IProjectResolution,
+  includeAllProjects: boolean,
+): ISessionRow[] {
+  return selectScopedSessions(
+    sessions.filter((session) => session.parent_id === null),
+    resolution,
+    includeAllProjects,
+  );
 }
 
 function extractTokenTotals(messageData: unknown): ITokenTotals {
@@ -783,26 +718,24 @@ function printDetails(report: ISessionReport): void {
   );
 }
 
-function groupReportsByProject(reports: ISessionReport[]): Map<string, ISessionReport[]> {
-  const groups = new Map<string, ISessionReport[]>();
-  for (const report of reports) {
-    const existing = groups.get(report.projectLabel) ?? [];
-    existing.push(report);
-    groups.set(report.projectLabel, existing);
-  }
-  return new Map([...groups.entries()].sort((left, right) => left[0].localeCompare(right[0])));
-}
-
 function getSelectedReport(reports: ISessionReport[], sessionId: string): ISessionReport | undefined {
   return reports.find((report) => report.root.id === sessionId);
 }
 
-function printScopedHeader(scopeLabel: string, reports: ISessionReport[], options: IOptions): void {
+function printScopedHeader(scopeLabel: string, reports: ISessionReport[], sessionId: string | undefined): void {
   console.log(`Scope: ${scopeLabel}`);
   console.log(`Root sessions: ${reports.length}`);
   console.log(`Active gap: ${DEFAULT_IDLE_GAP_LABEL}`);
-  console.log(`Detail mode: ${options.sessionId ? `session ${options.sessionId}` : "summary only"}`);
+  console.log(`Detail mode: ${sessionId ? `session ${sessionId}` : "summary only"}`);
   console.log("");
+}
+
+function getScopeLabel(resolution: IProjectResolution, includeAllProjects: boolean): string {
+  if (includeAllProjects) {
+    return "all projects";
+  }
+
+  return resolution.isGlobal ? resolution.directory : resolution.worktree;
 }
 
 function ensureStorageExists(): void {
@@ -817,50 +750,43 @@ function ensureStorageExists(): void {
   throw new Error(`OpenCode SQLite database not found at ${DB_PATH}`);
 }
 
-function main(): void {
-  const options = parseArgs(Bun.argv.slice(2));
-  if (options.help) {
-    console.log(getHelpText());
-    return;
-  }
-
+function runSkillsCommand(options: ISkillsCommandOptions): void {
   ensureStorageExists();
   const resolution = resolveProject(resolve(process.cwd()));
+  const includeAllProjects = options.all === true;
+  const scopeLabel = includeAllProjects ? "All projects" : getScopeLabel(resolution, false);
+
+  using database = new Database(DB_PATH, { readonly: true, strict: true });
+  const sessions = selectScopedSessions(readSessions(database), resolution, includeAllProjects);
+  const report = createSkillUsageReport({
+    overallLabel: scopeLabel,
+    sessions,
+    toolParts: readToolParts(database),
+  });
+  process.stdout.write(
+    formatSkillUsageReport({
+      report,
+      showAllProjects: false,
+    }),
+  );
+}
+
+function runSessionsCommand(options: ISessionsCommandOptions): void {
+  ensureStorageExists();
+  const resolution = resolveProject(resolve(process.cwd()));
+  const includeAllProjects = options.all === true;
 
   using database = new Database(DB_PATH, { readonly: true, strict: true });
   const sessions = readSessions(database);
-  if (options.skills) {
-    const report = createSkillUsageReport({
-      sessions,
-      toolParts: readToolParts(database),
-    });
-    process.stdout.write(
-      formatSkillUsageReport({
-        report,
-        showAllProjects: options.allProjects,
-      }),
-    );
-    return;
-  }
-
-  const rootSessions = selectRootSessions(sessions, resolution, options);
+  const rootSessions = selectRootSessions(sessions, resolution, includeAllProjects);
 
   if (rootSessions.length === 0) {
-    const emptyScope = options.allKnown
-      ? "all known projects"
-      : resolution.isGlobal
-        ? `global project directory ${resolution.directory}`
-        : resolution.worktree;
-    console.log(`No sessions found for ${emptyScope}`);
+    console.log(`No sessions found for ${getScopeLabel(resolution, includeAllProjects)}`);
     return;
   }
 
   const reports = buildReports(rootSessions, sessions, readAssistantMessages(database), readToolParts(database));
-  const scopeLabel = options.allKnown
-    ? "all known projects"
-    : resolution.isGlobal
-      ? `global project directory ${resolution.directory}`
-      : resolution.worktree;
+  const scopeLabel = getScopeLabel(resolution, includeAllProjects);
 
   if (options.sessionId) {
     const report = getSelectedReport(reports, options.sessionId);
@@ -868,23 +794,54 @@ function main(): void {
       throw new Error(`Session ${options.sessionId} not found in ${scopeLabel}`);
     }
 
-    printScopedHeader(scopeLabel, reports, options);
+    printScopedHeader(scopeLabel, reports, options.sessionId);
     printDetails(report);
     return;
   }
 
-  printScopedHeader(scopeLabel, reports, options);
-
-  if (options.allKnown && options.groupByProject) {
-    for (const [projectLabel, projectReports] of groupReportsByProject(reports)) {
-      console.log(projectLabel);
-      printSessionTable(projectReports);
-      console.log("");
-    }
-    return;
-  }
+  printScopedHeader(scopeLabel, reports, options.sessionId);
 
   printSessionTable(reports);
 }
 
-main();
+function createProgram(): Command {
+  const program = new Command();
+  program.name(COMMAND_NAME);
+  program.description("Reports OpenCode sessions and skill usage using the current SQLite storage.");
+
+  program
+    .command("skills")
+    .option("--all", "Include all known sessions across all projects")
+    .action((options: ISkillsCommandOptions) => {
+      runSkillsCommand(options);
+    });
+
+  program
+    .command("sessions")
+    .option("--all", "Include all known sessions across all projects")
+    .option("--session <id>", "Show detailed output for one session in the selected scope")
+    .action((options: { all?: boolean; session?: string }) => {
+      runSessionsCommand({
+        all: options.all,
+        sessionId: options.session,
+      });
+    });
+
+  return program;
+}
+
+async function main(): Promise<void> {
+  const program = createProgram();
+
+  if (Bun.argv.length <= 2) {
+    console.log(program.helpInformation());
+    return;
+  }
+
+  await program.parseAsync(Bun.argv);
+}
+
+void main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+});

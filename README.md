@@ -108,6 +108,8 @@ The repo-local OpenCode session tools are:
 - `air-opencode-session-export`
 - `air-opencode-conversation-extract`
 
+`air-opencode-session-analysis` exposes `skills` and `sessions` subcommands. Run `air-opencode-session-analysis --help` to see the current command interface.
+
 Run `bun run bootstrap` to symlink these wrappers into `~/.local/bin`. If you prefer to manage `PATH` directly, add `scripts/` to your `PATH` instead.
 
 These wrappers execute the checked-in Bun source from this repository, so the clone and its installed dependencies must remain available on disk.

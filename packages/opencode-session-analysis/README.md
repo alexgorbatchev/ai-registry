@@ -11,36 +11,53 @@ Active time is heuristic: it merges workflow activity intervals using a default 
 From this repository root:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts
+bun run --cwd packages/opencode-session-analysis src/cli.ts --help
 ```
 
 After publishing:
 
 ```bash
-bunx @alexgorbatchev/opencode-session-analysis
+bunx @alexgorbatchev/opencode-session-analysis --help
 ```
 
-Aggregate skill-usage report across all projects:
+Show session summaries for the current project:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts --skills
+bun run --cwd packages/opencode-session-analysis src/cli.ts sessions
 ```
 
-One skill-usage table per project:
+Show one skill-usage table for the current project:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts --skills --all-projects
+bun run --cwd packages/opencode-session-analysis src/cli.ts skills
 ```
 
-## Flags
+Aggregate all projects into one skill-usage table:
 
-- `--all`: include all known sessions across all projects
-- `--all-known`: include all known sessions across all projects
-- `--all-projects`: with `--skills`, show one skill-usage table per project instead of the aggregate table
-- `--by-project`: group `--all-known` output by project/worktree
-- `--skills`: show aggregate skill-usage totals across all projects
-- `--session <id>`: show detailed output for one session
-- `--help`: show help text
+```bash
+bun run --cwd packages/opencode-session-analysis src/cli.ts skills --all
+```
+
+Aggregate root sessions across all projects into one table:
+
+```bash
+bun run --cwd packages/opencode-session-analysis src/cli.ts sessions --all
+```
+
+Show details for one root session in the current scope:
+
+```bash
+bun run --cwd packages/opencode-session-analysis src/cli.ts sessions --session <id>
+```
+
+## Commands
+
+- `skills`: show one skill-usage table for the current project scope
+- `skills --all`: aggregate all projects into one skill-usage table
+- `sessions`: show root session summaries for the current project scope
+- `sessions --all`: aggregate root sessions from all projects into one table
+- `sessions --session <id>`: show detailed output for one root session in the selected scope
+- `--help`: show command help
 
 ## Data Source
 
@@ -61,10 +78,10 @@ For each root workflow session, the CLI reports:
 - tool-call breakdown
 - best-effort MCP/server breakdown when structured metadata is present
 
-With `--skills`, the CLI reports:
+With `skills`, the CLI reports:
 
-- one aggregate all-projects skill-usage table sorted by usage count descending, including an average-per-day column over the observed usage span
+- one skill-usage table sorted by usage count descending, including an average-per-day column over the observed usage span for the selected scope
 
-With `--skills --all-projects`, the CLI reports:
+With `sessions`, the CLI reports:
 
-- one skill-usage table per project/worktree or global directory scope
+- one root-session summary table for the selected scope

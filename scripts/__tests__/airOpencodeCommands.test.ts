@@ -55,21 +55,17 @@ describe("air-opencode wrappers", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toMatchInlineSnapshot(`
-"Usage: air-opencode-session-analysis [options]
+"Usage: air-opencode-session-analysis [options] [command]
 
 Reports OpenCode sessions and skill usage using the current SQLite storage.
-Project scoping follows OpenCode's git worktree resolution.
-Active time uses a default idle-gap threshold of 5m.
-Run with bunx @alexgorbatchev/opencode-session-analysis after publishing.
 
 Options:
-  --all           Include all known sessions across all projects
-  --all-known     Include all known sessions across all projects
-  --all-projects  With --skills, print one skill-usage table per project
-  --by-project    Group all-known output by project
-  --skills        Show aggregate skill-usage totals across all projects
-  --session <id>  Show detailed output for one session
-  --help          Show this help text
+  -h, --help          display help for command
+
+Commands:
+  skills [options]
+  sessions [options]
+  help [command]      display help for command
 "
 `);
   });

@@ -21,20 +21,6 @@ describe("createSkillPermission", () => {
       "global-b": "allow",
     });
   });
-
-  it("can restrict a profile to profile-local skills only", () => {
-    expect(createSkillPermission(["*"], ["global-a", "global-b"], ["local-a", "local-b"], true)).toEqual({
-      "*": "deny",
-      "local-a": "allow",
-      "local-b": "allow",
-    });
-  });
-
-  it("denies every skill when local-only mode is enabled without local skills", () => {
-    expect(createSkillPermission(["*"], ["global-a", "global-b"], [], true)).toEqual({
-      "*": "deny",
-    });
-  });
 });
 
 describe("getProfileLocalCommandOutputName", () => {

@@ -20,7 +20,6 @@ export type ITemplateContext = Record<string, string>;
 export type IProfileManifest = {
   description?: string;
   skills?: string[];
-  profile_skills_only?: boolean;
   commands?: string[];
   tools?: Record<string, boolean>;
   permission?: Record<string, string | Record<string, string>>;

@@ -8,9 +8,8 @@ export function createSkillPermission(
   manifestSkills: string[] | undefined,
   globalMatchedSkills: string[],
   profileLocalSkills: string[],
-  profileLocalSkillsOnly: boolean = false,
 ): ISkillPermission {
-  if (!profileLocalSkillsOnly && isGlobalWildcardOnly(manifestSkills) && profileLocalSkills.length === 0) {
+  if (isGlobalWildcardOnly(manifestSkills) && profileLocalSkills.length === 0) {
     return { "*": "allow" };
   }
 
@@ -19,10 +18,8 @@ export function createSkillPermission(
     permission[profileLocalSkill] = "allow";
   }
 
-  if (!profileLocalSkillsOnly) {
-    for (const globalMatchedSkill of globalMatchedSkills) {
-      permission[globalMatchedSkill] = "allow";
-    }
+  for (const globalMatchedSkill of globalMatchedSkills) {
+    permission[globalMatchedSkill] = "allow";
   }
 
   return permission;

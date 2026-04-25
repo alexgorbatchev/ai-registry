@@ -21,7 +21,6 @@ The assembled agents. These folders contain `profile.yaml` manifests that cherry
   - `profiles/<name>/skills/<skill-name>/SKILL.md` for profile-owned skills
 - Profile-local commands are emitted into OpenCode as namespaced shared commands named `--<profile>-<filename>.md`.
 - Profile-local skills keep their normal skill names and therefore must not collide with global skills or another profile's local skills.
-- Set `profile_skills_only: true` in a profile manifest when that profile should be allowed to use only its own `profiles/<name>/skills/*` skills. Global skills can still be packaged for other profiles, but that profile's generated skill permission map will deny them.
 - **`personal-assistant/`**: General-purpose personal assistant with stronger defaults for practical consumer tasks such as showtime searches.
 - **`designer/`**: UI/UX focused agent.
 - **`developer/`**: Backend/Fullstack focused agent.
@@ -38,8 +37,6 @@ The final generated harness artifacts. This directory is rebuilt from source and
 ## Building and Usage
 
 This repository includes a custom local compiler (`scripts/build.ts`) that resolves the profiles and builds generated harness outputs directly from the checked-in source tree.
-
-Profile manifests support an optional `profile_skills_only: true` flag for OpenCode builds when a persona should use only its profile-local skills while still sharing the rest of the generated output with other profiles.
 
 Harnesses that need extra output shaping can expose a plugin entrypoint at `harnesses/<target>/scripts/build.ts`. The root build discovers those plugins dynamically and lets them stage per-profile artifacts plus finalize the generated harness output.
 

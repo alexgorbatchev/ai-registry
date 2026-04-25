@@ -1,14 +1,17 @@
-import { $ } from "bun";
 import { lstat, mkdir, readlink, realpath, rename, symlink } from "fs/promises";
 import { homedir } from "os";
 import { dirname, join, resolve } from "path";
 
+import { getErrorMessage } from "./lib/getErrorMessage";
+import { runCommand } from "./lib/runCommand";
+import { syncPublicScripts, type ISyncPublicScriptsResult } from "./lib/syncPublicScripts";
+
 const REGISTRY_DIR = resolve(import.meta.dir, "..");
 const OUTPUT_DIR = join(REGISTRY_DIR, ".output");
+const PUBLIC_BIN_DIR = join(homedir(), ".local", "bin");
+const SCRIPTS_DIR = join(REGISTRY_DIR, "scripts");
 
 type IBootstrapTarget = {
-  name: string;
-  envName: string;
   sourcePath: string;
   targetPath: string;
   description: string;
@@ -66,8 +69,6 @@ async function resolveRealPathOrSelf(targetPath: string): Promise<string> {
 function getBootstrapTargets(): IBootstrapTarget[] {
   return [
     {
-      name: "opencode",
-      envName: "OPENCODE_CONFIG_DIR",
       sourcePath: join(OUTPUT_DIR, "opencode"),
       targetPath: process.env.OPENCODE_CONFIG_DIR?.trim() || join(getConfigHome(), "opencode"),
       description: "OpenCode config",
@@ -106,15 +107,49 @@ async function applyTarget(target: IBootstrapTarget): Promise<IApplyResult> {
   return { action: "linked" };
 }
 
+function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResult): void {
+  console.log("Syncing repo-local public scripts...");
+
+  for (const scriptName of result.cleanedBrokenLinks) {
+    console.log(`  removed broken link: ${join(binDir, scriptName)}`);
+  }
+
+  for (const linkedScript of result.linkedScripts) {
+    const targetPath = join(binDir, linkedScript.scriptName);
+    if (linkedScript.action === "unchanged") {
+      console.log(`  reused ${linkedScript.scriptName}: ${targetPath}`);
+      continue;
+    }
+
+    if (linkedScript.action === "relinked") {
+      console.log(`  relinked ${linkedScript.scriptName}: ${targetPath}`);
+      continue;
+    }
+
+    console.log(`  linked ${linkedScript.scriptName}: ${targetPath}`);
+    if (linkedScript.action === "backed_up") {
+      console.log(`    backed up previous contents to: ${linkedScript.backupPath}`);
+    }
+  }
+}
+
 async function main(): Promise<void> {
   console.log("🚀 Bootstrapping ai-registry...\n");
 
   console.log("Installing dependencies...");
-  await $`bun install`.cwd(REGISTRY_DIR);
+  await runCommand({
+    cmd: ["bun", "install"],
+    cwd: REGISTRY_DIR,
+    description: "install dependencies",
+  });
 
   console.log("Building generated outputs...");
-  const buildCommand = hasAutoConfirmFlag() ? $`bun run build -- -y` : $`bun run build`;
-  await buildCommand.cwd(REGISTRY_DIR);
+  await runCommand({
+    cmd: hasAutoConfirmFlag() ? ["bun", "run", "build", "--", "-y"] : ["bun", "run", "build"],
+    cwd: REGISTRY_DIR,
+    description: "build generated outputs",
+    failureHint: "If generated outputs drifted and you want to overwrite them, rerun `bun bootstrap -- -y`.",
+  });
 
   const bootstrapTargets = getBootstrapTargets();
 
@@ -132,12 +167,19 @@ async function main(): Promise<void> {
     }
   }
 
+  const publicScriptResult = await syncPublicScripts({
+    binDir: PUBLIC_BIN_DIR,
+    scriptsDir: SCRIPTS_DIR,
+  });
+  printPublicScriptResult(PUBLIC_BIN_DIR, publicScriptResult);
+
   console.log("\nReady.");
   console.log(`OpenCode now reads from: ${bootstrapTargets[0].targetPath}`);
+  console.log(`Repo-local air-* commands are linked into: ${PUBLIC_BIN_DIR}`);
   console.log("Override the target with OPENCODE_CONFIG_DIR if needed.");
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error(getErrorMessage(error));
   process.exit(1);
 });

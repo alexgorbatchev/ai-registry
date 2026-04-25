@@ -7,7 +7,7 @@ import {
   rm,
   writeFile,
 } from "fs/promises";
-import { join, relative, resolve } from "path";
+import { join, resolve } from "path";
 import { pathToFileURL } from "url";
 import { existsSync } from "fs";
 import { globby } from "globby";
@@ -23,6 +23,7 @@ import {
   copyPathWithTemplateVariables,
 } from "./lib/harnessBuild";
 import { discoverProfileLocalAssets } from "./lib/discoverProfileLocalAssets";
+import { getErrorMessage } from "./lib/getErrorMessage";
 
 // Resolve paths relative to the ai-registry root
 const REGISTRY_DIR = resolve(import.meta.dir, "..");
@@ -48,7 +49,6 @@ const LEGACY_GENERATED_OUTPUT_MANIFEST_PATH = join(
   LEGACY_GENERATED_OUTPUT_MANIFEST_NAME,
 );
 const GENERATED_OUTPUT_MANIFEST_VERSION = 1;
-const NULL_DEVICE_PATH = "/dev/null";
 const TEMPLATE_CONTEXT = {
   repo_root: REGISTRY_DIR,
   skills_dir: SKILLS_DIR,
@@ -239,114 +239,22 @@ function getGeneratedOutputDrift(
   return drift.sort((left, right) => left.path.localeCompare(right.path));
 }
 
-function indentBlock(content: string, indent: string): string {
-  return content
-    .split("\n")
-    .map((line) => `${indent}${line}`)
-    .join("\n");
-}
+function formatGeneratedOutputDrift(drift: IGeneratedOutputDrift[]): string {
+  const fileLabel = drift.length === 1 ? "file" : "files";
+  const sections = drift.map((entry) => `  - ${entry.path} (${entry.reason})`);
 
-function getGeneratedOutputDiffPaths(
-  entry: IGeneratedOutputDrift,
-  nextOutputDir: string,
-): { currentPath: string; nextPath: string } {
-  const currentPath = join(UNIFIED_OUTPUT_DIR, entry.path);
-  const nextPath = join(nextOutputDir, entry.path);
-
-  if (entry.reason === "missing") {
-    return { currentPath: NULL_DEVICE_PATH, nextPath };
-  }
-
-  if (entry.reason === "unexpected") {
-    return { currentPath, nextPath: NULL_DEVICE_PATH };
-  }
-
-  return { currentPath, nextPath };
-}
-
-function normalizeDiffPathLabel(filePath: string, label: string): string {
-  if (filePath === NULL_DEVICE_PATH) {
-    return filePath;
-  }
-
-  const relativePath = normalizeRelativePath(relative(REGISTRY_DIR, filePath));
-  return `${label}/${relativePath}`;
-}
-
-async function getGeneratedOutputDiff(
-  entry: IGeneratedOutputDrift,
-  nextOutputDir: string,
-): Promise<string> {
-  const { currentPath, nextPath } = getGeneratedOutputDiffPaths(entry, nextOutputDir);
-  const diffCurrentPath = currentPath === NULL_DEVICE_PATH
-    ? currentPath
-    : normalizeRelativePath(relative(REGISTRY_DIR, currentPath));
-  const diffNextPath = nextPath === NULL_DEVICE_PATH
-    ? nextPath
-    : normalizeRelativePath(relative(REGISTRY_DIR, nextPath));
-  const diffProcess = Bun.spawn({
-    cmd: [
-      "git",
-      "diff",
-      "--no-index",
-      "--no-color",
-      "--text",
-      "--src-prefix=current/",
-      "--dst-prefix=next/",
-      "--",
-      diffCurrentPath,
-      diffNextPath,
-    ],
-    cwd: REGISTRY_DIR,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-
-  const stdoutText = (await new Response(diffProcess.stdout).text()).trim();
-  const stderrText = (await new Response(diffProcess.stderr).text()).trim();
-  const exitCode = await diffProcess.exited;
-  if (exitCode > 1) {
-    throw new Error(
-      `Failed to generate diff for ${entry.path}: ${stderrText || stdoutText || `exit code ${exitCode}`}`,
-    );
-  }
-
-  return stdoutText
-    .replaceAll(
-      normalizeDiffPathLabel(currentPath, "current"),
-      `current/${entry.path}`,
-    )
-    .replaceAll(normalizeDiffPathLabel(nextPath, "next"), `next/${entry.path}`);
-}
-
-async function formatGeneratedOutputDrift(
-  drift: IGeneratedOutputDrift[],
-  nextOutputDir: string,
-): Promise<string> {
-  const sections: string[] = [];
-
-  for (const entry of drift) {
-    const diff = await getGeneratedOutputDiff(entry, nextOutputDir);
-    const sectionLines = [`  - ${entry.path} (${entry.reason})`];
-    if (diff) {
-      sectionLines.push(indentBlock(diff, "    "));
-    }
-    sections.push(sectionLines.join("\n"));
-  }
-
-  return `\n⚠️ Detected external changes in generated outputs:\n${sections.join("\n")}`;
+  return `\n⚠️ Detected external changes in generated outputs (${drift.length} ${fileLabel}):\n${sections.join("\n")}`;
 }
 
 async function confirmGeneratedOutputOverwrite(
   drift: IGeneratedOutputDrift[],
-  nextOutputDir: string,
   hasAutoConfirm: boolean,
 ): Promise<void> {
   if (drift.length === 0) {
     return;
   }
 
-  const driftMessage = await formatGeneratedOutputDrift(drift, nextOutputDir);
+  const driftMessage = formatGeneratedOutputDrift(drift);
   console.error(driftMessage);
 
   if (hasAutoConfirm) {
@@ -356,7 +264,7 @@ async function confirmGeneratedOutputOverwrite(
 
   if (!stdin.isTTY || !stdout.isTTY) {
     throw new Error(
-      `Build cancelled. Generated outputs changed outside the build and no interactive terminal is available to confirm overwrite.${driftMessage}`,
+      "Build cancelled. Generated outputs changed outside the build and no interactive terminal is available to confirm overwrite. Rerun with -y/--yes to overwrite them.",
     );
   }
 
@@ -369,7 +277,7 @@ async function confirmGeneratedOutputOverwrite(
 
     if (answer !== "y" && answer !== "yes") {
       throw new Error(
-        `Build cancelled. Generated outputs were modified outside the build.${driftMessage}`,
+        "Build cancelled. Generated outputs were modified outside the build.",
       );
     }
   } finally {
@@ -388,7 +296,7 @@ async function assertGeneratedOutputsAreSafeToReplace(
 
   const currentChecksums = await collectGeneratedOutputChecksums(UNIFIED_OUTPUT_DIR);
   const drift = getGeneratedOutputDrift(manifest, currentChecksums);
-  await confirmGeneratedOutputOverwrite(drift, nextOutputDir, hasAutoConfirm);
+  await confirmGeneratedOutputOverwrite(drift, hasAutoConfirm);
 }
 
 async function writeGeneratedOutputManifest(): Promise<void> {
@@ -594,6 +502,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error(getErrorMessage(error));
   process.exit(1);
 });

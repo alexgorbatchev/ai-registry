@@ -5,7 +5,7 @@ source_url: null
 file_kind: learnings
 scope: cross-project
 compaction_threshold: 10
-changes_since_compaction: 1
+changes_since_compaction: 2
 last_compacted_at: null
 ---
 
@@ -17,3 +17,7 @@ This file stores durable engineering wisdom that should generalize across work i
 
 - Put TypeScript helper modules that are imported by other scripts under `scripts/lib/`, not directly under `scripts/`.
 - Use dash-based filenames for executable script entrypoints (for example `install-git-hooks.ts`), not camelCase names.
+
+## Build-time Template Tags In Runnable Code
+
+- If a runnable source script contains build-time template tags such as `{{repo_root}}`, give it a runtime fallback for the unresolved placeholder so the source file still works before generated output templating runs.

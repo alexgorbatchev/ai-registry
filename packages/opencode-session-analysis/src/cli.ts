@@ -96,6 +96,7 @@ const DB_PATH = join(DATA_DIR, "opencode.db");
 const LEGACY_STORAGE_DIR = join(DATA_DIR, "storage");
 const DEFAULT_IDLE_GAP_MS = 5 * 60 * 1000;
 const DEFAULT_IDLE_GAP_LABEL = "5m";
+const COMMAND_NAME = process.env.OPENCODE_SESSION_ANALYSIS_COMMAND?.trim() || "opencode-session-analysis";
 const TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("sv-SE", {
   year: "numeric",
   month: "2-digit",
@@ -104,23 +105,26 @@ const TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("sv-SE", {
   minute: "2-digit",
   hour12: false,
 });
-const HELP_TEXT = [
-  "Usage: opencode-session-analysis [options]",
-  "",
-  "Reports OpenCode sessions and skill usage using the current SQLite storage.",
-  "Project scoping follows OpenCode's git worktree resolution.",
-  `Active time uses a default idle-gap threshold of ${DEFAULT_IDLE_GAP_LABEL}.`,
-  "Run with bunx @alexgorbatchev/opencode-session-analysis after publishing.",
-  "",
-  "Options:",
-  "  --all           Include all known sessions across all projects",
-  "  --all-known     Include all known sessions across all projects",
-  "  --all-projects  With --skills, print one skill-usage table per project",
-  "  --by-project    Group all-known output by project",
-  "  --skills        Show aggregate skill-usage totals across all projects",
-  "  --session <id>  Show detailed output for one session",
-  "  --help          Show this help text",
-].join("\n");
+
+function getHelpText(): string {
+  return [
+    `Usage: ${COMMAND_NAME} [options]`,
+    "",
+    "Reports OpenCode sessions and skill usage using the current SQLite storage.",
+    "Project scoping follows OpenCode's git worktree resolution.",
+    `Active time uses a default idle-gap threshold of ${DEFAULT_IDLE_GAP_LABEL}.`,
+    "Run with bunx @alexgorbatchev/opencode-session-analysis after publishing.",
+    "",
+    "Options:",
+    "  --all           Include all known sessions across all projects",
+    "  --all-known     Include all known sessions across all projects",
+    "  --all-projects  With --skills, print one skill-usage table per project",
+    "  --by-project    Group all-known output by project",
+    "  --skills        Show aggregate skill-usage totals across all projects",
+    "  --session <id>  Show detailed output for one session",
+    "  --help          Show this help text",
+  ].join("\n");
+}
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null;
@@ -816,7 +820,7 @@ function ensureStorageExists(): void {
 function main(): void {
   const options = parseArgs(Bun.argv.slice(2));
   if (options.help) {
-    console.log(HELP_TEXT);
+    console.log(getHelpText());
     return;
   }
 

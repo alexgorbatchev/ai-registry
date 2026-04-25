@@ -2,7 +2,7 @@
 
 import { Database } from "bun:sqlite";
 import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 interface IExtractedMessage {
   session_id: string;
@@ -27,12 +27,22 @@ interface IMessagePartRow {
   part_text: string | null;
 }
 
-const DATA_DIR = join(process.env.XDG_DATA_HOME ?? join(process.env.HOME ?? "", ".local", "share"), "opencode");
-const DB_PATH = join(DATA_DIR, "opencode.db");
-const STORAGE_DIR = join(DATA_DIR, "storage");
-const OUTPUT_DIR_PREFIX = "{{repo_root}}/.opencode-analysis";
-const OUTPUT_DIR = OUTPUT_DIR_PREFIX;
-const ALL_MESSAGES_FILE = join(OUTPUT_DIR, "all_messages.jsonl");
+interface IExtractArguments {
+  dbPath: string;
+  outputDirectory: string;
+  storageDirectory: string;
+}
+
+const DEFAULT_DATA_DIR = join(process.env.XDG_DATA_HOME ?? join(process.env.HOME ?? "", ".local", "share"), "opencode");
+const DEFAULT_DB_PATH = join(DEFAULT_DATA_DIR, "opencode.db");
+const DEFAULT_STORAGE_DIR = join(DEFAULT_DATA_DIR, "storage");
+const REPO_ROOT_PLACEHOLDER = "{{repo_root}}";
+const RESOLVED_REPO_ROOT =
+  REPO_ROOT_PLACEHOLDER === "{{repo_root}}"
+    ? resolve(import.meta.dir, "..", "..", "..", "..", "..")
+    : REPO_ROOT_PLACEHOLDER;
+const DEFAULT_OUTPUT_DIR = join(RESOLVED_REPO_ROOT, ".opencode-analysis");
+const COMMAND_NAME = process.env.OPENCODE_CONVERSATION_EXTRACT_COMMAND?.trim() || "bun scripts/extract.ts";
 const CHUNK_SIZE = 320000;
 const MIN_TEXT_LEN = 10;
 
@@ -67,6 +77,73 @@ function flushRecord(
     timestamp,
     text,
   });
+}
+
+function printUsage(): void {
+  console.log(
+    `Usage: ${COMMAND_NAME} [--output-dir <path>] [--db <path-to-opencode.db>] [--storage-dir <path-to-storage-dir>]`,
+  );
+  console.log("- output-dir defaults to .opencode-analysis under the resolved repo root");
+  console.log("- extracts user messages into all_messages.jsonl plus chunk_N.jsonl files");
+  console.log("- falls back to the legacy storage directory when SQLite is unavailable");
+}
+
+function parseArguments(argv: string[]): IExtractArguments {
+  let dbPath = DEFAULT_DB_PATH;
+  let outputDirectory = DEFAULT_OUTPUT_DIR;
+  let storageDirectory = DEFAULT_STORAGE_DIR;
+  let hasStorageDirectoryOverride = false;
+
+  for (let index = 2; index < argv.length; index += 1) {
+    const argument = argv[index];
+
+    if (argument === "--help" || argument === "-h") {
+      printUsage();
+      process.exit(0);
+    }
+
+    if (argument === "--db") {
+      const nextArgument = argv[index + 1];
+      if (!nextArgument) {
+        throw new Error("Missing value for --db");
+      }
+
+      dbPath = nextArgument;
+      index += 1;
+      continue;
+    }
+
+    if (argument === "--output-dir") {
+      const nextArgument = argv[index + 1];
+      if (!nextArgument) {
+        throw new Error("Missing value for --output-dir");
+      }
+
+      outputDirectory = nextArgument;
+      index += 1;
+      continue;
+    }
+
+    if (argument === "--storage-dir") {
+      const nextArgument = argv[index + 1];
+      if (!nextArgument) {
+        throw new Error("Missing value for --storage-dir");
+      }
+
+      storageDirectory = nextArgument;
+      hasStorageDirectoryOverride = true;
+      index += 1;
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${argument}`);
+  }
+
+  return {
+    dbPath,
+    outputDirectory,
+    storageDirectory: hasStorageDirectoryOverride ? storageDirectory : join(dirname(dbPath), "storage"),
+  };
 }
 
 async function pathExists(path: string): Promise<boolean> {
@@ -117,10 +194,10 @@ function extractLegacySessionTitle(data: Record<string, unknown>): string {
   return getStringProperty(data, "title") ?? "untitled";
 }
 
-function printSummary(chunks: IExtractedMessage[][]): void {
+function printSummary(chunks: IExtractedMessage[][], outputDirectory: string): void {
   console.error("");
   console.error("=== Summary ===");
-  console.error(`Created ${chunks.length} chunks in ${OUTPUT_DIR_PREFIX}/`);
+  console.error(`Created ${chunks.length} chunks in ${outputDirectory}/`);
   console.error("");
 
   console.log(`${"File".padEnd(20)} ${"Messages".padStart(10)} ${"Chars".padStart(12)}`);
@@ -157,15 +234,15 @@ function chunkRecords(records: IExtractedMessage[]): IExtractedMessage[][] {
   return chunks;
 }
 
-async function clearExistingChunkFiles(): Promise<void> {
-  if (!(await pathExists(OUTPUT_DIR))) {
+async function clearExistingChunkFiles(outputDirectory: string): Promise<void> {
+  if (!(await pathExists(outputDirectory))) {
     return;
   }
 
-  const directoryEntries = await readdir(OUTPUT_DIR, { withFileTypes: true });
+  const directoryEntries = await readdir(outputDirectory, { withFileTypes: true });
   const chunkFilePaths = directoryEntries
     .filter((directoryEntry) => directoryEntry.isFile() && /^chunk_\d+\.jsonl$/.test(directoryEntry.name))
-    .map((directoryEntry) => join(OUTPUT_DIR, directoryEntry.name));
+    .map((directoryEntry) => join(outputDirectory, directoryEntry.name));
 
   await Promise.all(chunkFilePaths.map((chunkFilePath) => rm(chunkFilePath, { force: true })));
 }
@@ -340,41 +417,44 @@ async function extractFromLegacyStorage(path: string): Promise<{ sessionCount: n
   return { sessionCount: sessions.size, records };
 }
 
-async function extractRecords(): Promise<{ sessionCount: number; records: IExtractedMessage[] }> {
-  if (await pathExists(DB_PATH)) {
+async function extractRecords(args: IExtractArguments): Promise<{ sessionCount: number; records: IExtractedMessage[] }> {
+  if (await pathExists(args.dbPath)) {
     try {
-      return extractFromSqlite(DB_PATH);
+      return extractFromSqlite(args.dbPath);
     } catch (error) {
-      if (await pathExists(STORAGE_DIR)) {
+      if (await pathExists(args.storageDirectory)) {
         console.error(`SQLite extraction failed (${String(error)}); falling back to legacy JSON storage.`);
-        return extractFromLegacyStorage(STORAGE_DIR);
+        return extractFromLegacyStorage(args.storageDirectory);
       }
 
       throw error;
     }
   }
 
-  if (await pathExists(STORAGE_DIR)) {
-    return extractFromLegacyStorage(STORAGE_DIR);
+  if (await pathExists(args.storageDirectory)) {
+    return extractFromLegacyStorage(args.storageDirectory);
   }
 
   throw new Error("No OpenCode storage found. Expected either opencode.db or storage/ directory.");
 }
 
 async function main(): Promise<void> {
-  await mkdir(OUTPUT_DIR, { recursive: true });
+  const args = parseArguments(Bun.argv);
+  const allMessagesFile = join(args.outputDirectory, "all_messages.jsonl");
+
+  await mkdir(args.outputDirectory, { recursive: true });
 
   console.error("Extracting user messages...");
-  const { records } = await extractRecords();
+  const { records } = await extractRecords(args);
   records.sort((left, right) => left.timestamp - right.timestamp);
 
-  await writeJsonLines(ALL_MESSAGES_FILE, records);
+  await writeJsonLines(allMessagesFile, records);
   console.error(`Extracted ${records.length} messages (after filtering)`);
 
-  await clearExistingChunkFiles();
+  await clearExistingChunkFiles(args.outputDirectory);
 
   if (records.length === 0) {
-    printSummary([]);
+    printSummary([], args.outputDirectory);
     return;
   }
 
@@ -382,10 +462,10 @@ async function main(): Promise<void> {
   const chunks = chunkRecords(records);
 
   await Promise.all(
-    chunks.map((chunk, index) => writeJsonLines(join(OUTPUT_DIR, `chunk_${index}.jsonl`), chunk)),
+    chunks.map((chunk, index) => writeJsonLines(join(args.outputDirectory, `chunk_${index}.jsonl`), chunk)),
   );
 
-  printSummary(chunks);
+  printSummary(chunks, args.outputDirectory);
 }
 
 await main();

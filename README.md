@@ -69,6 +69,8 @@ For the normal machine setup flow after cloning, run:
 bun run bootstrap
 ```
 
+Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the harness config, and resync the repo-local `air-*` wrappers into `~/.local/bin`.
+
 To smoke test that flow without touching your real XDG config paths, run:
 
 ```bash
@@ -84,9 +86,11 @@ That command:
 - verifies the previous generated-output manifest before replacing `.output/`
 - stops for confirmation when generated files drift from the last manifest, with `no` as the default; use `bun run build -- -y` or `bun run bootstrap -- -y` to auto-confirm
 - links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
+- symlinks every `scripts/air-*` wrapper into `~/.local/bin`
+- removes broken `air-*` symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
 
-After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`.
+After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps both the generated OpenCode config and the repo-local `air-*` symlinks refreshed.
 
 To compile the configurations, simply run:
 
@@ -94,6 +98,18 @@ To compile the configurations, simply run:
 bun install
 bun run build
 ```
+
+### Repo-local PATH commands
+
+The repo-local OpenCode session tools are:
+
+- `air-opencode-session-analysis`
+- `air-opencode-session-export`
+- `air-opencode-conversation-extract`
+
+Run `bun run bootstrap` to symlink these wrappers into `~/.local/bin`. If you prefer to manage `PATH` directly, add `scripts/` to your `PATH` instead.
+
+These wrappers execute the checked-in Bun source from this repository, so the clone and its installed dependencies must remain available on disk.
 
 *Generated outputs are discovered from the checked-in harness build plugins under `harnesses/<target>/scripts/build.ts`. Today that produces `.output/opencode`.*
 

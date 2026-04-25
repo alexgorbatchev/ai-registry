@@ -6,8 +6,14 @@ const REGISTRY_DIR = resolve(import.meta.dir, "..");
 const SMOKE_HOME = join(REGISTRY_DIR, ".tmp", "bootstrap-smoke");
 const SMOKE_REPO_DIR = join(SMOKE_HOME, "development", "ai-registry");
 const CONFIG_HOME = join(SMOKE_HOME, ".config");
+const PUBLIC_BIN_DIR = join(SMOKE_HOME, ".local", "bin");
 const OPENCODE_TARGET = join(CONFIG_HOME, "opencode");
 const OPENCODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "opencode");
+const PUBLIC_SCRIPT_NAMES = [
+  "air-opencode-conversation-extract",
+  "air-opencode-session-analysis",
+  "air-opencode-session-export",
+];
 const OUTPUT_MANIFEST = join(
   SMOKE_REPO_DIR,
   ".output",
@@ -91,11 +97,15 @@ async function runBootstrap(): Promise<void> {
 
 async function verifyBootstrapOutputs(): Promise<void> {
   const opencodeBackupDir = await findSingleBackup(CONFIG_HOME, "opencode.backup-");
+  const publicScriptAssertions = PUBLIC_SCRIPT_NAMES.map((scriptName) =>
+    assertSymlinkTarget(join(PUBLIC_BIN_DIR, scriptName), join(SMOKE_REPO_DIR, "scripts", scriptName)),
+  );
 
   await Promise.all([
     assertPathExists(join(opencodeBackupDir, "existing.txt")),
     assertPathExists(OUTPUT_MANIFEST),
     assertSymlinkTarget(OPENCODE_TARGET, OPENCODE_SOURCE),
+    ...publicScriptAssertions,
   ]);
 }
 
@@ -108,7 +118,7 @@ async function main(): Promise<void> {
 
   console.log(`Using fake HOME: ${SMOKE_HOME}`);
   console.log(`Using smoke repo clone: ${SMOKE_REPO_DIR}`);
-  console.log("First bootstrap run: backup existing directories and link generated outputs.");
+  console.log("First bootstrap run: backup existing directories, link generated outputs, and sync public scripts.");
   await runBootstrap();
   await verifyBootstrapOutputs();
 

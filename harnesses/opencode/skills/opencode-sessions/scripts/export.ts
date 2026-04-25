@@ -166,6 +166,7 @@ interface IExportBundle {
 const DEFAULT_DATA_DIR = join(process.env.XDG_DATA_HOME ?? join(process.env.HOME ?? "", ".local", "share"), "opencode");
 const DEFAULT_DB_PATH = join(DEFAULT_DATA_DIR, "opencode.db");
 const DEFAULT_OUTPUT_DIRECTORY = "long-session";
+const COMMAND_NAME = process.env.OPENCODE_SESSION_EXPORT_COMMAND?.trim() || "bun scripts/export.ts";
 
 const SESSION_TREE_CTE = `
   WITH RECURSIVE session_tree(id, depth) AS (
@@ -187,9 +188,9 @@ function parseJson(text: string): unknown {
 }
 
 function printUsage(): void {
-  console.error("Usage: bun scripts/export.ts <session-id> [output-directory] [--db <path-to-opencode.db>]");
-  console.error("- output-directory defaults to ./long-session");
-  console.error("- exports NDJSON files plus SESSION.md into that directory");
+  console.log(`Usage: ${COMMAND_NAME} <session-id> [output-directory] [--db <path-to-opencode.db>]`);
+  console.log("- output-directory defaults to ./long-session");
+  console.log("- exports NDJSON files plus SESSION.md into that directory");
 }
 
 function parseArguments(argv: string[]): IExportArguments {

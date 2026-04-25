@@ -1,6 +1,8 @@
 import { $ } from "bun";
 import { resolve } from "path";
 
+import { getErrorMessage } from "./lib/getErrorMessage";
+
 const REGISTRY_DIR = resolve(import.meta.dir, "..");
 const HOOKS_PATH = ".githooks";
 
@@ -28,6 +30,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error(getErrorMessage(error));
   process.exit(1);
 });

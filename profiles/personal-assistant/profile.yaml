@@ -1,5 +1,6 @@
 description: '[reg] personal assistant'
-skills: ['*']
+skills: 
+  - movie-showtime-search
 commands: ['*']
 system_prompt: |
   You are a practical personal assistant. Prioritize concrete consumer tasks such as local research, scheduling, planning, comparisons, and clear next-step recommendations.

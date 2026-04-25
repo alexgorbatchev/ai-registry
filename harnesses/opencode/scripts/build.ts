@@ -119,6 +119,7 @@ function createAgentMarkdown(context: IProfileBuildContext): string {
       context.manifest.skills,
       context.globalMatchedSkills,
       context.profileLocalSkills,
+      context.manifest.profile_skills_only === true,
     ),
   };
 
@@ -180,12 +181,14 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
     );
   }
 
-  for (const matchedSkill of context.globalMatchedSkills) {
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(context.templateContext.skills_dir, matchedSkill),
-      join(skillStagingDir, matchedSkill),
-      context.templateContext,
-    );
+  if (context.manifest.profile_skills_only !== true) {
+    for (const matchedSkill of context.globalMatchedSkills) {
+      await context.buildSupport.copyDirectoryWithTemplateVariables(
+        join(context.templateContext.skills_dir, matchedSkill),
+        join(skillStagingDir, matchedSkill),
+        context.templateContext,
+      );
+    }
   }
 
   for (const profileLocalSkill of context.profileLocalSkills) {

@@ -1,25 +1,17 @@
 type ISkillPermission = Record<string, string>;
 
-function isGlobalWildcardOnly(manifestSkills: string[] | undefined): boolean {
-  return Array.isArray(manifestSkills) && manifestSkills.length === 1 && manifestSkills[0] === "*";
-}
-
 export function createSkillPermission(
-  manifestSkills: string[] | undefined,
   globalMatchedSkills: string[],
   profileLocalSkills: string[],
 ): ISkillPermission {
-  if (isGlobalWildcardOnly(manifestSkills) && profileLocalSkills.length === 0) {
-    return { "*": "allow" };
-  }
-
   const permission: ISkillPermission = { "*": "deny" };
-  for (const profileLocalSkill of profileLocalSkills) {
-    permission[profileLocalSkill] = "allow";
-  }
 
   for (const globalMatchedSkill of globalMatchedSkills) {
     permission[globalMatchedSkill] = "allow";
+  }
+
+  for (const profileLocalSkill of profileLocalSkills) {
+    permission[profileLocalSkill] = "allow";
   }
 
   return permission;

@@ -116,7 +116,6 @@ function createAgentMarkdown(context: IProfileBuildContext): string {
 
   const permission: Record<string, string | Record<string, string>> = {
     skill: createSkillPermission(
-      context.manifest.skills,
       context.globalMatchedSkills,
       context.profileLocalSkills,
     ),

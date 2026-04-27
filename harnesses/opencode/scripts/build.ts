@@ -19,7 +19,7 @@
  * - `finalizeOutput()` copies shipped harness files, merges staged canonical commands and skills into
  *   their canonical OpenCode directories, and copies staged profile agents into `.output/opencode/agents/`
  */
-import { copyFile, lstat, mkdir, readdir, rename, rm, writeFile } from "fs/promises";
+import { copyFile, mkdir, readdir, rm, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
@@ -49,56 +49,6 @@ function getCommandStagingDir(outputDir: string): string {
 
 function getSkillStagingDir(outputDir: string): string {
   return join(outputDir, SKILL_STAGING_DIR_NAME);
-}
-
-function assertMissingOutputPath(outputPath: string, assetDescription: string): void {
-  if (existsSync(outputPath)) {
-    throw new Error(`Cannot stage ${assetDescription} because the output path already exists: ${outputPath}`);
-  }
-}
-
-async function mergeDirectoryContents(sourceDir: string, destinationDir: string): Promise<void> {
-  await mkdir(destinationDir, { recursive: true });
-
-  const sourceEntries = await readdir(sourceDir, { withFileTypes: true });
-  for (const sourceEntry of sourceEntries) {
-    const sourcePath = join(sourceDir, sourceEntry.name);
-    const destinationPath = join(destinationDir, sourceEntry.name);
-
-    if (sourceEntry.isDirectory()) {
-      if (existsSync(destinationPath)) {
-        const destinationStats = await lstat(destinationPath);
-        if (!destinationStats.isDirectory()) {
-          throw new Error(`Cannot merge directory into file: ${destinationPath}`);
-        }
-
-        await mergeDirectoryContents(sourcePath, destinationPath);
-        continue;
-      }
-
-      await rename(sourcePath, destinationPath);
-      continue;
-    }
-
-    if (existsSync(destinationPath)) {
-      throw new Error(`Cannot merge generated output because destination already exists: ${destinationPath}`);
-    }
-
-    await rename(sourcePath, destinationPath);
-  }
-
-  await rm(sourceDir, { recursive: true, force: true });
-}
-
-async function mergeStagedDir(
-  sourceDir: string,
-  destinationDir: string,
-): Promise<void> {
-  if (!existsSync(sourceDir)) {
-    return;
-  }
-
-  await mergeDirectoryContents(sourceDir, destinationDir);
 }
 
 function createAgentMarkdown(context: IProfileBuildContext): string {
@@ -154,56 +104,18 @@ function createAgentMarkdown(context: IProfileBuildContext): string {
 
 async function stageProfile(context: IProfileBuildContext): Promise<void> {
   const agentStagingDir = getAgentStagingDir(context.outputDir);
-  const commandStagingDir = getCommandStagingDir(context.outputDir);
-  const skillStagingDir = getSkillStagingDir(context.outputDir);
 
   await mkdir(agentStagingDir, { recursive: true });
   await writeFile(join(agentStagingDir, `${context.profileName}.md`), createAgentMarkdown(context), "utf-8");
 
-  for (const matchedCommand of context.globalMatchedCommands) {
-    await context.buildSupport.copyPathWithTemplateVariables(
-      join(context.templateContext.commands_dir, matchedCommand),
-      join(commandStagingDir, matchedCommand),
-      context.templateContext,
-    );
-  }
-
-  for (const profileLocalCommand of context.profileLocalCommands) {
-    const outputName = getProfileLocalCommandOutputName(context.profileName, profileLocalCommand);
-    const outputPath = join(commandStagingDir, outputName);
-    assertMissingOutputPath(outputPath, `profile-local command ${profileLocalCommand} for profile ${context.profileName}`);
-
-    await context.buildSupport.copyPathWithTemplateVariables(
-      join(context.profileDir, "commands", profileLocalCommand),
-      outputPath,
-      context.templateContext,
-    );
-  }
-
-  for (const matchedSkill of context.globalMatchedSkills) {
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(context.templateContext.skills_dir, matchedSkill),
-      join(skillStagingDir, matchedSkill),
-      context.templateContext,
-    );
-  }
-
-  for (const profileLocalSkill of context.profileLocalSkills) {
-    const outputPath = join(skillStagingDir, profileLocalSkill);
-    assertMissingOutputPath(outputPath, `profile-local skill ${profileLocalSkill} for profile ${context.profileName}`);
-
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(context.profileDir, "skills", profileLocalSkill),
-      outputPath,
-      context.templateContext,
-    );
-  }
+  await context.buildSupport.stageProfileAssets(context, {
+    skillsDir: getSkillStagingDir(context.outputDir),
+    commandsDir: getCommandStagingDir(context.outputDir),
+    localCommandRenamer: getProfileLocalCommandOutputName,
+  });
 }
 
 async function generateAirHelpers(context: IUnifiedHarnessBuildContext): Promise<void> {
-  const binDir = join(context.outputDir, "bin");
-  await mkdir(binDir, { recursive: true });
-
   const helpers = [
     {
       name: "air-opencode-conversation-extract",
@@ -223,14 +135,13 @@ async function generateAirHelpers(context: IUnifiedHarnessBuildContext): Promise
   ];
 
   for (const helper of helpers) {
-    const helperPath = join(binDir, helper.name);
     const content = `#!/bin/bash
 # Autogenerated ${helper.name} helper
 
 exec env ${helper.envVar}="${helper.name}" \\
   bun "${helper.scriptPath}" "$@"
 `;
-    await writeFile(helperPath, content, { mode: 0o755 });
+    await context.buildSupport.writeBinScript(context.outputDir, helper.name, content);
   }
 }
 
@@ -248,8 +159,8 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       context.templateContext,
     );
 
-    await mergeStagedDir(commandStagingDir, join(visibleOutputDir, "commands"));
-    await mergeStagedDir(skillStagingDir, join(visibleOutputDir, "skills"));
+    await context.buildSupport.mergeDirectory(commandStagingDir, join(visibleOutputDir, "commands"), { move: true });
+    await context.buildSupport.mergeDirectory(skillStagingDir, join(visibleOutputDir, "skills"), { move: true });
 
     if (!existsSync(agentStagingDir)) {
       return;

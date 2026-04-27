@@ -5,6 +5,8 @@ import {
   mkdir,
   readdir,
   readFile,
+  rename,
+  rm,
   writeFile,
 } from "fs/promises";
 import { existsSync } from "fs";
@@ -29,6 +31,9 @@ export type IProfileManifest = {
 };
 
 export type IBuildSupport = {
+  mergeDirectory(sourceDir: string, destDir: string, options?: { move?: boolean }): Promise<void>;
+  stageProfileAssets(context: IProfileBuildContext, destinations: { skillsDir: string; commandsDir: string; localCommandRenamer?: (profileName: string, commandName: string) => string; }): Promise<void>;
+  writeBinScript(outputDir: string, filename: string, content: string): Promise<void>;
   copyDirectoryWithTemplateVariables(
     sourceDir: string,
     targetDir: string,
@@ -340,4 +345,122 @@ export async function applyTemplateVariablesToGeneratedOutput(
       await writeFile(entryPath, renderedContent, "utf-8");
     }
   }
+}
+
+export async function mergeDirectory(
+  sourceDir: string,
+  destinationDir: string,
+  options: { move?: boolean } = {}
+): Promise<void> {
+  if (!existsSync(sourceDir)) {
+    return;
+  }
+  await mkdir(destinationDir, { recursive: true });
+
+  const sourceEntries = await readdir(sourceDir, { withFileTypes: true });
+  for (const sourceEntry of sourceEntries) {
+    const sourcePath = join(sourceDir, sourceEntry.name);
+    const destinationPath = join(destinationDir, sourceEntry.name);
+
+    if (sourceEntry.isDirectory()) {
+      if (existsSync(destinationPath)) {
+        const destinationStats = await lstat(destinationPath);
+        if (!destinationStats.isDirectory()) {
+          throw new Error(`Cannot merge directory into file: ${destinationPath}`);
+        }
+        await mergeDirectory(sourcePath, destinationPath, options);
+        continue;
+      }
+
+      if (options.move) {
+        await rename(sourcePath, destinationPath);
+      } else {
+        await mergeDirectory(sourcePath, destinationPath, options);
+      }
+      continue;
+    }
+
+    if (existsSync(destinationPath)) {
+      throw new Error(`Cannot merge generated output because destination already exists: ${destinationPath}`);
+    }
+
+    if (options.move) {
+      await rename(sourcePath, destinationPath);
+    } else {
+      await copyFile(sourcePath, destinationPath);
+    }
+  }
+
+  if (options.move) {
+    await rm(sourceDir, { recursive: true, force: true });
+  }
+}
+
+export async function stageProfileAssets(
+  context: IProfileBuildContext,
+  destinations: {
+    skillsDir: string;
+    commandsDir: string;
+    localCommandRenamer?: (profileName: string, commandName: string) => string;
+  }
+): Promise<void> {
+  const { commandsDir, skillsDir, localCommandRenamer } = destinations;
+
+  const assertMissingOutputPath = (outputPath: string, assetDescription: string) => {
+    if (existsSync(outputPath)) {
+      throw new Error(`Cannot stage ${assetDescription} because the output path already exists: ${outputPath}`);
+    }
+  };
+
+  for (const matchedCommand of context.globalMatchedCommands) {
+    const outputPath = join(commandsDir, matchedCommand);
+    if (existsSync(outputPath)) continue;
+    await context.buildSupport.copyPathWithTemplateVariables(
+      join(context.templateContext.commands_dir, matchedCommand),
+      outputPath,
+      context.templateContext,
+    );
+  }
+
+  for (const profileLocalCommand of context.profileLocalCommands) {
+    const outputName = localCommandRenamer ? localCommandRenamer(context.profileName, profileLocalCommand) : profileLocalCommand;
+    const outputPath = join(commandsDir, outputName);
+    assertMissingOutputPath(outputPath, `profile-local command ${profileLocalCommand} for profile ${context.profileName}`);
+    await context.buildSupport.copyPathWithTemplateVariables(
+      join(context.profileDir, "commands", profileLocalCommand),
+      outputPath,
+      context.templateContext,
+    );
+  }
+
+  for (const matchedSkill of context.globalMatchedSkills) {
+    const outputPath = join(skillsDir, matchedSkill);
+    if (existsSync(outputPath)) continue;
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
+      join(context.templateContext.skills_dir, matchedSkill),
+      outputPath,
+      context.templateContext,
+    );
+  }
+
+  for (const profileLocalSkill of context.profileLocalSkills) {
+    const outputPath = join(skillsDir, profileLocalSkill);
+    assertMissingOutputPath(outputPath, `profile-local skill ${profileLocalSkill} for profile ${context.profileName}`);
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
+      join(context.profileDir, "skills", profileLocalSkill),
+      outputPath,
+      context.templateContext,
+    );
+  }
+}
+
+export async function writeBinScript(
+  outputDir: string,
+  filename: string,
+  content: string
+): Promise<void> {
+  const binDir = join(outputDir, "bin");
+  await mkdir(binDir, { recursive: true });
+  const scriptPath = join(binDir, filename);
+  await writeFile(scriptPath, content, { mode: 0o755 });
 }

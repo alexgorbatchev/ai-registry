@@ -20,7 +20,7 @@ import {
   type IUnifiedHarnessPlugin,
   applyTemplateVariablesToGeneratedOutput,
   copyDirectoryWithTemplateVariables,
-  copyPathWithTemplateVariables,
+  copyPathWithTemplateVariables, mergeDirectory, stageProfileAssets, writeBinScript,
   getAvailableHarnessBuildTargets,
   loadUnifiedHarnessPlugins,
   getObjectValue,
@@ -345,7 +345,7 @@ async function buildUnifiedOutputs(
 
   const buildSupport: IBuildSupport = {
     copyDirectoryWithTemplateVariables,
-    copyPathWithTemplateVariables,
+    copyPathWithTemplateVariables, mergeDirectory, stageProfileAssets, writeBinScript,
   };
 
   const profileDirents = await readdir(PROFILES_DIR, { withFileTypes: true });

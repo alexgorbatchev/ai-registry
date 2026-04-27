@@ -35,10 +35,7 @@ const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
 const LEGACY_GENERATED_OUTPUT_MANIFEST_NAME = ".generated-output-manifest.json";
-const GENERATED_OUTPUT_MANIFEST_PATH = join(
-  UNIFIED_OUTPUT_DIR,
-  GENERATED_OUTPUT_MANIFEST_NAME,
-);
+const PI_HELPER_TEMPLATE_PATH = join(REGISTRY_DIR, "harnesses", "pi", "templates", "pi-helper-template.sh");
 const GENERATED_OUTPUT_STAGING_DIR = join(
   REGISTRY_DIR,
   ".tmp",
@@ -47,6 +44,10 @@ const GENERATED_OUTPUT_STAGING_DIR = join(
 const LEGACY_GENERATED_OUTPUT_MANIFEST_PATH = join(
   UNIFIED_OUTPUT_DIR,
   LEGACY_GENERATED_OUTPUT_MANIFEST_NAME,
+);
+const GENERATED_OUTPUT_MANIFEST_PATH = join(
+  UNIFIED_OUTPUT_DIR,
+  GENERATED_OUTPUT_MANIFEST_NAME,
 );
 const GENERATED_OUTPUT_MANIFEST_VERSION = 1;
 const TEMPLATE_CONTEXT = {
@@ -372,6 +373,23 @@ async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> 
   return matches;
 }
 
+async function generatePiHelpers(outputDir: string, profiles: string[]): Promise<void> {
+  const binDir = join(outputDir, "bin");
+  await mkdir(binDir, { recursive: true });
+
+  const template = await readFile(PI_HELPER_TEMPLATE_PATH, "utf-8");
+
+  for (const profile of profiles) {
+    const helperName = `pi-${profile}`;
+    const helperPath = join(binDir, helperName);
+    
+    // Replace {{profile}} with the actual profile name
+    const content = template.replace(/\{\{profile\}\}/g, profile);
+    
+    await writeFile(helperPath, content, { mode: 0o755 });
+  }
+}
+
 async function buildUnifiedOutputs(
   outputDir: string,
   unifiedHarnessPlugins: IUnifiedHarnessPlugin[],
@@ -384,11 +402,10 @@ async function buildUnifiedOutputs(
     copyPathWithTemplateVariables,
   };
 
-  const profiles = await readdir(PROFILES_DIR, { withFileTypes: true });
+  const profileDirents = await readdir(PROFILES_DIR, { withFileTypes: true });
+  const profiles = profileDirents.filter(d => d.isDirectory());
 
   for (const dirent of profiles) {
-    if (!dirent.isDirectory()) continue;
-
     const profileName = dirent.name;
     const profileDir = join(PROFILES_DIR, profileName);
 
@@ -450,6 +467,9 @@ async function buildUnifiedOutputs(
     }
   }
 
+  const profileNames = profiles.map(p => p.name);
+  await generatePiHelpers(outputDir, profileNames);
+
   console.log("\n🧩 Finalizing harness outputs...");
   for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
     if (!unifiedHarnessPlugin.finalizeOutput) {
@@ -503,7 +523,6 @@ async function main() {
   console.log("  XDG_CONFIG_HOME=~/.dotfiles/ai-registry/.output opencode --agent designer\n");
   console.log("To apply the generated outputs to your machine, run:");
   console.log("  bun run bootstrap\n");
-  console.log("Use `bun run bootstrap -- --pi-profile <profile>` to link a generated Pi profile into ~/.pi/agent.");
 }
 
 main().catch((error) => {

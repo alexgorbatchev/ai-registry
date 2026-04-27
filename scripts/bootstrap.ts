@@ -11,7 +11,7 @@ const REGISTRY_DIR = resolve(import.meta.dir, "..");
 const OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 const PUBLIC_BIN_DIR = join(homedir(), ".local", "bin");
 const SCRIPTS_DIR = join(REGISTRY_DIR, "scripts");
-const PI_PROFILE_FLAG = "--pi-profile";
+const DEFAULT_PI_PROFILE = "default";
 
 type IBootstrapTarget = {
   sourcePath: string;
@@ -23,10 +23,6 @@ type IApplyResult =
   | { action: "linked" }
   | { action: "unchanged" }
   | { action: "backed_up"; backupPath: string };
-
-type IBootstrapOptions = {
-  piProfileName?: string;
-};
 
 function getConfigHome(): string {
   return process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
@@ -44,20 +40,7 @@ function getBackupPath(targetPath: string): string {
   return `${targetPath}.backup-${getTimestamp()}`;
 }
 
-function parseBootstrapOptions(argv: readonly string[]): IBootstrapOptions {
-  const piProfileFlagIndex = argv.indexOf(PI_PROFILE_FLAG);
-  if (piProfileFlagIndex === -1) {
-    return {};
-  }
-
-  const piProfileName = argv[piProfileFlagIndex + 1]?.trim();
-  if (!piProfileName) {
-    throw new Error(`Expected a profile name after ${PI_PROFILE_FLAG}.`);
-  }
-
-  return { piProfileName };
-}
-
+// (delete parseBootstrapOptions entirely)
 function getErrorCode(error: unknown): string | null {
   if (typeof error !== "object" || error === null || !("code" in error)) {
     return null;
@@ -86,26 +69,22 @@ async function resolveRealPathOrSelf(targetPath: string): Promise<string> {
   }
 }
 
-function getBootstrapTargets(options: IBootstrapOptions): IBootstrapTarget[] {
+function getBootstrapTargets(): IBootstrapTarget[] {
   const targets: IBootstrapTarget[] = [
     {
       sourcePath: join(OUTPUT_DIR, "opencode"),
       targetPath: process.env.OPENCODE_CONFIG_DIR?.trim() || join(getConfigHome(), "opencode"),
       description: "OpenCode config",
     },
+    {
+      sourcePath: join(OUTPUT_DIR, "pi", DEFAULT_PI_PROFILE),
+      targetPath: process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent"),
+      description: `Pi config (${DEFAULT_PI_PROFILE})`,
+    },
   ];
 
-  if (options.piProfileName) {
-    const sourcePath = join(OUTPUT_DIR, "pi", "profiles", options.piProfileName);
-    if (!existsSync(sourcePath)) {
-      throw new Error(`Generated Pi profile does not exist: ${sourcePath}`);
-    }
-
-    targets.push({
-      sourcePath,
-      targetPath: process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent"),
-      description: `Pi config (${options.piProfileName})`,
-    });
+  if (!existsSync(targets[1].sourcePath)) {
+    throw new Error(`Generated Pi profile does not exist: ${targets[1].sourcePath}`);
   }
 
   return targets;
@@ -169,8 +148,6 @@ function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResul
 }
 
 async function main(): Promise<void> {
-  const options = parseBootstrapOptions(process.argv.slice(2));
-
   console.log("🚀 Bootstrapping ai-registry...\n");
 
   console.log("Installing dependencies...");
@@ -188,7 +165,7 @@ async function main(): Promise<void> {
     failureHint: "If generated outputs drifted and you want to overwrite them, rerun `bun bootstrap -- -y`.",
   });
 
-  const bootstrapTargets = getBootstrapTargets(options);
+  const bootstrapTargets = getBootstrapTargets();
 
   console.log("Applying generated outputs...");
   for (const target of bootstrapTargets) {
@@ -212,12 +189,7 @@ async function main(): Promise<void> {
 
   console.log("\nReady.");
   console.log(`OpenCode now reads from: ${bootstrapTargets[0].targetPath}`);
-  if (options.piProfileName) {
-    const piTarget = bootstrapTargets.find((target) => target.description === `Pi config (${options.piProfileName})`);
-    if (piTarget) {
-      console.log(`Pi now reads profile ${options.piProfileName} from: ${piTarget.targetPath}`);
-    }
-  }
+  console.log(`Pi now reads profile ${DEFAULT_PI_PROFILE} from: ${bootstrapTargets[1].targetPath}`);
   console.log(`Repo-local air-* commands are linked into: ${PUBLIC_BIN_DIR}`);
   console.log("Override the targets with OPENCODE_CONFIG_DIR and PI_CODING_AGENT_DIR if needed.");
 }

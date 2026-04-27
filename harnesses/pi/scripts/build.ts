@@ -32,17 +32,7 @@ async function mergeDirectoryContents(sourceDir: string, destinationDir: string)
     const destinationPath = join(destinationDir, sourceEntry.name);
 
     if (sourceEntry.isDirectory()) {
-      if (existsSync(destinationPath)) {
-        const destinationStats = await lstat(destinationPath);
-        if (!destinationStats.isDirectory()) {
-          throw new Error(`Cannot merge directory into file: ${destinationPath}`);
-        }
-
-        await mergeDirectoryContents(sourcePath, destinationPath);
-        continue;
-      }
-
-      await rename(sourcePath, destinationPath);
+      await mergeDirectoryContents(sourcePath, destinationPath);
       continue;
     }
 
@@ -50,10 +40,8 @@ async function mergeDirectoryContents(sourceDir: string, destinationDir: string)
       throw new Error(`Cannot merge generated output because destination already exists: ${destinationPath}`);
     }
 
-    await rename(sourcePath, destinationPath);
+    await copyFile(sourcePath, destinationPath);
   }
-
-  await rm(sourceDir, { force: true, recursive: true });
 }
 
 async function mergeStagedDir(sourceDir: string, destinationDir: string): Promise<void> {
@@ -127,7 +115,8 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
 
 async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<void> {
   const profileStagingRoot = getProfileStagingRoot(context.outputDir);
-  const visibleOutputDir = join(context.outputDir, "pi", "profiles");
+  const visibleOutputDir = join(context.outputDir, "pi");
+  const masterSettingsPath = join(context.harnessDir, "settings.json");
 
   try {
     await mkdir(visibleOutputDir, { recursive: true });
@@ -146,14 +135,15 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       const visibleProfileDir = join(visibleOutputDir, stagedProfile.name);
       await mkdir(visibleProfileDir, { recursive: true });
 
-      await context.buildSupport.copyDirectoryWithTemplateVariables(
-        join(context.harnessDir, "agent"),
-        visibleProfileDir,
-        context.templateContext,
-      );
+      // Copy master settings.json to the profile directory
+      await copyFile(masterSettingsPath, join(visibleProfileDir, "settings.json"));
 
       await mergeStagedDir(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
       await mergeStagedDir(join(stagedProfileDir, "skills"), join(visibleProfileDir, "skills"));
+
+      // Merge harness-local prompts and skills
+      await mergeStagedDir(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
+      await mergeStagedDir(join(context.harnessDir, "skills"), join(visibleProfileDir, "skills"));
 
       const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
       if (existsSync(stagedAppendSystemPath)) {

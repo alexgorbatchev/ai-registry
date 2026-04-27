@@ -9,7 +9,7 @@ The reusable source-of-truth layer.
 - **`/skills`**: Domain-specific AI skills. Each skill lives in its own folder with a `SKILL.md`. This directory is also the repo's install surface for `npx skills`.
 - **`/commands`**: Reusable slash commands, system prompts, and task blueprints.
 - **`/system`**: Shared repo-level instruction fragments and persistent-memory guidance that harness configs and profiles can reference via template includes.
-- **`/harnesses`**: Harness-specific config overrides, optional unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic can live under `harnesses/<target>/scripts/` when excluded via `.registry-ignore`.
+- **`/harnesses`**: Harness-specific config overrides, unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic lives under `harnesses/<target>/scripts/` when excluded via `.registry-ignore`.
 - **`/vendor`**: Third-party code packages vendored into this repo as Bun workspaces when a harness needs a repo-local file path with installed runtime dependencies.
 - **`/packages`**: Publishable repo-local packages distributed independently from the generated harness outputs.
 - **`/packages/opencode-session-analysis`**: Bun CLI package for OpenCode session and skill-usage reporting.
@@ -39,7 +39,7 @@ The final generated harness artifacts. This directory is rebuilt from source and
 
 This repository includes a custom local compiler (`scripts/build.ts`) that resolves the profiles and builds generated harness outputs directly from the checked-in source tree.
 
-Harnesses that need extra output shaping can expose a plugin entrypoint at `harnesses/<target>/scripts/build.ts`. The root build discovers those plugins dynamically and lets them stage per-profile artifacts plus finalize the generated harness output.
+Generated harness outputs are discovered from plugin entrypoints at `harnesses/<target>/scripts/build.ts`. The root build loads those plugins dynamically and lets them stage per-profile artifacts plus finalize the generated harness output.
 
 Generated output files may use a small set of build-time template tags. `bun run build` scans generated text outputs recursively and resolves them wherever they appear. Unsupported tags, unknown variables, missing include files, circular includes, and missing environment variables all fail the build. Supported forms:
 
@@ -70,7 +70,7 @@ For the normal machine setup flow after cloning, run:
 bun run bootstrap
 ```
 
-Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the harness config, and resync the repo-local `air-*` wrappers into `~/.local/bin`.
+Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, and resync the repo-local `air-*` wrappers into `~/.local/bin`. Add `-- --pi-profile <profile>` when you also want to relink a generated Pi profile.
 
 To smoke test that flow without touching your real XDG config paths, run:
 
@@ -87,11 +87,12 @@ That command:
 - verifies the previous generated-output manifest before replacing `.output/`
 - stops for confirmation when generated files drift from the last manifest, with `no` as the default; use `bun run build -- -y` or `bun run bootstrap -- -y` to auto-confirm
 - links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
+- optionally links `.output/pi/profiles/<profile>` into `${PI_CODING_AGENT_DIR:-~/.pi/agent}` when you pass `-- --pi-profile <profile>`
 - symlinks every `scripts/air-*` wrapper into `~/.local/bin`
 - removes broken `air-*` symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
 
-After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps both the generated OpenCode config and the repo-local `air-*` symlinks refreshed.
+After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps generated outputs and the repo-local `air-*` symlinks refreshed. If you also use Pi, rerun bootstrap with `-- --pi-profile <profile>` to relink the Pi target explicitly.
 
 To compile the configurations, simply run:
 
@@ -116,7 +117,7 @@ Run `bun run bootstrap` to symlink these wrappers into `~/.local/bin`. If you pr
 
 These wrappers execute the checked-in Bun source from this repository, so the clone and its installed dependencies must remain available on disk.
 
-*Generated outputs are discovered from the checked-in harness build plugins under `harnesses/<target>/scripts/build.ts`. Today that produces `.output/opencode`.*
+*Generated outputs are discovered from the checked-in harness build plugins under `harnesses/<target>/scripts/build.ts`. Today that produces `.output/opencode` and `.output/pi`.*
 
 ### Installing a Skill with `npx skills`
 
@@ -162,23 +163,41 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
 - `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/scripts/build.ts`.
+- `.output/pi/profiles/<profile>`: Pi Coding Agent config roots with `settings.json`, selected `prompts/`, selected `skills/`, and generated `APPEND_SYSTEM.md` files. The Pi-specific final shaping lives in `harnesses/pi/scripts/build.ts`.
 - `.output/manifest.json`: SHA-256 manifest for the generated files. The next `bun run build` checks it before deleting `.output/` so externally edited generated files are not overwritten silently.
 
 The build writes only final generated outputs into `.output/`.
 
 For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://{{repo_root}}/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.
 
+### Using with Pi
+
+The Pi harness compiles each ai-registry profile into its own Pi config root under `.output/pi/profiles/<profile>/`.
+
+- `commands/` become Pi `prompts/`
+- `skills/` stay Pi `skills/`
+- `system_prompt` content becomes `APPEND_SYSTEM.md`
+
+To link one generated Pi profile into your active Pi config directory, run:
+
+```bash
+bun run bootstrap -- --pi-profile default
+```
+
+Pi bootstrap is opt-in because Pi has one active config root at a time. Override the target location with `PI_CODING_AGENT_DIR`.
+
 ### Bootstrap Overrides
 
 Override the default target locations with:
 
 - `OPENCODE_CONFIG_DIR`
+- `PI_CODING_AGENT_DIR`
 
 The smoke test uses `.tmp/bootstrap-smoke/` inside this repository for that path.
 Treat `.tmp/bootstrap-smoke/` as a fake `HOME`, with a fresh repo copy staged at `.tmp/bootstrap-smoke/development/ai-registry`.
 
-Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch between your `designer`, `developer`, and `default` personas on the fly.
+Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch between your `designer`, `developer`, and `default` personas on the fly. Pi uses one linked profile at a time, selected during bootstrap.
 
 ### Other Harnesses
 
-Add other generated harness outputs by putting the source of truth under `harnesses/<target>/` and, when needed, a build plugin at `harnesses/<target>/scripts/build.ts`.
+Add other generated harness outputs by putting the source of truth under `harnesses/<target>/` plus a build plugin at `harnesses/<target>/scripts/build.ts`.

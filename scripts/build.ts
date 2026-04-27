@@ -494,11 +494,16 @@ async function main() {
   }
 
   console.log("\n🎉 Unified configuration ready!");
-  console.log("\nTo test this setup instantly via CLI, run:");
+  console.log("\nGenerated harness outputs:");
+  for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
+    console.log(`  - ${join(UNIFIED_OUTPUT_DIR, unifiedHarnessPlugin.target)}`);
+  }
+  console.log(`  - ${GENERATED_OUTPUT_MANIFEST_PATH}`);
+  console.log("\nTo test OpenCode instantly via CLI, run:");
   console.log("  XDG_CONFIG_HOME=~/.dotfiles/ai-registry/.output opencode --agent designer\n");
   console.log("To apply the generated outputs to your machine, run:");
   console.log("  bun run bootstrap\n");
-  console.log("Once activated, you can open OpenCode and use the Tab key to switch between your profiles!");
+  console.log("Use `bun run bootstrap -- --pi-profile <profile>` to link a generated Pi profile into ~/.pi/agent.");
 }
 
 main().catch((error) => {

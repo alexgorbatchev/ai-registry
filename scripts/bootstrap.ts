@@ -1,4 +1,5 @@
 import { lstat, mkdir, readlink, realpath, rename, symlink } from "fs/promises";
+import { existsSync } from "fs";
 import { homedir } from "os";
 import { dirname, join, resolve } from "path";
 
@@ -10,6 +11,7 @@ const REGISTRY_DIR = resolve(import.meta.dir, "..");
 const OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 const PUBLIC_BIN_DIR = join(homedir(), ".local", "bin");
 const SCRIPTS_DIR = join(REGISTRY_DIR, "scripts");
+const PI_PROFILE_FLAG = "--pi-profile";
 
 type IBootstrapTarget = {
   sourcePath: string;
@@ -21,6 +23,10 @@ type IApplyResult =
   | { action: "linked" }
   | { action: "unchanged" }
   | { action: "backed_up"; backupPath: string };
+
+type IBootstrapOptions = {
+  piProfileName?: string;
+};
 
 function getConfigHome(): string {
   return process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
@@ -36,6 +42,20 @@ function hasAutoConfirmFlag(): boolean {
 
 function getBackupPath(targetPath: string): string {
   return `${targetPath}.backup-${getTimestamp()}`;
+}
+
+function parseBootstrapOptions(argv: readonly string[]): IBootstrapOptions {
+  const piProfileFlagIndex = argv.indexOf(PI_PROFILE_FLAG);
+  if (piProfileFlagIndex === -1) {
+    return {};
+  }
+
+  const piProfileName = argv[piProfileFlagIndex + 1]?.trim();
+  if (!piProfileName) {
+    throw new Error(`Expected a profile name after ${PI_PROFILE_FLAG}.`);
+  }
+
+  return { piProfileName };
 }
 
 function getErrorCode(error: unknown): string | null {
@@ -66,14 +86,29 @@ async function resolveRealPathOrSelf(targetPath: string): Promise<string> {
   }
 }
 
-function getBootstrapTargets(): IBootstrapTarget[] {
-  return [
+function getBootstrapTargets(options: IBootstrapOptions): IBootstrapTarget[] {
+  const targets: IBootstrapTarget[] = [
     {
       sourcePath: join(OUTPUT_DIR, "opencode"),
       targetPath: process.env.OPENCODE_CONFIG_DIR?.trim() || join(getConfigHome(), "opencode"),
       description: "OpenCode config",
     },
   ];
+
+  if (options.piProfileName) {
+    const sourcePath = join(OUTPUT_DIR, "pi", "profiles", options.piProfileName);
+    if (!existsSync(sourcePath)) {
+      throw new Error(`Generated Pi profile does not exist: ${sourcePath}`);
+    }
+
+    targets.push({
+      sourcePath,
+      targetPath: process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent"),
+      description: `Pi config (${options.piProfileName})`,
+    });
+  }
+
+  return targets;
 }
 
 async function applyTarget(target: IBootstrapTarget): Promise<IApplyResult> {
@@ -134,6 +169,8 @@ function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResul
 }
 
 async function main(): Promise<void> {
+  const options = parseBootstrapOptions(process.argv.slice(2));
+
   console.log("🚀 Bootstrapping ai-registry...\n");
 
   console.log("Installing dependencies...");
@@ -151,7 +188,7 @@ async function main(): Promise<void> {
     failureHint: "If generated outputs drifted and you want to overwrite them, rerun `bun bootstrap -- -y`.",
   });
 
-  const bootstrapTargets = getBootstrapTargets();
+  const bootstrapTargets = getBootstrapTargets(options);
 
   console.log("Applying generated outputs...");
   for (const target of bootstrapTargets) {
@@ -175,8 +212,14 @@ async function main(): Promise<void> {
 
   console.log("\nReady.");
   console.log(`OpenCode now reads from: ${bootstrapTargets[0].targetPath}`);
+  if (options.piProfileName) {
+    const piTarget = bootstrapTargets.find((target) => target.description === `Pi config (${options.piProfileName})`);
+    if (piTarget) {
+      console.log(`Pi now reads profile ${options.piProfileName} from: ${piTarget.targetPath}`);
+    }
+  }
   console.log(`Repo-local air-* commands are linked into: ${PUBLIC_BIN_DIR}`);
-  console.log("Override the target with OPENCODE_CONFIG_DIR if needed.");
+  console.log("Override the targets with OPENCODE_CONFIG_DIR and PI_CODING_AGENT_DIR if needed.");
 }
 
 main().catch((error) => {

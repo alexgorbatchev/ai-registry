@@ -9,6 +9,8 @@ const CONFIG_HOME = join(SMOKE_HOME, ".config");
 const PUBLIC_BIN_DIR = join(SMOKE_HOME, ".local", "bin");
 const OPENCODE_TARGET = join(CONFIG_HOME, "opencode");
 const OPENCODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "opencode");
+const PI_TARGET = join(SMOKE_HOME, ".pi", "agent");
+const PI_SOURCE = join(SMOKE_REPO_DIR, ".output", "pi", "profiles", "default");
 const PUBLIC_SCRIPT_NAMES = [
   "air-opencode-conversation-extract",
   "air-opencode-session-analysis",
@@ -68,6 +70,9 @@ async function findSingleBackup(parentDir: string, prefix: string): Promise<stri
 async function seedExistingTargets(): Promise<void> {
   await mkdir(OPENCODE_TARGET, { recursive: true });
   await writeFile(join(OPENCODE_TARGET, "existing.txt"), "existing opencode data\n");
+
+  await mkdir(PI_TARGET, { recursive: true });
+  await writeFile(join(PI_TARGET, "existing.txt"), "existing pi data\n");
 }
 
 async function createSmokeClone(): Promise<void> {
@@ -95,6 +100,17 @@ async function runBootstrap(): Promise<void> {
     });
 }
 
+async function runBootstrapWithPiProfile(): Promise<void> {
+  await $`bun run bootstrap -- --pi-profile default`
+    .cwd(SMOKE_REPO_DIR)
+    .env({
+      ...process.env,
+      HOME: SMOKE_HOME,
+      PI_CODING_AGENT_DIR: PI_TARGET,
+      XDG_CONFIG_HOME: CONFIG_HOME,
+    });
+}
+
 async function verifyBootstrapOutputs(): Promise<void> {
   const opencodeBackupDir = await findSingleBackup(CONFIG_HOME, "opencode.backup-");
   const publicScriptAssertions = PUBLIC_SCRIPT_NAMES.map((scriptName) =>
@@ -106,6 +122,15 @@ async function verifyBootstrapOutputs(): Promise<void> {
     assertPathExists(OUTPUT_MANIFEST),
     assertSymlinkTarget(OPENCODE_TARGET, OPENCODE_SOURCE),
     ...publicScriptAssertions,
+  ]);
+}
+
+async function verifyPiBootstrapOutputs(): Promise<void> {
+  const piBackupDir = await findSingleBackup(join(SMOKE_HOME, ".pi"), "agent.backup-");
+
+  await Promise.all([
+    assertPathExists(join(piBackupDir, "existing.txt")),
+    assertSymlinkTarget(PI_TARGET, PI_SOURCE),
   ]);
 }
 
@@ -125,6 +150,10 @@ async function main(): Promise<void> {
   console.log("Second bootstrap run: verify idempotent reuse of managed symlinks.");
   await runBootstrap();
   await verifyBootstrapOutputs();
+
+  console.log("Third bootstrap run: verify optional Pi profile linking.");
+  await runBootstrapWithPiProfile();
+  await verifyPiBootstrapOutputs();
 
   console.log("\nBootstrap smoke test passed.");
   console.log(`Inspect artifacts at: ${SMOKE_HOME}`);

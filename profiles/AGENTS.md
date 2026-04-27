@@ -10,7 +10,7 @@ Profile manifests in this directory assemble reusable global assets plus profile
 - Keep reusable skills in `skills/` and reusable commands in `commands/`. Put assets under `profiles/<name>/skills/` or `profiles/<name>/commands/` only when they are intentionally owned by a single profile.
 - In profile manifests, `skills: ['*']` means all global skills only. A profile also gets its own `profiles/<name>/skills/*` skills, but it must not gain access to another profile's local skills.
 - Treat `profiles/<name>/skills/*` as isolated to that profile. If another profile should use the same skill, promote it to `skills/<skill-name>/` instead of duplicating or relying on wildcard access.
-- Profile-local commands are namespaced automatically as `--<profile>-<filename>.md`. Do not pre-prefix filenames with `--`.
+- Profile-local commands are namespaced automatically as `--<profile>-<filename>.md` in OpenCode outputs. Pi keeps the original filename inside each profile's isolated `prompts/` directory. Do not pre-prefix filenames with `--`.
 
 ## Boundaries
 - Always: run `bun run build` after editing any profile manifest or profile-local asset in this directory.
@@ -21,3 +21,4 @@ Profile manifests in this directory assemble reusable global assets plus profile
 - `README.md`
 - `AGENTS.md`
 - `harnesses/opencode/scripts/lib/profileLocalAssetRules.ts`
+- `harnesses/pi/scripts/lib/profileOutputRules.ts`

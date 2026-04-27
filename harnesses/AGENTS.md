@@ -12,6 +12,8 @@ This directory contains source-of-truth harness overrides and maintenance notes 
 - Prefer the harness's native configuration surface over local wrapper files when the harness already supports the feature directly.
 - Pin external plugin versions and commit SHAs so generated outputs stay reproducible.
 
+Harnesses are only built into `.output/` when they provide `harnesses/<name>/scripts/build.ts`.
+
 ## OpenCode
 
 - Register external OpenCode plugins in `harnesses/opencode/opencode.jsonc` under the `plugin` array.
@@ -22,6 +24,14 @@ This directory contains source-of-truth harness overrides and maintenance notes 
 - Keep shipped OpenCode config in `harnesses/opencode/`, but keep installable third-party plugin source out of that directory unless it truly needs to be copied into generated output.
 - Do not add proxy wrapper plugins under `harnesses/opencode/plugins/` unless a plugin truly must be loaded from a local file entrypoint.
 - Use tuple form `[spec, { ... }]` only when a plugin needs inline startup options.
+
+## Pi
+
+- Keep shipped Pi skeleton files under `harnesses/pi/agent/`.
+- Keep the Pi unified-output plugin in `harnesses/pi/scripts/build.ts`.
+- The Pi harness generates one config root per profile under `.output/pi/profiles/<profile>/`.
+- Map reusable commands to Pi `prompts/`, reusable skills to Pi `skills/`, and profile `system_prompt` content to `APPEND_SYSTEM.md`.
+- Do not silently ignore profile `tools` or `permission`; the Pi build must fail until an exact Pi-native mapping exists.
 
 ## Maintenance
 

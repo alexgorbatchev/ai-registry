@@ -1,6 +1,6 @@
-import { copyFile, lstat, mkdir, readdir, rename, rm, writeFile } from "fs/promises";
+import { copyFile, lstat, mkdir, readdir, rename, rm, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
-import { join } from "path";
+import { join, relative } from "path";
 
 import type {
   IProfileBuildContext,
@@ -149,6 +149,12 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       if (existsSync(stagedAppendSystemPath)) {
         await copyFile(stagedAppendSystemPath, join(visibleProfileDir, APPEND_SYSTEM_FILE_NAME));
       }
+
+      // Link sessions directory to central harnesses/pi/sessions
+      const sessionsTargetDir = join(context.harnessDir, "sessions");
+      await mkdir(sessionsTargetDir, { recursive: true });
+      const relativeSessionsTarget = relative(visibleProfileDir, sessionsTargetDir);
+      await symlink(relativeSessionsTarget, join(visibleProfileDir, "sessions"));
     }
   } finally {
     await rm(profileStagingRoot, { force: true, recursive: true });

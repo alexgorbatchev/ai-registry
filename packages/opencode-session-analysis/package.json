@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "check": "bun run src/cli.ts --help",
-    "lint": "tsc --noEmit",
+    "lint": "tsgo -p tsconfig.json",
     "test": "bun test src"
   },
   "keywords": [

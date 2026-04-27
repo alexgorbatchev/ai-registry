@@ -130,7 +130,12 @@ function runOxlint(
     const stdout = new TextDecoder().decode(spawnResult.stdout);
     const stderr = new TextDecoder().decode(spawnResult.stderr);
 
-    assert.equal(stderr, '');
+    const filteredStderr = stderr
+      .split('\n')
+      .filter((line) => !line.includes('MODULE_TYPELESS_PACKAGE_JSON') && !line.includes('Reparsing as ES module') && !line.includes('To eliminate this warning') && !line.includes('node --trace-warnings') && line.trim() !== '')
+      .join('\n');
+
+    assert.equal(filteredStderr, '');
 
     const payload = JSON.parse(stdout) as {
       diagnostics?: Array<{

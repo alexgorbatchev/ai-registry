@@ -31,10 +31,11 @@ describe("syncPublicScripts", () => {
   it("links all air-prefixed scripts and ignores other entries", async () => {
     const testDir = await createTestDirectory();
     const scriptsDir = join(testDir, "scripts");
+    const outputBinDir = join(testDir, ".output", "bin");
     const binDir = join(testDir, "bin");
-    const firstPublicScriptPath = await writeScriptFile(scriptsDir, "air-first");
-    const secondPublicScriptPath = await writeScriptFile(scriptsDir, "air-second");
-    await writeScriptFile(scriptsDir, "not-public");
+    const firstPublicScriptPath = await writeScriptFile(outputBinDir, "air-first");
+    const secondPublicScriptPath = await writeScriptFile(outputBinDir, "air-second");
+    await writeScriptFile(outputBinDir, "not-public");
 
     const result = await syncPublicScripts({ binDir, scriptsDir, getTimestamp: () => "20260425T000000Z" });
 
@@ -53,8 +54,9 @@ describe("syncPublicScripts", () => {
   it("removes broken air symlinks and leaves other broken links alone", async () => {
     const testDir = await createTestDirectory();
     const scriptsDir = join(testDir, "scripts");
+    const outputBinDir = join(testDir, ".output", "bin");
     const binDir = join(testDir, "bin");
-    const publicScriptPath = await writeScriptFile(scriptsDir, "air-first");
+    const publicScriptPath = await writeScriptFile(outputBinDir, "air-first");
     await mkdir(binDir, { recursive: true });
     await symlink(join(testDir, "missing-air-target"), join(binDir, "air-stale"));
     await symlink(join(testDir, "missing-other-target"), join(binDir, "other-stale"));
@@ -72,9 +74,10 @@ describe("syncPublicScripts", () => {
   it("relinks outdated air symlinks and backs up conflicting files", async () => {
     const testDir = await createTestDirectory();
     const scriptsDir = join(testDir, "scripts");
+    const outputBinDir = join(testDir, ".output", "bin");
     const binDir = join(testDir, "bin");
-    const firstPublicScriptPath = await writeScriptFile(scriptsDir, "air-first");
-    const secondPublicScriptPath = await writeScriptFile(scriptsDir, "air-second");
+    const firstPublicScriptPath = await writeScriptFile(outputBinDir, "air-first");
+    const secondPublicScriptPath = await writeScriptFile(outputBinDir, "air-second");
     const staleScriptPath = join(testDir, "stale-air-first");
     await writeFile(staleScriptPath, "old\n", "utf-8");
     await mkdir(binDir, { recursive: true });

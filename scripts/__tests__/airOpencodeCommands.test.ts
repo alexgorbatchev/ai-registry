@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "bun:test";
 
 const REPO_ROOT = resolve(import.meta.dir, "..", "..");
-const SCRIPTS_DIR = resolve(REPO_ROOT, "scripts");
+const SCRIPTS_DIR = resolve(REPO_ROOT, ".output", "bin");
 const TMP_DIR = resolve(REPO_ROOT, ".tmp");
 
 interface IHelpResult {

@@ -150,17 +150,17 @@ export async function syncPublicScripts(options: ISyncPublicScriptsOptions): Pro
 
   const cleanedBrokenLinks = await cleanupBrokenPublicSymlinks(options.binDir);
   
-  // Link air scripts from scriptsDir
-  const airScriptNames = (await listPublicScriptNames(options.scriptsDir)).filter(n => n.startsWith("air-"));
-  
-  // Link pi scripts from .output/bin
+  // Link air and pi scripts from .output/bin
   const outputBinDir = join(options.scriptsDir, "..", ".output", "bin");
-  const piScriptNames = (await readdir(outputBinDir)).filter(n => n.startsWith("pi-"));
+  const binScriptNames = await readdir(outputBinDir).catch(() => []);
+  binScriptNames.sort();
+  const airScriptNames = binScriptNames.filter(n => n.startsWith("air-"));
+  const piScriptNames = binScriptNames.filter(n => n.startsWith("pi-"));
   
   const linkedScripts: IPublicScriptLinkResult[] = [];
 
   for (const scriptName of airScriptNames) {
-    linkedScripts.push(await applyPublicScriptLink(scriptName, options.scriptsDir, options.binDir, getTimestamp));
+    linkedScripts.push(await applyPublicScriptLink(scriptName, outputBinDir, options.binDir, getTimestamp));
   }
   
   for (const scriptName of piScriptNames) {

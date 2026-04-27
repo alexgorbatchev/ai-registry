@@ -50,6 +50,18 @@ Show details for one root session in the current scope:
 bun run --cwd packages/opencode-session-analysis src/cli.ts sessions --session <id>
 ```
 
+Interactively choose used skills from the current project and sync them into the project's `.opencode/skills` directory:
+
+```bash
+bun run --cwd packages/opencode-session-analysis src/cli.ts sync-skills --pick
+```
+
+Reuse the saved selection manifest and refresh the synced copies without reopening the picker:
+
+```bash
+bun run --cwd packages/opencode-session-analysis src/cli.ts sync-skills
+```
+
 ## Commands
 
 - `skills`: show one skill-usage table for the current project scope
@@ -57,6 +69,10 @@ bun run --cwd packages/opencode-session-analysis src/cli.ts sessions --session <
 - `sessions`: show root session summaries for the current project scope
 - `sessions --all`: aggregate root sessions from all projects into one table
 - `sessions --session <id>`: show detailed output for one root session in the selected scope
+- `sync-skills --pick`: interactively choose used skills to copy into `.opencode/skills`
+- `sync-skills`: reuse the saved `.opencode/skills-manifest.json` selection and refresh the synced skill copies
+- `sync-skills --yes`: overwrite drifted managed skill files without prompting
+- `sync-skills --registry-dir <path>`: point the command at an `ai-registry` checkout when auto-detection is unavailable
 - `--help`: show command help
 
 ## Data Source
@@ -67,7 +83,6 @@ The CLI reads OpenCode's current SQLite storage at `~/.local/share/opencode/open
 
 For each root workflow session, the CLI reports:
 
-- project/worktree scope
 - session id
 - model usage
 - total tokens
@@ -84,4 +99,11 @@ With `skills`, the CLI reports:
 
 With `sessions`, the CLI reports:
 
-- one root-session summary table for the selected scope
+- one root-session summary table for the selected scope without echoing full project-directory paths per session row
+
+With `sync-skills`, the CLI:
+
+- lists skills used in the current project scope and lets you pick which ones should be copied into the project's `.opencode/skills/` directory
+- writes `.opencode/skills-manifest.json` with the selected skill names plus SHA-256 checksums for the managed files
+- reuses that manifest on later runs so the same skills can be refreshed automatically
+- warns when the manifest selection misses newly used skills and blocks overwriting drifted managed files unless you confirm or pass `--yes`

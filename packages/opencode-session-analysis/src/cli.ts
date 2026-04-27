@@ -1,7 +1,10 @@
 #!/usr/bin/env bun
 
+import { cancel, confirm, isCancel, multiselect } from "@clack/prompts";
 import { createSkillUsageReport } from "./createSkillUsageReport";
 import { formatSkillUsageReport } from "./formatSkillUsageReport";
+import { readSyncableSkillSources } from "./readSyncableSkillSources";
+import { syncProjectSkills } from "./syncProjectSkills";
 import { Database } from "bun:sqlite";
 import { Command } from "commander";
 import { existsSync } from "node:fs";
@@ -17,6 +20,12 @@ interface ISessionsCommandOptions {
   sessionId?: string;
 }
 
+interface ISyncSkillsCommandOptions {
+  pick?: boolean;
+  registryDir?: string;
+  yes?: boolean;
+}
+
 interface ISessionRow {
   id: string;
   project_id: string;
@@ -28,7 +37,6 @@ interface ISessionRow {
   time_updated: number;
   time_archived: number | null;
   project_worktree: string;
-  project_name: string | null;
 }
 
 interface IMessageRow {
@@ -68,8 +76,6 @@ interface ICountEntry {
 
 interface ISessionReport {
   root: ISessionRow;
-  projectLabel: string;
-  descendantSessionIds: string[];
   totalSessions: number;
   subagentSessions: number;
   toolCalls: number;
@@ -98,6 +104,7 @@ const LEGACY_STORAGE_DIR = join(DATA_DIR, "storage");
 const DEFAULT_IDLE_GAP_MS = 5 * 60 * 1000;
 const DEFAULT_IDLE_GAP_LABEL = "5m";
 const COMMAND_NAME = process.env.OPENCODE_SESSION_ANALYSIS_COMMAND?.trim() || "opencode-session-analysis";
+const REGISTRY_DIR_ENV = "OPENCODE_SESSION_ANALYSIS_REGISTRY_DIR";
 const TIMESTAMP_FORMATTER = new Intl.DateTimeFormat("sv-SE", {
   year: "numeric",
   month: "2-digit",
@@ -325,11 +332,90 @@ function resolveProject(directory: string): IProjectResolution {
   };
 }
 
-function getProjectLabel(session: ISessionRow): string {
-  if (session.project_worktree !== "/") {
-    return session.project_worktree;
+function looksLikeRegistryRoot(directoryPath: string): boolean {
+  return (
+    existsSync(join(directoryPath, "skills")) &&
+    existsSync(join(directoryPath, "harnesses", "opencode", "skills"))
+  );
+}
+
+function findRegistryRoot(startDirectory: string): string | undefined {
+  let currentDirectory = resolve(startDirectory);
+
+  while (true) {
+    if (looksLikeRegistryRoot(currentDirectory)) {
+      return currentDirectory;
+    }
+
+    const parentDirectory = dirname(currentDirectory);
+    if (parentDirectory === currentDirectory) {
+      return undefined;
+    }
+
+    currentDirectory = parentDirectory;
   }
-  return session.directory;
+}
+
+function resolveRegistryRoot(registryDirOption: string | undefined): string {
+  const configuredRegistryDir = registryDirOption?.trim() || process.env[REGISTRY_DIR_ENV]?.trim();
+  if (configuredRegistryDir) {
+    const resolvedRegistryDir = resolve(configuredRegistryDir);
+    if (!looksLikeRegistryRoot(resolvedRegistryDir)) {
+      throw new Error(`Registry directory does not look like an ai-registry checkout: ${resolvedRegistryDir}`);
+    }
+
+    return resolvedRegistryDir;
+  }
+
+  const detectedRegistryDir = findRegistryRoot(import.meta.dir);
+  if (detectedRegistryDir) {
+    return detectedRegistryDir;
+  }
+
+  throw new Error(
+    `Could not detect an ai-registry checkout automatically. Re-run with --registry-dir <path> or set ${REGISTRY_DIR_ENV}.`,
+  );
+}
+
+function getProjectRootPath(resolution: IProjectResolution): string {
+  return resolution.isGlobal ? resolution.directory : resolution.sandbox;
+}
+
+function getInteractiveSelectionErrorMessage(): string {
+  return "Skill sync cancelled.";
+}
+
+async function promptForSkillSelection(args: {
+  initialValues: readonly string[];
+  options: readonly { disabled: boolean; hint?: string; label: string; value: string }[];
+}): Promise<readonly string[]> {
+  const selection = await multiselect({
+    message: "Select used skills to sync into .opencode/skills",
+    options: [...args.options],
+    initialValues: [...args.initialValues],
+    required: false,
+  });
+
+  if (isCancel(selection)) {
+    cancel(getInteractiveSelectionErrorMessage());
+    throw new Error(getInteractiveSelectionErrorMessage());
+  }
+
+  return selection;
+}
+
+async function promptToConfirmOverwrite(message: string): Promise<boolean> {
+  const shouldOverwrite = await confirm({
+    initialValue: false,
+    message,
+  });
+
+  if (isCancel(shouldOverwrite)) {
+    cancel(getInteractiveSelectionErrorMessage());
+    throw new Error(getInteractiveSelectionErrorMessage());
+  }
+
+  return shouldOverwrite;
 }
 
 function getPrimaryModelLabel(entries: ICountEntry[]): string {
@@ -353,8 +439,7 @@ function readSessions(database: Database): ISessionRow[] {
           s.time_created,
           s.time_updated,
           s.time_archived,
-          p.worktree AS project_worktree,
-          p.name AS project_name
+          p.worktree AS project_worktree
         FROM session s
         JOIN project p ON p.id = s.project_id
         ORDER BY s.time_updated DESC
@@ -597,8 +682,6 @@ function buildReports(
 
     return {
       root: rootSession,
-      projectLabel: getProjectLabel(rootSession),
-      descendantSessionIds,
       totalSessions: descendantSessions.length,
       subagentSessions: descendantSessions.filter((session) => session.parent_id !== null).length,
       toolCalls,
@@ -642,7 +725,7 @@ function printSessionTable(reports: ISessionReport[]): void {
       "Tools",
     ],
     ...reports.map((report) => [
-      `${report.root.title}\n  ${report.projectLabel}\n  ${report.root.id}`,
+      `${report.root.title}\n  ${report.root.id}`,
       formatActiveSummaryDuration(report.activeDurationMs),
       formatInteger(report.subagentSessions),
       formatTimestamp(report.updatedAt),
@@ -688,7 +771,6 @@ function printDetails(report: ISessionReport): void {
   const rows = [
     ["title", report.root.title],
     ["session", report.root.id],
-    ["project", report.projectLabel],
     ["started", formatTimestamp(report.startedAt)],
     ["last active", formatTimestamp(report.updatedAt)],
     ["active", `${formatDuration(report.activeDurationMs)} (gap ${DEFAULT_IDLE_GAP_LABEL})`],
@@ -727,15 +809,22 @@ function printScopedHeader(scopeLabel: string, reports: ISessionReport[], sessio
   console.log(`Root sessions: ${reports.length}`);
   console.log(`Active gap: ${DEFAULT_IDLE_GAP_LABEL}`);
   console.log(`Detail mode: ${sessionId ? `session ${sessionId}` : "summary only"}`);
-  console.log("");
 }
 
-function getScopeLabel(resolution: IProjectResolution, includeAllProjects: boolean): string {
+function getSkillsScopeLabel(resolution: IProjectResolution, includeAllProjects: boolean): string {
   if (includeAllProjects) {
     return "all projects";
   }
 
   return resolution.isGlobal ? resolution.directory : resolution.worktree;
+}
+
+function getSessionsScopeLabel(resolution: IProjectResolution, includeAllProjects: boolean): string {
+  if (includeAllProjects) {
+    return "all projects";
+  }
+
+  return resolution.isGlobal ? "current directory" : "current project";
 }
 
 function ensureStorageExists(): void {
@@ -754,7 +843,7 @@ function runSkillsCommand(options: ISkillsCommandOptions): void {
   ensureStorageExists();
   const resolution = resolveProject(resolve(process.cwd()));
   const includeAllProjects = options.all === true;
-  const scopeLabel = includeAllProjects ? "All projects" : getScopeLabel(resolution, false);
+  const scopeLabel = includeAllProjects ? "All projects" : getSkillsScopeLabel(resolution, false);
 
   using database = new Database(DB_PATH, { readonly: true, strict: true });
   const sessions = selectScopedSessions(readSessions(database), resolution, includeAllProjects);
@@ -781,12 +870,12 @@ function runSessionsCommand(options: ISessionsCommandOptions): void {
   const rootSessions = selectRootSessions(sessions, resolution, includeAllProjects);
 
   if (rootSessions.length === 0) {
-    console.log(`No sessions found for ${getScopeLabel(resolution, includeAllProjects)}`);
+    console.log(`No sessions found for ${getSessionsScopeLabel(resolution, includeAllProjects)}`);
     return;
   }
 
   const reports = buildReports(rootSessions, sessions, readAssistantMessages(database), readToolParts(database));
-  const scopeLabel = getScopeLabel(resolution, includeAllProjects);
+  const scopeLabel = getSessionsScopeLabel(resolution, includeAllProjects);
 
   if (options.sessionId) {
     const report = getSelectedReport(reports, options.sessionId);
@@ -802,6 +891,46 @@ function runSessionsCommand(options: ISessionsCommandOptions): void {
   printScopedHeader(scopeLabel, reports, options.sessionId);
 
   printSessionTable(reports);
+}
+
+async function runSyncSkillsCommand(options: ISyncSkillsCommandOptions): Promise<void> {
+  ensureStorageExists();
+
+  const resolution = resolveProject(resolve(process.cwd()));
+  const projectRootPath = getProjectRootPath(resolution);
+  const registryRootPath = resolveRegistryRoot(options.registryDir);
+  const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
+  const availableSkillSources = await readSyncableSkillSources(registryRootPath);
+  const availableSkillDirByName = new Map(
+    [...availableSkillSources.entries()].map(([name, source]) => [name, source.sourceDirPath]),
+  );
+
+  using database = new Database(DB_PATH, { readonly: true, strict: true });
+  const sessions = selectScopedSessions(readSessions(database), resolution, false);
+  const usedSkills = createSkillUsageReport({
+    sessions,
+    toolParts: readToolParts(database),
+  }).overall.skills;
+
+  const result = await syncProjectSkills({
+    availableSkillDirByName,
+    autoConfirm: options.yes === true,
+    confirmOverwrite: isInteractive ? promptToConfirmOverwrite : undefined,
+    isInteractive,
+    pickSkills: isInteractive ? promptForSkillSelection : undefined,
+    projectRootPath,
+    promptForSelection: options.pick === true,
+    registryRootPath,
+    usedSkills,
+  });
+
+  console.log(`Synced ${result.selectedSkills.length} skills into ${result.skillsDirPath}`);
+  console.log(`Manifest: ${result.manifestPath}`);
+  console.log(`Skills: ${result.selectedSkills.length > 0 ? result.selectedSkills.join(", ") : "none"}`);
+
+  for (const warningMessage of result.warningMessages) {
+    console.warn(`Warning: ${warningMessage}`);
+  }
 }
 
 function createProgram(): Command {
@@ -825,6 +954,16 @@ function createProgram(): Command {
         all: options.all,
         sessionId: options.session,
       });
+      });
+
+  program
+    .command("sync-skills")
+    .description("Sync selected used skills into the current project's .opencode directory")
+    .option("--pick", "Interactively choose skills instead of reusing the saved manifest selection")
+    .option("--yes", "Overwrite managed project-local skill files without prompting")
+    .option("--registry-dir <path>", "Path to an ai-registry checkout that contains syncable skills")
+    .action(async (options: ISyncSkillsCommandOptions) => {
+      await runSyncSkillsCommand(options);
     });
 
   return program;

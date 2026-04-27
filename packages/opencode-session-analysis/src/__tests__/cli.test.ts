@@ -267,12 +267,14 @@ describe("cli", () => {
 Reports OpenCode sessions and skill usage using the current SQLite storage.
 
 Options:
-  -h, --help          display help for command
+  -h, --help             display help for command
 
 Commands:
   skills [options]
   sessions [options]
-  help [command]      display help for command
+  sync-skills [options]  Sync selected used skills into the current project's
+                         .opencode directory
+  help [command]         display help for command
 "
 `);
   });
@@ -315,14 +317,12 @@ Commands:
     expect(scopedResult.exitCode).toBe(0);
     expect(scopedResult.stderr).toBe("");
     expect(normalizeCliOutput(scopedResult.stdout, fixture)).toMatchInlineSnapshot(`
-"Scope: <project-a>
+"Scope: current project
 Root sessions: 1
 Active gap: 5m
 Detail mode: summary only
-
 | Session | Active | Subagents | Last Active | Model | Cache R | Cache W | Tokens | Cost | Tools |
 | Project A root | 3m | 1 | 2026-04-27 12:00 | anthropic/sonnet | 10 | 30 | 140 | $0.17 | 2 |
-| <project-a> |  |  |  |  |  |  |  |  |  |
 | session-a |  |  |  |  |  |  |  |  |  |
 | Total 1 sessions | 3m | 1 |  |  | 10 | 30 | 140 | $0.17 | 2 |
 "
@@ -335,18 +335,44 @@ Detail mode: summary only
 Root sessions: 3
 Active gap: 5m
 Detail mode: summary only
-
 | Session | Active | Subagents | Last Active | Model | Cache R | Cache W | Tokens | Cost | Tools |
 | Scratch root | 1m | 0 | 2026-05-01 12:00 | openai/gpt-4.1-mini | 0 | 0 | 20 | $0.01 | 1 |
-| <scratch> |  |  |  |  |  |  |  |  |  |
 | session-global |  |  |  |  |  |  |  |  |  |
 | Project B root | 1m | 0 | 2026-04-29 12:00 | openai/gpt-4.1 | 5 | 0 | 75 | $0.20 | 1 |
-| <project-b> |  |  |  |  |  |  |  |  |  |
 | session-b |  |  |  |  |  |  |  |  |  |
 | Project A root | 3m | 1 | 2026-04-27 12:00 | anthropic/sonnet | 10 | 30 | 140 | $0.17 | 2 |
-| <project-a> |  |  |  |  |  |  |  |  |  |
 | session-a |  |  |  |  |  |  |  |  |  |
 | Total 3 sessions | 5m | 1 |  |  | 15 | 30 | 235 | $0.38 | 4 |
+"
+`);
+  });
+
+  it("omits project directories from session detail output", () => {
+    const fixture = createFixtureContext("sessions");
+    const result = runCli(fixture.projectAPath, fixture.dataHomePath, ["sessions", "--session", "session-a"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(normalizeCliOutput(result.stdout, fixture)).toMatchInlineSnapshot(`
+"Scope: current project
+Root sessions: 1
+Active gap: 5m
+Detail mode: session session-a
+
+| title | Project A root |
+| session | session-a |
+| started | 2026-04-25 12:00 |
+| last active | 2026-04-27 12:00 |
+| active | 3m 0s (gap 5m) |
+| elapsed | 48h 0m 0s |
+| sessions | 2 total, 1 subagent |
+| models | anthropic/sonnet=2 |
+| cost | $0.17 |
+| tool calls | 2 |
+| tokens | input=40, output=60, cache_write=30, cache_read=10, total=140 |
+| tok/s | 0.33 |
+| tools | skill=2 |
+| mcp | none |
 "
 `);
   });

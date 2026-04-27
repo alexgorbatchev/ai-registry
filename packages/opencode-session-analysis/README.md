@@ -53,26 +53,26 @@ bun run --cwd packages/opencode-session-analysis src/cli.ts sessions --session <
 Interactively choose used skills from the current project and sync them into the project's `.opencode/skills` directory:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts sync-skills --pick
+bun run --cwd packages/opencode-session-analysis src/cli.ts skills --sync --pick
 ```
 
 Reuse the saved selection manifest and refresh the synced copies without reopening the picker:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts sync-skills
+bun run --cwd packages/opencode-session-analysis src/cli.ts skills --sync
 ```
 
 ## Commands
 
 - `skills`: show one skill-usage table for the current project scope
 - `skills --all`: aggregate all projects into one skill-usage table
+- `skills --sync --pick`: interactively choose used skills to copy into `.opencode/skills`
+- `skills --sync`: reuse the saved `.opencode/skills-manifest.json` selection and refresh the synced skill copies
+- `skills --sync --yes`: overwrite drifted managed skill files without prompting
+- `skills --sync --registry-dir <path>`: point the command at an `ai-registry` checkout when auto-detection is unavailable
 - `sessions`: show root session summaries for the current project scope
 - `sessions --all`: aggregate root sessions from all projects into one table
 - `sessions --session <id>`: show detailed output for one root session in the selected scope
-- `sync-skills --pick`: interactively choose used skills to copy into `.opencode/skills`
-- `sync-skills`: reuse the saved `.opencode/skills-manifest.json` selection and refresh the synced skill copies
-- `sync-skills --yes`: overwrite drifted managed skill files without prompting
-- `sync-skills --registry-dir <path>`: point the command at an `ai-registry` checkout when auto-detection is unavailable
 - `--help`: show command help
 
 ## Data Source
@@ -101,7 +101,7 @@ With `sessions`, the CLI reports:
 
 - one root-session summary table for the selected scope without echoing full project-directory paths per session row
 
-With `sync-skills`, the CLI:
+With `skills --sync`, the CLI:
 
 - lists skills used in the current project scope and lets you pick which ones should be copied into the project's `.opencode/skills/` directory
 - writes `.opencode/skills-manifest.json` with the selected skill names plus SHA-256 checksums for the managed files

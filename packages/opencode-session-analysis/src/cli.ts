@@ -13,17 +13,15 @@ import { getBorderCharacters, table } from "table";
 
 interface ISkillsCommandOptions {
   all?: boolean;
+  sync?: boolean;
+  pick?: boolean;
+  registryDir?: string;
+  yes?: boolean;
 }
 
 interface ISessionsCommandOptions {
   all?: boolean;
   sessionId?: string;
-}
-
-interface ISyncSkillsCommandOptions {
-  pick?: boolean;
-  registryDir?: string;
-  yes?: boolean;
 }
 
 interface ISessionRow {
@@ -893,7 +891,7 @@ function runSessionsCommand(options: ISessionsCommandOptions): void {
   printSessionTable(reports);
 }
 
-async function runSyncSkillsCommand(options: ISyncSkillsCommandOptions): Promise<void> {
+async function runSyncSkillsCommand(options: ISkillsCommandOptions): Promise<void> {
   ensureStorageExists();
 
   const resolution = resolveProject(resolve(process.cwd()));
@@ -940,9 +938,18 @@ function createProgram(): Command {
 
   program
     .command("skills")
-    .option("--all", "Include all known sessions across all projects")
-    .action((options: ISkillsCommandOptions) => {
-      runSkillsCommand(options);
+    .description("Show skill usage across sessions or sync selected skills")
+    .option("--all", "Include all known sessions across all projects (for reporting)")
+    .option("--sync", "Sync selected used skills into the current project's .opencode directory")
+    .option("--pick", "Interactively choose skills instead of reusing the saved manifest selection (requires --sync)")
+    .option("--yes", "Overwrite managed project-local skill files without prompting (requires --sync)")
+    .option("--registry-dir <path>", "Path to an ai-registry checkout that contains syncable skills (requires --sync)")
+    .action(async (options: ISkillsCommandOptions) => {
+      if (options.sync) {
+        await runSyncSkillsCommand(options);
+      } else {
+        runSkillsCommand(options);
+      }
     });
 
   program
@@ -955,16 +962,6 @@ function createProgram(): Command {
         sessionId: options.session,
       });
       });
-
-  program
-    .command("sync-skills")
-    .description("Sync selected used skills into the current project's .opencode directory")
-    .option("--pick", "Interactively choose skills instead of reusing the saved manifest selection")
-    .option("--yes", "Overwrite managed project-local skill files without prompting")
-    .option("--registry-dir <path>", "Path to an ai-registry checkout that contains syncable skills")
-    .action(async (options: ISyncSkillsCommandOptions) => {
-      await runSyncSkillsCommand(options);
-    });
 
   return program;
 }

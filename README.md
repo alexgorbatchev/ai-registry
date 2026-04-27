@@ -109,9 +109,9 @@ The repo-local OpenCode session tools are:
 - `air-opencode-session-export`
 - `air-opencode-conversation-extract`
 
-`air-opencode-session-analysis` exposes `skills`, `sessions`, and `sync-skills` subcommands. Run `air-opencode-session-analysis --help` to see the current command interface.
+`air-opencode-session-analysis` exposes `skills` and `sessions` subcommands. Run `air-opencode-session-analysis --help` to see the current command interface.
 
-Use `air-opencode-session-analysis sync-skills --pick` from a project directory to choose used skills and copy them into that project's `.opencode/skills/` directory. The command writes `.opencode/skills-manifest.json` so later runs can refresh the same selection automatically, warn about newly used skills that are not in the saved selection, and detect drift in the managed copied files before overwriting them. When the command cannot auto-detect this repository as the skill source, pass `--registry-dir <path>`.
+Use `air-opencode-session-analysis skills --sync --pick` from a project directory to choose used skills and copy them into that project's `.opencode/skills/` directory. The command writes `.opencode/skills-manifest.json` so later runs can refresh the same selection automatically, warn about newly used skills that are not in the saved selection, and detect drift in the managed copied files before overwriting them. When the command cannot auto-detect this repository as the skill source, pass `--registry-dir <path>`.
 
 Run `bun run bootstrap` to symlink these wrappers into `~/.local/bin`. If you prefer to manage `PATH` directly, add `scripts/` to your `PATH` instead.
 

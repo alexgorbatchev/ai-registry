@@ -60,14 +60,12 @@ describe("air-opencode wrappers", () => {
 Reports OpenCode sessions and skill usage using the current SQLite storage.
 
 Options:
-  -h, --help             display help for command
+  -h, --help          display help for command
 
 Commands:
-  skills [options]
+  skills [options]    Show skill usage across sessions or sync selected skills
   sessions [options]
-  sync-skills [options]  Sync selected used skills into the current project's
-                         .opencode directory
-  help [command]         display help for command
+  help [command]      display help for command
 "
 `);
   });

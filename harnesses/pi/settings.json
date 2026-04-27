@@ -1,12 +1,9 @@
 {
   "lastChangelogVersion": "0.70.2",
-
   "skills": [],
   "prompts": [],
-
   "defaultProvider": "google",
   "defaultModel": "gemini-3.1-pro-preview",
-
   "packages": [
     "npm:@juanibiapina/pi-extension-settings",
     "npm:@aliou/pi-processes",
@@ -18,21 +15,18 @@
     "npm:pi-ask-user",
     "npm:pi-file-change-reminder",
     "npm:@alexgorbatchev/pi-skill-library",
-    "npm:@alexgorbatchev/pi-env"
+    "npm:@alexgorbatchev/pi-env",
+    "npm:pi-timestamps"
   ],
-
   "steeringMode": "one-at-a-time",
-
   "enabledModels": [
     "openai/gpt-5.4",
     "openai/gpt-5.4-mini",
     "google/gemini-3.1-pro-preview",
     "google/gemini-3.1-flash-lite-preview"
   ],
-
   "@alexgorbatchev/pi-env": {
     "AGENT": "1"
   },
-  
   "enableSkillCommands": true
 }

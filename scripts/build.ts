@@ -35,7 +35,9 @@ const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
 const LEGACY_GENERATED_OUTPUT_MANIFEST_NAME = ".generated-output-manifest.json";
-const PI_HELPER_TEMPLATE_PATH = join(REGISTRY_DIR, "harnesses", "pi", "templates", "pi-helper-template.sh");
+const PI_PROFILE_HELPER_PATH = join(REGISTRY_DIR, "harnesses", "pi", "templates", "pi-profile-helper.sh");
+const PI_INSTALL_PATH = join(REGISTRY_DIR, "harnesses", "pi", "templates", "pi-install.sh");
+const PI_UPDATE_PATH = join(REGISTRY_DIR, "harnesses", "pi", "templates", "pi-update.sh");
 const GENERATED_OUTPUT_STAGING_DIR = join(
   REGISTRY_DIR,
   ".tmp",
@@ -377,17 +379,26 @@ async function generatePiHelpers(outputDir: string, profiles: string[]): Promise
   const binDir = join(outputDir, "bin");
   await mkdir(binDir, { recursive: true });
 
-  const template = await readFile(PI_HELPER_TEMPLATE_PATH, "utf-8");
+  const template = await readFile(PI_PROFILE_HELPER_PATH, "utf-8");
+  const installTemplate = await readFile(PI_INSTALL_PATH, "utf-8");
+  const updateTemplate = await readFile(PI_UPDATE_PATH, "utf-8");
 
   for (const profile of profiles) {
     const helperName = `pi-${profile}`;
     const helperPath = join(binDir, helperName);
     
     // Replace {{profile}} with the actual profile name
-    const content = template.replace(/\{\{profile\}\}/g, profile);
+    const content = template.replace(/\{\{profile\}\}/g, profile).replace(/\{\{output_dir\}\}/g, outputDir);
     
     await writeFile(helperPath, content, { mode: 0o755 });
   }
+
+  // Add pi-install and pi-update helpers
+  const piInstallPath = join(binDir, "pi-install");
+  await writeFile(piInstallPath, installTemplate, { mode: 0o755 });
+
+  const piUpdatePath = join(binDir, "pi-update");
+  await writeFile(piUpdatePath, updateTemplate, { mode: 0o755 });
 }
 
 async function generateAirHelpers(outputDir: string): Promise<void> {

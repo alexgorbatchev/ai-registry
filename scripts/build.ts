@@ -27,6 +27,7 @@ import {
 } from "./lib/harnessBuild";
 import { discoverProfileLocalAssets } from "./lib/discoverProfileLocalAssets";
 import { getErrorMessage } from "./lib/getErrorMessage";
+import { runCommand } from "./lib/runCommand";
 
 // Resolve paths relative to the ai-registry root
 const REGISTRY_DIR = resolve(import.meta.dir, "..");
@@ -222,22 +223,50 @@ function getGeneratedOutputDrift(
   return drift.sort((left, right) => left.path.localeCompare(right.path));
 }
 
-function formatGeneratedOutputDrift(drift: IGeneratedOutputDrift[]): string {
+async function getFileDiff(
+  oldPath: string,
+  newPath: string,
+): Promise<string> {
+  try {
+    const process = Bun.spawn(["git", "diff", "--no-index", "--color=always", oldPath, newPath]);
+    const output = await new Response(process.stdout).text();
+    return output;
+  } catch (error) {
+    return `Could not generate diff: ${error}`;
+  }
+}
+
+async function formatGeneratedOutputDrift(
+  drift: IGeneratedOutputDrift[],
+  nextOutputDir: string,
+): Promise<string> {
   const fileLabel = drift.length === 1 ? "file" : "files";
-  const sections = drift.map((entry) => `  - ${entry.path} (${entry.reason})`);
+  const sections = await Promise.all(
+    drift.map(async (entry) => {
+      let message = `  - ${entry.path} (${entry.reason})`;
+      if (entry.reason === "modified") {
+        const oldPath = join(UNIFIED_OUTPUT_DIR, entry.path);
+        const newPath = join(nextOutputDir, entry.path);
+        const diff = await getFileDiff(oldPath, newPath);
+        message += `\n${diff.split('\n').map(line => `    ${line}`).join('\n')}`;
+      }
+      return message;
+    }),
+  );
 
   return `\n⚠️ Detected external changes in generated outputs (${drift.length} ${fileLabel}):\n${sections.join("\n")}`;
 }
 
 async function confirmGeneratedOutputOverwrite(
   drift: IGeneratedOutputDrift[],
+  nextOutputDir: string,
   hasAutoConfirm: boolean,
 ): Promise<void> {
   if (drift.length === 0) {
     return;
   }
 
-  const driftMessage = formatGeneratedOutputDrift(drift);
+  const driftMessage = await formatGeneratedOutputDrift(drift, nextOutputDir);
   console.error(driftMessage);
 
   if (hasAutoConfirm) {
@@ -279,7 +308,7 @@ async function assertGeneratedOutputsAreSafeToReplace(
 
   const currentChecksums = await collectGeneratedOutputChecksums(UNIFIED_OUTPUT_DIR);
   const drift = getGeneratedOutputDrift(manifest, currentChecksums);
-  await confirmGeneratedOutputOverwrite(drift, hasAutoConfirm);
+  await confirmGeneratedOutputOverwrite(drift, nextOutputDir, hasAutoConfirm);
 }
 
 async function writeGeneratedOutputManifest(): Promise<void> {

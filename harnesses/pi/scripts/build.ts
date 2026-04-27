@@ -1,6 +1,7 @@
-import { copyFile, lstat, mkdir, readdir, rename, rm, symlink, writeFile } from "fs/promises";
+import { copyFile, lstat, mkdir, readdir, readFile, rename, rm, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { join, relative } from "path";
+import { homedir } from "os";
 
 import type {
   IProfileBuildContext,
@@ -113,6 +114,42 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   }
 }
 
+async function generatePiHelpers(context: IUnifiedHarnessBuildContext, profiles: string[]): Promise<void> {
+  const binDir = join(context.outputDir, "bin");
+  await mkdir(binDir, { recursive: true });
+
+  const piProfileHelperPath = join(context.harnessDir, "templates", "pi-profile-helper.sh");
+  const piInstallPath = join(context.harnessDir, "templates", "pi-install.sh");
+  const piUninstallPath = join(context.harnessDir, "templates", "pi-uninstall.sh");
+  const piUpdatePath = join(context.harnessDir, "templates", "pi-update.sh");
+
+  const template = await readFile(piProfileHelperPath, "utf-8");
+  const installTemplate = await readFile(piInstallPath, "utf-8");
+  const uninstallTemplate = await readFile(piUninstallPath, "utf-8");
+  const updateTemplate = await readFile(piUpdatePath, "utf-8");
+
+  for (const profile of profiles) {
+    const helperName = `pi-${profile}`;
+    const helperPath = join(binDir, helperName);
+    
+    // Replace {{profile}} with the actual profile name.
+    // We leave {{output_dir}} untouched so it gets expanded by the general template expansion pass.
+    const content = template.replace(/\{\{profile\}\}/g, profile);
+    
+    await writeFile(helperPath, content, { mode: 0o755 });
+  }
+
+  // Add pi-install, pi-uninstall, and pi-update helpers
+  const piInstallBinPath = join(binDir, "pi-install");
+  await writeFile(piInstallBinPath, installTemplate, { mode: 0o755 });
+
+  const piUninstallBinPath = join(binDir, "pi-uninstall");
+  await writeFile(piUninstallBinPath, uninstallTemplate, { mode: 0o755 });
+
+  const piUpdateBinPath = join(binDir, "pi-update");
+  await writeFile(piUpdateBinPath, updateTemplate, { mode: 0o755 });
+}
+
 async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<void> {
   const profileStagingRoot = getProfileStagingRoot(context.outputDir);
   const visibleOutputDir = join(context.outputDir, "pi");
@@ -126,11 +163,14 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     }
 
     const stagedProfiles = await readdir(profileStagingRoot, { withFileTypes: true });
+    const profileNames: string[] = [];
+
     for (const stagedProfile of stagedProfiles) {
       if (!stagedProfile.isDirectory()) {
         continue;
       }
 
+      profileNames.push(stagedProfile.name);
       const stagedProfileDir = join(profileStagingRoot, stagedProfile.name);
       const visibleProfileDir = join(visibleOutputDir, stagedProfile.name);
       await mkdir(visibleProfileDir, { recursive: true });
@@ -155,14 +195,38 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       await mkdir(sessionsTargetDir, { recursive: true });
       await symlink(sessionsTargetDir, join(visibleProfileDir, "sessions"));
     }
+
+    await generatePiHelpers(context, profileNames);
   } finally {
     await rm(profileStagingRoot, { force: true, recursive: true });
   }
 }
 
+async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>> {
+  let profile = "default";
+  const overrideIndex = process.argv.indexOf("--pi-profile");
+  if (overrideIndex !== -1 && overrideIndex + 1 < process.argv.length) {
+    profile = process.argv[overrideIndex + 1];
+  }
+
+  const sourcePath = join(outputDir, "pi", profile);
+  if (!existsSync(sourcePath)) {
+    throw new Error(`Generated Pi profile does not exist: ${sourcePath}`);
+  }
+
+  return [
+    {
+      sourcePath,
+      targetPath: process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent"),
+      description: `Pi config (${profile})`,
+    },
+  ];
+}
+
 const plugin: IUnifiedHarnessPlugin = {
   finalizeOutput,
   stageProfile,
+  getBootstrapTargets,
   target: "pi",
 };
 

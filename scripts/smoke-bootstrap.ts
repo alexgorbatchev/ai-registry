@@ -10,7 +10,7 @@ const PUBLIC_BIN_DIR = join(SMOKE_HOME, ".local", "bin");
 const OPENCODE_TARGET = join(CONFIG_HOME, "opencode");
 const OPENCODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "opencode");
 const PI_TARGET = join(SMOKE_HOME, ".pi", "agent");
-const PI_SOURCE = join(SMOKE_REPO_DIR, ".output", "pi", "profiles", "default");
+const PI_SOURCE = join(SMOKE_REPO_DIR, ".output", "pi", "default");
 const PUBLIC_SCRIPT_NAMES = [
   "air-opencode-conversation-extract",
   "air-opencode-session-analysis",
@@ -114,7 +114,7 @@ async function runBootstrapWithPiProfile(): Promise<void> {
 async function verifyBootstrapOutputs(): Promise<void> {
   const opencodeBackupDir = await findSingleBackup(CONFIG_HOME, "opencode.backup-");
   const publicScriptAssertions = PUBLIC_SCRIPT_NAMES.map((scriptName) =>
-    assertSymlinkTarget(join(PUBLIC_BIN_DIR, scriptName), join(SMOKE_REPO_DIR, "scripts", scriptName)),
+    assertSymlinkTarget(join(PUBLIC_BIN_DIR, scriptName), join(SMOKE_REPO_DIR, ".output", "bin", scriptName)),
   );
 
   await Promise.all([

@@ -15,6 +15,8 @@ import walk from "ignore-walk";
 const REGISTRY_IGNORE_FILE_NAME = ".registry-ignore";
 const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
 
+import { pathToFileURL } from "url";
+
 export type ITemplateContext = Record<string, string>;
 
 export type IProfileManifest = {
@@ -64,7 +66,78 @@ export type IUnifiedHarnessPlugin = {
   target: string;
   stageProfile?(context: IProfileBuildContext): Promise<void>;
   finalizeOutput?(context: IUnifiedHarnessBuildContext): Promise<void>;
+  getBootstrapTargets?(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>>;
 };
+
+export function getObjectValue(object: object, key: string): unknown {
+  return Reflect.get(object, key);
+}
+
+export function isUnifiedHarnessPlugin(value: unknown): value is IUnifiedHarnessPlugin {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const target = getObjectValue(value, "target");
+  const stageProfile = getObjectValue(value, "stageProfile");
+  const finalizeOutput = getObjectValue(value, "finalizeOutput");
+  const getBootstrapTargets = getObjectValue(value, "getBootstrapTargets");
+
+  return (
+    typeof target === "string" &&
+    (stageProfile === undefined || typeof stageProfile === "function") &&
+    (finalizeOutput === undefined || typeof finalizeOutput === "function") &&
+    (getBootstrapTargets === undefined || typeof getBootstrapTargets === "function")
+  );
+}
+
+export async function getAvailableHarnessBuildTargets(harnessesDir: string): Promise<string[]> {
+  if (!existsSync(harnessesDir)) {
+    return [];
+  }
+
+  const harnessEntries = await readdir(harnessesDir, { withFileTypes: true });
+  return harnessEntries
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+    .map((entry) => entry.name)
+    .filter((entryName) => existsSync(join(harnessesDir, entryName, "scripts", "build.ts")));
+}
+
+export async function loadUnifiedHarnessPlugins(harnessesDir: string, targets: string[]): Promise<IUnifiedHarnessPlugin[]> {
+  const plugins: IUnifiedHarnessPlugin[] = [];
+
+  for (const target of targets) {
+    const pluginPath = join(harnessesDir, target, "scripts", "build.ts");
+    if (!existsSync(pluginPath)) {
+      continue;
+    }
+
+    const moduleValue = await import(pathToFileURL(pluginPath).href);
+    const defaultExport = getObjectValue(moduleValue, "default");
+    const namedPlugin = getObjectValue(moduleValue, "plugin");
+    const plugin = isUnifiedHarnessPlugin(defaultExport)
+      ? defaultExport
+      : isUnifiedHarnessPlugin(namedPlugin)
+        ? namedPlugin
+        : null;
+
+    if (!plugin) {
+      throw new Error(
+        `Harness build plugin at ${pluginPath} must export a plugin object as default or named \"plugin\".`,
+      );
+    }
+
+    if (plugin.target !== target) {
+      throw new Error(
+        `Harness build plugin at ${pluginPath} declared target \"${plugin.target}\", expected \"${target}\".`,
+      );
+    }
+
+    plugins.push(plugin);
+  }
+
+  return plugins;
+}
 
 function normalizeRelativePath(filePath: string): string {
   return filePath.replaceAll("\\", "/");

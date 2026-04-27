@@ -21,6 +21,9 @@ import {
   applyTemplateVariablesToGeneratedOutput,
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
+  getAvailableHarnessBuildTargets,
+  loadUnifiedHarnessPlugins,
+  getObjectValue,
 } from "./lib/harnessBuild";
 import { discoverProfileLocalAssets } from "./lib/discoverProfileLocalAssets";
 import { getErrorMessage } from "./lib/getErrorMessage";
@@ -35,10 +38,6 @@ const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
 const LEGACY_GENERATED_OUTPUT_MANIFEST_NAME = ".generated-output-manifest.json";
-const PI_PROFILE_HELPER_PATH = join(REGISTRY_DIR, "harnesses", "pi", "templates", "pi-profile-helper.sh");
-const PI_INSTALL_PATH = join(REGISTRY_DIR, "harnesses", "pi", "templates", "pi-install.sh");
-const PI_UNINSTALL_PATH = join(REGISTRY_DIR, "harnesses", "pi", "templates", "pi-uninstall.sh");
-const PI_UPDATE_PATH = join(REGISTRY_DIR, "harnesses", "pi", "templates", "pi-update.sh");
 const GENERATED_OUTPUT_STAGING_DIR = join(
   REGISTRY_DIR,
   ".tmp",
@@ -85,28 +84,8 @@ function hasAutoConfirmFlag(): boolean {
   return process.argv.some((argument) => AUTO_CONFIRM_FLAGS.has(argument));
 }
 
-function getObjectValue(object: object, key: string): unknown {
-  return Reflect.get(object, key);
-}
-
 function isProfileManifest(value: unknown): value is IProfileManifest {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isUnifiedHarnessPlugin(value: unknown): value is IUnifiedHarnessPlugin {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-
-  const target = getObjectValue(value, "target");
-  const stageProfile = getObjectValue(value, "stageProfile");
-  const finalizeOutput = getObjectValue(value, "finalizeOutput");
-
-  return (
-    typeof target === "string" &&
-    (stageProfile === undefined || typeof stageProfile === "function") &&
-    (finalizeOutput === undefined || typeof finalizeOutput === "function")
-  );
 }
 
 function isStringRecord(value: unknown): value is Record<string, string> {
@@ -317,54 +296,6 @@ async function writeGeneratedOutputManifest(): Promise<void> {
   );
 }
 
-async function getAvailableHarnessBuildTargets(): Promise<string[]> {
-  if (!existsSync(HARNESSES_DIR)) {
-    return [];
-  }
-
-  const harnessEntries = await readdir(HARNESSES_DIR, { withFileTypes: true });
-  return harnessEntries
-    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
-    .map((entry) => entry.name)
-    .filter((entryName) => existsSync(join(HARNESSES_DIR, entryName, "scripts", "build.ts")));
-}
-
-async function loadUnifiedHarnessPlugins(targets: string[]): Promise<IUnifiedHarnessPlugin[]> {
-  const plugins: IUnifiedHarnessPlugin[] = [];
-
-  for (const target of targets) {
-    const pluginPath = join(HARNESSES_DIR, target, "scripts", "build.ts");
-    if (!existsSync(pluginPath)) {
-      continue;
-    }
-
-    const moduleValue = await import(pathToFileURL(pluginPath).href);
-    const defaultExport = getObjectValue(moduleValue, "default");
-    const namedPlugin = getObjectValue(moduleValue, "plugin");
-    const plugin = isUnifiedHarnessPlugin(defaultExport)
-      ? defaultExport
-      : isUnifiedHarnessPlugin(namedPlugin)
-        ? namedPlugin
-        : null;
-
-    if (!plugin) {
-      throw new Error(
-        `Harness build plugin at ${pluginPath} must export a plugin object as default or named \"plugin\".`,
-      );
-    }
-
-    if (plugin.target !== target) {
-      throw new Error(
-        `Harness build plugin at ${pluginPath} declared target \"${plugin.target}\", expected \"${target}\".`,
-      );
-    }
-
-    plugins.push(plugin);
-  }
-
-  return plugins;
-}
-
 async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> {
   if (!patterns || !Array.isArray(patterns) || patterns.length === 0) return [];
   const matches = await globby(patterns, {
@@ -374,70 +305,6 @@ async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> 
     expandDirectories: false,
   });
   return matches;
-}
-
-async function generatePiHelpers(outputDir: string, profiles: string[]): Promise<void> {
-  const binDir = join(outputDir, "bin");
-  await mkdir(binDir, { recursive: true });
-
-  const template = await readFile(PI_PROFILE_HELPER_PATH, "utf-8");
-  const installTemplate = await readFile(PI_INSTALL_PATH, "utf-8");
-  const uninstallTemplate = await readFile(PI_UNINSTALL_PATH, "utf-8");
-  const updateTemplate = await readFile(PI_UPDATE_PATH, "utf-8");
-
-  for (const profile of profiles) {
-    const helperName = `pi-${profile}`;
-    const helperPath = join(binDir, helperName);
-    
-    // Replace {{profile}} with the actual profile name
-    const content = template.replace(/\{\{profile\}\}/g, profile).replace(/\{\{output_dir\}\}/g, outputDir);
-    
-    await writeFile(helperPath, content, { mode: 0o755 });
-  }
-
-  // Add pi-install, pi-uninstall, and pi-update helpers
-  const piInstallPath = join(binDir, "pi-install");
-  await writeFile(piInstallPath, installTemplate, { mode: 0o755 });
-
-  const piUninstallPath = join(binDir, "pi-uninstall");
-  await writeFile(piUninstallPath, uninstallTemplate, { mode: 0o755 });
-
-  const piUpdatePath = join(binDir, "pi-update");
-  await writeFile(piUpdatePath, updateTemplate, { mode: 0o755 });
-}
-
-async function generateAirHelpers(outputDir: string): Promise<void> {
-  const binDir = join(outputDir, "bin");
-  await mkdir(binDir, { recursive: true });
-
-  const helpers = [
-    {
-      name: "air-opencode-conversation-extract",
-      scriptPath: "{{repo_root}}/harnesses/opencode/skills/opencode-conversation-analysis/scripts/extract.ts",
-      envVar: "OPENCODE_CONVERSATION_EXTRACT_COMMAND",
-    },
-    {
-      name: "air-opencode-session-analysis",
-      scriptPath: "{{repo_root}}/packages/opencode-session-analysis/src/cli.ts",
-      envVar: "OPENCODE_SESSION_ANALYSIS_COMMAND",
-    },
-    {
-      name: "air-opencode-session-export",
-      scriptPath: "{{repo_root}}/harnesses/opencode/skills/opencode-sessions/scripts/export.ts",
-      envVar: "OPENCODE_SESSION_EXPORT_COMMAND",
-    },
-  ];
-
-  for (const helper of helpers) {
-    const helperPath = join(binDir, helper.name);
-    const content = `#!/bin/bash
-# Autogenerated ${helper.name} helper
-
-exec env ${helper.envVar}="${helper.name}" \\
-  bun "${helper.scriptPath}" "$@"
-`;
-    await writeFile(helperPath, content, { mode: 0o755 });
-  }
 }
 
 async function buildUnifiedOutputs(
@@ -517,10 +384,6 @@ async function buildUnifiedOutputs(
     }
   }
 
-  const profileNames = profiles.map(p => p.name);
-  await generatePiHelpers(outputDir, profileNames);
-  await generateAirHelpers(outputDir);
-
   console.log("\n🧩 Finalizing harness outputs...");
   for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
     if (!unifiedHarnessPlugin.finalizeOutput) {
@@ -544,8 +407,8 @@ async function main() {
 
   const hasAutoConfirm = hasAutoConfirmFlag();
 
-  const availableHarnessBuildTargets = await getAvailableHarnessBuildTargets();
-  const unifiedHarnessPlugins = await loadUnifiedHarnessPlugins(availableHarnessBuildTargets);
+  const availableHarnessBuildTargets = await getAvailableHarnessBuildTargets(HARNESSES_DIR);
+  const unifiedHarnessPlugins = await loadUnifiedHarnessPlugins(HARNESSES_DIR, availableHarnessBuildTargets);
 
   try {
     await buildUnifiedOutputs(

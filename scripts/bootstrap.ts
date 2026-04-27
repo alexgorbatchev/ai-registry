@@ -6,12 +6,13 @@ import { dirname, join, resolve } from "path";
 import { getErrorMessage } from "./lib/getErrorMessage";
 import { runCommand } from "./lib/runCommand";
 import { syncPublicScripts, type ISyncPublicScriptsResult } from "./lib/syncPublicScripts";
+import { getAvailableHarnessBuildTargets, loadUnifiedHarnessPlugins } from "./lib/harnessBuild";
 
 const REGISTRY_DIR = resolve(import.meta.dir, "..");
+const HARNESSES_DIR = join(REGISTRY_DIR, "harnesses");
 const OUTPUT_DIR = join(REGISTRY_DIR, ".output");
 const PUBLIC_BIN_DIR = join(homedir(), ".local", "bin");
 const SCRIPTS_DIR = join(REGISTRY_DIR, "scripts");
-const DEFAULT_PI_PROFILE = "default";
 
 type IBootstrapTarget = {
   sourcePath: string;
@@ -69,22 +70,16 @@ async function resolveRealPathOrSelf(targetPath: string): Promise<string> {
   }
 }
 
-function getBootstrapTargets(): IBootstrapTarget[] {
-  const targets: IBootstrapTarget[] = [
-    {
-      sourcePath: join(OUTPUT_DIR, "opencode"),
-      targetPath: process.env.OPENCODE_CONFIG_DIR?.trim() || join(getConfigHome(), "opencode"),
-      description: "OpenCode config",
-    },
-    {
-      sourcePath: join(OUTPUT_DIR, "pi", DEFAULT_PI_PROFILE),
-      targetPath: process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent"),
-      description: `Pi config (${DEFAULT_PI_PROFILE})`,
-    },
-  ];
+async function getBootstrapTargets(): Promise<IBootstrapTarget[]> {
+  const targets: IBootstrapTarget[] = [];
+  const availableHarnessBuildTargets = await getAvailableHarnessBuildTargets(HARNESSES_DIR);
+  const unifiedHarnessPlugins = await loadUnifiedHarnessPlugins(HARNESSES_DIR, availableHarnessBuildTargets);
 
-  if (!existsSync(targets[1].sourcePath)) {
-    throw new Error(`Generated Pi profile does not exist: ${targets[1].sourcePath}`);
+  for (const plugin of unifiedHarnessPlugins) {
+    if (plugin.getBootstrapTargets) {
+      const pluginTargets = await plugin.getBootstrapTargets(OUTPUT_DIR);
+      targets.push(...pluginTargets);
+    }
   }
 
   return targets;
@@ -165,7 +160,7 @@ async function main(): Promise<void> {
     failureHint: "If generated outputs drifted and you want to overwrite them, rerun `bun bootstrap -- -y`.",
   });
 
-  const bootstrapTargets = getBootstrapTargets();
+  const bootstrapTargets = await getBootstrapTargets();
 
   console.log("Applying generated outputs...");
   for (const target of bootstrapTargets) {
@@ -188,8 +183,9 @@ async function main(): Promise<void> {
   printPublicScriptResult(PUBLIC_BIN_DIR, publicScriptResult);
 
   console.log("\nReady.");
-  console.log(`OpenCode now reads from: ${bootstrapTargets[0].targetPath}`);
-  console.log(`Pi now reads profile ${DEFAULT_PI_PROFILE} from: ${bootstrapTargets[1].targetPath}`);
+  for (const target of bootstrapTargets) {
+    console.log(`${target.description} now reads from: ${target.targetPath}`);
+  }
   console.log(`Repo-local air-* commands are linked into: ${PUBLIC_BIN_DIR}`);
   console.log("Override the targets with OPENCODE_CONFIG_DIR and PI_CODING_AGENT_DIR if needed.");
 }

@@ -1,6 +1,6 @@
 ---
 name: persistent-memory-files
-description: Read, create, update, and compact `{{repo_root}}/wiki/LEARNINGS.md` and any project `ARCHITECTURE.md` file. Use whenever a task involves consulting, editing, appending to, reorganizing, compacting, or creating those files, or when course corrections, durable lessons, or architecture decisions need to be recorded there.
+description: Read, create, update, and compact `{{repo_root}}/wiki/LEARNINGS.md` and any project `docs/internal/architecture.md` file. Use whenever a task involves consulting, editing, appending to, reorganizing, compacting, or creating those files, or when course corrections, durable lessons, or architecture decisions need to be recorded there.
 author: alexgorbatchev
 ---
 
@@ -13,21 +13,21 @@ Use this skill for the detailed workflow when persistent memory files need to be
 Use the narrowest durable location that fits the learning:
 
 - `{{repo_root}}/wiki/LEARNINGS.md` for durable engineering wisdom that should generalize across projects in this repository
-- `ARCHITECTURE.md` at the project root for project-specific architecture, design decisions, and local constraints
+- `docs/internal/architecture.md` for project-specific architecture, design decisions, and local constraints
 - code comments or docblocks for file-local or function-local invariants, caveats, or non-obvious behavior
 
 When these sources conflict, prefer the most specific applicable source of truth:
 
 1. Explicit user instructions in the current conversation
 2. Repository-local source of truth such as `AGENTS.md`, `README.md`, checked-in docs, tests, and code
-3. Project `ARCHITECTURE.md`
+3. Project `docs/internal/architecture.md`
 4. `{{repo_root}}/wiki/LEARNINGS.md`
 
 If a memory file is missing, continue without it unless the current task is to create or update that file.
 
 ## Front Matter Contract
 
-Use YAML front matter at the top of both `{{repo_root}}/wiki/LEARNINGS.md` and project `ARCHITECTURE.md`.
+Use YAML front matter at the top of both `{{repo_root}}/wiki/LEARNINGS.md` and project `docs/internal/architecture.md`.
 
 Recommended `{{repo_root}}/wiki/LEARNINGS.md` front matter:
 
@@ -44,7 +44,7 @@ last_compacted_at: null
 ---
 ```
 
-Recommended `ARCHITECTURE.md` front matter:
+Recommended `docs/internal/architecture.md` front matter:
 
 ```yaml
 ---
@@ -70,7 +70,7 @@ Field rules:
 Before substantive code work, read any relevant memory files that exist:
 
 1. Look for `{{repo_root}}/wiki/LEARNINGS.md` when the task may benefit from cross-project engineering guidance in this repository.
-2. Look for project-root `ARCHITECTURE.md` when the task may depend on project-local architecture or design decisions.
+2. Look for project `docs/internal/architecture.md` when the task may depend on project-local architecture or design decisions.
 3. Apply only the entries that are relevant to the current task.
 4. If a memory file is noisy, duplicated, or obviously stale, mention that to the user rather than silently trusting it.
 

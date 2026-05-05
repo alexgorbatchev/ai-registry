@@ -268,6 +268,8 @@ Skip this step only if the skill being developed already exists, and iteration o
 
 When creating a new skill from scratch in this registry, always run the `init_skill.ts` script with Bun and create the new skill under `{{skills_dir}}`. The script conveniently generates a new template skill directory that automatically includes everything a skill requires, making the skill creation process much more efficient and reliable.
 
+When maintaining `init_skill.ts`, scaffold template content, or validator-adjacent code, first generate a fresh skill with `init_skill.ts` and immediately run `quick_validate.ts` against that untouched scaffold before making any manual edits. Treat that init-to-validate pass as the first regression check for scaffold/validator compatibility, because it catches frontmatter and template contract drift that hand-edited examples can hide.
+
 Usage:
 
 ```bash
@@ -360,6 +362,8 @@ Quick validation:
 bun {{skills_dir}}/skill-creator/scripts/quick_validate.ts <path/to/skill-folder>
 ```
 
+If you changed scaffold generation or validator behavior, validate a freshly generated skill before validating a hand-edited one.
+
 Packaging:
 
 ```bash
@@ -384,6 +388,8 @@ The packaging script will:
 2. **Package** the skill if validation passes, creating a .skill file named after the skill (e.g., `my-skill.skill`) that includes all files and maintains the proper directory structure for distribution. The .skill file is a zip file with a .skill extension.
 
 If validation fails, the script will report the errors and exit without creating a package. Fix any validation errors and run the packaging command again.
+
+When changing scaffold or validator contracts, keep an end-to-end regression that covers `initSkill(...)` followed by `validateSkill(...)` so the generated default scaffold remains valid without manual cleanup.
 
 ### Step 6: Iterate
 

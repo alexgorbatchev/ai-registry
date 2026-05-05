@@ -1,6 +1,6 @@
 ---
 created_on: 2026-05-04 22:47
-last_modified: 2026-05-04 22:47
+last_modified: 2026-05-04 23:01
 status: current
 ---
 
@@ -27,6 +27,7 @@ Out of scope for v1:
 - Allowing silent repo-local overrides of global asset names.
 - Writeback for generated agents or generated harness configuration files.
 - Solving cross-machine propagation without a shared filesystem, registry Git sync, or another external sync mechanism.
+- Requiring FUSE or macFUSE for normal CI validation.
 
 ## Current codebase baseline
 
@@ -54,6 +55,8 @@ Verified current behavior in this repository:
 - Generated profile agents and generated harness config files must be read-only in v1.
 - macOS support requires macFUSE or an equivalent user-space filesystem provider. Linux support requires FUSE.
 - A daemon crash must not corrupt canonical assets. Writes must use validate-then-atomic-replace semantics.
+- CI must validate projection behavior through deterministic non-FUSE commands by default.
+- FUSE and macFUSE CI jobs must be platform-specific integration jobs, not required for every consuming repo validation run.
 
 ## Exact architecture choice
 
@@ -225,11 +228,15 @@ This design records the planned implementation surface. Do not implement these f
 - `packages/live-registry-projection/src/harnessAdapters/types.ts`
 - `packages/live-registry-projection/src/harnessAdapters/opencode.ts`
 - `packages/live-registry-projection/src/fuse/mountProjectView.ts`
+- `packages/live-registry-projection/src/materialize/materializeProjectView.ts`
+- `packages/live-registry-projection/src/ci/validateProjectView.ts`
 - `packages/live-registry-projection/src/writeback/atomicCanonicalWrite.ts`
 - `packages/live-registry-projection/src/writeback/routeHarnessWrite.ts`
 - `packages/live-registry-projection/src/__tests__/projectAssetIndex.test.ts`
 - `packages/live-registry-projection/src/__tests__/routeHarnessWrite.test.ts`
 - `packages/live-registry-projection/src/__tests__/opencodeAdapter.test.ts`
+- `packages/live-registry-projection/src/__tests__/validateProjectView.test.ts`
+- `packages/live-registry-projection/src/__tests__/materializeProjectView.test.ts`
 
 ### Modify
 
@@ -290,6 +297,21 @@ When a harness creates a new skill or command path that does not exist in the in
 
 The daemon must reject writes to generated agents, generated config files, and unknown harness paths with `EROFS` or the closest platform-specific read-only filesystem error.
 
+### Non-FUSE materialization path
+
+CI and tests must use the same manifest parsing, asset discovery, duplicate detection, adapter, and validation modules as the FUSE daemon without mounting a filesystem.
+
+For each materialization request:
+
+1. Build the project asset index for `projectRootPath`, `harness`, and `registryRootPath`.
+2. Fail before writing output when the index contains duplicate visible names or invalid canonical assets.
+3. Delete and recreate the caller-provided output directory only when it is inside the project `.tmp/` directory or an explicit CI workspace directory.
+4. Write adapter-produced harness files into the output directory.
+5. Write a machine-readable manifest at `<output>/.air-registry-projection.json`.
+6. Mark the materialized output read-only when `readonly` is `true`.
+
+Materialized output is disposable generated state. CI must never commit it back to a consuming repo.
+
 ## Validation rules
 
 - Skill names must match `^[a-z0-9]+(-[a-z0-9]+)*$`.
@@ -313,6 +335,8 @@ The CLI surface for the future package must be:
 air-registry-view mount --project <path> --harness opencode
 air-registry-view status --project <path>
 air-registry-view doctor --project <path>
+air-registry-view validate --project <path> --harness opencode --registry <path> --ci
+air-registry-view materialize --project <path> --harness opencode --registry <path> --output <path> --readonly
 air-opencode [opencode args...]
 ```
 
@@ -331,9 +355,102 @@ interface StatusCommandOptions {
 interface DoctorCommandOptions {
   project: string;
 }
+
+interface ValidateCommandOptions {
+  project: string;
+  harness: "opencode";
+  registry: string;
+  ci: boolean;
+}
+
+interface MaterializeCommandOptions {
+  project: string;
+  harness: "opencode";
+  registry: string;
+  output: string;
+  readonly: boolean;
+}
 ```
 
 `status` must report duplicate visible names and invalid canonical assets before any harness launch.
+
+`validate --ci` must exit non-zero when any of these conditions exists:
+
+- the project manifest is missing required v1 fields;
+- the manifest references a global asset that does not exist under `registry`;
+- a repo-local canonical asset is invalid;
+- a duplicate visible asset name exists across global and repo scopes;
+- the harness adapter cannot project every selected asset;
+- the projected harness file path is invalid for the selected harness.
+
+`materialize --readonly` must fail with the same validation checks before it writes any files.
+
+## CI contract
+
+### Registry repository CI
+
+The `ai-registry` repository CI must run these commands on every pull request and main branch update:
+
+```text
+bun install
+bun run typecheck
+bun run build
+bun run bootstrap:smoke
+bun test packages/live-registry-projection
+```
+
+The package-specific test command is required only after `packages/live-registry-projection` exists.
+
+The registry repository CI must verify that `bun run build` leaves no uncommitted generated-output drift in `.output/manifest.json` or generated harness files.
+
+### Consuming repository CI
+
+Each consuming repo that uses `.ai-registry/` must run projection validation without FUSE:
+
+```text
+air-registry-view validate --project "$PWD" --harness opencode --registry "$AI_REGISTRY_ROOT" --ci
+air-registry-view materialize --project "$PWD" --harness opencode --registry "$AI_REGISTRY_ROOT" --output "$PWD/.tmp/air-opencode" --readonly
+```
+
+Consuming repo CI must not require `.opencode/`, `.claude/`, `.agents/`, `.pi/`, or other harness-specific source folders to exist in the repository.
+
+### Registry reference policy
+
+Consuming repo CI must choose one of these registry reference modes explicitly in its workflow configuration:
+
+```ts
+type RegistryReferenceMode =
+  | {
+      mode: "pinned";
+      registryGitRef: string;
+    }
+  | {
+      mode: "latest-main";
+      registryRemote: string;
+    };
+```
+
+`pinned` mode is the default for pull request CI because it keeps consuming repo builds reproducible. A consuming repo updates `registryGitRef` through a normal code review when it opts into new global registry content.
+
+`latest-main` mode is allowed only for scheduled compatibility jobs and mainline propagation checks. A failure in `latest-main` mode must open or update a propagation issue or PR instead of blocking unrelated consuming repo pull requests.
+
+### Propagation workflow
+
+When a global skill or command changes in `ai-registry`, propagation across repos happens through one of these mechanisms:
+
+1. Same-machine local development sees the change immediately through the live projection view.
+2. CI in `latest-main` mode detects compatibility failures against current global content.
+3. A propagation bot opens PRs in consuming repos that update the pinned `registryGitRef` and run `air-registry-view validate` plus `materialize`.
+
+Global registry changes must not silently break unrelated consuming repo pull requests that run in `pinned` mode.
+
+### FUSE integration CI
+
+FUSE integration CI must be separate from normal validation CI.
+
+Linux FUSE CI must run only in an environment with `/dev/fuse` available and permissions configured for the test runner. macOS FUSE CI must run only in an environment with macFUSE or an equivalent provider installed.
+
+FUSE integration CI must cover the same read, create, write, flush, fsync, rename, unlink rejection, and read-only behavior listed in the testing plan. Normal consuming repo CI must rely on non-FUSE `validate` and `materialize` commands.
 
 ## Implementation order
 
@@ -342,11 +459,12 @@ interface DoctorCommandOptions {
 3. Implement duplicate visible name detection as a hard error.
 4. Implement the OpenCode adapter in pure TypeScript without FUSE.
 5. Implement writeback routing and atomic canonical writes.
-6. Add a non-FUSE materialization test harness to prove read/write transforms.
-7. Implement Linux FUSE mount support.
-8. Implement macOS macFUSE mount support.
-9. Generate `air-opencode` wrapper after the package is stable.
-10. Document the public workflow in `README.md` and update `AGENTS.md`.
+6. Implement non-FUSE `validate` and `materialize` commands for CI.
+7. Add a non-FUSE materialization test harness to prove read/write transforms.
+8. Implement Linux FUSE mount support.
+9. Implement macOS macFUSE mount support.
+10. Generate `air-opencode` wrapper after the package is stable.
+11. Document the public workflow in `README.md` and update `AGENTS.md`.
 
 ## Testing plan
 
@@ -360,6 +478,8 @@ interface DoctorCommandOptions {
   - new skill matching a global name is rejected.
 - Unit-test OpenCode adapter round trips for skills and commands.
 - Integration-test materialized projection before FUSE integration.
+- Integration-test `validate --ci` failure cases for invalid manifests, missing global references, invalid repo-local assets, duplicate visible names, and adapter projection failures.
+- Integration-test `materialize --readonly` output manifest creation and read-only output permissions without FUSE.
 - Integration-test FUSE read, create, write, flush, fsync, rename, unlink rejection, and read-only error behavior on Linux.
 - Integration-test macFUSE behavior on macOS before declaring macOS support complete.
 
@@ -375,6 +495,8 @@ Reject implementations that do any of the following:
 - Make generated agents writable before exact profile round-trip semantics exist.
 - Depend on checked-in symlinks for portability.
 - Treat copy-sync as the live propagation mechanism.
+- Require FUSE or macFUSE for normal consuming repo CI validation.
+- Run consuming repo pull request CI against moving `ai-registry` main without an explicit latest-main compatibility job policy.
 
 ## Definition of done
 
@@ -387,6 +509,8 @@ This design is implemented when:
 - Creating a new skill through the projected OpenCode path creates a repo-specific skill.
 - A same-name global and repo-specific skill prevents the project view from mounting.
 - Generated agents and generated configs are read-only.
+- `air-registry-view validate --ci` and `materialize --readonly` validate consuming repos without FUSE.
+- Consuming repo CI has an explicit pinned or latest-main registry reference policy.
 - Linux and macOS behavior is validated with platform-specific integration tests.
 - `README.md`, `AGENTS.md`, and `skills/ai-registry-integration/SKILL.md` document the final implemented workflow.
 
@@ -398,3 +522,5 @@ This design is implemented when:
 - Global propagation happens by editing the global canonical file, not by copying generated projections.
 - Repo-specific skills coexist with global skills only when names are unique.
 - Generated agents and generated harness config files are read-only in v1.
+- Normal CI uses non-FUSE validation and materialization; FUSE CI is a separate platform integration layer.
+- Pull request CI uses pinned registry refs by default; latest-main checks are scheduled compatibility or propagation jobs.

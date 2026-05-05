@@ -29,7 +29,7 @@ Harnesses are only built into `.output/` when they provide `harnesses/<name>/scr
 
 - Keep shipped Pi skeleton files under `harnesses/pi/agent/`.
 - Keep the Pi unified-output plugin in `harnesses/pi/scripts/build.ts`.
-- The Pi harness generates one config root per profile under `.output/pi/profiles/<profile>/`.
+- The Pi harness generates one config root per profile under `.output/pi/<profile>/`.
 - Map reusable commands to Pi `prompts/`, reusable skills to Pi `skills/`, and profile `system_prompt` content to `APPEND_SYSTEM.md`.
 - Do not silently ignore profile `tools` or `permission`; the Pi build must fail until an exact Pi-native mapping exists.
 

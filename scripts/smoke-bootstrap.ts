@@ -10,7 +10,8 @@ const PUBLIC_BIN_DIR = join(SMOKE_HOME, ".local", "bin");
 const OPENCODE_TARGET = join(CONFIG_HOME, "opencode");
 const OPENCODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "opencode");
 const PI_TARGET = join(SMOKE_HOME, ".pi", "agent");
-const PI_SOURCE = join(SMOKE_REPO_DIR, ".output", "pi", "default");
+const PI_SMOKE_PROFILE = "developer";
+const PI_SOURCE = join(SMOKE_REPO_DIR, ".output", "pi", PI_SMOKE_PROFILE);
 const PUBLIC_SCRIPT_NAMES = [
   "air-opencode-conversation-extract",
   "air-opencode-session-analysis",
@@ -101,7 +102,7 @@ async function runBootstrap(): Promise<void> {
 }
 
 async function runBootstrapWithPiProfile(): Promise<void> {
-  await $`bun run bootstrap -- --pi-profile default`
+  await $`bun run bootstrap -- --pi-profile ${PI_SMOKE_PROFILE}`
     .cwd(SMOKE_REPO_DIR)
     .env({
       ...process.env,

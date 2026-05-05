@@ -124,16 +124,53 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
   }
 }
 
+function getRequestedPiProfile(argv: string[]): string | null {
+  const overrideIndex = argv.indexOf("--pi-profile");
+  if (overrideIndex === -1) {
+    return null;
+  }
+
+  if (overrideIndex + 1 < argv.length) {
+    const profileName = argv[overrideIndex + 1]?.trim() ?? "";
+    if (profileName.length > 0) {
+      return profileName;
+    }
+  }
+
+  throw new Error("Missing Pi profile name after --pi-profile.");
+}
+
+async function getGeneratedPiProfileNames(outputDir: string): Promise<string[]> {
+  const piOutputDir = join(outputDir, "pi");
+  if (!existsSync(piOutputDir)) {
+    return [];
+  }
+
+  const profileEntries = await readdir(piOutputDir, { withFileTypes: true });
+  return profileEntries
+    .filter((profileEntry) => profileEntry.isDirectory())
+    .map((profileEntry) => profileEntry.name)
+    .sort();
+}
+
+function formatMissingPiProfileMessage(sourcePath: string, availableProfiles: string[]): string {
+  if (availableProfiles.length === 0) {
+    return `Generated Pi profile does not exist: ${sourcePath}. No generated Pi profiles are available.`;
+  }
+
+  return `Generated Pi profile does not exist: ${sourcePath}. Available generated Pi profiles: ${availableProfiles.join(", ")}.`;
+}
+
 async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>> {
-  let profile = "default";
-  const overrideIndex = process.argv.indexOf("--pi-profile");
-  if (overrideIndex !== -1 && overrideIndex + 1 < process.argv.length) {
-    profile = process.argv[overrideIndex + 1];
+  const profile = getRequestedPiProfile(process.argv);
+  if (profile === null) {
+    return [];
   }
 
   const sourcePath = join(outputDir, "pi", profile);
   if (!existsSync(sourcePath)) {
-    throw new Error(`Generated Pi profile does not exist: ${sourcePath}`);
+    const availableProfiles = await getGeneratedPiProfileNames(outputDir);
+    throw new Error(formatMissingPiProfileMessage(sourcePath, availableProfiles));
   }
 
   return [

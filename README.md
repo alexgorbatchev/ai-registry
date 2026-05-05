@@ -25,7 +25,6 @@ The assembled agents. These folders contain `profile.yaml` manifests that cherry
 - **`personal-assistant/`**: General-purpose personal assistant with stronger defaults for practical consumer tasks such as showtime searches.
 - **`designer/`**: UI/UX focused agent.
 - **`developer/`**: Backend/Fullstack focused agent.
-- **`default/`**: General-purpose baseline agent.
 
 ### 3. Setup (`bun run bootstrap`)
 `bun run bootstrap` is the repo-local clone-and-run entrypoint for this repository.
@@ -70,7 +69,7 @@ For the normal machine setup flow after cloning, run:
 bun run bootstrap
 ```
 
-Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, and resync the repo-local `air-*` wrappers into `~/.local/bin`. Add `-- --pi-profile <profile>` when you also want to relink a generated Pi profile.
+Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, and resync the repo-local `air-*` wrappers into `~/.local/bin`. Add `-- --pi-profile <profile>` when you also want to relink a generated Pi profile. Pi profile linking is opt-in; plain bootstrap does not require any specific profile name such as `default` to exist.
 
 To smoke test that flow without touching your real XDG config paths, run:
 
@@ -87,7 +86,7 @@ That command:
 - verifies the previous generated-output manifest before replacing `.output/`
 - stops for confirmation when generated files drift from the last manifest, with `no` as the default; use `bun run build -- -y` or `bun run bootstrap -- -y` to auto-confirm
 - links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
-- optionally links `.output/pi/profiles/<profile>` into `${PI_CODING_AGENT_DIR:-~/.pi/agent}` when you pass `-- --pi-profile <profile>`
+- optionally links `.output/pi/<profile>` into `${PI_CODING_AGENT_DIR:-~/.pi/agent}` when you pass `-- --pi-profile <profile>`
 - symlinks every `pi-*` and `air-*` helper from `.output/bin` into `~/.local/bin`
 - removes broken `air-*` symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
@@ -163,7 +162,7 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
 - `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/scripts/build.ts`.
-- `.output/pi/profiles/<profile>`: Pi Coding Agent config roots with `settings.json`, selected `prompts/`, selected `skills/`, and generated `APPEND_SYSTEM.md` files. The Pi-specific final shaping lives in `harnesses/pi/scripts/build.ts`.
+- `.output/pi/<profile>`: Pi Coding Agent config roots with `settings.json`, selected `prompts/`, selected `skills/`, and generated `APPEND_SYSTEM.md` files. The Pi-specific final shaping lives in `harnesses/pi/scripts/build.ts`.
 - `.output/manifest.json`: SHA-256 manifest for the generated files. The next `bun run build` checks it before deleting `.output/` so externally edited generated files are not overwritten silently.
 
 The build writes only final generated outputs into `.output/`.
@@ -172,7 +171,7 @@ For local file-based OpenCode plugins that need runtime dependencies from this r
 
 ### Using with Pi
 
-The Pi harness compiles each ai-registry profile into its own Pi config root under `.output/pi/profiles/<profile>/`.
+The Pi harness compiles each ai-registry profile into its own Pi config root under `.output/pi/<profile>/`.
 
 - `commands/` become Pi `prompts/`
 - `skills/` stay Pi `skills/`
@@ -181,7 +180,7 @@ The Pi harness compiles each ai-registry profile into its own Pi config root und
 To link one generated Pi profile into your active Pi config directory, run:
 
 ```bash
-bun run bootstrap -- --pi-profile default
+bun run bootstrap -- --pi-profile developer
 ```
 
 Pi bootstrap is opt-in because Pi has one active config root at a time. Override the target location with `PI_CODING_AGENT_DIR`.
@@ -196,7 +195,7 @@ Override the default target locations with:
 The smoke test uses `.tmp/bootstrap-smoke/` inside this repository for that path.
 Treat `.tmp/bootstrap-smoke/` as a fake `HOME`, with a fresh repo copy staged at `.tmp/bootstrap-smoke/development/ai-registry`.
 
-Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch between your `designer`, `developer`, and `default` personas on the fly. Pi uses one linked profile at a time, selected during bootstrap.
+Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch between generated personas on the fly. Pi uses one linked profile at a time, selected during bootstrap.
 
 ### Other Harnesses
 

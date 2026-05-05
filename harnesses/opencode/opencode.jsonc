@@ -18,8 +18,6 @@
 
   "instructions": [
     "{{repo_root}}/system/system.md",
-    "{{repo_root}}/system/memory-read.md",
-    "{{repo_root}}/system/memory-writeback.md"
   ],
 
   "mcp": {

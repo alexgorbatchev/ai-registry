@@ -12,7 +12,6 @@ import { pathToFileURL } from "url";
 import { existsSync } from "fs";
 import { globby } from "globby";
 import { stdin, stdout } from "process";
-import { createInterface } from "readline/promises";
 
 import {
   type IBuildSupport,
@@ -27,6 +26,7 @@ import {
 } from "./lib/harnessBuild";
 import { discoverProfileLocalAssets } from "./lib/discoverProfileLocalAssets";
 import { getErrorMessage } from "./lib/getErrorMessage";
+import { promptForYesNo } from "./lib/promptForYesNo";
 import { runCommand } from "./lib/runCommand";
 
 // Resolve paths relative to the ai-registry root
@@ -280,20 +280,15 @@ async function confirmGeneratedOutputOverwrite(
     );
   }
 
-  const readline = createInterface({ input: stdin, output: stdout });
-  try {
-    const answer = (await readline
-      .question("\nProceed and overwrite these generated files? [y/N] "))
-      .trim()
-      .toLowerCase();
+  const shouldOverwrite = await promptForYesNo({
+    message: "\nProceed and overwrite these generated files?",
+    interruptMessage: "Build cancelled by Ctrl+C. Generated outputs were modified outside the build.",
+  });
 
-    if (answer !== "y" && answer !== "yes") {
-      throw new Error(
-        "Build cancelled. Generated outputs were modified outside the build.",
-      );
-    }
-  } finally {
-    readline.close();
+  if (!shouldOverwrite) {
+    throw new Error(
+      "Build cancelled. Generated outputs were modified outside the build.",
+    );
   }
 }
 

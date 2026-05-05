@@ -16,7 +16,7 @@ import { join, resolve } from 'path';
 
 const SKILL_TEMPLATE = `---
 name: {skill_name}
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: "[TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]"
 author: alexgorbatchev
 ---
 
@@ -202,7 +202,7 @@ function formatTemplate(template: string, vars: Record<string, string>): string 
   return result;
 }
 
-async function initSkill(
+export async function initSkill(
   skillName: string,
   path: string,
 ): Promise<string | null> {

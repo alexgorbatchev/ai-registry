@@ -1,11 +1,11 @@
 ---
-name: self-hosted-gitea
+name: gitea
 description: Create and manage Gitea repositories and inspect Gitea Actions using Tea CLI and direct Gitea credential or API workflows. Use when asked to create a repo, make a "tea repo", inspect Tea logins, check whether a repo exists, configure or update a Git remote, push local branches, verify remote repository state, or diagnose CI or workflow failures on a Gitea host.
 author: alexgorbatchev
 source: "{{file_path}}"
 ---
 
-# self-hosted-gitea
+# gitea
 
 Use this workflow for Gitea repository creation, initial push, and Gitea Actions CI inspection.
 

@@ -10,7 +10,7 @@ import {
   writeFile,
 } from "fs/promises";
 import { existsSync } from "fs";
-import { basename, dirname, join } from "path";
+import { basename, dirname, isAbsolute, join, relative } from "path";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 import walk from "ignore-walk";
@@ -20,6 +20,8 @@ const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
 import { pathToFileURL } from "url";
 
 export type ITemplateContext = Record<string, string>;
+
+type ISourcePathByOutputPath = Map<string, string>;
 
 export type IProfileManifest = {
   description?: string;
@@ -226,10 +228,71 @@ async function applyTemplateVariables(
   });
 }
 
+function registerOriginalSourcePath(
+  outputPath: string,
+  sourcePath: string,
+  sourcePathByOutputPath?: ISourcePathByOutputPath,
+): void {
+  sourcePathByOutputPath?.set(outputPath, sourcePath);
+}
+
+function moveOriginalSourcePathForFile(
+  currentOutputPath: string,
+  nextOutputPath: string,
+  sourcePathByOutputPath?: ISourcePathByOutputPath,
+  removeCurrentPath: boolean = true,
+): void {
+  if (!sourcePathByOutputPath) {
+    return;
+  }
+
+  const originalSourcePath = sourcePathByOutputPath.get(currentOutputPath);
+  if (originalSourcePath === undefined) {
+    return;
+  }
+
+  sourcePathByOutputPath.set(nextOutputPath, originalSourcePath);
+  if (removeCurrentPath) {
+    sourcePathByOutputPath.delete(currentOutputPath);
+  }
+}
+
+function moveOriginalSourcePathForDirectory(
+  currentOutputDir: string,
+  nextOutputDir: string,
+  sourcePathByOutputPath?: ISourcePathByOutputPath,
+): void {
+  if (!sourcePathByOutputPath) {
+    return;
+  }
+
+  const movedEntries: Array<{ currentOutputPath: string; nextOutputPath: string; originalSourcePath: string }> = [];
+  for (const [currentOutputPath, originalSourcePath] of sourcePathByOutputPath.entries()) {
+    const relativeOutputPath = relative(currentOutputDir, currentOutputPath);
+    const isDescendantPath = relativeOutputPath.length > 0 && !relativeOutputPath.startsWith("..") && !isAbsolute(relativeOutputPath);
+
+    if (!isDescendantPath) {
+      continue;
+    }
+
+    movedEntries.push({
+      currentOutputPath,
+      nextOutputPath: join(nextOutputDir, relativeOutputPath),
+      originalSourcePath,
+    });
+  }
+
+  for (const movedEntry of movedEntries) {
+    sourcePathByOutputPath.delete(movedEntry.currentOutputPath);
+    sourcePathByOutputPath.set(movedEntry.nextOutputPath, movedEntry.originalSourcePath);
+  }
+}
+
 async function copyFileWithTemplateVariables(
   sourcePath: string,
   targetPath: string,
   templateContext: ITemplateContext,
+  sourcePathByOutputPath?: ISourcePathByOutputPath,
 ): Promise<void> {
   await mkdir(dirname(targetPath), { recursive: true });
 
@@ -242,16 +305,19 @@ async function copyFileWithTemplateVariables(
       renderedContent,
       "utf-8",
     );
+    registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
     return;
   }
 
   await copyFile(sourcePath, targetPath);
+  registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
 }
 
 export async function copyDirectoryWithTemplateVariables(
   sourceDir: string,
   targetDir: string,
   templateContext: ITemplateContext,
+  sourcePathByOutputPath?: ISourcePathByOutputPath,
 ): Promise<void> {
   await mkdir(targetDir, { recursive: true });
 
@@ -275,7 +341,7 @@ export async function copyDirectoryWithTemplateVariables(
       continue;
     }
 
-    await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext);
+    await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath);
     await chmod(targetPath, sourceStats.mode);
   }
 }
@@ -284,6 +350,7 @@ export async function copyPathWithTemplateVariables(
   sourcePath: string,
   targetPath: string,
   templateContext: ITemplateContext,
+  sourcePathByOutputPath?: ISourcePathByOutputPath,
 ): Promise<void> {
   const sourceStats = await lstat(sourcePath);
 
@@ -292,7 +359,7 @@ export async function copyPathWithTemplateVariables(
   }
 
   if (sourceStats.isDirectory()) {
-    await copyDirectoryWithTemplateVariables(sourcePath, targetPath, templateContext);
+    await copyDirectoryWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath);
     return;
   }
 
@@ -300,13 +367,14 @@ export async function copyPathWithTemplateVariables(
     return;
   }
 
-  await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext);
+  await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath);
   await chmod(targetPath, sourceStats.mode);
 }
 
 export async function applyTemplateVariablesToGeneratedOutput(
   outputDir: string,
   templateContext: ITemplateContext,
+  sourcePathByOutputPath?: ISourcePathByOutputPath,
 ): Promise<void> {
   if (!existsSync(outputDir)) {
     return;
@@ -321,7 +389,7 @@ export async function applyTemplateVariablesToGeneratedOutput(
     const entryPath = join(outputDir, entry.name);
 
     if (entry.isDirectory()) {
-      await applyTemplateVariablesToGeneratedOutput(entryPath, templateContext);
+      await applyTemplateVariablesToGeneratedOutput(entryPath, templateContext, sourcePathByOutputPath);
       continue;
     }
 
@@ -337,7 +405,7 @@ export async function applyTemplateVariablesToGeneratedOutput(
     const sourceContent = fileBuffer.toString("utf-8");
     const renderedContent = await applyTemplateVariables(
       sourceContent,
-      entryPath,
+      sourcePathByOutputPath?.get(entryPath) ?? entryPath,
       templateContext,
     );
 
@@ -350,7 +418,8 @@ export async function applyTemplateVariablesToGeneratedOutput(
 export async function mergeDirectory(
   sourceDir: string,
   destinationDir: string,
-  options: { move?: boolean } = {}
+  options: { move?: boolean } = {},
+  sourcePathByOutputPath?: ISourcePathByOutputPath,
 ): Promise<void> {
   if (!existsSync(sourceDir)) {
     return;
@@ -368,14 +437,15 @@ export async function mergeDirectory(
         if (!destinationStats.isDirectory()) {
           throw new Error(`Cannot merge directory into file: ${destinationPath}`);
         }
-        await mergeDirectory(sourcePath, destinationPath, options);
+        await mergeDirectory(sourcePath, destinationPath, options, sourcePathByOutputPath);
         continue;
       }
 
       if (options.move) {
+        moveOriginalSourcePathForDirectory(sourcePath, destinationPath, sourcePathByOutputPath);
         await rename(sourcePath, destinationPath);
       } else {
-        await mergeDirectory(sourcePath, destinationPath, options);
+        await mergeDirectory(sourcePath, destinationPath, options, sourcePathByOutputPath);
       }
       continue;
     }
@@ -386,8 +456,10 @@ export async function mergeDirectory(
 
     if (options.move) {
       await rename(sourcePath, destinationPath);
+      moveOriginalSourcePathForFile(sourcePath, destinationPath, sourcePathByOutputPath);
     } else {
       await copyFile(sourcePath, destinationPath);
+      moveOriginalSourcePathForFile(sourcePath, destinationPath, sourcePathByOutputPath, false);
     }
   }
 

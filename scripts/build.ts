@@ -337,10 +337,20 @@ async function buildUnifiedOutputs(
 ): Promise<void> {
   await rm(outputDir, { recursive: true, force: true });
   await mkdir(outputDir, { recursive: true });
+  const sourcePathByOutputPath = new Map<string, string>();
 
   const buildSupport: IBuildSupport = {
-    copyDirectoryWithTemplateVariables,
-    copyPathWithTemplateVariables, mergeDirectory, stageProfileAssets, writeBinScript,
+    copyDirectoryWithTemplateVariables: (sourceDir, targetDir, templateContext) => {
+      return copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext, sourcePathByOutputPath);
+    },
+    copyPathWithTemplateVariables: (sourcePath, targetPath, templateContext) => {
+      return copyPathWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath);
+    },
+    mergeDirectory: (sourceDir, destinationDir, options) => {
+      return mergeDirectory(sourceDir, destinationDir, options, sourcePathByOutputPath);
+    },
+    stageProfileAssets,
+    writeBinScript,
   };
 
   const profileDirents = await readdir(PROFILES_DIR, { withFileTypes: true });
@@ -422,7 +432,7 @@ async function buildUnifiedOutputs(
     });
   }
 
-  await applyTemplateVariablesToGeneratedOutput(outputDir, TEMPLATE_CONTEXT);
+  await applyTemplateVariablesToGeneratedOutput(outputDir, TEMPLATE_CONTEXT, sourcePathByOutputPath);
   console.log("   ✅ Successfully compiled unified outputs!");
 }
 

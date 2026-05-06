@@ -18,6 +18,7 @@ const SKILL_TEMPLATE = `---
 name: {skill_name}
 description: "[TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]"
 author: alexgorbatchev
+source: "{{file_path}}"
 ---
 
 # {skill_title}

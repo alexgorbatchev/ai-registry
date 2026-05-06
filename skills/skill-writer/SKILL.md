@@ -1,15 +1,16 @@
 ---
-name: skill-creator
+name: skill-writer
 description: >-
-  Guide for creating effective skills. This skill should be used when users want
-  to create a new skill (or update an existing skill) that extends Claude's
-  capabilities with specialized knowledge, workflows, or tool integrations.
+  Create, revise, and package effective skills. Use when adding a new skill or
+  changing an existing skill's SKILL.md, bundled scripts, references, assets,
+  scaffold templates, or validation/packaging tooling.
 author: alexgorbatchev
+source: "{{file_path}}"
 ---
 
-# Skill Creator
+# Skill Writer
 
-This skill provides guidance for creating effective skills.
+This skill provides guidance for creating and revising effective skills.
 
 ## About Skills
 
@@ -57,7 +58,8 @@ skill-name/
 │   ├── YAML frontmatter metadata (required)
 │   │   ├── name: (required)
 │   │   ├── description: (required)
-│   │   └── author: alexgorbatchev (repo convention)
+│   │   ├── author: alexgorbatchev (repo convention)
+│   │   └── source: "{{file_path}}" (repo convention)
 │   └── Markdown instructions (required)
 └── Bundled Resources (optional)
     ├── scripts/          - Executable code (Bun/Bash/etc.)
@@ -69,7 +71,7 @@ skill-name/
 
 Every SKILL.md consists of:
 
-- **Frontmatter** (YAML): `name` and `description` are the important triggering fields. In this repo, also include `author: alexgorbatchev` in skill frontmatter. Keep frontmatter minimal. In this toolchain, the validator requires `name` and `description`, permits `author`, and currently permits only `license`, `allowed-tools`, and `metadata` as additional keys beyond those. Default to `name`, `description`, and `author` unless you have a validated reason to add one of those supported extras.
+- **Frontmatter** (YAML): `name` and `description` are the important triggering fields. In this repo, also include `author: alexgorbatchev` and `source: "{{file_path}}"` in skill frontmatter. Keep frontmatter minimal. In this toolchain, the validator requires `name` and `description`, permits `author` and `source`, and currently permits only `license`, `allowed-tools`, and `metadata` as additional keys beyond those. Default to `name`, `description`, `author`, and `source` unless you have a validated reason to add one of those supported extras.
 - **Body** (Markdown): Instructions and guidance for using the skill. Only loaded AFTER the skill triggers (if at all).
 
 #### Bundled Resources (optional)
@@ -206,15 +208,15 @@ Claude reads REDLINING.md or OOXML.md only when the user needs those features.
 - **Avoid deeply nested references** - Keep references one level deep from SKILL.md. All reference files should link directly from SKILL.md.
 - **Structure longer reference files** - For files longer than 100 lines, include a table of contents at the top so Claude can see the full scope when previewing.
 
-## Skill Creation Process
+## Skill Writing Process
 
-Skill creation involves these steps:
+Skill writing and maintenance involve these steps:
 
 1. Understand the skill with concrete examples
 2. Plan reusable skill contents (scripts, references, assets)
-3. Initialize the skill (run `bun {{skills_dir}}/skill-creator/scripts/init_skill.ts`)
+3. Initialize the skill when needed (run `bun {{skills_dir}}/skill-writer/scripts/init_skill.ts`)
 4. Edit the skill (implement resources and write SKILL.md)
-5. Validate and package the skill (run `bun {{skills_dir}}/skill-creator/scripts/quick_validate.ts` and `bun {{skills_dir}}/skill-creator/scripts/package_skill.ts`)
+5. Validate and package the skill (run `bun {{skills_dir}}/skill-writer/scripts/quick_validate.ts` and `bun {{skills_dir}}/skill-writer/scripts/package_skill.ts`)
 6. Iterate based on real usage
 
 Follow these steps in order, skipping only if there is a clear reason why they are not applicable.
@@ -273,7 +275,7 @@ When maintaining `init_skill.ts`, scaffold template content, or validator-adjace
 Usage:
 
 ```bash
-bun {{skills_dir}}/skill-creator/scripts/init_skill.ts <skill-name> --path {{skills_dir}}
+bun {{skills_dir}}/skill-writer/scripts/init_skill.ts <skill-name> --path {{skills_dir}}
 ```
 
 The script:
@@ -334,7 +336,7 @@ Review rubric:
 
 ##### Frontmatter
 
-Write the YAML frontmatter with `name`, `description`, and `author`:
+Write the YAML frontmatter with `name`, `description`, `author`, and `source`:
 
 - `name`: The skill name
 - `description`: This is the primary triggering mechanism for your skill, and helps Claude understand when to use it.
@@ -342,8 +344,9 @@ Write the YAML frontmatter with `name`, `description`, and `author`:
   - Include all "when to use" information here - Not in the body. The body is only loaded after triggering, so "When to Use This Skill" sections in the body are not helpful to Claude.
   - Example description for a `docx` skill: "Comprehensive document creation, editing, and analysis with support for tracked changes, comments, formatting preservation, and text extraction. Use when Claude needs to work with professional documents (.docx files) for: (1) Creating new documents, (2) Modifying or editing content, (3) Working with tracked changes, (4) Adding comments, or any other document tasks"
 - `author`: Use `alexgorbatchev` for skills maintained in this registry.
+- `source`: Use `"{{file_path}}"` so generated skill outputs retain the original source path.
 
-Default to `name`, `description`, and `author`.
+Default to `name`, `description`, `author`, and `source`.
 If you need extra frontmatter for a specific distribution flow, verify first that the local validator accepts it. In this toolchain, the allowed extra keys beyond those are currently `license`, `allowed-tools`, and `metadata`.
 
 ##### Body
@@ -359,7 +362,7 @@ These entrypoint scripts are Bun scripts. Invoke them as `bun <script> ...`.
 Quick validation:
 
 ```bash
-bun {{skills_dir}}/skill-creator/scripts/quick_validate.ts <path/to/skill-folder>
+bun {{skills_dir}}/skill-writer/scripts/quick_validate.ts <path/to/skill-folder>
 ```
 
 If you changed scaffold generation or validator behavior, validate a freshly generated skill before validating a hand-edited one.
@@ -367,13 +370,13 @@ If you changed scaffold generation or validator behavior, validate a freshly gen
 Packaging:
 
 ```bash
-bun {{skills_dir}}/skill-creator/scripts/package_skill.ts <path/to/skill-folder>
+bun {{skills_dir}}/skill-writer/scripts/package_skill.ts <path/to/skill-folder>
 ```
 
 Optional output directory specification:
 
 ```bash
-bun {{skills_dir}}/skill-creator/scripts/package_skill.ts <path/to/skill-folder> ./dist
+bun {{skills_dir}}/skill-writer/scripts/package_skill.ts <path/to/skill-folder> ./dist
 ```
 
 The packaging script will:

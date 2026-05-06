@@ -7,6 +7,7 @@ const ALLOWED_PROPERTIES = new Set([
   'name',
   'description',
   'author',
+  'source',
   'license',
   'allowed-tools',
   'metadata',
@@ -142,6 +143,13 @@ export async function validateSkill(skillPath: string): Promise<ValidationResult
         message: `Description is too long (${trimmedDescription.length} characters). Maximum is 1024 characters.`,
       };
     }
+  }
+
+  if ('source' in frontmatter && typeof frontmatter.source !== 'string') {
+    return {
+      valid: false,
+      message: `Source must be a string, got ${typeof frontmatter.source}`,
+    };
   }
 
   return { valid: true, message: 'Skill is valid!' };

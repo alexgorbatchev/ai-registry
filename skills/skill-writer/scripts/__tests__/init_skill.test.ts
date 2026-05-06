@@ -13,7 +13,7 @@ const TMP_DIR = resolve(REPO_ROOT, ".tmp");
 function createTempDirectory(): string {
   mkdirSync(TMP_DIR, { recursive: true });
 
-  return mkdtempSync(resolve(TMP_DIR, "skill-creator-"));
+  return mkdtempSync(resolve(TMP_DIR, "skill-writer-"));
 }
 
 describe("initSkill", () => {
@@ -39,6 +39,7 @@ describe("initSkill", () => {
 name: example-skill
 description: "[TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]"
 author: alexgorbatchev
+source: "{{file_path}}"
 ---`);
     } finally {
       rmSync(tempDir, { force: true, recursive: true });

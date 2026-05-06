@@ -33,9 +33,9 @@ My recommendation is to standardize on **2-3 sentences by default, with a third 
 
 This repository already treats `description` as the primary routing field:
 
-- `skills/skill-creator/SKILL.md` says the description is the **primary triggering mechanism** for a skill and must include both what the skill does and the specific triggers/contexts for when to use it.
+- `skills/skill-writer/SKILL.md` says the description is the **primary triggering mechanism** for a skill and must include both what the skill does and the specific triggers/contexts for when to use it.
 - The same file says all “when to use” information must live in the frontmatter description, not in the body, because the body only loads after the skill has already triggered.
-- `skills/skill-creator/scripts/quick_validate.ts` currently enforces only a few hard constraints on `description`: it must exist, be a string, not contain `<` or `>`, and remain within the 1024-character maximum.
+- `skills/skill-writer/scripts/quick_validate.ts` currently enforces only a few hard constraints on `description`: it must exist, be a string, not contain `<` or `>`, and remain within the 1024-character maximum.
 
 That local guidance is directionally aligned with the strongest provider guidance. The repo already has the right mental model; what it lacks is a sharper house style for how to compose the field consistently.
 
@@ -67,7 +67,7 @@ Implication for `SKILL.md`: description quality is not a repo-local stylistic pr
 
 ### 1. The description must include both capability and trigger conditions
 
-This is the strongest point of agreement. OpenAI skills, Anthropic tool-use guidance, the Agent Skills specification, and this repo’s own `skill-creator` guidance all converge on the same rule: the description must communicate both **what the asset does** and **when the model should use it** ([OpenAI Codex skills](https://developers.openai.com/codex/skills), [Anthropic tool-use docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/implement-tool-use), [Agent Skills specification](https://agentskills.io/specification), `skills/skill-creator/SKILL.md`).
+This is the strongest point of agreement. OpenAI skills, Anthropic tool-use guidance, the Agent Skills specification, and this repo’s own `skill-writer` guidance all converge on the same rule: the description must communicate both **what the asset does** and **when the model should use it** ([OpenAI Codex skills](https://developers.openai.com/codex/skills), [Anthropic tool-use docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/implement-tool-use), [Agent Skills specification](https://agentskills.io/specification), `skills/skill-writer/SKILL.md`).
 
 ### 2. Clear boundaries beat vague generality
 
@@ -125,13 +125,13 @@ Every `description` should answer these questions directly:
 - Prefer explicit trigger verbs such as **build**, **refactor**, **debug**, **review**, **analyze**, **migrate**, **test**, **document**.
 - Include concrete artifacts when they matter: `.tsx`, `Dockerfile`, Storybook stories, `AGENTS.md`, Tailwind config, Bun server, etc.
 - Prefer “Use when …” wording because it matches both OpenAI’s explicit recommendation and the strongest patterns already present in this repo ([OpenAI Apps SDK](https://developers.openai.com/apps-sdk/guides/optimize-metadata)).
-- Keep all trigger logic in the description, not in a later “When to use” section of the body (`skills/skill-creator/SKILL.md`).
+- Keep all trigger logic in the description, not in a later “When to use” section of the body (`skills/skill-writer/SKILL.md`).
 
 ### Recommended length rule
 
 - Default to **2-3 sentences**.
 - Use **4 sentences** only when the skill is broad, easy to confuse with adjacent skills, or requires unusually specific routing cues.
-- Stay comfortably below the 1024-character validator ceiling unless there is a compelling reason not to (`skills/skill-creator/scripts/quick_validate.ts`).
+- Stay comfortably below the 1024-character validator ceiling unless there is a compelling reason not to (`skills/skill-writer/scripts/quick_validate.ts`).
 
 ### Anti-patterns to avoid
 
@@ -210,5 +210,5 @@ That recommendation is the best fit for both the repo’s own progressive-disclo
 
 ### Local repository sources
 
-- `skills/skill-creator/SKILL.md`
-- `skills/skill-creator/scripts/quick_validate.ts`
+- `skills/skill-writer/SKILL.md`
+- `skills/skill-writer/scripts/quick_validate.ts`

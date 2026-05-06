@@ -1,23 +1,53 @@
 ---
 name: self-hosted-gitea
-description: Create and manage repositories on `git.internal.example.com` (self-hosted Gitea). Use when asked to create a repo, check whether a repo exists, configure `origin`, or push local branches to `git.internal.example.com`, especially under the `internal-user` account. Repositories on this host must always be created as private.
+description: Create and manage private repositories on self-hosted Gitea instances using Tea CLI and direct Gitea credential or API workflows. Use when asked to create a repo, make a "tea repo", inspect Tea logins, check whether a repo exists, configure or update `origin`, push local branches, or verify remote repository state.
+author: alexgorbatchev
+source: "{{file_path}}"
 ---
 
 # self-hosted-gitea
 
-Use this workflow for `git.internal.example.com` repository creation and initial push.
+Use this workflow for self-hosted Gitea repository creation and initial push.
 
 ## Non-negotiable rule
 
 - Always create repositories as **private**.
-- Do not create or suggest public repositories on `git.internal.example.com`.
+- Do not create or suggest public repositories on self-hosted Gitea hosts.
+
+## Tea CLI workflow
+
+When the user asks for a "tea repo" or otherwise references Tea, use the `tea` CLI before trying raw Git credentials or direct Gitea API calls.
+
+1. Inspect available logins:
+
+```bash
+tea logins
+```
+
+2. Pick the matching login and host. Prefer the configured user login for the target host unless the user names another Tea login.
+3. Check whether the repo already exists:
+
+```bash
+tea repos --login <login> --output json <owner>/<repo>
+```
+
+4. If missing, create it as private:
+
+```bash
+tea repos create --login <login> --name <repo> --private
+```
+
+Rules:
+- For user-owned repos under the logged-in user, omit `--owner`; Tea may treat `--owner <user>` as an org lookup and fail with `GetOrgByName`.
+- Use `--owner <org>` only for org-owned repositories.
+- If Tea has no usable login, then fall back to the credential/API workflow below.
 
 ## Authentication
 
 Prefer existing git credentials instead of asking the user for tokens first.
 
 ```bash
-printf 'protocol=https\nhost=git.internal.example.com\n\n' | git credential fill
+printf 'protocol=https\nhost=<gitea-host>\n\n' | git credential fill
 ```
 
 Extract `username` and `password` from that result and use them for Gitea API calls.
@@ -27,12 +57,12 @@ If credentials are missing or invalid, stop and ask the user.
 ## Create Repository
 
 1. Determine the owner and repo name.
-   - If the user explicitly says `under internal-user`, use owner `internal-user`.
+   - If the user explicitly names an owner, use that owner.
    - Prefer the current repo name or `package.json` name as the repo name when that is the obvious match.
 2. Check whether the remote repo already exists:
 
 ```bash
-curl -u "$user:$pass" https://git.internal.example.com/api/v1/repos/<owner>/<repo>
+curl -u "$user:$pass" https://<gitea-host>/api/v1/repos/<owner>/<repo>
 ```
 
 3. If it does not exist, create it with the Gitea API:
@@ -40,7 +70,7 @@ curl -u "$user:$pass" https://git.internal.example.com/api/v1/repos/<owner>/<rep
 ```bash
 curl -u "$user:$pass" \
   -H 'Content-Type: application/json' \
-  -X POST https://git.internal.example.com/api/v1/user/repos \
+  -X POST https://<gitea-host>/api/v1/user/repos \
   --data '{"name":"<repo>","private":true,"auto_init":false}'
 ```
 
@@ -53,7 +83,7 @@ Requirements:
 Use this remote URL shape:
 
 ```bash
-https://git.internal.example.com/<owner>/<repo>.git
+https://<gitea-host>/<owner>/<repo>.git
 ```
 
 Rules:
@@ -101,7 +131,7 @@ After creation/push, verify:
 - `git remote -v`
 - `git branch -vv`
 - `git ls-remote --heads origin`
-- remote repo exists at `https://git.internal.example.com/<owner>/<repo>`
+- remote repo exists at `https://<gitea-host>/<owner>/<repo>`
 
 ## Report Back
 

@@ -2,6 +2,7 @@
 name: multica-agent-migration
 description: Copy or migrate agents from one Multica workspace to another with the `multica` CLI. Use when asked to clone a workspace's agent lineup into a second workspace, inspect source and target agent sets, remap runtime/provider settings, handle duplicate agent names safely, or verify a migration completed correctly. Do not use for ordinary single-agent edits that stay inside one workspace.
 author: alexgorbatchev
+source: "{{file_path}}"
 ---
 
 # Multica Agent Migration

@@ -2,6 +2,7 @@
 name: movie-showtime-search
 description: Find movie showtimes for a user-specified movie, date, time window, and geographic corridor, then return a theater-by-theater list with direct theater links and ticket links when available. Use when the user asks for nearby movie times, wants coverage across several neighboring cities, or needs browser automation because theater pages hide showtimes behind JavaScript or anti-bot flows. Do not use for reviews, plot summaries, or generic entertainment recommendations that do not require concrete showtime verification.
 author: alexgorbatchev
+source: "{{file_path}}"
 ---
 
 # Movie Showtime Search

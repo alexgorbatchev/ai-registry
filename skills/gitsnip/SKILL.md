@@ -5,6 +5,7 @@ description: >-
   GitHub without cloning entire repos. Trigger whenever there is a need to
   explore full or partial GitHub repository content, inspect remote code
   quickly, or pull only selected folders for analysis.
+source: "{{file_path}}"
 ---
 
 # gitsnip

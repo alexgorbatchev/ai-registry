@@ -1,6 +1,7 @@
 ---
 name: agents-md
 description: Generate, audit, refactor, split, and maintain canonical repository AGENTS.md files for AI coding agents. Use when creating a new AGENTS.md, tightening a stale or bloated AGENTS.md, adding nested AGENTS.md files for monorepos, or improving commands, boundaries, non-obvious patterns, and validation guidance without duplicating README or framework docs.
+source: "{{file_path}}"
 ---
 
 # AGENTS.md

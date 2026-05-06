@@ -1,6 +1,7 @@
 ---
 name: opencode-sessions
 description: OpenCode session storage locations and inspection guidance. Use when asked where OpenCode stores session data, chat history, local databases, or repo-specific session metadata.
+source: "{{file_path}}"
 ---
 
 # OpenCode Session Storage

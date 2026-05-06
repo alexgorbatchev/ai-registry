@@ -7,6 +7,7 @@ description: >-
   Bun runtime and bundler capabilities in a Bun project. Do not use for generic
   JavaScript or TypeScript work that does not depend on Bun-specific APIs or
   runtime behavior.
+source: "{{file_path}}"
 ---
 
 # Bun

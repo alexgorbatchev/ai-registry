@@ -3,6 +3,7 @@ name: agent-browser
 description: Core agent-browser usage guide. Read this before running any agent-browser commands. Covers the snapshot-and-ref workflow, navigating pages, interacting with elements (click, fill, type, select), extracting text and data, taking screenshots, managing tabs, handling forms and auth, waiting for content, running multiple browser sessions in parallel, and troubleshooting common failures. Use when the task requires browser automation against a real rendered page or web app. Do not use for static fetches, direct API calls, or non-browser tasks.
 author: alexgorbatchev
 allowed-tools: Bash(agent-browser:*), Bash(npx agent-browser:*)
+source: "{{file_path}}"
 ---
 
 # agent-browser core

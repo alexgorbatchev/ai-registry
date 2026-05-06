@@ -2,6 +2,7 @@
 name: ai-registry-integration
 description: Add or update content in the AI registry. Use when an user needs to add/integrate or modify skills, commands, profiles, harness overrides, vendored skills, or related registry documentation in ai-registry.
 author: alexgorbatchev
+source: "{{file_path}}"
 ---
 
 # AI Registry Integration
@@ -11,7 +12,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Core Rules
 
 - Keep new content anonymized and reusable. Do not introduce private company names, internal URLs, secrets, or personal details.
-- When checked-in guidance or generated text refers to repository paths, use the build-time template tags instead of machine-specific absolute paths. Supported string variables are `{{repo_root}}`, `{{skills_dir}}`, `{{commands_dir}}`, `{{profiles_dir}}`, and `{{output_dir}}`. The build also supports `&#123;&#123; include "path/from/repo/root.md" &#125;&#125;` and `&#123;&#123; env "VAR_NAME" &#125;&#125;` with optional `default` for generated text outputs.
+- When checked-in guidance or generated text refers to repository paths, use the build-time template tags instead of machine-specific absolute paths. Supported string variables are `{{repo_root}}`, `{{skills_dir}}`, `{{commands_dir}}`, `{{profiles_dir}}`, `{{output_dir}}`, and `{{file_path}}` (the original source file path being rendered). The build also supports `&#123;&#123; include "path/from/repo/root.md" &#125;&#125;` and `&#123;&#123; env "VAR_NAME" &#125;&#125;` with optional `default` for generated text outputs.
 - Prefer the most specific canonical-folder token available: `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...`. For canonical folders without a dedicated token, anchor the path from `{{repo_root}}`, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/vendor/...`, `{{repo_root}}/scripts/...`, `{{repo_root}}/README.md`, and `{{repo_root}}/AGENTS.md`.
 - Put reusable assets in `{{repo_root}}/skills/`, `{{repo_root}}/commands/`, `{{repo_root}}/profiles/`, or `{{repo_root}}/harnesses/`.
 - Keep executable repo entrypoints directly under `{{repo_root}}/scripts/` and use dash-based filenames for them. Put TypeScript helper modules that are imported by those entrypoints and are not meant to be executed directly under `{{repo_root}}/scripts/lib/`.
@@ -36,14 +37,14 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 - Create a folder at `{{repo_root}}/skills/<skill-name>/`.
 - Put the main instructions in `{{repo_root}}/skills/<skill-name>/SKILL.md`.
-- Start `SKILL.md` with YAML frontmatter containing `name`, `description`, and `author: alexgorbatchev`.
+- Start `SKILL.md` with YAML frontmatter containing `name`, `description`, `author: alexgorbatchev`, and `source: "{{file_path}}"`.
 - Keep each skill self-contained. Do not assume another skill is present.
 - Add bundled resources only when needed, inside the same skill folder:
   - `{{repo_root}}/skills/<skill-name>/scripts/`
   - `{{repo_root}}/skills/<skill-name>/references/`
   - `{{repo_root}}/skills/<skill-name>/assets/`
 - Keep the body procedural and specific for another AI agent.
-- Validate the skill with `bun {{repo_root}}/skills/skill-creator/scripts/quick_validate.ts {{repo_root}}/skills/<skill-name>`.
+- Validate the skill with `bun {{repo_root}}/skills/skill-writer/scripts/quick_validate.ts {{repo_root}}/skills/<skill-name>`.
 - Run `bun run build` from `{{repo_root}}` after the skill change.
 
 ## Add A Command

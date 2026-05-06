@@ -29,3 +29,4 @@ profiles/*/.generated/
 *.swp
 /.opencode-analysis
 /.graymatter
+/.workspaces

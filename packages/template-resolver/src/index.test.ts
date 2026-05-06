@@ -78,6 +78,31 @@ test("renders variables, recursive includes, and environment values", async (): 
   ].join("\n"));
 });
 
+test("renders file_path as the original source file across includes", async (): Promise<void> => {
+  const repositoryRoot = await createTestDirectory();
+  const sourcePath = await writeRepositoryFile(
+    repositoryRoot,
+    "profiles/developer/prompt.md",
+    '{{ include "shared/intro.md" }}',
+  );
+
+  await writeRepositoryFile(
+    repositoryRoot,
+    "shared/intro.md",
+    "Original file: {{ file_path }}",
+  );
+
+  const rendered = await renderTemplate({
+    content: await Bun.file(sourcePath).text(),
+    sourcePath,
+    repositoryRoot,
+    variables: {},
+    environment: {},
+  });
+
+  expect(rendered).toBe(`Original file: ${sourcePath}`);
+});
+
 test("uses the default for missing environment variables", async (): Promise<void> => {
   const repositoryRoot = await createTestDirectory();
   const sourcePath = await writeRepositoryFile(

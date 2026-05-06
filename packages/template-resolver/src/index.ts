@@ -7,6 +7,7 @@ const ENV_NAME_PATTERN = /^[A-Z0-9_]+$/;
 const INCLUDE_PATTERN = /^include\s+"((?:[^"\\]|\\.)*)"$/;
 const ENV_PATTERN = /^env\s+"((?:[^"\\]|\\.)*)"(?:\s+default\s+"((?:[^"\\]|\\.)*)")?$/;
 const DEFAULT_MAX_INCLUDE_DEPTH = 32;
+const FILE_PATH_VARIABLE_NAME = "file_path";
 
 function isOwnedTemplateExpression(expression: string): boolean {
   return VARIABLE_NAME_PATTERN.test(expression) || expression.startsWith("include") || expression.startsWith("env");
@@ -54,7 +55,7 @@ async function renderTag(
   includeStack: string[],
 ): Promise<string> {
   if (VARIABLE_NAME_PATTERN.test(expression)) {
-    const variableValue = options.variables[expression];
+    const variableValue = expression === FILE_PATH_VARIABLE_NAME ? includeStack[0] : options.variables[expression];
     if (variableValue === undefined) {
       throw new Error(`Unknown template variable in ${options.sourcePath}: ${expression}`);
     }

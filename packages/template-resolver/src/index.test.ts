@@ -103,6 +103,31 @@ test("renders file_path as the original source file across includes", async (): 
   expect(rendered).toBe(`Original file: ${sourcePath}`);
 });
 
+test("renders file_dir as the original source directory across includes", async (): Promise<void> => {
+  const repositoryRoot = await createTestDirectory();
+  const sourcePath = await writeRepositoryFile(
+    repositoryRoot,
+    "profiles/developer/prompt.md",
+    '{{ include "shared/intro.md" }}',
+  );
+
+  await writeRepositoryFile(
+    repositoryRoot,
+    "shared/intro.md",
+    "Original dir: {{ file_dir }}",
+  );
+
+  const rendered = await renderTemplate({
+    content: await Bun.file(sourcePath).text(),
+    sourcePath,
+    repositoryRoot,
+    variables: {},
+    environment: {},
+  });
+
+  expect(rendered).toBe(`Original dir: ${join(repositoryRoot, "profiles", "developer")}`);
+});
+
 test("uses the default for missing environment variables", async (): Promise<void> => {
   const repositoryRoot = await createTestDirectory();
   const sourcePath = await writeRepositoryFile(

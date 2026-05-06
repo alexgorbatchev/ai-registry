@@ -48,6 +48,7 @@ Generated output files may use a small set of build-time template tags. `bun run
 - `{{profiles_dir}}`: Absolute path to the repository's `profiles/` directory.
 - `{{output_dir}}`: Absolute path to the generated output root at `.output/`.
 - `{{file_path}}`: Absolute path to the original source file being rendered, even inside nested includes.
+- `{{file_dir}}`: Absolute path to the directory containing the original source file being rendered, even inside nested includes.
 - `{{include "path/from/repo/root.md"}}`: Inserts another file using a repository-root-relative path.
 - `{{env "VAR_NAME"}}`: Inserts the value of the named environment variable and fails the build if it is missing.
 - `{{env "VAR_NAME" default "fallback"}}`: Inserts the named environment variable, or the fallback value when the variable is unavailable.

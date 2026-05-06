@@ -6,6 +6,7 @@ Supported tags:
 
 - `{{ repo_root }}` style string variables
 - `{{ file_path }}` for the original source file path of the file being rendered
+- `{{ file_dir }}` for the original source file directory of the file being rendered
 - `{{ include "path/from/repo/root.txt" }}`
 - `{{ env "VAR_NAME" }}`
 - `{{ env "VAR_NAME" default "fallback" }}`

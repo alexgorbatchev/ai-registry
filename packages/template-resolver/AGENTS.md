@@ -8,6 +8,7 @@ This package implements the repository's build-time template resolver.
 - Supported template forms are limited to:
   - lower-snake-case string variables such as `{{repo_root}}`
   - `{{file_path}}` for the absolute path to the original source file being rendered
+  - `{{file_dir}}` for the absolute directory of the original source file being rendered
   - `{{include "path/from/repo/root.md"}}`
   - `{{env "VAR_NAME"}}`
   - `{{env "VAR_NAME" default "fallback"}}`

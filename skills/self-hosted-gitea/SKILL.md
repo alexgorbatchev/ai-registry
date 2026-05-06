@@ -1,13 +1,13 @@
 ---
 name: self-hosted-gitea
-description: Create and manage private repositories on self-hosted Gitea instances using Tea CLI and direct Gitea credential or API workflows. Use when asked to create a repo, make a "tea repo", inspect Tea logins, check whether a repo exists, configure or update `origin`, push local branches, or verify remote repository state.
+description: Create and manage Gitea repositories and inspect Gitea Actions using Tea CLI and direct Gitea credential or API workflows. Use when asked to create a repo, make a "tea repo", inspect Tea logins, check whether a repo exists, configure or update a Git remote, push local branches, verify remote repository state, or diagnose CI or workflow failures on a Gitea host.
 author: alexgorbatchev
 source: "{{file_path}}"
 ---
 
 # self-hosted-gitea
 
-Use this workflow for self-hosted Gitea repository creation and initial push.
+Use this workflow for Gitea repository creation, initial push, and Gitea Actions CI inspection.
 
 ## Non-negotiable rule
 
@@ -53,6 +53,50 @@ printf 'protocol=https\nhost=<gitea-host>\n\n' | git credential fill
 Extract `username` and `password` from that result and use them for Gitea API calls.
 
 If credentials are missing or invalid, stop and ask the user.
+
+## Gitea Actions CI Inspection
+
+Use the Gitea API when checking workflow failures on a Gitea host.
+
+Do not assume GitHub tooling works:
+- `gh run ...` usually cannot resolve non-GitHub remotes unless the host is explicitly configured for GitHub-compatible access.
+- `tea actions ...` is acceptable only when a login already exists; if it reports no available login, use the API with existing git credentials instead of asking for a token first.
+
+Keep identifying information out of reports and skill updates:
+- Do not paste actor email addresses, personal names, avatars, full credential-helper output, or tokens.
+- Redact internal runner or container names unless they are necessary to explain the failure.
+- Prefer run IDs, job IDs, commit SHAs, step names, and sanitized error text.
+
+Workflow:
+1. Identify `<owner>`, `<repo>`, and `<branch>` from the remote and the request context.
+2. Use credentials from the Authentication section.
+3. List recent runs:
+
+```bash
+curl -fsS -u "$user:$pass" \
+  'https://<gitea-host>/api/v1/repos/<owner>/<repo>/actions/runs?limit=10&branch=<branch>'
+```
+
+4. Inspect jobs for the failing run:
+
+```bash
+curl -fsS -u "$user:$pass" \
+  'https://<gitea-host>/api/v1/repos/<owner>/<repo>/actions/runs/<run-id>/jobs'
+```
+
+5. Download logs for the failing job:
+
+```bash
+curl -fsS -L -u "$user:$pass" \
+  'https://<gitea-host>/api/v1/repos/<owner>/<repo>/actions/jobs/<job-id>/logs'
+```
+
+6. Report only the durable failure signature: workflow name, run ID, job or step name, failing command, commit SHA, and minimal sanitized error text.
+
+Known failure pattern to recognize:
+- During `bun install --frozen-lockfile`, Bun may resolve a Git dependency through the Gitea API host and fail with a 404 shaped like `/api/v1/repos/<external-owner>/<external-repo>/tarball/<sha>`.
+- Treat this as dependency-resolution or CI-environment behavior, not as proof that the external dependency SHA is missing.
+- Prefer a dependency form or CI environment fix that forces direct resolution from the external source; do not paper over it with a compatibility shim.
 
 ## Create Repository
 

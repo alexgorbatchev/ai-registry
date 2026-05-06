@@ -6,10 +6,11 @@ This package implements the repository's build-time template resolver.
 
 - Keep this package text-only. Do not add JavaScript evaluation, loops, conditionals, filters, or custom helper execution.
 - Supported template forms are limited to:
-  - lower-snake-case string variables such as `{{ repo_root }}`
-  - `{{ include "path/from/repo/root.txt" }}`
-  - `{{ env "VAR_NAME" }}`
-  - `{{ env "VAR_NAME" default "fallback" }}`
+  - lower-snake-case string variables such as `{{repo_root}}`
+  - `{{file_path}}` for the absolute path to the original source file being rendered
+  - `{{include "path/from/repo/root.md"}}`
+  - `{{env "VAR_NAME"}}`
+  - `{{env "VAR_NAME" default "fallback"}}`
 - Includes are always repository-root-relative.
 - Includes must support recursive expansion.
 - Circular includes, missing include files, unknown variables, invalid env names, and missing env vars without defaults must fail clearly.

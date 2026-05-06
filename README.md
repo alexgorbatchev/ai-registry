@@ -6,15 +6,15 @@ This repository serves as a canonical registry for my AI tooling. It keeps reusa
 
 ### 1. Reusable Assets
 The reusable source-of-truth layer.
-- **`/skills`**: Domain-specific AI skills. Each skill lives in its own folder with a `SKILL.md`. This directory is also the repo's install surface for `npx skills`.
-- **`/commands`**: Reusable slash commands, system prompts, and task blueprints.
-- **`/system`**: Shared repo-level instruction fragments and persistent-memory guidance that harness configs and profiles can reference via template includes.
-- **`/harnesses`**: Harness-specific config overrides, unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic lives under `harnesses/<target>/scripts/` when excluded via `.registry-ignore`.
-- **`/vendor`**: Third-party code packages vendored into this repo as Bun workspaces when a harness needs a repo-local file path with installed runtime dependencies.
-- **`/packages`**: Publishable repo-local packages distributed independently from the generated harness outputs.
-- **`/packages/opencode-session-analysis`**: Bun CLI package for OpenCode session and skill-usage reporting.
+- **`skills/`**: Domain-specific AI skills. Each skill lives in its own folder with a `SKILL.md`. This directory is also the repo's install surface for `npx skills`.
+- **`commands/`**: Reusable slash commands, system prompts, and task blueprints.
+- **`system/`**: Shared repo-level instruction fragments and persistent-memory guidance that harness configs and profiles can reference via template includes.
+- **`harnesses/`**: Harness-specific config overrides, unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic lives under `harnesses/<target>/scripts/` when excluded via `.registry-ignore`.
+- **`vendor/`**: Third-party code packages vendored into this repo as Bun workspaces when a harness needs a repo-local file path with installed runtime dependencies.
+- **`packages/`**: Publishable repo-local packages distributed independently from the generated harness outputs.
+- **`packages/opencode-session-analysis/`**: Bun CLI package for OpenCode session and skill-usage reporting.
 
-### 2. The Profiles (`/profiles`)
+### 2. The Profiles (`profiles/`)
 The assembled agents. These folders contain `profile.yaml` manifests that cherry-pick from the reusable assets using globs to create specific AI personas. You can also define custom tool toggles and granular tool permissions in these files.
 - Profiles may also define top-level local assets:
   - `profiles/<name>/commands/*.md` for profile-owned commands
@@ -31,7 +31,7 @@ The assembled agents. These folders contain `profile.yaml` manifests that cherry
 
 Root script entrypoints live directly under `scripts/` and use dash-based filenames. Helper modules that are imported by those entrypoints and are not intended to be executed directly belong under `scripts/lib/`.
 
-### 4. Generated Outputs (`/.output`)
+### 4. Generated Outputs (`.output/`)
 The final generated harness artifacts. This directory is rebuilt from source and should only contain consumable outputs.
 
 ## Building and Usage
@@ -42,26 +42,19 @@ Generated harness outputs are discovered from plugin entrypoints at `harnesses/<
 
 Generated output files may use a small set of build-time template tags. `bun run build` scans generated text outputs recursively and resolves them wherever they appear. Unsupported tags, unknown variables, missing include files, circular includes, and missing environment variables all fail the build. Supported forms:
 
-- `{{repo_root}}`
-- `{{skills_dir}}`
-- `{{commands_dir}}`
-- `{{profiles_dir}}`
-- `{{output_dir}}`
-- `&#123;&#123; include "path/from/repo/root.md" &#125;&#125;`
-- `&#123;&#123; env "VAR_NAME" &#125;&#125;`
-- `&#123;&#123; env "VAR_NAME" default "fallback" &#125;&#125;`
-
-Current built-in string variables:
-
-- `{{repo_root}}`
-- `{{skills_dir}}`
-- `{{commands_dir}}`
-- `{{profiles_dir}}`
-- `{{output_dir}}`
+- `{{repo_root}}`: Absolute path to the repository root during template expansion.
+- `{{skills_dir}}`: Absolute path to the repository's `skills/` directory.
+- `{{commands_dir}}`: Absolute path to the repository's `commands/` directory.
+- `{{profiles_dir}}`: Absolute path to the repository's `profiles/` directory.
+- `{{output_dir}}`: Absolute path to the generated output root at `.output/`.
+- `{{file_path}}`: Absolute path to the original source file being rendered, even inside nested includes.
+- `{{include "path/from/repo/root.md"}}`: Inserts another file using a repository-root-relative path.
+- `{{env "VAR_NAME"}}`: Inserts the value of the named environment variable and fails the build if it is missing.
+- `{{env "VAR_NAME" default "fallback"}}`: Inserts the named environment variable, or the fallback value when the variable is unavailable.
 
 When the build stages files from `skills/`, `commands/`, or `harnesses/<target>/`, it also honors nested `.registry-ignore` files using `.gitignore`-style matching. Use those files to keep repo-local scratch assets, harness build scripts, or other non-shipping files out of generated outputs.
 
-When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/system/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/scripts/...`. Includes are always repository-root-relative, so `&#123;&#123; include "system/system.md" &#125;&#125;` resolves from the repo root no matter which source file contains it.
+When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/system/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/scripts/...`. Includes are always repository-root-relative, so `{{include "system/system.md"}}` resolves from the repo root no matter which source file contains it.
 
 For the normal machine setup flow after cloning, run:
 

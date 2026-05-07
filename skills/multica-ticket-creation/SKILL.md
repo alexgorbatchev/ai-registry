@@ -1,6 +1,6 @@
 ---
 name: multica-ticket-creation
-description: Create Multica issues with correct routing, project selection, and issue metadata using the `multica` CLI. Use when asked to open a ticket, file an issue, or turn work into a tracked Multica task. Distinguish workspace-wide tickets from project-specific tickets, require `--project` for project-specific work every time, and stop to ask for clarification instead of guessing when the request is project-scoped but no project is identified.
+description: Create Multica issues with the `multica` CLI. Use when asked to open a ticket, file an issue, or turn work into a tracked Multica task, especially when project routing or issue metadata must be determined before creation.
 author: alexgorbatchev
 ---
 

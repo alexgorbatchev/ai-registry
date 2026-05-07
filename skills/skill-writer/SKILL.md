@@ -35,6 +35,8 @@ The context window is a public good. Skills share the context window with everyt
 
 Prefer concise examples over verbose explanations.
 
+Treat the frontmatter `description` as routing metadata, not as a mini playbook. It should help the agent decide whether to load the skill, not try to enforce workflow rules before the skill body is read.
+
 ### Set Appropriate Degrees of Freedom
 
 Match the level of specificity to the task's fragility and variability:
@@ -338,9 +340,12 @@ Write the YAML frontmatter with `name`, `description`, and `author`:
 
 - `name`: The skill name
 - `description`: This is the primary triggering mechanism for your skill, and helps Claude understand when to use it.
-  - Include both what the Skill does and specific triggers/contexts for when to use it.
-  - Include all "when to use" information here - Not in the body. The body is only loaded after triggering, so "When to Use This Skill" sections in the body are not helpful to Claude.
-  - Example description for a `docx` skill: "Comprehensive document creation, editing, and analysis with support for tracked changes, comments, formatting preservation, and text extraction. Use when Claude needs to work with professional documents (.docx files) for: (1) Creating new documents, (2) Modifying or editing content, (3) Working with tracked changes, (4) Adding comments, or any other document tasks"
+  - Keep it to 1-2 sentences focused on scope and triggers.
+  - Include what the skill does, the kinds of requests or artifacts that should trigger it, and optionally one nearby non-trigger boundary if that materially improves routing.
+  - Include all true trigger information here, not buried only in the body. The body is loaded after triggering.
+  - Do **not** put workflow rules, command requirements, validation criteria, or step-by-step instructions here. Words like "always", "never", "require", and long procedural clauses usually belong in the body.
+  - Good example for a `docx` skill: "Create, edit, and inspect `.docx` documents. Use when the task involves Word files, tracked changes, comments, or formatting-preserving document updates."
+  - Anti-pattern: "Create DOCX documents and always preserve tracked changes, require comment anchors before edits, and stop to ask for clarification if formatting intent is ambiguous." Those are usage instructions, not trigger metadata.
 - `author`: Use `alexgorbatchev` for skills maintained in this registry.
 
 Default to `name`, `description`, and `author`.

@@ -16,7 +16,7 @@ import { join, resolve } from 'path';
 
 const SKILL_TEMPLATE = `---
 name: {skill_name}
-description: "[TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]"
+description: "[TODO: Describe the capability and the kinds of requests that should trigger this skill in 1-2 sentences. Keep this limited to trigger metadata; do not include workflow rules, operational requirements, or step-by-step instructions.]"
 author: alexgorbatchev
 ---
 
@@ -285,7 +285,7 @@ export async function initSkill(
   );
   console.log('\nNext steps:');
   console.log(
-    '1. Edit SKILL.md to complete the TODO items and update the description',
+    '1. Edit SKILL.md to replace the TODO items and keep the description limited to trigger metadata',
   );
   console.log(
     '2. Customize or delete the example files in scripts/, references/, and assets/',

@@ -37,7 +37,7 @@ describe("initSkill", () => {
       });
       expect(frontmatterMatch[0]).toBe(`---
 name: example-skill
-description: "[TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]"
+description: "[TODO: Describe the capability and the kinds of requests that should trigger this skill in 1-2 sentences. Keep this limited to trigger metadata; do not include workflow rules, operational requirements, or step-by-step instructions.]"
 author: alexgorbatchev
 ---`);
     } finally {

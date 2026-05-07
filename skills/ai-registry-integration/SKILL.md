@@ -1,6 +1,6 @@
 ---
 name: ai-registry-integration
-description: Add or update content in the AI registry. Use when an user needs to add/integrate or modify skills, commands, profiles, harness overrides, vendored skills, or related registry documentation in ai-registry.
+description: Add or update content in the AI registry. Use when a user needs to create or modify skills, commands, profiles, harness overrides, vendored skills, or related registry documentation in this repository.
 author: alexgorbatchev
 ---
 

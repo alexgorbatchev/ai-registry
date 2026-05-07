@@ -3,9 +3,8 @@ name: react-development
 description: >-
   Build and modify React components, hooks, context providers, and JSX render
   trees. Use when implementing or refactoring React UI code, component APIs,
-  render branches, shared primitives, hook-driven state, DOM structure, or test
-  ID conventions. Covers the required `data-testid` naming contract and the ban
-  on using `createElement` from React in regular application code.
+  render branches, shared primitives, hook-driven state, DOM structure, or
+  test ID usage in React codebases.
 ---
 
 # React Development

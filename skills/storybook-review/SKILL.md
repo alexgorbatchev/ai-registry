@@ -1,6 +1,6 @@
 ---
 name: storybook-review
-description: Use when asked to review Storybook stories or Storybook testing coverage in this repository, especially `*.stories.*` files. Apply `.agents/skills/storybook/SKILL.md` as the rubric and write the review to `docs/internal/audit/storybook.md`.
+description: Review Storybook stories and Storybook-owned testing coverage in this repository. Use when asked to audit `*.stories.*` files, play tests, or Storybook coverage quality without making implementation changes.
 ---
 
 # Storybook Review

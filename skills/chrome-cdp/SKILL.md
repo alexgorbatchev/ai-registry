@@ -1,6 +1,6 @@
 ---
 name: chrome-cdp
-description: Interact with local Chrome browser session (only on explicit user approval after being asked to inspect, debug, or interact with a page open in Chrome)
+description: Interact with a local Chrome-family browser session through CDP. Use only after the user explicitly approves inspecting, debugging, or interacting with a page already open in Chrome or Chromium.
 ---
 
 # Chrome CDP

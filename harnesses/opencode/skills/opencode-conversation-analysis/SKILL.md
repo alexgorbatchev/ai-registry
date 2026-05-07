@@ -2,7 +2,6 @@
 name: opencode-conversation-analysis
 description: Analyze OpenCode conversation history to identify themes and patterns in user messages. Use when asked to analyze conversations, find themes, review how a user steers agents, or extract insights from session history.
 author: alexgorbatchev
-source: "{{file_path}}"
 ---
 
 # Conversation Analysis

@@ -4,7 +4,6 @@ description: >-
   TypeScript testing guidelines and patterns. Use when writing, reviewing, or
   fixing TypeScript tests. Covers test structure, assertions, snapshots,
   conditional logic restrictions, and test organization patterns.
-source: "{{file_path}}"
 ---
 
 # TypeScript Testing

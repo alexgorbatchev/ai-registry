@@ -2,7 +2,6 @@
 name: internal-docs-writer
 description: 'Write, rewrite, reorganize, and archive internal Markdown documentation for maintainers, operators, and collaborators. Use when creating repo-local process docs, runbooks, decision notes, reference material, or folder-based doc sets that should default to `docs/internal/`, move archived content into the nearest `archived/` folder, and include `created_on`, `last_modified`, and `status: current|archived` frontmatter.'
 author: alexgorbatchev
-source: "{{file_path}}"
 ---
 
 # Internal Docs Writer

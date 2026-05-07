@@ -18,7 +18,6 @@ const SKILL_TEMPLATE = `---
 name: {skill_name}
 description: "[TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]"
 author: alexgorbatchev
-source: "{{file_path}}"
 ---
 
 # {skill_title}
@@ -219,9 +218,9 @@ export async function initSkill(
   try {
     await mkdir(skillDir, { recursive: true });
     console.log(`✅ Created skill directory: ${skillDir}`);
-  } catch (e) {
+  } catch (error) {
     console.log(
-      `❌ Error creating directory: ${e instanceof Error ? e.message : e}`,
+      `❌ Error creating directory: ${error instanceof Error ? error.message : error}`,
     );
     return null;
   }
@@ -237,9 +236,9 @@ export async function initSkill(
   try {
     await Bun.write(skillMdPath, skillContent);
     console.log('✅ Created SKILL.md');
-  } catch (e) {
+  } catch (error) {
     console.log(
-      `❌ Error creating SKILL.md: ${e instanceof Error ? e.message : e}`,
+      `❌ Error creating SKILL.md: ${error instanceof Error ? error.message : error}`,
     );
     return null;
   }
@@ -273,9 +272,9 @@ export async function initSkill(
     const exampleAssetPath = join(assetsDir, 'example_asset.txt');
     await Bun.write(exampleAssetPath, EXAMPLE_ASSET);
     console.log('✅ Created assets/example_asset.txt');
-  } catch (e) {
+  } catch (error) {
     console.log(
-      `❌ Error creating resource directories: ${e instanceof Error ? e.message : e}`,
+      `❌ Error creating resource directories: ${error instanceof Error ? error.message : error}`,
     );
     return null;
   }

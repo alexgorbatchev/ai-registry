@@ -7,7 +7,6 @@ const ALLOWED_PROPERTIES = new Set([
   'name',
   'description',
   'author',
-  'source',
   'license',
   'allowed-tools',
   'metadata',
@@ -53,10 +52,10 @@ export async function validateSkill(skillPath: string): Promise<ValidationResult
       return { valid: false, message: 'Frontmatter must be a YAML dictionary' };
     }
     frontmatter = parsedFrontmatter;
-  } catch (e) {
+  } catch (error) {
     return {
       valid: false,
-      message: `Invalid YAML in frontmatter: ${e instanceof Error ? e.message : e}`,
+      message: `Invalid YAML in frontmatter: ${error instanceof Error ? error.message : error}`,
     };
   }
 
@@ -144,14 +143,6 @@ export async function validateSkill(skillPath: string): Promise<ValidationResult
       };
     }
   }
-
-  if ('source' in frontmatter && typeof frontmatter.source !== 'string') {
-    return {
-      valid: false,
-      message: `Source must be a string, got ${typeof frontmatter.source}`,
-    };
-  }
-
   return { valid: true, message: 'Skill is valid!' };
 }
 

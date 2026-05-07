@@ -39,8 +39,38 @@ describe("initSkill", () => {
 name: example-skill
 description: "[TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]"
 author: alexgorbatchev
-source: "{{file_path}}"
 ---`);
+    } finally {
+      rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it("rejects source in skill frontmatter", async () => {
+    const tempDir = createTempDirectory();
+    const skillDir = resolve(tempDir, "sourceful-skill");
+
+    try {
+      mkdirSync(skillDir, { recursive: true });
+      await Bun.write(
+        resolve(skillDir, "SKILL.md"),
+        `---
+name: sourceful-skill
+description: Reject legacy source metadata in skill frontmatter.
+author: alexgorbatchev
+source: "{{file_path}}"
+---
+
+# Sourceful Skill
+`,
+      );
+
+      const validationResult = await validateSkill(skillDir);
+
+      expect(validationResult).toEqual({
+        valid: false,
+        message:
+          "Unexpected key(s) in SKILL.md frontmatter: source. Allowed properties are: allowed-tools, author, description, license, metadata, name",
+      });
     } finally {
       rmSync(tempDir, { force: true, recursive: true });
     }

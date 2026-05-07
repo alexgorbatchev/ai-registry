@@ -2,7 +2,6 @@
 name: prompt-composer
 description: Compose, rewrite, refactor, and adapt prompts for LLM applications. Use when drafting system, developer, or user prompts; turning vague requirements into reusable prompt templates; improving prompt reliability or output format; or deciding prompt structure for grounded, long-context, tool-using, or structured-output workflows.
 author: alexgorbatchev
-source: "{{file_path}}"
 ---
 
 # Prompt Composer

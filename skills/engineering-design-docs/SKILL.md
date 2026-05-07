@@ -1,7 +1,6 @@
 ---
 name: engineering-design-docs
 description: Write or tighten implementation-ready engineering design documents, technical design specs, and exact implementation plans. Use when drafting a new eng design doc at `docs/internal/eng-designs/topic-name/DESIGN.md`, converting a recommendation-style doc into an exact build spec, defining file-level architecture, API/schema/state contracts, validation rules, implementation order, or reviewing a design doc for ambiguity, stale assumptions, wildcards, and prose-only contracts before engineering starts.
-source: "{{file_path}}"
 ---
 
 # Engineering Design Docs

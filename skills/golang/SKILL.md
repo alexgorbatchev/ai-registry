@@ -6,7 +6,6 @@ description: >-
   or releasing Go code, or when working on Go-specific project structure, APIs,
   tests, CI, or binaries. Do not use for non-Go codebases or for language-agnostic
   tasks that do not depend on Go conventions.
-source: "{{file_path}}"
 ---
 
 # Go Baseline Skill

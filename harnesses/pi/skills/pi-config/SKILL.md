@@ -2,7 +2,6 @@
 name: pi-config
 description: Configure Pi Coding Agent (`pi`) settings, prompts, skills, models, and repo-local `.pi` directories. Use when working with Pi config files such as `settings.json`, `models.json`, `SYSTEM.md`, `APPEND_SYSTEM.md`, `prompts/`, `skills/`, or `extensions/`, and when mapping another tool's prompts or skills into Pi's native configuration surface.
 author: alexgorbatchev
-source: "{{file_path}}"
 ---
 
 # Pi Config

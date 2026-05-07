@@ -1,7 +1,6 @@
 ---
 name: storybook
 description: Use when creating or changing Storybook stories in this repository, especially `*.stories.*` files. Applies to story coverage, `play` tests, and shared Storybook setup. Use `storybook-review` for review-only tasks.
-source: "{{file_path}}"
 ---
 
 # Storybook

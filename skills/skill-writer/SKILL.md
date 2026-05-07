@@ -5,7 +5,6 @@ description: >-
   changing an existing skill's SKILL.md, bundled scripts, references, assets,
   scaffold templates, or validation/packaging tooling.
 author: alexgorbatchev
-source: "{{file_path}}"
 ---
 
 # Skill Writer
@@ -58,8 +57,7 @@ skill-name/
 │   ├── YAML frontmatter metadata (required)
 │   │   ├── name: (required)
 │   │   ├── description: (required)
-│   │   ├── author: alexgorbatchev (repo convention)
-│   │   └── source: "{{file_path}}" (repo convention)
+│   │   └── author: alexgorbatchev (repo convention)
 │   └── Markdown instructions (required)
 └── Bundled Resources (optional)
     ├── scripts/          - Executable code (Bun/Bash/etc.)
@@ -71,7 +69,7 @@ skill-name/
 
 Every SKILL.md consists of:
 
-- **Frontmatter** (YAML): `name` and `description` are the important triggering fields. In this repo, also include `author: alexgorbatchev` and `source: "{{file_path}}"` in skill frontmatter. Keep frontmatter minimal. In this toolchain, the validator requires `name` and `description`, permits `author` and `source`, and currently permits only `license`, `allowed-tools`, and `metadata` as additional keys beyond those. Default to `name`, `description`, `author`, and `source` unless you have a validated reason to add one of those supported extras.
+- **Frontmatter** (YAML): `name` and `description` are the important triggering fields. In this repo, also include `author: alexgorbatchev` in skill frontmatter. Keep frontmatter minimal. In this toolchain, the validator requires `name` and `description`, permits `author`, and currently permits only `license`, `allowed-tools`, and `metadata` as additional keys beyond those. Default to `name`, `description`, and `author` unless you have a validated reason to add one of those supported extras.
 - **Body** (Markdown): Instructions and guidance for using the skill. Only loaded AFTER the skill triggers (if at all).
 
 #### Bundled Resources (optional)
@@ -336,7 +334,7 @@ Review rubric:
 
 ##### Frontmatter
 
-Write the YAML frontmatter with `name`, `description`, `author`, and `source`:
+Write the YAML frontmatter with `name`, `description`, and `author`:
 
 - `name`: The skill name
 - `description`: This is the primary triggering mechanism for your skill, and helps Claude understand when to use it.
@@ -344,9 +342,8 @@ Write the YAML frontmatter with `name`, `description`, `author`, and `source`:
   - Include all "when to use" information here - Not in the body. The body is only loaded after triggering, so "When to Use This Skill" sections in the body are not helpful to Claude.
   - Example description for a `docx` skill: "Comprehensive document creation, editing, and analysis with support for tracked changes, comments, formatting preservation, and text extraction. Use when Claude needs to work with professional documents (.docx files) for: (1) Creating new documents, (2) Modifying or editing content, (3) Working with tracked changes, (4) Adding comments, or any other document tasks"
 - `author`: Use `alexgorbatchev` for skills maintained in this registry.
-- `source`: Use `"{{file_path}}"` so generated skill outputs retain the original source path.
 
-Default to `name`, `description`, `author`, and `source`.
+Default to `name`, `description`, and `author`.
 If you need extra frontmatter for a specific distribution flow, verify first that the local validator accepts it. In this toolchain, the allowed extra keys beyond those are currently `license`, `allowed-tools`, and `metadata`.
 
 ##### Body

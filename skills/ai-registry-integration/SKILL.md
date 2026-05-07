@@ -2,7 +2,6 @@
 name: ai-registry-integration
 description: Add or update content in the AI registry. Use when an user needs to add/integrate or modify skills, commands, profiles, harness overrides, vendored skills, or related registry documentation in ai-registry.
 author: alexgorbatchev
-source: "{{file_path}}"
 ---
 
 # AI Registry Integration
@@ -44,7 +43,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 - Create a folder under the skills_dir token for the new skill.
 - Put the main instructions in `SKILL.md` within that skill folder.
-- Start `SKILL.md` with YAML frontmatter containing `name`, `description`, `author: alexgorbatchev`, and a `source` field that uses the file_path token.
+- Start `SKILL.md` with YAML frontmatter containing `name`, `description`, and `author: alexgorbatchev`.
 - Keep each skill self-contained. Do not assume another skill is present.
 - Add bundled resources only when needed, inside the same skill folder:
   - `scripts/` beneath the skill folder

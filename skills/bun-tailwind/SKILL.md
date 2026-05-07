@@ -4,7 +4,6 @@ description: >-
   Use when adding Tailwind to a Bun app, fixing missing utilities in Bun-built
   assets, defining Tailwind v4 theme tokens with @theme, or documenting how
   consumers must import and scan a Bun component library.
-source: "{{file_path}}"
 ---
 
 # Bun Tailwind

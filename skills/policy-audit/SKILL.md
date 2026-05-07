@@ -1,7 +1,6 @@
 ---
 name: policy-audit
 description: Strict repository policy audit for tests, CI, pre-commit, AGENTS, and deploy or release enforcement. Use when asked to verify whether a repository's checked-in code, scripts, workflows, and docs actually define and enforce those policies, or when producing a formal audit report at `docs/internal/audit/policy.md`.
-source: "{{file_path}}"
 ---
 
 # Policy Audit

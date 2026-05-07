@@ -2,7 +2,6 @@
 name: readme-writer
 description: Write, rewrite, and update `README.md` files for projects. Use when creating a project README from scratch, tightening an existing README, or updating evergreen documentation after project changes. Ground claims in the available source materials and describe the project as it exists today, not as a narration of what just changed.
 author: alexgorbatchev
-source: "{{file_path}}"
 ---
 
 # README Writer

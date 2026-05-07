@@ -1,7 +1,6 @@
 ---
 name: opencode-config
 description: Rules and guidelines for configuring the OpenCode CLI, including Agents, Commands, Skills, and Permissions.
-source: "{{file_path}}"
 ---
 
 # OpenCode Configuration Guide

@@ -5,7 +5,6 @@ description: >-
   reviewing, or modifying TypeScript code. Covers type safety, naming
   conventions, file organization, module structure, functional programming
   patterns, and import/export rules.
-source: "{{file_path}}"
 ---
 
 # TypeScript Code Quality

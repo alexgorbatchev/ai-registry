@@ -2,7 +2,6 @@
 name: github-release
 description: Create, inspect, edit, and publish GitHub releases with the `gh release` CLI, including writing release notes, verifying tags, managing draft/prerelease state, and uploading assets. Use when asked to create a GitHub release, fix or replace release notes, publish an existing tag, inspect release metadata, or attach release assets. Do not use for generic git tagging or repository publishing flows that do not involve GitHub Releases.
 author: alexgorbatchev
-source: "{{file_path}}"
 ---
 
 # GitHub Release

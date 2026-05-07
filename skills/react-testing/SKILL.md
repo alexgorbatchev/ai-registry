@@ -7,7 +7,6 @@ description: >-
   Storybook browser test failures, React act warnings, accessibility-query
   problems, modal/dialog interactions, async UI states, or deciding whether a
   behavior belongs in Storybook, lower-level unit tests, or end-to-end tests.
-source: "{{file_path}}"
 ---
 
 # React Testing

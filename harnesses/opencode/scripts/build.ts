@@ -30,9 +30,9 @@ import type {
   IUnifiedHarnessBuildContext,
   IUnifiedHarnessPlugin,
 } from "../../../scripts/lib/harnessBuild";
+import { getProfileLocalCommandOutputName } from "../../../scripts/lib/profileLocalAssetNames";
 import {
   createSkillPermission,
-  getProfileLocalCommandOutputName,
 } from "./lib/profileLocalAssetRules";
 
 const AGENT_STAGING_DIR_NAME = ".opencode-agents";

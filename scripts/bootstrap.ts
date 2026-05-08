@@ -186,8 +186,8 @@ async function main(): Promise<void> {
   for (const target of bootstrapTargets) {
     console.log(`${target.description} now reads from: ${target.targetPath}`);
   }
-  console.log(`Repo-local air-* commands are linked into: ${PUBLIC_BIN_DIR}`);
-  console.log("Override the targets with OPENCODE_CONFIG_DIR and PI_CODING_AGENT_DIR if needed.");
+  console.log(`Repo-local air-*, codex, codex-*, pi, and pi-* commands are linked into: ${PUBLIC_BIN_DIR}`);
+  console.log("Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, and PI_CODING_AGENT_DIR if needed.");
 }
 
 main().catch((error) => {

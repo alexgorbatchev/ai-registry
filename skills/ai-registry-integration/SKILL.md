@@ -22,7 +22,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - When checked-in guidance or generated text refers to repository paths, use template tokens instead of machine-specific absolute paths.
 - Put reusable assets under the directories referenced by the repo_root token: `skills/`, `commands/`, `profiles/`, or `harnesses/`.
 - Keep executable repo entrypoints under `scripts/` beneath the repo_root token and use dash-based filenames. Put imported TypeScript helper modules that are not direct entrypoints under `scripts/lib/`.
-- Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `pi-*` or `air-*` wrappers) MUST NOT be checked into `scripts/` beneath the repo_root token. Generate them from `scripts/build.ts` into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
+- Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `codex`, `codex-*`, `pi`, or `pi-*` wrappers) MUST NOT be checked into `scripts/` beneath the repo_root token. Generate them from `scripts/build.ts` into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
 - Put publishable standalone packages under `packages/<package-name>/` beneath the repo_root token.
 - Put vendored third-party code packages that need Bun workspace installs under `vendor/` beneath the repo_root token.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
@@ -81,10 +81,12 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Only files under a harness directory are copied into generated output for that harness, subject to `.registry-ignore`.
 - Do not place repo-only notes inside a harness directory unless they are intentionally meant to ship.
 - Prefer the harness's native configuration surface over local wrappers when the harness already supports the feature directly.
+- For Codex-only shipped skills, place them under `harnesses/codex/skills/`; the Codex build merges that directory into each generated `skills/` root inside `.output/codex/<profile>/`.
 - If a local file-based harness dependency needs installed runtime imports, vendor it under `vendor/<name>/` beneath the repo_root token, add it to the root Bun workspaces, and reference it from the harness config using the repo_root token.
 - Run `bun run build` from the repo_root token and verify the corresponding files under the output_dir token.
 - Existing harnesses:
   - OpenCode under `harnesses/opencode`.
+  - Codex under `harnesses/codex`.
   - Pi under `harnesses/pi`.
 
 ## Add A Standalone Package
@@ -112,6 +114,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Generated outputs are written under the output_dir token.
 - Verify generated files that match the change, especially:
   - `opencode/` beneath the output_dir token
+  - `codex/` beneath the output_dir token
   - `pi/` beneath the output_dir token
   - `manifest.json` beneath the output_dir token
 - Never move source-of-truth edits into the output_dir token; rebuild instead.
@@ -134,4 +137,5 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Add shared harness guidance under `harnesses/AGENTS.md` beneath the repo_root token.
 - Add or update a vendored third-party skill under the skills_dir token plus `skills-lock.json` beneath the repo_root token.
 - OpenCode configuration lives in `harnesses/opencode/opencode.jsonc` beneath the repo_root token.
+- Codex docs snapshots, build logic, and Codex-only shipped skills live under `harnesses/codex/` beneath the repo_root token.
 - Pi configuration skeleton lives in `harnesses/pi/agent/settings.json` beneath the repo_root token.

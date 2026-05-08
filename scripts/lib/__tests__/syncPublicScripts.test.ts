@@ -28,13 +28,17 @@ describe("syncPublicScripts", () => {
     }
   });
 
-  it("links all air-prefixed scripts and ignores other entries", async () => {
+  it("links exact and prefixed public scripts and ignores other entries", async () => {
     const testDir = await createTestDirectory();
     const scriptsDir = join(testDir, "scripts");
     const outputBinDir = join(testDir, ".output", "bin");
     const binDir = join(testDir, "bin");
     const firstPublicScriptPath = await writeScriptFile(outputBinDir, "air-first");
     const secondPublicScriptPath = await writeScriptFile(outputBinDir, "air-second");
+    const codexScriptPath = await writeScriptFile(outputBinDir, "codex");
+    const codexProfileScriptPath = await writeScriptFile(outputBinDir, "codex-developer");
+    const piScriptPath = await writeScriptFile(outputBinDir, "pi");
+    const piProfileScriptPath = await writeScriptFile(outputBinDir, "pi-designer");
     await writeScriptFile(outputBinDir, "not-public");
 
     const result = await syncPublicScripts({ binDir, scriptsDir, getTimestamp: () => "20260425T000000Z" });
@@ -44,11 +48,26 @@ describe("syncPublicScripts", () => {
       linkedScripts: [
         { action: "linked", scriptName: "air-first" },
         { action: "linked", scriptName: "air-second" },
+        { action: "linked", scriptName: "codex" },
+        { action: "linked", scriptName: "codex-developer" },
+        { action: "linked", scriptName: "pi" },
+        { action: "linked", scriptName: "pi-designer" },
       ],
     });
     expect(await readlink(join(binDir, "air-first"))).toBe(firstPublicScriptPath);
     expect(await readlink(join(binDir, "air-second"))).toBe(secondPublicScriptPath);
-    expect((await readdir(binDir)).sort()).toEqual(["air-first", "air-second"]);
+    expect(await readlink(join(binDir, "codex"))).toBe(codexScriptPath);
+    expect(await readlink(join(binDir, "codex-developer"))).toBe(codexProfileScriptPath);
+    expect(await readlink(join(binDir, "pi"))).toBe(piScriptPath);
+    expect(await readlink(join(binDir, "pi-designer"))).toBe(piProfileScriptPath);
+    expect((await readdir(binDir)).sort()).toEqual([
+      "air-first",
+      "air-second",
+      "codex",
+      "codex-developer",
+      "pi",
+      "pi-designer",
+    ]);
   });
 
   it("removes broken air symlinks and leaves other broken links alone", async () => {

@@ -63,7 +63,7 @@ For the normal machine setup flow after cloning, run:
 bun run bootstrap
 ```
 
-Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, and resync the repo-local `air-*` wrappers into `~/.local/bin`. Add `-- --pi-profile <profile>` when you also want to relink a generated Pi profile. Pi profile linking is opt-in; plain bootstrap does not require any specific profile name such as `default` to exist.
+Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, relink the generated `default` Codex profile into `~/.codex`, and resync the repo-local `air-*`, `codex`, `codex-*`, `pi`, and `pi-*` wrappers into `~/.local/bin`. Add `-- --codex-profile <profile>` when you want to override the linked Codex profile, and add `-- --pi-profile <profile>` when you also want to relink a generated Pi profile.
 
 To smoke test that flow without touching your real XDG config paths, run:
 
@@ -80,12 +80,13 @@ That command:
 - verifies the previous generated-output manifest before replacing `.output/`
 - stops for confirmation when generated files drift from the last manifest, with `no` as the default; use `bun run build -- -y` or `bun run bootstrap -- -y` to auto-confirm
 - links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
+- links `.output/codex/default` into `${CODEX_HOME:-~/.codex}` by default, or links `.output/codex/<profile>` when you pass `-- --codex-profile <profile>`
 - optionally links `.output/pi/<profile>` into `${PI_CODING_AGENT_DIR:-~/.pi/agent}` when you pass `-- --pi-profile <profile>`
-- symlinks every `pi-*` and `air-*` helper from `.output/bin` into `~/.local/bin`
-- removes broken `air-*` symlinks from `~/.local/bin` before recreating the current links
+- symlinks every `air-*`, `codex`, `codex-*`, `pi`, and `pi-*` helper from `.output/bin` into `~/.local/bin`
+- removes broken public-wrapper symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
 
-After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps generated outputs and the repo-local `air-*` symlinks refreshed. If you also use Pi, rerun bootstrap with `-- --pi-profile <profile>` to relink the Pi target explicitly.
+After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps generated outputs, the default Codex link, and the repo-local wrapper symlinks refreshed. Add `-- --codex-profile <profile>` and/or `-- --pi-profile <profile>` when you need non-default linked targets.
 
 To compile the configurations, simply run:
 
@@ -110,7 +111,7 @@ Run `bun run bootstrap` to symlink these wrappers into `~/.local/bin`. If you pr
 
 These wrappers execute the checked-in Bun source from this repository, so the clone and its installed dependencies must remain available on disk.
 
-*Generated outputs are discovered from the checked-in harness build plugins under `harnesses/<target>/scripts/build.ts`. Today that produces `.output/opencode` and `.output/pi`.*
+*Generated outputs are discovered from the checked-in harness build plugins under `harnesses/<target>/scripts/build.ts`. Today that produces `.output/opencode`, `.output/codex`, and `.output/pi`.*
 
 ### Installing a Skill with `npx skills`
 
@@ -156,12 +157,34 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
 - `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/scripts/build.ts`.
+- `.output/codex/<profile>`: Codex profile root for one ai-registry profile. The generated `default` root contains the shared `AGENTS.md`, `prompts/`, and symlinked mutable `config.toml` and `auth.json`; non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Codex-specific shaping lives in `harnesses/codex/scripts/build.ts`.
 - `.output/pi/<profile>`: Pi Coding Agent config roots with `settings.json`, selected `prompts/`, selected `skills/`, and generated `APPEND_SYSTEM.md` files. The Pi-specific final shaping lives in `harnesses/pi/scripts/build.ts`.
 - `.output/manifest.json`: SHA-256 manifest for the generated files. The next `bun run build` checks it before deleting `.output/` so externally edited generated files are not overwritten silently.
 
 The build writes only final generated outputs into `.output/`.
 
 For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://{{repo_root}}/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.
+
+### Using with Codex
+
+The Codex harness compiles the generated `default` profile into the shared Codex root under `.output/codex/default/`. Every non-default generated Codex profile root under `.output/codex/<profile>/` symlinks all shared entries from `default/` and keeps only its own `skills/` directory.
+
+- the generated `default` profile contributes the shared `prompts/`, home-level `AGENTS.md`, and mutable `config.toml` / `auth.json` symlinks
+- `skills/` plus any Codex-only harness skills under `harnesses/codex/skills/` are generated per profile and remain the only non-default profile-specific Codex payload
+- non-default generated Codex profile roots symlink every top-level entry from `default/` except `skills/`, so they inherit the default commands and instructions while keeping their own skills
+
+To link one generated Codex profile into your active Codex directories, run:
+
+```bash
+bun run bootstrap -- --codex-profile developer
+```
+
+Codex uses one active home directory at a time. This repository links the generated `default` profile into `${CODEX_HOME:-~/.codex}` during plain bootstrap, and `-- --codex-profile <profile>` overrides that link to a different generated profile root.
+
+Bootstrap also links generated Codex launchers into `~/.local/bin`:
+
+- `codex` launches the generated `default` profile
+- `codex-<profile>` launches any other generated Codex profile directly by setting `CODEX_HOME`
 
 ### Using with Pi
 
@@ -179,11 +202,17 @@ bun run bootstrap -- --pi-profile developer
 
 Pi bootstrap is opt-in because Pi has one active config root at a time. Override the target location with `PI_CODING_AGENT_DIR`.
 
+Bootstrap also links generated Pi launchers into `~/.local/bin`:
+
+- `pi` launches the generated `default` profile
+- `pi-<profile>` launches any other generated Pi profile directly by setting `PI_CODING_AGENT_DIR`
+
 ### Bootstrap Overrides
 
 Override the default target locations with:
 
 - `OPENCODE_CONFIG_DIR`
+- `CODEX_HOME`
 - `PI_CODING_AGENT_DIR`
 
 The smoke test uses `.tmp/bootstrap-smoke/` inside this repository for that path.

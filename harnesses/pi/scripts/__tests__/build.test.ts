@@ -1,10 +1,20 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { mkdir, mkdtemp, rm } from "fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
-import { join } from "path";
+import { dirname, join } from "path";
 
 import plugin from "../build";
+import {
+  copyDirectoryWithTemplateVariables,
+  copyPathWithTemplateVariables,
+  mergeDirectory,
+  stageProfileAssets,
+  writeBinScript,
+  type IBuildSupport,
+  type ITemplateContext,
+  type IUnifiedHarnessBuildContext,
+} from "../../../../scripts/lib/harnessBuild";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "pi-build-tests");
 const originalArgv: string[] = [...process.argv];
@@ -24,9 +34,50 @@ async function createPiProfile(outputDir: string, profileName: string): Promise<
   return profileDir;
 }
 
+async function writeTestFile(rootDir: string, relativePath: string, content: string): Promise<string> {
+  const filePath = join(rootDir, relativePath);
+  await mkdir(dirname(filePath), { recursive: true });
+  await writeFile(filePath, content, "utf-8");
+  return filePath;
+}
+
+function createTemplateContext(repositoryRoot: string): ITemplateContext {
+  return {
+    repo_root: repositoryRoot,
+    skills_dir: join(repositoryRoot, "skills"),
+    commands_dir: join(repositoryRoot, "commands"),
+    profiles_dir: join(repositoryRoot, "profiles"),
+    output_dir: join(repositoryRoot, ".output"),
+  };
+}
+
+function createBuildSupport(): IBuildSupport {
+  return {
+    mergeDirectory,
+    stageProfileAssets,
+    writeBinScript,
+    copyDirectoryWithTemplateVariables,
+    copyPathWithTemplateVariables,
+  };
+}
+
+function createUnifiedContext(repositoryRoot: string): IUnifiedHarnessBuildContext {
+  return {
+    harnessDir: join(repositoryRoot, "harnesses", "pi"),
+    outputDir: join(repositoryRoot, ".output"),
+    templateContext: createTemplateContext(repositoryRoot),
+    buildSupport: createBuildSupport(),
+  };
+}
+
 function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
   assert(plugin.getBootstrapTargets);
   return plugin.getBootstrapTargets;
+}
+
+function getFinalizeOutput(): NonNullable<typeof plugin.finalizeOutput> {
+  assert(plugin.finalizeOutput);
+  return plugin.finalizeOutput;
 }
 
 describe("Pi harness bootstrap targets", () => {
@@ -94,5 +145,84 @@ describe("Pi harness bootstrap targets", () => {
     await expect(getBootstrapTargets()(outputDir)).rejects.toThrow(
       `Generated Pi profile does not exist: ${join(outputDir, "pi", "removed")}. Available generated Pi profiles: designer, developer.`,
     );
+  });
+
+  it("generates default and named Pi launcher helpers", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
+    await writeTestFile(repositoryRoot, ".output/.pi-profiles/default/APPEND_SYSTEM.md", "default\n");
+    await writeTestFile(repositoryRoot, ".output/.pi-profiles/developer/APPEND_SYSTEM.md", "developer\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    expect(await readFile(join(repositoryRoot, ".output", "bin", "pi"), "utf-8")).toMatchInlineSnapshot(`
+"#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=\"$(cd \"$(dirname \"$0\")\" && pwd -P)\"
+generated_bin_dir=\"{{output_dir}}/bin\"
+filtered_path=\"\"
+
+IFS=':' read -r -a path_entries <<< \"\${PATH:-}\"
+for path_entry in \"\${path_entries[@]}\"; do
+  normalized_path=\"\${path_entry:-.}\"
+  if [ \"$normalized_path\" = \"$script_dir\" ] || [ \"$normalized_path\" = \"$generated_bin_dir\" ]; then
+    continue
+  fi
+
+  if [ -n \"$filtered_path\" ]; then
+    filtered_path=\"\${filtered_path}:$normalized_path\"
+  else
+    filtered_path=\"$normalized_path\"
+  fi
+done
+
+PATH=\"$filtered_path\"
+export PATH
+
+if ! command -v pi >/dev/null 2>&1; then
+  printf 'Could not find the real pi binary outside ai-registry wrapper paths.\\n' >&2
+  exit 1
+fi
+
+PI_CODING_AGENT_DIR=\"{{output_dir}}/pi/default\" exec pi \"$@\"
+"
+`);
+    expect(await readFile(join(repositoryRoot, ".output", "bin", "pi-developer"), "utf-8")).toMatchInlineSnapshot(`
+"#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=\"$(cd \"$(dirname \"$0\")\" && pwd -P)\"
+generated_bin_dir=\"{{output_dir}}/bin\"
+filtered_path=\"\"
+
+IFS=':' read -r -a path_entries <<< \"\${PATH:-}\"
+for path_entry in \"\${path_entries[@]}\"; do
+  normalized_path=\"\${path_entry:-.}\"
+  if [ \"$normalized_path\" = \"$script_dir\" ] || [ \"$normalized_path\" = \"$generated_bin_dir\" ]; then
+    continue
+  fi
+
+  if [ -n \"$filtered_path\" ]; then
+    filtered_path=\"\${filtered_path}:$normalized_path\"
+  else
+    filtered_path=\"$normalized_path\"
+  fi
+done
+
+PATH=\"$filtered_path\"
+export PATH
+
+if ! command -v pi >/dev/null 2>&1; then
+  printf 'Could not find the real pi binary outside ai-registry wrapper paths.\\n' >&2
+  exit 1
+fi
+
+PI_CODING_AGENT_DIR=\"{{output_dir}}/pi/developer\" exec pi \"$@\"
+"
+`);
   });
 });

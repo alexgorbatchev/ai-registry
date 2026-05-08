@@ -1,7 +1,8 @@
 import { lstat, mkdir, readdir, readlink, realpath, rename, rm, symlink } from "fs/promises";
 import { dirname, resolve, join } from "path";
 
-const PUBLIC_SCRIPT_PREFIXES = ["air-", "pi-"];
+const PUBLIC_SCRIPT_PREFIXES = ["air-", "codex-", "pi-"];
+const PUBLIC_SCRIPT_NAMES = new Set(["codex", "pi"]);
 
 export type IPublicScriptLinkResult =
   | { action: "linked"; scriptName: string }
@@ -38,7 +39,7 @@ function getBackupPath(targetPath: string, getTimestamp: () => string): string {
 }
 
 function isPublicScriptName(fileName: string): boolean {
-  return PUBLIC_SCRIPT_PREFIXES.some(prefix => fileName.startsWith(prefix));
+  return PUBLIC_SCRIPT_NAMES.has(fileName) || PUBLIC_SCRIPT_PREFIXES.some(prefix => fileName.startsWith(prefix));
 }
 
 async function listPublicScriptNames(scriptsDir: string): Promise<string[]> {
@@ -150,20 +151,12 @@ export async function syncPublicScripts(options: ISyncPublicScriptsOptions): Pro
 
   const cleanedBrokenLinks = await cleanupBrokenPublicSymlinks(options.binDir);
   
-  // Link air and pi scripts from .output/bin
   const outputBinDir = join(options.scriptsDir, "..", ".output", "bin");
-  const binScriptNames = await readdir(outputBinDir).catch(() => []);
-  binScriptNames.sort();
-  const airScriptNames = binScriptNames.filter(n => n.startsWith("air-"));
-  const piScriptNames = binScriptNames.filter(n => n.startsWith("pi-"));
-  
+  const publicScriptNames = await listPublicScriptNames(outputBinDir).catch(() => []);
+
   const linkedScripts: IPublicScriptLinkResult[] = [];
 
-  for (const scriptName of airScriptNames) {
-    linkedScripts.push(await applyPublicScriptLink(scriptName, outputBinDir, options.binDir, getTimestamp));
-  }
-  
-  for (const scriptName of piScriptNames) {
+  for (const scriptName of publicScriptNames) {
     linkedScripts.push(await applyPublicScriptLink(scriptName, outputBinDir, options.binDir, getTimestamp));
   }
 

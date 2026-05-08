@@ -8,6 +8,7 @@ import type {
   IUnifiedHarnessBuildContext,
   IUnifiedHarnessPlugin,
 } from "../../../scripts/lib/harnessBuild";
+import { createExternalProfileHelper } from "../../../scripts/lib/createExternalProfileHelper";
 import {
   assertSupportedPiManifest,
 } from "./lib/profileOutputRules";
@@ -46,23 +47,18 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
 }
 
 async function generatePiHelpers(context: IUnifiedHarnessBuildContext, profiles: string[]): Promise<void> {
-  const piProfileHelperPath = join(context.harnessDir, "templates", "pi-profile-helper.sh");
   const piInstallPath = join(context.harnessDir, "templates", "pi-install.sh");
   const piUninstallPath = join(context.harnessDir, "templates", "pi-uninstall.sh");
   const piUpdatePath = join(context.harnessDir, "templates", "pi-update.sh");
 
-  const template = await readFile(piProfileHelperPath, "utf-8");
   const installTemplate = await readFile(piInstallPath, "utf-8");
   const uninstallTemplate = await readFile(piUninstallPath, "utf-8");
   const updateTemplate = await readFile(piUpdatePath, "utf-8");
 
   for (const profile of profiles) {
-    const helperName = `pi-${profile}`;
-    
-    // Replace {{profile}} with the actual profile name.
-    // We leave {{output_dir}} untouched so it gets expanded by the general template expansion pass.
-    const content = template.replace(/\{\{profile\}\}/g, profile);
-    
+    const helperName = profile === "default" ? "pi" : `pi-${profile}`;
+    const content = createExternalProfileHelper("pi", "PI_CODING_AGENT_DIR", `{{output_dir}}/pi/${profile}`);
+
     await context.buildSupport.writeBinScript(context.outputDir, helperName, content);
   }
 

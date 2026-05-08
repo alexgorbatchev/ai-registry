@@ -14,6 +14,19 @@ This directory contains source-of-truth harness overrides and maintenance notes 
 
 Harnesses are only built into `.output/` when they provide `harnesses/<name>/scripts/build.ts`.
 
+## Codex
+
+- Keep the checked-in Codex reference docs under `harnesses/codex/docs/`.
+- Treat `harnesses/codex/docs/` as an upstream documentation snapshot; refresh it from `https://github.com/openai/codex/tree/main/docs` when the local copy drifts.
+- Preserve upstream filenames when refreshing the snapshot so links and diffs stay easy to compare.
+- Keep the Codex unified-output plugin in `harnesses/codex/scripts/build.ts`.
+- Put Codex-only shipped skills under `harnesses/codex/skills/`; the Codex build merges them into each generated `.output/codex/<profile>/skills/` root.
+- The Codex harness treats `.output/codex/default/` as the shared Codex base. Every non-default generated profile root under `.output/codex/<profile>/` symlinks all top-level entries from `default/` except `skills/`.
+- Map reusable commands and the generated home-level `AGENTS.md` only from the `default` profile. Generate selected skills into each profile's own Codex `skills/` directory.
+- Treat `harnesses/codex/config.toml` as the seed for the mutable Codex config file. The generated `default` Codex root symlinks `config.toml` and `auth.json` to `{{repo_root}}/.tmp/codex/`, and non-default generated Codex roots inherit those shared entries by symlinking back to `default/`.
+- Plain `bun run bootstrap` links the generated `default` Codex profile root into `${CODEX_HOME:-~/.codex}`. Use `bun run bootstrap -- --codex-profile <profile>` to override that link with another generated Codex profile root.
+- Generate `codex` for the `default` profile and `codex-<profile>` for other generated Codex profiles under `.output/bin/`.
+
 ## OpenCode
 
 - Register external OpenCode plugins in `harnesses/opencode/opencode.jsonc` under the `plugin` array.
@@ -31,6 +44,7 @@ Harnesses are only built into `.output/` when they provide `harnesses/<name>/scr
 - Keep the Pi unified-output plugin in `harnesses/pi/scripts/build.ts`.
 - The Pi harness generates one config root per profile under `.output/pi/<profile>/`.
 - Map reusable commands to Pi `prompts/`, reusable skills to Pi `skills/`, and profile `system_prompt` content to `APPEND_SYSTEM.md`.
+- Generate `pi` for the `default` profile and `pi-<profile>` for other generated Pi profiles under `.output/bin/`.
 - Do not silently ignore profile `tools` or `permission`; the Pi build must fail until an exact Pi-native mapping exists.
 
 ## Maintenance

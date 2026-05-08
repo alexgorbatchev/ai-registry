@@ -15,6 +15,7 @@ import {
 
 const PROFILE_STAGING_DIR_NAME = ".pi-profiles";
 const APPEND_SYSTEM_FILE_NAME = "APPEND_SYSTEM.md";
+const DEFAULT_PROFILE_NAME = "default";
 
 function getProfileStagingRoot(outputDir: string): string {
   return join(outputDir, PROFILE_STAGING_DIR_NAME);
@@ -24,26 +25,62 @@ function getProfileStagingDir(outputDir: string, profileName: string): string {
   return join(getProfileStagingRoot(outputDir), profileName);
 }
 
+async function stageProfileSkills(context: IProfileBuildContext, skillsOutputDir: string): Promise<void> {
+  for (const matchedSkill of context.globalMatchedSkills) {
+    const outputPath = join(skillsOutputDir, matchedSkill);
+    if (existsSync(outputPath)) {
+      continue;
+    }
+
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
+      join(context.templateContext.skills_dir, matchedSkill),
+      outputPath,
+      context.templateContext,
+    );
+  }
+
+  for (const profileLocalSkill of context.profileLocalSkills) {
+    const outputPath = join(skillsOutputDir, profileLocalSkill);
+    if (existsSync(outputPath)) {
+      throw new Error(
+        `Cannot stage profile-local skill ${profileLocalSkill} for profile ${context.profileName} because the output path already exists: ${outputPath}`,
+      );
+    }
+
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
+      join(context.profileDir, "skills", profileLocalSkill),
+      outputPath,
+      context.templateContext,
+    );
+  }
+}
+
 async function stageProfile(context: IProfileBuildContext): Promise<void> {
   assertSupportedPiManifest(context.manifest, context.profileName);
 
   const profileStagingDir = getProfileStagingDir(context.outputDir, context.profileName);
-  const promptsOutputDir = join(profileStagingDir, "prompts");
   const skillsOutputDir = join(profileStagingDir, "skills");
+  const isDefaultProfile = context.profileName === DEFAULT_PROFILE_NAME;
 
   await mkdir(profileStagingDir, { recursive: true });
 
-  const systemPrompt = typeof context.manifest.system_prompt === "string"
-    ? context.manifest.system_prompt.trim()
-    : "";
-  if (systemPrompt.length > 0) {
-    await writeFile(join(profileStagingDir, APPEND_SYSTEM_FILE_NAME), `${systemPrompt}\n`, "utf-8");
+  if (isDefaultProfile) {
+    const promptsOutputDir = join(profileStagingDir, "prompts");
+    const systemPrompt = typeof context.manifest.system_prompt === "string"
+      ? context.manifest.system_prompt.trim()
+      : "";
+    if (systemPrompt.length > 0) {
+      await writeFile(join(profileStagingDir, APPEND_SYSTEM_FILE_NAME), `${systemPrompt}\n`, "utf-8");
+    }
+
+    await context.buildSupport.stageProfileAssets(context, {
+      commandsDir: promptsOutputDir,
+      skillsDir: skillsOutputDir,
+    });
+    return;
   }
 
-  await context.buildSupport.stageProfileAssets(context, {
-    commandsDir: promptsOutputDir,
-    skillsDir: skillsOutputDir,
-  });
+  await stageProfileSkills(context, skillsOutputDir);
 }
 
 async function generatePiHelpers(context: IUnifiedHarnessBuildContext, profiles: string[]): Promise<void> {
@@ -71,6 +108,7 @@ async function generatePiHelpers(context: IUnifiedHarnessBuildContext, profiles:
 async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<void> {
   const profileStagingRoot = getProfileStagingRoot(context.outputDir);
   const visibleOutputDir = join(context.outputDir, "pi");
+  const finalVisibleOutputDir = join(context.templateContext.output_dir, "pi");
   const masterSettingsPath = join(context.harnessDir, "settings.json");
 
   try {
@@ -81,7 +119,16 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     }
 
     const stagedProfiles = await readdir(profileStagingRoot, { withFileTypes: true });
+    const stagedProfileNames = stagedProfiles
+      .filter((stagedProfile) => stagedProfile.isDirectory())
+      .map((stagedProfile) => stagedProfile.name);
+    const defaultProfileDir = join(visibleOutputDir, DEFAULT_PROFILE_NAME);
+    if (!stagedProfileNames.includes(DEFAULT_PROFILE_NAME)) {
+      throw new Error(`Generated Pi default profile does not exist: ${defaultProfileDir}`);
+    }
+
     const profileNames: string[] = [];
+    const nonDefaultProfileDirs: string[] = [];
 
     for (const stagedProfile of stagedProfiles) {
       if (!stagedProfile.isDirectory()) {
@@ -91,27 +138,41 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       profileNames.push(stagedProfile.name);
       const stagedProfileDir = join(profileStagingRoot, stagedProfile.name);
       const visibleProfileDir = join(visibleOutputDir, stagedProfile.name);
+      const isDefaultProfile = stagedProfile.name === DEFAULT_PROFILE_NAME;
       await mkdir(visibleProfileDir, { recursive: true });
 
-      // Copy master settings.json to the profile directory
-      await copyFile(masterSettingsPath, join(visibleProfileDir, "settings.json"));
-
-      await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
       await context.buildSupport.mergeDirectory(join(stagedProfileDir, "skills"), join(visibleProfileDir, "skills"));
-
-      // Merge harness-local prompts and skills
-      await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
       await context.buildSupport.mergeDirectory(join(context.harnessDir, "skills"), join(visibleProfileDir, "skills"));
 
-      const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
-      if (existsSync(stagedAppendSystemPath)) {
-        await copyFile(stagedAppendSystemPath, join(visibleProfileDir, APPEND_SYSTEM_FILE_NAME));
+      if (isDefaultProfile) {
+        await copyFile(masterSettingsPath, join(visibleProfileDir, "settings.json"));
+        await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
+        await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
+
+        const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
+        if (existsSync(stagedAppendSystemPath)) {
+          await copyFile(stagedAppendSystemPath, join(visibleProfileDir, APPEND_SYSTEM_FILE_NAME));
+        }
+
+        await mkdir(join(visibleProfileDir, "sessions"), { recursive: true });
+        continue;
       }
 
-      // Link sessions directory to central harnesses/pi/sessions
-      const sessionsTargetDir = join(context.harnessDir, "sessions");
-      await mkdir(sessionsTargetDir, { recursive: true });
-      await symlink(sessionsTargetDir, join(visibleProfileDir, "sessions"));
+      nonDefaultProfileDirs.push(visibleProfileDir);
+    }
+
+    const defaultProfileEntries = await readdir(defaultProfileDir, { withFileTypes: true });
+    for (const nonDefaultProfileDir of nonDefaultProfileDirs) {
+      for (const defaultProfileEntry of defaultProfileEntries) {
+        if (defaultProfileEntry.name === "skills") {
+          continue;
+        }
+
+        await symlink(
+          join(finalVisibleOutputDir, DEFAULT_PROFILE_NAME, defaultProfileEntry.name),
+          join(nonDefaultProfileDir, defaultProfileEntry.name),
+        );
+      }
     }
 
     await generatePiHelpers(context, profileNames);
@@ -158,10 +219,7 @@ function formatMissingPiProfileMessage(sourcePath: string, availableProfiles: st
 }
 
 async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>> {
-  const profile = getRequestedPiProfile(process.argv);
-  if (profile === null) {
-    return [];
-  }
+  const profile = getRequestedPiProfile(process.argv) ?? DEFAULT_PROFILE_NAME;
 
   const sourcePath = join(outputDir, "pi", profile);
   if (!existsSync(sourcePath)) {

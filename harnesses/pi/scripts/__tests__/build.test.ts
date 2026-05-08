@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, readlink, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
 import { dirname, join } from "path";
 
@@ -12,6 +12,7 @@ import {
   stageProfileAssets,
   writeBinScript,
   type IBuildSupport,
+  type IProfileBuildContext,
   type ITemplateContext,
   type IUnifiedHarnessBuildContext,
 } from "../../../../scripts/lib/harnessBuild";
@@ -70,6 +71,39 @@ function createUnifiedContext(repositoryRoot: string): IUnifiedHarnessBuildConte
   };
 }
 
+type IProfileContextOverrides = {
+  globalMatchedCommands?: string[];
+  globalMatchedSkills?: string[];
+  profileLocalCommands?: string[];
+  profileLocalSkills?: string[];
+  systemPrompt?: string;
+};
+
+function createProfileContext(
+  repositoryRoot: string,
+  profileName: string,
+  overrides: IProfileContextOverrides = {},
+): IProfileBuildContext {
+  return {
+    harnessDir: join(repositoryRoot, "harnesses", "pi"),
+    profileName,
+    profileDir: join(repositoryRoot, "profiles", profileName),
+    manifest: {
+      commands: ["review.md"],
+      description: "Pi profile",
+      skills: ["shared-skill"],
+      system_prompt: overrides.systemPrompt ?? "Follow the repo guidance.\nEscalate risky changes.",
+    },
+    globalMatchedSkills: overrides.globalMatchedSkills ?? ["shared-skill"],
+    globalMatchedCommands: overrides.globalMatchedCommands ?? ["review.md"],
+    profileLocalSkills: overrides.profileLocalSkills ?? ["local-skill"],
+    profileLocalCommands: overrides.profileLocalCommands ?? ["local.md"],
+    outputDir: join(repositoryRoot, ".output"),
+    templateContext: createTemplateContext(repositoryRoot),
+    buildSupport: createBuildSupport(),
+  };
+}
+
 function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
   assert(plugin.getBootstrapTargets);
   return plugin.getBootstrapTargets;
@@ -78,6 +112,11 @@ function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
 function getFinalizeOutput(): NonNullable<typeof plugin.finalizeOutput> {
   assert(plugin.finalizeOutput);
   return plugin.finalizeOutput;
+}
+
+function getStageProfile(): NonNullable<typeof plugin.stageProfile> {
+  assert(plugin.stageProfile);
+  return plugin.stageProfile;
 }
 
 describe("Pi harness bootstrap targets", () => {
@@ -94,12 +133,19 @@ describe("Pi harness bootstrap targets", () => {
     createdDirectories.length = 0;
   });
 
-  it("does not require a default Pi profile when bootstrap did not request Pi linking", async () => {
+  it("links the default Pi profile when bootstrap did not request an override", async () => {
     const outputDir = await createOutputDirectory();
+    const profileDir = await createPiProfile(outputDir, "default");
 
     const targets = await getBootstrapTargets()(outputDir);
 
-    expect(targets).toEqual([]);
+    expect(targets).toEqual([
+      {
+        description: "Pi config (default)",
+        sourcePath: profileDir,
+        targetPath: join(homedir(), ".pi", "agent"),
+      },
+    ]);
   });
 
   it("links the explicitly requested Pi profile", async () => {
@@ -136,6 +182,23 @@ describe("Pi harness bootstrap targets", () => {
     ]);
   });
 
+  it("uses PI_CODING_AGENT_DIR for the default Pi profile target", async () => {
+    const outputDir = await createOutputDirectory();
+    const profileDir = await createPiProfile(outputDir, "default");
+    const targetPath = join(outputDir, "custom-pi-agent");
+    process.env.PI_CODING_AGENT_DIR = targetPath;
+
+    const targets = await getBootstrapTargets()(outputDir);
+
+    expect(targets).toEqual([
+      {
+        description: "Pi config (default)",
+        sourcePath: profileDir,
+        targetPath,
+      },
+    ]);
+  });
+
   it("reports generated Pi profiles when the requested profile is missing", async () => {
     const outputDir = await createOutputDirectory();
     await createPiProfile(outputDir, "designer");
@@ -144,6 +207,112 @@ describe("Pi harness bootstrap targets", () => {
 
     await expect(getBootstrapTargets()(outputDir)).rejects.toThrow(
       `Generated Pi profile does not exist: ${join(outputDir, "pi", "removed")}. Available generated Pi profiles: designer, developer.`,
+    );
+  });
+
+  it("stages the default Pi profile as the shared root", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/prompts/harness.md", "Harness prompt.\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/skills/harness-skill/SKILL.md", "# Harness skill\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "APPEND_SYSTEM.md"), "utf-8")).toBe(
+      "Follow the repo guidance.\nEscalate risky changes.\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "settings.json"), "utf-8")).toBe("{}\n");
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "prompts", "review.md"), "utf-8")).toBe(
+      "Review the changes.\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "prompts", "local.md"), "utf-8")).toBe(
+      "Local command.\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "prompts", "harness.md"), "utf-8")).toBe(
+      "Harness prompt.\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe(
+      "# Shared skill\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "skills", "local-skill", "SKILL.md"), "utf-8")).toBe(
+      "# Local skill\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe(
+      "# Harness skill\n",
+    );
+    expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isDirectory()).toBe(true);
+    expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isSymbolicLink()).toBe(false);
+  });
+
+  it("symlinks non-default Pi files from default and keeps profile-specific skills", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
+    await writeTestFile(repositoryRoot, "commands/developer-only.md", "Developer-only command.\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/prompts/harness.md", "Harness prompt.\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/skills/harness-skill/SKILL.md", "# Harness skill\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/commands/local.md", "Developer local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Developer local skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(repositoryRoot, "skills/developer-shared-skill/SKILL.md", "# Developer shared skill\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      systemPrompt: "Default instructions.\nStay shared.",
+    }));
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
+      globalMatchedCommands: ["developer-only.md"],
+      globalMatchedSkills: ["developer-shared-skill"],
+      profileLocalCommands: ["local.md"],
+      profileLocalSkills: ["local-skill"],
+      systemPrompt: "Developer-only instructions.\nShould not ship here.",
+    }));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "APPEND_SYSTEM.md"))).toBe(
+      join(repositoryRoot, ".output", "pi", "default", "APPEND_SYSTEM.md"),
+    );
+    expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "settings.json"))).toBe(
+      join(repositoryRoot, ".output", "pi", "default", "settings.json"),
+    );
+    expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "prompts"))).toBe(
+      join(repositoryRoot, ".output", "pi", "default", "prompts"),
+    );
+    expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "sessions"))).toBe(
+      join(repositoryRoot, ".output", "pi", "default", "sessions"),
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "APPEND_SYSTEM.md"), "utf-8")).toBe(
+      "Default instructions.\nStay shared.\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "prompts", "review.md"), "utf-8")).toBe(
+      "Review the default changes.\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "prompts", "local.md"), "utf-8")).toBe(
+      "Default local command.\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "prompts", "harness.md"), "utf-8")).toBe(
+      "Harness prompt.\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "skills", "developer-shared-skill", "SKILL.md"), "utf-8")).toBe(
+      "# Developer shared skill\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "skills", "local-skill", "SKILL.md"), "utf-8")).toBe(
+      "# Developer local skill\n",
+    );
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe(
+      "# Harness skill\n",
     );
   });
 

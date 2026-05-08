@@ -42,8 +42,9 @@ Harnesses are only built into `.output/` when they provide `harnesses/<name>/scr
 
 - Keep shipped Pi skeleton files under `harnesses/pi/agent/`.
 - Keep the Pi unified-output plugin in `harnesses/pi/scripts/build.ts`.
-- The Pi harness generates one config root per profile under `.output/pi/<profile>/`.
-- Map reusable commands to Pi `prompts/`, reusable skills to Pi `skills/`, and profile `system_prompt` content to `APPEND_SYSTEM.md`.
+- The Pi harness treats `.output/pi/default/` as the shared Pi base. Every non-default generated profile root under `.output/pi/<profile>/` symlinks all top-level entries from `default/` except `skills/`.
+- Map reusable commands, `APPEND_SYSTEM.md`, the shared `settings.json`, and the static shared `sessions/` directory only from the `default` profile. Generate selected skills into each profile's own Pi `skills/` directory.
+- Plain `bun run bootstrap` links the generated `default` Pi profile root into `${PI_CODING_AGENT_DIR:-~/.pi/agent}`. Use `bun run bootstrap -- --pi-profile <profile>` to override that link with another generated Pi profile root.
 - Generate `pi` for the `default` profile and `pi-<profile>` for other generated Pi profiles under `.output/bin/`.
 - Do not silently ignore profile `tools` or `permission`; the Pi build must fail until an exact Pi-native mapping exists.
 

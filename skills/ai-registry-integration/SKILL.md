@@ -138,4 +138,4 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Add or update a vendored third-party skill under the skills_dir token plus `skills-lock.json` beneath the repo_root token.
 - OpenCode configuration lives in `harnesses/opencode/opencode.jsonc` beneath the repo_root token.
 - Codex docs snapshots, build logic, and Codex-only shipped skills live under `harnesses/codex/` beneath the repo_root token.
-- Pi configuration skeleton lives in `harnesses/pi/agent/settings.json` beneath the repo_root token.
+- Pi shared settings seed plus harness-local prompts and skills live under `harnesses/pi/` beneath the repo_root token.

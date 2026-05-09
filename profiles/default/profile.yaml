@@ -1,0 +1,6 @@
+description: '[reg] engineer'
+skills: ['*']
+commands: ['*']
+system_prompt: |
+  {{ include "system/system.md" }}
+

@@ -1,10 +1,6 @@
 ---
 name: react-development
-description: >-
-  Build and modify React components, hooks, context providers, and JSX render
-  trees. Use when implementing or refactoring React UI code, component APIs,
-  render branches, shared primitives, hook-driven state, DOM structure, or
-  test ID usage in React codebases.
+description: Must be used any time React code is touched.
 author: alexgorbatchev
 ---
 
@@ -18,7 +14,8 @@ Use existing React patterns before introducing new ones. Preserve accessibility,
 2. Reuse an existing component or hook when one already expresses the pattern.
 3. Keep rendering in JSX. Extract helpers or hooks instead of switching to `createElement`.
 4. Apply the test ID contract exactly when a tagged element is needed.
-5. Run the narrowest relevant type and test validation first, then broader test commands.
+5. Continuously compare the touched UI against nearby views and pages for repeated layout, color, sizing, spacing, typography, and state styling patterns.
+6. Run the narrowest relevant type and test validation first, then broader test commands.
 
 ## Non-negotiable rules
 
@@ -136,8 +133,20 @@ Keep enhancers presentation-oriented. If the trailing element is the component's
 ## Code organization rules
 
 - Organize code by feature or domain folders.
+- Name component files in PascalCase, matching the exported component name when the file primarily defines one component.
+- Name hook files in camelCase, matching the exported hook name when the file primarily defines one hook.
 - Do not dump unrelated modules into broad `lib/` directories.
 - When `lib/` is necessary, keep it for shared infrastructure and move feature-specific code into named subfolders such as `lib/githubExtraction/` or `lib/youtubeExtraction/`.
+
+## Continuous UI consistency
+
+Treat UI consistency as an ongoing process while working in React code, not as a final one-time cleanup pass.
+
+- Review touched app and feature components for inline `style`, consumer-side `className`, repeated wrapper markup, and duplicated layout or visual constants.
+- Compare related views and pages for consistency in layout structure, colors, spacing, sizing, typography, density, border treatment, and loading, empty, error, hover, active, and selected states.
+- When the same visual or structural pattern appears in more than one place, extract it into a shared component, shared primitive variant, or component-owned prop before adding another one-off implementation.
+- Prefer existing shared primitives for common surfaces such as buttons, inputs, dialogs, cards, menus, lists, toolbars, page shells, and layout regions.
+- Extend shared primitives through named variants or explicit props when product needs diverge in a supported way; do not fork near-identical components or push design differences into call-site styling.
 
 ## Review checklist
 
@@ -150,6 +159,9 @@ Before finishing a React change, verify all of the following:
 - product-surface consumers do not pass `className` or `style` to imported components for spacing, size, color, typography, layout, or state styling
 - optional leading and trailing visual slots use `startEnhancer` and `endEnhancer`
 - feature-specific modules live in named feature or domain folders instead of a broad unrelated `lib/` dump
+- component files use PascalCase and hook files use camelCase
+- repeated inline styles, consumer-side class names, wrapper markup, and visual constants were evaluated for extraction into shared components or variants
+- touched views and pages remain consistent in layout, colors, spacing, sizing, typography, and component states
 - no new `createElement` usage was introduced without an explicit documented exception
 - shared primitives were reused where appropriate
 - accessible queries remain possible for user-facing controls

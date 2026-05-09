@@ -1,9 +1,7 @@
-import { createHash } from "crypto";
 import {
   mkdir,
   readdir,
   readFile,
-  rename,
   rm,
   writeFile,
 } from "fs/promises";
@@ -26,6 +24,18 @@ import {
 } from "./lib/harnessBuild";
 import { discoverProfileLocalAssets } from "./lib/discoverProfileLocalAssets";
 import { getErrorMessage } from "./lib/getErrorMessage";
+import {
+  collectGeneratedOutputEntries,
+  createGeneratedOutputManifest,
+  GENERATED_OUTPUT_MANIFEST_NAME,
+  GENERATED_OUTPUT_MANIFEST_VERSION,
+  getGeneratedOutputDrift,
+  LEGACY_GENERATED_OUTPUT_MANIFEST_NAME,
+  type IGeneratedOutputDrift,
+  type IGeneratedOutputManifest,
+  type IGeneratedOutputManifestEntry,
+  syncManagedGeneratedOutputs,
+} from "./lib/generatedOutputUtils";
 import { promptForYesNo } from "./lib/promptForYesNo";
 import { runCommand } from "./lib/runCommand";
 
@@ -37,8 +47,6 @@ const COMMANDS_DIR = join(REGISTRY_DIR, "commands");
 const PROFILES_DIR = join(REGISTRY_DIR, "profiles");
 
 const UNIFIED_OUTPUT_DIR = join(REGISTRY_DIR, ".output");
-const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
-const LEGACY_GENERATED_OUTPUT_MANIFEST_NAME = ".generated-output-manifest.json";
 const GENERATED_OUTPUT_STAGING_DIR = join(
   REGISTRY_DIR,
   ".tmp",
@@ -52,7 +60,6 @@ const GENERATED_OUTPUT_MANIFEST_PATH = join(
   UNIFIED_OUTPUT_DIR,
   GENERATED_OUTPUT_MANIFEST_NAME,
 );
-const GENERATED_OUTPUT_MANIFEST_VERSION = 1;
 const TEMPLATE_CONTEXT = {
   repo_root: REGISTRY_DIR,
   skills_dir: SKILLS_DIR,
@@ -61,24 +68,6 @@ const TEMPLATE_CONTEXT = {
   output_dir: UNIFIED_OUTPUT_DIR,
 } as const;
 
-type IGeneratedOutputManifest = {
-  version: number;
-  generatedAt: string;
-  files: Record<string, string>;
-};
-
-type IGeneratedOutputDrift = {
-  path: string;
-  reason: "missing" | "modified" | "unexpected";
-};
-
-const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
-const GENERATED_OUTPUT_IGNORED_BASENAMES = new Set([
-  ".gitignore",
-  "bun.lock",
-  "bun.lockb",
-  "package-lock.json",
-]);
 const AUTO_CONFIRM_FLAGS = new Set(["-y", "--yes"]);
 
 function hasAutoConfirmFlag(): boolean {
@@ -97,6 +86,39 @@ function isStringRecord(value: unknown): value is Record<string, string> {
   return Object.values(value).every((entry) => typeof entry === "string");
 }
 
+function isGeneratedOutputManifestEntry(
+  value: unknown,
+): value is IGeneratedOutputManifestEntry {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const kind = getObjectValue(value, "kind");
+  if (kind === "directory") {
+    return true;
+  }
+
+  if (kind === "file") {
+    return typeof getObjectValue(value, "checksum") === "string";
+  }
+
+  if (kind === "symlink") {
+    return typeof getObjectValue(value, "target") === "string";
+  }
+
+  return false;
+}
+
+function isGeneratedOutputManifestEntryRecord(
+  value: unknown,
+): value is Record<string, IGeneratedOutputManifestEntry> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  return Object.values(value).every((entry) => isGeneratedOutputManifestEntry(entry));
+}
+
 function isGeneratedOutputManifest(
   value: unknown,
 ): value is IGeneratedOutputManifest {
@@ -106,72 +128,50 @@ function isGeneratedOutputManifest(
 
   const version = getObjectValue(value, "version");
   const generatedAt = getObjectValue(value, "generatedAt");
-  const files = getObjectValue(value, "files");
+  const entries = getObjectValue(value, "entries");
 
   return (
     version === GENERATED_OUTPUT_MANIFEST_VERSION &&
     typeof generatedAt === "string" &&
-    isStringRecord(files)
+    isGeneratedOutputManifestEntryRecord(entries)
   );
 }
 
-function createFileChecksum(fileBuffer: Buffer): string {
-  return createHash("sha256").update(fileBuffer).digest("hex");
+type ILegacyGeneratedOutputManifest = {
+  version: 1;
+  generatedAt: string;
+  files: Record<string, string>;
+};
+
+function isLegacyGeneratedOutputManifest(
+  value: unknown,
+): value is ILegacyGeneratedOutputManifest {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const version = getObjectValue(value, "version");
+  const generatedAt = getObjectValue(value, "generatedAt");
+  const files = getObjectValue(value, "files");
+
+  return version === 1 && typeof generatedAt === "string" && isStringRecord(files);
 }
 
-function normalizeRelativePath(filePath: string): string {
-  return filePath.replaceAll("\\", "/");
-}
-
-function shouldIgnoreGeneratedOutputPath(relativePath: string): boolean {
-  const pathParts = relativePath.split("/");
-  const basename = pathParts[pathParts.length - 1];
-
-  return (
-    GENERATED_OUTPUT_IGNORED_BASENAMES.has(basename) ||
-    pathParts.some((part) => GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(part))
+function convertLegacyGeneratedOutputManifest(
+  legacyManifest: ILegacyGeneratedOutputManifest,
+): IGeneratedOutputManifest {
+  const entries = Object.fromEntries(
+    Object.entries(legacyManifest.files).map(([relativePath, checksum]) => [
+      relativePath,
+      { kind: "file", checksum } satisfies IGeneratedOutputManifestEntry,
+    ]),
   );
-}
 
-async function collectGeneratedOutputChecksums(
-  rootDir: string,
-  currentDir: string = rootDir,
-): Promise<Record<string, string>> {
-  if (!existsSync(currentDir)) {
-    return {};
-  }
-
-  const checksums: Record<string, string> = {};
-  const entries = await readdir(currentDir, { withFileTypes: true });
-  for (const entry of entries) {
-    const entryPath = join(currentDir, entry.name);
-
-    if (entry.isDirectory()) {
-      Object.assign(
-        checksums,
-        await collectGeneratedOutputChecksums(rootDir, entryPath),
-      );
-      continue;
-    }
-
-    if (!entry.isFile()) {
-      continue;
-    }
-
-    const relativePath = normalizeRelativePath(entryPath.slice(rootDir.length + 1));
-    if (
-      relativePath === GENERATED_OUTPUT_MANIFEST_NAME ||
-      relativePath === LEGACY_GENERATED_OUTPUT_MANIFEST_NAME ||
-      shouldIgnoreGeneratedOutputPath(relativePath)
-    ) {
-      continue;
-    }
-
-    const fileBuffer = await readFile(entryPath);
-    checksums[relativePath] = createFileChecksum(fileBuffer);
-  }
-
-  return checksums;
+  return {
+    version: GENERATED_OUTPUT_MANIFEST_VERSION,
+    generatedAt: legacyManifest.generatedAt,
+    entries,
+  };
 }
 
 async function readGeneratedOutputManifest(): Promise<IGeneratedOutputManifest | null> {
@@ -187,40 +187,15 @@ async function readGeneratedOutputManifest(): Promise<IGeneratedOutputManifest |
 
   const manifestContent = await readFile(manifestPath, "utf-8");
   const parsedManifest = JSON.parse(manifestContent);
-  if (!isGeneratedOutputManifest(parsedManifest)) {
-    throw new Error(
-      `Invalid generated output manifest: ${manifestPath}`,
-    );
+  if (isGeneratedOutputManifest(parsedManifest)) {
+    return parsedManifest;
   }
 
-  return parsedManifest;
-}
-
-function getGeneratedOutputDrift(
-  manifest: IGeneratedOutputManifest,
-  currentChecksums: Record<string, string>,
-): IGeneratedOutputDrift[] {
-  const drift: IGeneratedOutputDrift[] = [];
-
-  for (const [relativePath, expectedChecksum] of Object.entries(manifest.files)) {
-    const actualChecksum = currentChecksums[relativePath];
-    if (!actualChecksum) {
-      drift.push({ path: relativePath, reason: "missing" });
-      continue;
-    }
-
-    if (actualChecksum !== expectedChecksum) {
-      drift.push({ path: relativePath, reason: "modified" });
-    }
+  if (isLegacyGeneratedOutputManifest(parsedManifest)) {
+    return convertLegacyGeneratedOutputManifest(parsedManifest);
   }
 
-  for (const relativePath of Object.keys(currentChecksums)) {
-    if (!(relativePath in manifest.files)) {
-      drift.push({ path: relativePath, reason: "unexpected" });
-    }
-  }
-
-  return drift.sort((left, right) => left.path.localeCompare(right.path));
+  throw new Error(`Invalid generated output manifest: ${manifestPath}`);
 }
 
 async function getFileDiff(
@@ -293,31 +268,30 @@ async function confirmGeneratedOutputOverwrite(
 }
 
 async function assertGeneratedOutputsAreSafeToReplace(
+  manifest: IGeneratedOutputManifest | null,
   nextOutputDir: string,
   hasAutoConfirm: boolean,
 ): Promise<void> {
-  const manifest = await readGeneratedOutputManifest();
   if (!manifest) {
     return;
   }
 
-  const currentChecksums = await collectGeneratedOutputChecksums(UNIFIED_OUTPUT_DIR);
-  const drift = getGeneratedOutputDrift(manifest, currentChecksums);
+  const currentEntries = await collectGeneratedOutputEntries(UNIFIED_OUTPUT_DIR);
+  const drift = getGeneratedOutputDrift(manifest, currentEntries);
   await confirmGeneratedOutputOverwrite(drift, nextOutputDir, hasAutoConfirm);
 }
 
-async function writeGeneratedOutputManifest(): Promise<void> {
-  const manifest: IGeneratedOutputManifest = {
-    version: GENERATED_OUTPUT_MANIFEST_VERSION,
-    generatedAt: new Date().toISOString(),
-    files: await collectGeneratedOutputChecksums(UNIFIED_OUTPUT_DIR),
-  };
+async function writeGeneratedOutputManifest(
+  managedEntries: Record<string, IGeneratedOutputManifestEntry>,
+): Promise<void> {
+  const manifest = createGeneratedOutputManifest(managedEntries);
 
   await writeFile(
     GENERATED_OUTPUT_MANIFEST_PATH,
     `${JSON.stringify(manifest, null, 2)}\n`,
     "utf-8",
   );
+  await rm(LEGACY_GENERATED_OUTPUT_MANIFEST_PATH, { force: true });
 }
 
 async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> {
@@ -445,18 +419,26 @@ async function main() {
   const unifiedHarnessPlugins = await loadUnifiedHarnessPlugins(HARNESSES_DIR, availableHarnessBuildTargets);
 
   try {
+    const existingManifest = await readGeneratedOutputManifest();
+
     await buildUnifiedOutputs(
       GENERATED_OUTPUT_STAGING_DIR,
       unifiedHarnessPlugins,
     );
+    const nextManagedEntries = await collectGeneratedOutputEntries(GENERATED_OUTPUT_STAGING_DIR);
     await assertGeneratedOutputsAreSafeToReplace(
+      existingManifest,
       GENERATED_OUTPUT_STAGING_DIR,
       hasAutoConfirm,
     );
 
-    await rm(UNIFIED_OUTPUT_DIR, { recursive: true, force: true });
-    await rename(GENERATED_OUTPUT_STAGING_DIR, UNIFIED_OUTPUT_DIR);
-    await writeGeneratedOutputManifest();
+    await syncManagedGeneratedOutputs({
+      nextEntries: nextManagedEntries,
+      nextOutputDir: GENERATED_OUTPUT_STAGING_DIR,
+      outputDir: UNIFIED_OUTPUT_DIR,
+      previousManifest: existingManifest,
+    });
+    await writeGeneratedOutputManifest(nextManagedEntries);
   } finally {
     await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
   }

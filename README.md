@@ -32,7 +32,7 @@ The assembled agents. These folders contain `profile.yaml` manifests that cherry
 Root script entrypoints live directly under `scripts/` and use dash-based filenames. Helper modules that are imported by those entrypoints and are not intended to be executed directly belong under `scripts/lib/`.
 
 ### 4. Generated Outputs (`.output/`)
-The final generated harness artifacts. This directory is rebuilt from source and should only contain consumable outputs.
+The final generated harness artifacts. The registry updates only the files and paths it manages there, writes a manifest for those managed entries, and leaves unrelated harness-owned files in place.
 
 ## Building and Usage
 
@@ -77,8 +77,8 @@ That command:
 - installs dependencies for all root workspaces declared in `package.json`, including `vendor/*` and `packages/*`
 - installs the repo-local Git hooks from `.githooks`
 - builds the generated outputs
-- verifies the previous generated-output manifest before replacing `.output/`
-- stops for confirmation when generated files drift from the last manifest, with `no` as the default; use `bun run build -- -y` or `bun run bootstrap -- -y` to auto-confirm
+- verifies the previous generated-output manifest before overwriting managed generated paths in `.output/`
+- stops for confirmation when managed generated files drift from the last manifest, with `no` as the default; use `bun run build -- -y` or `bun run bootstrap -- -y` to auto-confirm
 - links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
 - links `.output/codex/default` into `${CODEX_HOME:-~/.codex}` by default, or links `.output/codex/<profile>` when you pass `-- --codex-profile <profile>`
 - links `.output/pi/default` into `${PI_CODING_AGENT_DIR:-~/.pi/agent}` by default, or links `.output/pi/<profile>` when you pass `-- --pi-profile <profile>`
@@ -159,9 +159,9 @@ The build script generates unified final outputs in `.output/` for the targets t
 - `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/scripts/build.ts`.
 - `.output/codex/<profile>`: Codex profile root for one ai-registry profile. The generated `default` root contains the shared `AGENTS.md`, `prompts/`, and symlinked mutable `config.toml` and `auth.json`; non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Codex-specific shaping lives in `harnesses/codex/scripts/build.ts`.
 - `.output/pi/<profile>`: Pi profile root for one ai-registry profile. The generated `default` root contains the shared `settings.json`, `prompts/`, `APPEND_SYSTEM.md`, and static `sessions/` directory; non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Pi-specific final shaping lives in `harnesses/pi/scripts/build.ts`.
-- `.output/manifest.json`: SHA-256 manifest for the generated files. The next `bun run build` checks it before deleting `.output/` so externally edited generated files are not overwritten silently.
+- `.output/manifest.json`: SHA-256 manifest for the generated files, directories, and symlinks that the registry manages under `.output/`. The next `bun run build` checks those managed entries before overwriting them so externally edited generated files are not overwritten silently.
 
-The build writes only final generated outputs into `.output/`.
+The build writes only final generated outputs into `.output/` and updates only the managed paths recorded in the manifest.
 
 For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://{{repo_root}}/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.
 

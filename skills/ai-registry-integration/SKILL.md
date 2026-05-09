@@ -26,7 +26,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Put publishable standalone packages under `packages/<package-name>/` beneath the repo_root token.
 - Put vendored third-party code packages that need Bun workspace installs under `vendor/` beneath the repo_root token.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
-- Treat `.output/` beneath the repo_root token as generated output, not an editing surface.
+- Treat `.output/` beneath the repo_root token as generated output, not an editing surface. The registry manages only the generated files, directories, and symlinks recorded in `.output/manifest.json`; other harness-owned files under `.output/` are preserved across builds.
 - After modifying any file under `skills/`, `commands/`, `profiles/`, `harnesses/`, or `skills-lock.json` beneath the repo_root token, run `bun run build` from the repo_root token.
 - If a change alters repo structure, build architecture, or workflow contracts, update `AGENTS.md` and `README.md` beneath the repo_root token in the same change.
 
@@ -112,6 +112,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - The local build entrypoint is `scripts/build.ts` beneath the repo_root token.
 - Unified harness plugins are discovered from `harnesses/<target>/scripts/build.ts` beneath the repo_root token.
 - Generated outputs are written under the output_dir token.
+- The generated-output manifest tracks only registry-managed entries under the output_dir token, and `bun run build` overwrites only those managed paths instead of replacing the entire output tree.
 - Verify generated files that match the change, especially:
   - `opencode/` beneath the output_dir token
   - `codex/` beneath the output_dir token

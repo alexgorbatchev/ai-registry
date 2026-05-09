@@ -1,20 +1,11 @@
 {
   "version": 1,
   "skills": {
-    "agent-browser": {
-      "source": "vercel-labs/agent-browser",
-      "sourceType": "github",
-      "computedHash": "c19a532a3777698b80b35270939a1dc559da451381971b3e1e78174d1ab54863"
-    },
-    "opencode-conversation-analysis": {
-      "source": "connorads/dotfiles",
-      "sourceType": "github",
-      "computedHash": "fcfd2e64c453be1e0eabd88ea4b28e9b86e7da9cbb126fd779fd8683ba7c6d7e"
-    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
-      "computedHash": "873c67922d80775a9fdf596db7964b579f0408c30ec6e3d11989f6055bbec89f"
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "80a6226e78f6d1fe464214ae0ef449d49d8ffaa3e7704f011e9b418c678ad4d1"
     }
   }
 }

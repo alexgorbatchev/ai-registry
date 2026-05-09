@@ -157,7 +157,7 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
 - `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/scripts/build.ts`.
-- `.output/codex/<profile>`: Codex profile root for one ai-registry profile. The generated `default` root contains the shared `AGENTS.md`, `prompts/`, and symlinked mutable `config.toml` and `auth.json`; non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Codex-specific shaping lives in `harnesses/codex/scripts/build.ts`.
+- `.output/codex/<profile>`: Codex profile root for one ai-registry profile. The generated `default` root contains the shared `AGENTS.md`, `prompts/`, and symlinked mutable `config.toml`; non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Codex-specific shaping lives in `harnesses/codex/scripts/build.ts`. Runtime files such as `auth.json` stay Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
 - `.output/pi/<profile>`: Pi profile root for one ai-registry profile. The generated `default` root contains the shared `settings.json`, `prompts/`, `APPEND_SYSTEM.md`, and static `sessions/` directory; non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Pi-specific final shaping lives in `harnesses/pi/scripts/build.ts`.
 - `.output/manifest.json`: SHA-256 manifest for the generated files, directories, and symlinks that the registry manages under `.output/`. The next `bun run build` checks those managed entries before overwriting them so externally edited generated files are not overwritten silently.
 
@@ -169,7 +169,7 @@ For local file-based OpenCode plugins that need runtime dependencies from this r
 
 The Codex harness compiles the generated `default` profile into the shared Codex root under `.output/codex/default/`. Every non-default generated Codex profile root under `.output/codex/<profile>/` symlinks all shared entries from `default/` and keeps only its own `skills/` directory.
 
-- the generated `default` profile contributes the shared `prompts/`, home-level `AGENTS.md`, and mutable `config.toml` / `auth.json` symlinks
+- the generated `default` profile contributes the shared `prompts/`, home-level `AGENTS.md`, and mutable `config.toml` symlink
 - `skills/` plus any Codex-only harness skills under `harnesses/codex/skills/` are generated per profile and remain the only non-default profile-specific Codex payload
 - non-default generated Codex profile roots symlink every top-level entry from `default/` except `skills/`, so they inherit the default commands and instructions while keeping their own skills
 

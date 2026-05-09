@@ -30,10 +30,6 @@ function getMutableCodexConfigPath(repositoryRoot: string): string {
   return join(getMutableCodexStateDir(repositoryRoot), "config.toml");
 }
 
-function getMutableCodexAuthPath(repositoryRoot: string): string {
-  return join(getMutableCodexStateDir(repositoryRoot), "auth.json");
-}
-
 function getManagedCodexConfigSnapshotPath(repositoryRoot: string): string {
   return join(getMutableCodexStateDir(repositoryRoot), "managed-config.json");
 }
@@ -78,11 +74,9 @@ async function seedMutableCodexConfig(context: IProfileBuildContext): Promise<st
 
 async function stageMutableCodexState(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
   const mutableConfigPath = await seedMutableCodexConfig(context);
-  const mutableAuthPath = getMutableCodexAuthPath(context.templateContext.repo_root);
 
   await mkdir(getMutableCodexStateDir(context.templateContext.repo_root), { recursive: true });
   await symlink(mutableConfigPath, join(profileOutputDir, "config.toml"));
-  await symlink(mutableAuthPath, join(profileOutputDir, "auth.json"));
 }
 
 async function stageHarnessRules(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {

@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { mkdir, mkdtemp, readFile, readlink, rm, writeFile } from "fs/promises";
+import { mkdir, mkdtemp, lstat, readFile, readlink, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
 import { dirname, join } from "path";
 
@@ -158,9 +158,9 @@ describe("Codex harness build plugin", () => {
     expect(await readlink(join(repositoryRoot, ".output", "codex", "default", "config.toml"))).toBe(
       join(repositoryRoot, ".tmp", "codex", "config.toml"),
     );
-    expect(await readlink(join(repositoryRoot, ".output", "codex", "default", "auth.json"))).toBe(
-      join(repositoryRoot, ".tmp", "codex", "auth.json"),
-    );
+    await expect(lstat(join(repositoryRoot, ".output", "codex", "default", "auth.json"))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
     expect(await readFile(join(repositoryRoot, ".tmp", "codex", "config.toml"), "utf-8")).toBe("model = \"gpt-5.5\"\n");
   });
 
@@ -198,9 +198,9 @@ describe("Codex harness build plugin", () => {
     expect(await readlink(join(repositoryRoot, ".output", "codex", "developer", "config.toml"))).toBe(
       join(repositoryRoot, ".output", "codex", "default", "config.toml"),
     );
-    expect(await readlink(join(repositoryRoot, ".output", "codex", "developer", "auth.json"))).toBe(
-      join(repositoryRoot, ".output", "codex", "default", "auth.json"),
-    );
+    await expect(lstat(join(repositoryRoot, ".output", "codex", "developer", "auth.json"))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
     expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "prompts", "review.md"), "utf-8")).toBe(
       "Review the default changes.\n",
     );

@@ -1,4 +1,4 @@
-import { mkdir, readdir, symlink, writeFile } from "fs/promises";
+import { mkdir, readFile, readdir, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
@@ -12,6 +12,7 @@ import type {
 } from "../../../scripts/lib/harnessBuild";
 import { createExternalProfileHelper } from "../../../scripts/lib/createExternalProfileHelper";
 import { getProfileLocalCommandOutputName } from "../../../scripts/lib/profileLocalAssetNames";
+import { buildMutableCodexConfig } from "./buildMutableCodexConfig";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
 const CODEX_MUTABLE_STATE_DIR_NAME = "codex";
@@ -33,19 +34,45 @@ function getMutableCodexAuthPath(repositoryRoot: string): string {
   return join(getMutableCodexStateDir(repositoryRoot), "auth.json");
 }
 
-async function seedMutableCodexConfig(context: IProfileBuildContext): Promise<string> {
-  const mutableConfigPath = getMutableCodexConfigPath(context.templateContext.repo_root);
-  if (existsSync(mutableConfigPath)) {
-    return mutableConfigPath;
-  }
+function getManagedCodexConfigSnapshotPath(repositoryRoot: string): string {
+  return join(getMutableCodexStateDir(repositoryRoot), "managed-config.json");
+}
 
+async function renderCodexConfigSeed(context: IProfileBuildContext): Promise<string> {
   const sourceConfigPath = join(context.harnessDir, "config.toml");
   if (!existsSync(sourceConfigPath)) {
     throw new Error(`Codex harness config seed does not exist: ${sourceConfigPath}`);
   }
 
+  const sourceConfigText = await readFile(sourceConfigPath, "utf-8");
+  return renderTemplate({
+    content: sourceConfigText,
+    sourcePath: sourceConfigPath,
+    repositoryRoot: context.templateContext.repo_root,
+    variables: context.templateContext,
+    environment: process.env,
+  });
+}
+
+async function seedMutableCodexConfig(context: IProfileBuildContext): Promise<string> {
+  const mutableConfigPath = getMutableCodexConfigPath(context.templateContext.repo_root);
+  const managedConfigSnapshotPath = getManagedCodexConfigSnapshotPath(context.templateContext.repo_root);
+  const sourceConfigText = await renderCodexConfigSeed(context);
+  const currentConfigText = existsSync(mutableConfigPath)
+    ? await readFile(mutableConfigPath, "utf-8")
+    : null;
+  const previousManagedConfigText = existsSync(managedConfigSnapshotPath)
+    ? await readFile(managedConfigSnapshotPath, "utf-8")
+    : null;
+  const nextConfig = buildMutableCodexConfig({
+    currentConfigText,
+    previousManagedConfigText,
+    sourceConfigText,
+  });
+
   await mkdir(getMutableCodexStateDir(context.templateContext.repo_root), { recursive: true });
-  await context.buildSupport.copyPathWithTemplateVariables(sourceConfigPath, mutableConfigPath, context.templateContext);
+  await writeFile(mutableConfigPath, nextConfig.configText, "utf-8");
+  await writeFile(managedConfigSnapshotPath, nextConfig.managedConfigSnapshotText, "utf-8");
   return mutableConfigPath;
 }
 
@@ -56,6 +83,19 @@ async function stageMutableCodexState(context: IProfileBuildContext, profileOutp
   await mkdir(getMutableCodexStateDir(context.templateContext.repo_root), { recursive: true });
   await symlink(mutableConfigPath, join(profileOutputDir, "config.toml"));
   await symlink(mutableAuthPath, join(profileOutputDir, "auth.json"));
+}
+
+async function stageHarnessRules(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
+  const harnessRulesDir = join(context.harnessDir, "rules");
+  if (!existsSync(harnessRulesDir)) {
+    return;
+  }
+
+  await context.buildSupport.copyDirectoryWithTemplateVariables(
+    harnessRulesDir,
+    join(profileOutputDir, "rules"),
+    context.templateContext,
+  );
 }
 
 async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir: string): Promise<void> {
@@ -134,6 +174,15 @@ async function renderSystemPrompt(context: IProfileBuildContext): Promise<string
   });
 }
 
+async function stageProfileAgentsFile(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
+  const renderedSystemPrompt = await renderSystemPrompt(context);
+  if (renderedSystemPrompt.trim().length === 0) {
+    return;
+  }
+
+  await writeFile(join(profileOutputDir, "AGENTS.md"), `${renderedSystemPrompt.trim()}\n`, "utf-8");
+}
+
 async function stageProfile(context: IProfileBuildContext): Promise<void> {
   const profileOutputDir = getProfileOutputDir(context.outputDir, context.profileName);
   const promptsDir = join(profileOutputDir, "prompts");
@@ -141,14 +190,12 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   const isDefaultProfile = context.profileName === DEFAULT_PROFILE_NAME;
 
   await mkdir(skillsDir, { recursive: true });
+  await stageProfileAgentsFile(context, profileOutputDir);
+
   if (isDefaultProfile) {
-    const renderedSystemPrompt = await renderSystemPrompt(context);
     await mkdir(promptsDir, { recursive: true });
     await stageMutableCodexState(context, profileOutputDir);
-
-    if (renderedSystemPrompt.trim().length > 0) {
-      await writeFile(join(profileOutputDir, "AGENTS.md"), `${renderedSystemPrompt.trim()}\n`, "utf-8");
-    }
+    await stageHarnessRules(context, profileOutputDir);
 
     await context.buildSupport.stageProfileAssets(context, {
       commandsDir: promptsDir,
@@ -184,7 +231,7 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     if (profileEntry.name !== DEFAULT_PROFILE_NAME) {
       const profileOutputDir = join(codexOutputDir, profileEntry.name);
       for (const defaultProfileEntry of defaultProfileEntries) {
-        if (defaultProfileEntry.name === "skills") {
+        if (defaultProfileEntry.name === "skills" || defaultProfileEntry.name === "AGENTS.md") {
           continue;
         }
 

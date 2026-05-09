@@ -1,0 +1,21 @@
+prefix_rule(
+    pattern = ["git", "checkout"],
+    decision = "forbidden",
+    justification = "Use a non-mutating git inspection command, or ask the user to run checkout explicitly.",
+    match = [
+        "git checkout main",
+        "git checkout -- package.json",
+        "git checkout -b feature/example",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "reset"],
+    decision = "forbidden",
+    justification = "Use non-destructive git inspection commands instead; reset rewrites worktree, index, or history state.",
+    match = [
+        "git reset --hard HEAD",
+        "git reset HEAD~1",
+        "git reset -- package.json",
+    ],
+)

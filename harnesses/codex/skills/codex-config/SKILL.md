@@ -30,6 +30,7 @@ Use this skill for Codex configuration work rather than generic prompting or ski
    - Trusted-project status decides whether project-local config, hooks, and rules load at all.
    - Provider settings, MCP settings, and tool gates often have per-profile or per-app overrides.
 5. Read `references/configuration.md` whenever you need exact key families, lesser-known knobs, or `requirements.toml` policy details.
+6. Read `references/harness-maintenance.md` before changing checked-in Codex harness policies, rules, or Codex-only skills in this registry.
 
 ## Working rules
 
@@ -40,7 +41,9 @@ Use this skill for Codex configuration work rather than generic prompting or ski
 - For built-in OpenAI routing changes, prefer `openai_base_url` instead of inventing a duplicate custom provider.
 - For hooks, note that a single layer can define either `hooks.json` or inline `[hooks]`; Codex loads both if present and warns.
 - For project trust, state plainly that untrusted projects skip project-local `.codex/config.toml`, hooks, and rules.
+- For this registry, edit Codex harness source under `{{repo_root}}/harnesses/codex/`, then run `bun run build`; do not hand-edit `{{output_dir}}/codex/`.
 
 ## Read this reference on demand
 
 - `references/configuration.md` — comprehensive configuration guide organized by layer, key family, security model, override scope, and admin policy.
+- `references/harness-maintenance.md` — repo-local workflow for Codex harness policies, exec rules, and Codex-only skills under `{{repo_root}}/harnesses/codex/`.

@@ -126,6 +126,7 @@ describe("Codex harness build plugin", () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/rules/default.rules", "prefix_rule(pattern = [\"git\", \"reset\"], decision = \"forbidden\")\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/skills/harness-skill/SKILL.md", "# Harness skill\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
     await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
@@ -151,6 +152,9 @@ describe("Codex harness build plugin", () => {
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe(
       "# Harness skill\n",
     );
+    expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "rules", "default.rules"), "utf-8")).toBe(
+      "prefix_rule(pattern = [\"git\", \"reset\"], decision = \"forbidden\")\n",
+    );
     expect(await readlink(join(repositoryRoot, ".output", "codex", "default", "config.toml"))).toBe(
       join(repositoryRoot, ".tmp", "codex", "config.toml"),
     );
@@ -160,7 +164,7 @@ describe("Codex harness build plugin", () => {
     expect(await readFile(join(repositoryRoot, ".tmp", "codex", "config.toml"), "utf-8")).toBe("model = \"gpt-5.5\"\n");
   });
 
-  it("symlinks non-default Codex files from default and keeps profile-specific skills", async () => {
+  it("builds per-profile AGENTS.md and symlinks other shared non-default Codex files", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
     await writeTestFile(repositoryRoot, "commands/developer-only.md", "Developer-only command.\n");
@@ -181,12 +185,12 @@ describe("Codex harness build plugin", () => {
       globalMatchedSkills: ["developer-shared-skill"],
       profileLocalCommands: ["local.md"],
       profileLocalSkills: ["local-skill"],
-      systemPrompt: "Developer-only instructions.\nShould not ship here.",
+      systemPrompt: "Developer-only instructions.\nShould ship here.",
     }));
     await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
 
-    expect(await readlink(join(repositoryRoot, ".output", "codex", "developer", "AGENTS.md"))).toBe(
-      join(repositoryRoot, ".output", "codex", "default", "AGENTS.md"),
+    expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "AGENTS.md"), "utf-8")).toBe(
+      "Developer-only instructions.\nShould ship here.\n",
     );
     expect(await readlink(join(repositoryRoot, ".output", "codex", "developer", "prompts"))).toBe(
       join(repositoryRoot, ".output", "codex", "default", "prompts"),
@@ -196,9 +200,6 @@ describe("Codex harness build plugin", () => {
     );
     expect(await readlink(join(repositoryRoot, ".output", "codex", "developer", "auth.json"))).toBe(
       join(repositoryRoot, ".output", "codex", "default", "auth.json"),
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "AGENTS.md"), "utf-8")).toBe(
-      "Default instructions.\nStay shared.\n",
     );
     expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "prompts", "review.md"), "utf-8")).toBe(
       "Review the default changes.\n",
@@ -217,7 +218,7 @@ describe("Codex harness build plugin", () => {
     );
   });
 
-  it("preserves an existing mutable Codex config outside generated output", async () => {
+  it("preserves unmanaged entries in an existing mutable Codex config", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
@@ -230,7 +231,54 @@ describe("Codex harness build plugin", () => {
     await getStageProfile()(createProfileContext(repositoryRoot, "default"));
 
     expect(await readFile(join(repositoryRoot, ".tmp", "codex", "config.toml"), "utf-8")).toBe(
-      "approval_policy = \"never\"\n",
+      "approval_policy = \"never\"\nmodel = \"gpt-5.5\"\n",
+    );
+  });
+
+  it("refreshes existing mutable Codex config from the harness seed while preserving local state", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n\n[features]\ngoals = true\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/skills/harness-skill/SKILL.md", "# Harness skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(
+      repositoryRoot,
+      ".tmp/codex/config.toml",
+      "model = \"gpt-4.1\"\n\n[projects.\"/repo\"]\ntrust_level = \"trusted\"\n",
+    );
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
+
+    expect(await readFile(join(repositoryRoot, ".tmp", "codex", "config.toml"), "utf-8")).toBe(
+      "model = \"gpt-5.5\"\n\n[projects.\"/repo\"]\ntrust_level = \"trusted\"\n\n[features]\ngoals = true\n",
+    );
+  });
+
+  it("removes stale managed Codex config keys when a newer harness seed omits them", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/skills/harness-skill/SKILL.md", "# Harness skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(
+      repositoryRoot,
+      ".tmp/codex/config.toml",
+      "model = \"gpt-4.1\"\n\n[features]\ngoals = true\n\n[projects.\"/repo\"]\ntrust_level = \"trusted\"\n",
+    );
+    await writeTestFile(
+      repositoryRoot,
+      ".tmp/codex/managed-config.json",
+      `${JSON.stringify({ model: "gpt-4.1", features: { goals: true } }, null, 2)}\n`,
+    );
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
+
+    expect(await readFile(join(repositoryRoot, ".tmp", "codex", "config.toml"), "utf-8")).toBe(
+      "model = \"gpt-5.5\"\n\n[projects.\"/repo\"]\ntrust_level = \"trusted\"\n",
     );
   });
 

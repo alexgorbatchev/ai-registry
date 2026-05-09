@@ -3,6 +3,8 @@ import { existsSync } from "fs";
 import { join, relative } from "path";
 import { homedir } from "os";
 
+import { renderTemplate } from "@alexgorbatchev/template-resolver";
+
 import type {
   IProfileBuildContext,
   IUnifiedHarnessBuildContext,
@@ -55,6 +57,33 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsOutputDir
   }
 }
 
+async function renderSystemPrompt(context: IProfileBuildContext): Promise<string> {
+  const systemPrompt = typeof context.manifest.system_prompt === "string"
+    ? context.manifest.system_prompt
+    : "";
+
+  if (systemPrompt.trim().length === 0) {
+    return "";
+  }
+
+  return renderTemplate({
+    content: systemPrompt,
+    sourcePath: join(context.profileDir, "profile.yaml"),
+    repositoryRoot: context.templateContext.repo_root,
+    variables: context.templateContext,
+    environment: process.env,
+  });
+}
+
+async function stageProfileAppendSystemFile(context: IProfileBuildContext, profileStagingDir: string): Promise<void> {
+  const renderedSystemPrompt = await renderSystemPrompt(context);
+  if (renderedSystemPrompt.trim().length === 0) {
+    return;
+  }
+
+  await writeFile(join(profileStagingDir, APPEND_SYSTEM_FILE_NAME), `${renderedSystemPrompt.trim()}\n`, "utf-8");
+}
+
 async function stageProfile(context: IProfileBuildContext): Promise<void> {
   assertSupportedPiManifest(context.manifest, context.profileName);
 
@@ -63,15 +92,10 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   const isDefaultProfile = context.profileName === DEFAULT_PROFILE_NAME;
 
   await mkdir(profileStagingDir, { recursive: true });
+  await stageProfileAppendSystemFile(context, profileStagingDir);
 
   if (isDefaultProfile) {
     const promptsOutputDir = join(profileStagingDir, "prompts");
-    const systemPrompt = typeof context.manifest.system_prompt === "string"
-      ? context.manifest.system_prompt.trim()
-      : "";
-    if (systemPrompt.length > 0) {
-      await writeFile(join(profileStagingDir, APPEND_SYSTEM_FILE_NAME), `${systemPrompt}\n`, "utf-8");
-    }
 
     await context.buildSupport.stageProfileAssets(context, {
       commandsDir: promptsOutputDir,
@@ -144,15 +168,15 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       await context.buildSupport.mergeDirectory(join(stagedProfileDir, "skills"), join(visibleProfileDir, "skills"));
       await context.buildSupport.mergeDirectory(join(context.harnessDir, "skills"), join(visibleProfileDir, "skills"));
 
+      const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
+      if (existsSync(stagedAppendSystemPath)) {
+        await copyFile(stagedAppendSystemPath, join(visibleProfileDir, APPEND_SYSTEM_FILE_NAME));
+      }
+
       if (isDefaultProfile) {
         await copyFile(masterSettingsPath, join(visibleProfileDir, "settings.json"));
         await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
         await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
-
-        const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
-        if (existsSync(stagedAppendSystemPath)) {
-          await copyFile(stagedAppendSystemPath, join(visibleProfileDir, APPEND_SYSTEM_FILE_NAME));
-        }
 
         await mkdir(join(visibleProfileDir, "sessions"), { recursive: true });
         continue;
@@ -164,7 +188,7 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     const defaultProfileEntries = await readdir(defaultProfileDir, { withFileTypes: true });
     for (const nonDefaultProfileDir of nonDefaultProfileDirs) {
       for (const defaultProfileEntry of defaultProfileEntries) {
-        if (defaultProfileEntry.name === "skills") {
+        if (defaultProfileEntry.name === "skills" || defaultProfileEntry.name === APPEND_SYSTEM_FILE_NAME) {
           continue;
         }
 

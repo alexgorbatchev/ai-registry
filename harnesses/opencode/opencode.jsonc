@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "autoupdate": false,
+  "autoupdate": true,
   "formatter": false,
   "default_agent": "developer",
 

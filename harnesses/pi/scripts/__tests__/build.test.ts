@@ -252,7 +252,7 @@ describe("Pi harness bootstrap targets", () => {
     expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isSymbolicLink()).toBe(false);
   });
 
-  it("symlinks non-default Pi files from default and keeps profile-specific skills", async () => {
+  it("builds per-profile APPEND_SYSTEM.md and symlinks other shared Pi files", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
     await writeTestFile(repositoryRoot, "commands/developer-only.md", "Developer-only command.\n");
@@ -277,12 +277,12 @@ describe("Pi harness bootstrap targets", () => {
       globalMatchedSkills: ["developer-shared-skill"],
       profileLocalCommands: ["local.md"],
       profileLocalSkills: ["local-skill"],
-      systemPrompt: "Developer-only instructions.\nShould not ship here.",
+      systemPrompt: "Developer-only instructions.\nShould ship here.",
     }));
     await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
 
-    expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "APPEND_SYSTEM.md"))).toBe(
-      join(repositoryRoot, ".output", "pi", "default", "APPEND_SYSTEM.md"),
+    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "APPEND_SYSTEM.md"), "utf-8")).toBe(
+      "Developer-only instructions.\nShould ship here.\n",
     );
     expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "settings.json"))).toBe(
       join(repositoryRoot, ".output", "pi", "default", "settings.json"),
@@ -292,9 +292,6 @@ describe("Pi harness bootstrap targets", () => {
     );
     expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "sessions"))).toBe(
       join(repositoryRoot, ".output", "pi", "default", "sessions"),
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "APPEND_SYSTEM.md"), "utf-8")).toBe(
-      "Default instructions.\nStay shared.\n",
     );
     expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "prompts", "review.md"), "utf-8")).toBe(
       "Review the default changes.\n",

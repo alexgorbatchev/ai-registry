@@ -21,9 +21,9 @@ Harnesses are only built into `.output/` when they provide `harnesses/<name>/scr
 - Preserve upstream filenames when refreshing the snapshot so links and diffs stay easy to compare.
 - Keep the Codex unified-output plugin in `harnesses/codex/scripts/build.ts`.
 - Put Codex-only shipped skills under `harnesses/codex/skills/`; the Codex build merges them into each generated `.output/codex/<profile>/skills/` root.
-- The Codex harness treats `.output/codex/default/` as the shared Codex base. Every non-default generated profile root under `.output/codex/<profile>/` symlinks all top-level entries from `default/` except `skills/`.
-- Map reusable commands and the generated home-level `AGENTS.md` only from the `default` profile. Generate selected skills into each profile's own Codex `skills/` directory.
-- Treat `harnesses/codex/config.toml` as the seed for the mutable Codex config file. The generated `default` Codex root symlinks `config.toml` to `{{repo_root}}/.tmp/codex/`, and non-default generated Codex roots inherit that shared entry by symlinking back to `default/`. Runtime files such as `auth.json` remain Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
+- The Codex harness treats `.output/codex/default/` as the shared Codex base. Every non-default generated profile root under `.output/codex/<profile>/` symlinks all top-level entries from `default/` except `AGENTS.md` and `skills/`.
+- Map reusable commands only from the `default` profile. Render `AGENTS.md` separately for each profile from that profile's `system_prompt`, and generate selected skills into each profile's own Codex `skills/` directory.
+- Treat `harnesses/codex/config.toml` as the continuously managed defaults for the mutable Codex config file, not a one-time seed. The generated `default` Codex root symlinks only `config.toml` to `{{repo_root}}/.tmp/codex/`, and non-default generated Codex roots inherit that shared entry by symlinking back to `default/`. On each build, the Codex harness merges the current managed defaults into `{{repo_root}}/.tmp/codex/config.toml`, preserves Codex-owned local state, and records the previously managed subset in `{{repo_root}}/.tmp/codex/managed-config.json` so removed managed keys can be cleaned up safely. Runtime files such as `auth.json` remain Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
 - Plain `bun run bootstrap` links the generated `default` Codex profile root into `${CODEX_HOME:-~/.codex}`. Use `bun run bootstrap -- --codex-profile <profile>` to override that link with another generated Codex profile root.
 - Generate `codex` for the `default` profile and `codex-<profile>` for other generated Codex profiles under `.output/bin/`.
 
@@ -42,8 +42,8 @@ Harnesses are only built into `.output/` when they provide `harnesses/<name>/scr
 
 - Keep shipped Pi skeleton files under `harnesses/pi/agent/`.
 - Keep the Pi unified-output plugin in `harnesses/pi/scripts/build.ts`.
-- The Pi harness treats `.output/pi/default/` as the shared Pi base. Every non-default generated profile root under `.output/pi/<profile>/` symlinks all top-level entries from `default/` except `skills/`.
-- Map reusable commands, `APPEND_SYSTEM.md`, the shared `settings.json`, and the static shared `sessions/` directory only from the `default` profile. Generate selected skills into each profile's own Pi `skills/` directory.
+- The Pi harness treats `.output/pi/default/` as the shared Pi base. Every non-default generated profile root under `.output/pi/<profile>/` symlinks all top-level entries from `default/` except `APPEND_SYSTEM.md` and `skills/`.
+- Map reusable commands, the shared `settings.json`, and the static shared `sessions/` directory only from the `default` profile. Render `APPEND_SYSTEM.md` separately for each profile from that profile's `system_prompt`, and generate selected skills into each profile's own Pi `skills/` directory.
 - Plain `bun run bootstrap` links the generated `default` Pi profile root into `${PI_CODING_AGENT_DIR:-~/.pi/agent}`. Use `bun run bootstrap -- --pi-profile <profile>` to override that link with another generated Pi profile root.
 - Generate `pi` for the `default` profile and `pi-<profile>` for other generated Pi profiles under `.output/bin/`.
 - Do not silently ignore profile `tools` or `permission`; the Pi build must fail until an exact Pi-native mapping exists.

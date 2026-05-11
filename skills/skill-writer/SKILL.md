@@ -344,6 +344,8 @@ Write the YAML frontmatter with `name`, `description`, and `author`:
   - Include what the skill does, the kinds of requests or artifacts that should trigger it, and optionally one nearby non-trigger boundary if that materially improves routing.
   - Include all true trigger information here, not buried only in the body. The body is loaded after triggering.
   - Do **not** put workflow rules, command requirements, validation criteria, or step-by-step instructions here. Words like "always", "never", "require", and long procedural clauses usually belong in the body.
+  - Narrow exception for project-specific addenda: when authoring a project-local companion skill named `<base-skill>-addendum`, use the description to declare the dependency because current harnesses route skills from `name` and `description`. Use this exact pattern: `If <base-skill> skill is used, this skill must be used as well.`
+  - Keep that exception narrow. Do not make the base global skill describe project-local addenda, do not create multiple addenda for the same base skill in one project, and do not duplicate the global skill into the project just to add project-specific rules.
   - Good example for a `docx` skill: "Create, edit, and inspect `.docx` documents. Use when the task involves Word files, tracked changes, comments, or formatting-preserving document updates."
   - Anti-pattern: "Create DOCX documents and always preserve tracked changes, require comment anchors before edits, and stop to ask for clarification if formatting intent is ambiguous." Those are usage instructions, not trigger metadata.
 - `author`: Use `alexgorbatchev` for skills maintained in this registry.
@@ -354,6 +356,8 @@ If you need extra frontmatter for a specific distribution flow, verify first tha
 ##### Body
 
 Write instructions for using the skill and its bundled resources.
+
+For a project-local `<base-skill>-addendum`, keep the body focused on the project-specific delta from the base skill. State clearly that project-specific guidance in the addendum supersedes conflicting guidance from the base skill for that project, and avoid repeating unchanged parts of the base skill.
 
 ### Step 5: Packaging a Skill
 

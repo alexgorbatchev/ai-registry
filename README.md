@@ -125,6 +125,23 @@ npx skills add owner/repo --skill react-development
 
 Use `--agent` to target specific harnesses and `-g` to install globally.
 
+### Project-specific skill addenda
+
+When a project needs to modify the behavior of a reusable base skill, use a project-local addendum skill instead of copying the full base skill into the project.
+
+- Name the project-local skill `<base-skill>-addendum`.
+- Write its description with this exact pattern so harnesses can route it from `name` and `description` alone: `If <base-skill> skill is used, this skill must be used as well.`
+- Put only the project-specific delta in the addendum body.
+- If the addendum conflicts with the base skill, the addendum wins for that project.
+- Do not make the base global skill track project-local addenda.
+- Do not create multiple addenda for the same base skill in one project.
+
+Example:
+
+- Base skill: `example-skill`
+- Project-local addendum: `example-skill-addendum`
+- Addendum description: `If example-skill skill is used, this skill must be used as well.`
+
 ### Vendoring External Skills with `npx skills`
 
 This repo can also vendor third-party skills into its canonical top-level `skills/` directory.

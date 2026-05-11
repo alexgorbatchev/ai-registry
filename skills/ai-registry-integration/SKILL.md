@@ -44,7 +44,11 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Create a folder under the skills_dir token for the new skill.
 - Put the main instructions in `SKILL.md` within that skill folder.
 - Start `SKILL.md` with YAML frontmatter containing `name`, `description`, and `author: alexgorbatchev`.
-- Keep each skill self-contained. Do not assume another skill is present.
+- Keep base skills self-contained. Project-local `<base-skill>-addendum` skills are the narrow exception and may depend on the matching base skill.
+- For project-specific overrides to an existing skill, use a project-local addendum skill named `<base-skill>-addendum` instead of copying the full global skill into the project.
+- Write the addendum description so routing can discover the dependency through `name` and `description` alone: `If <base-skill> skill is used, this skill must be used as well.`
+- Put only the project-specific delta in the addendum body. When project-specific guidance conflicts with the base skill, the addendum supersedes the base skill for that project.
+- Do not make a global skill refer to project-local addenda, and do not create multiple addenda for the same base skill in one project.
 - Add bundled resources only when needed, inside the same skill folder:
   - `scripts/` beneath the skill folder
   - `references/` beneath the skill folder

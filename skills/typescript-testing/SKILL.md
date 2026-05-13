@@ -4,6 +4,7 @@ description: >-
   TypeScript testing guidelines and patterns. Use when writing, reviewing, or
   fixing TypeScript tests. Covers test structure, assertions, snapshots,
   conditional logic restrictions, and test organization patterns.
+author: alexgorbatchev
 ---
 
 # TypeScript Testing
@@ -15,15 +16,15 @@ Mandatory testing guidelines for TypeScript projects using Bun's test runner.
 **Before writing tests:**
 
 - Review adjacent tests in the same `__tests__` directory for patterns and conventions
-- Check existing fixtures in `__tests__/fixtures` and reuse whenever possible
-- Check for shared testing helpers or package-specific testing utilities
+- Check existing fixtures and shared testing helpers before creating new ones
 - Reuse existing testing helpers (mocks, factories, utilities) before creating new ones
-- Only create new fixtures or helpers when existing ones don't meet the test requirements
+- Only create new fixtures or helpers when existing ones do not meet the test requirements
 
 **File naming and location:**
 
-- Test files: `*.test.ts` in `__tests__` directory **directly adjacent to the code being tested**
-- Fixtures: `fixtures--{purpose}.ts` in `__tests__/fixtures` with `FIXTURE_[SNAKE_CASE]` exports
+- Test files: `*.test.ts` or `*.test.tsx` in a `__tests__` directory **directly adjacent to the code being tested**
+- Shared fixtures: a single local `./fixtures` entrypoint per test area using `fixtures.ts`, `fixtures.tsx`, or `fixtures/`
+- Fixture exports: `fixture_<lowerCamelCase>` for constant fixtures and `factory_<lowerCamelCase>` for factories
 
 **Colocation rule:** The `__tests__` directory must be a sibling of the source file(s) it tests. Each directory containing source files should have its own `__tests__` directory.
 
@@ -41,7 +42,8 @@ packages/shell-emissions/src/
 │   ├── guards.ts
 │   └── __tests__/
 │       ├── factories.test.ts
-│       └── guards.test.ts
+│       ├── guards.test.ts
+│       └── fixtures.ts
 └── renderer/
     ├── BlockRenderer.ts
     └── __tests__/
@@ -86,6 +88,14 @@ expect(result.message).toBe('Installation failed');
 
 Use `toMatchInlineSnapshot()` for multi-line strings or complex output.
 
+### No Manual Throws
+
+Do not use `throw new Error(...)` as an ad-hoc failure path inside committed tests. Use matchers, `assert(...)`, or `assert.fail(...)` instead.
+
+### No Module Mocking
+
+Do not mock whole modules. Inject collaborators and stub the injected dependency instead.
+
 ## Strict Prohibitions
 
 - **DO NOT** delete or skip tests to make them pass
@@ -93,6 +103,16 @@ Use `toMatchInlineSnapshot()` for multi-line strings or complex output.
 - **DO NOT** pipe CLI test commands through `grep`
 - **DO NOT** use conditional logic (`if`, `else`, `switch`, ternary)
 - **DO NOT** use partial string matches (`toContain`, `toMatch`)
+- **DO NOT** export from test files
+- **DO NOT** import runtime code from `__tests__/` into non-test modules
+
+## Fixture Rules
+
+- Keep shared fixture exports behind the local `./fixtures` entrypoint.
+- Give fixture exports explicit concrete types imported from outside the fixture file.
+- Do not declare local interfaces, type aliases, or enums inside fixture files.
+- Do not declare `fixture_...` or `factory_...` bindings inline inside consumer tests.
+- Import fixtures with named imports from `./fixtures` and do not alias those bindings.
 
 ## Test Structure Best Practices
 

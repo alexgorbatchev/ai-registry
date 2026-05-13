@@ -5,6 +5,7 @@ description: >-
   reviewing, or modifying TypeScript code. Covers type safety, naming
   conventions, file organization, module structure, functional programming
   patterns, and import/export rules.
+author: alexgorbatchev
 ---
 
 # TypeScript Code Quality
@@ -15,6 +16,8 @@ description: >-
 - Type casting with `as Type` (exceptions: branded types, DOM elements, test mocks)
 - `as any`
 - Inline imports or `require()` statements
+- Inline type imports such as `import("vite").PluginOption`
+- Inline structural type expressions when inference or a named type can carry the contract
 - Unjustified dynamic imports (`await import()`) outside lazy-loading, optional dependency, or plugin boundaries
 - `import * as Foo` or `export * as Foo`
 - Unnecessary renaming imports (`import { Foo as Bar }`) when there is no name conflict or clarity benefit
@@ -35,7 +38,7 @@ Each file should have a single primary export. If multiple related items are exp
 - Constants: `constants.ts`
 - Utility collections: `stringUtils.ts`, `dateUtils.ts`
 - Type collections: `types.ts` (must not contain implementations)
-- Index files: `index.ts` (re-exports public API)
+- Index files: `index.ts` (re-exports public API only)
 - Tests: `{sourceFileName}.test.ts` in `__tests__/`
 
 ## Naming Conventions
@@ -150,7 +153,7 @@ export function createUser(name: string) {
 
 ### Use Existing Types
 
-Variables not from function calls need explicit types. Never inline type definitions:
+Variables not from function calls need explicit types. Prefer existing named types or inference; avoid inline type definitions:
 
 ```typescript
 // ✅
@@ -158,8 +161,16 @@ type Metadata = { tarballUrl: string; };
 type OperationResult = { success: boolean; metadata: Metadata; };
 function getResults(): Promise<OperationResult>;
 
+// ✅
+import type { PluginOption } from 'vite';
+
+const plugin: PluginOption = {};
+
 // ❌
 function getResults(): Promise<{ success: boolean; metadata: { tarballUrl: string; }; }>;
+
+// ❌
+const plugin: import('vite').PluginOption = {};
 ```
 
 ### Type Guards Over Assertions
@@ -190,7 +201,7 @@ Re-export public API through `index.ts` files at package/module boundaries. Inte
 
 ```
 src/
-├── index.ts           // Public API re-exports
+├── index.ts           // Public API re-exports only
 ├── UserService.ts
 ├── validation/
 │   ├── index.ts       // Public validation API
@@ -216,6 +227,14 @@ export * from './validation';
 export * from './createUser';
 export * from './UserService';
 ```
+
+### Type/Value Ownership
+
+- Keep `index.ts` as a pure barrel instead of mixing in local runtime logic.
+- Keep `constants.ts` value-only.
+- Keep `types.ts` type-only.
+- Do not import types from `constants.ts`.
+- Do not leak values from `types.ts`.
 
 ## Functional Programming
 
@@ -246,4 +265,5 @@ Configuration objects derived from external sources (like environment variables)
 - No file header comments
 - Imports at top of file, before any other code
 - Use shortest import path for `@foo/bar` packages
+- Indent multiline template literals to match the surrounding code
 - Use modern TypeScript and ECMAScript features when supported by the project's runtime targets, tsconfig, and polyfill/transpile strategy

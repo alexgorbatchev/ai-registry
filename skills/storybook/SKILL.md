@@ -1,32 +1,61 @@
 ---
 name: storybook
-description: Use whenever touching Storybook files.
+description: Create and update Storybook stories, story-owned fixtures, and `play` tests. Use when touching `*.stories.*` files or Storybook-driven component coverage; use `storybook-review` instead for review-only audits.
 author: alexgorbatchev
 ---
 
 # Storybook
 
-Use `packages/devhost/src/devtools/features/externalDevtoolsPanel/stories/ExternalDevtoolsPanel.stories.tsx` as the reference model for shared setup helpers and behavior-focused `play` tests.
-
 For Storybook review-only tasks, use `{{skills_dir}}/storybook-review/SKILL.md`.
+
+If the repository uses `@alexgorbatchev/typescript-ai-policy`, treat that package's CLI guidance and lint rules as hard requirements for Storybook files.
 
 ## Workflow
 
 1. Inspect the existing Storybook and test setup before adding anything new.
-   - If the repo already has Storybook browser tests, follow its conventions.
+   - If the repo already has Storybook browser tests, follow its conventions unless they conflict with an explicit lint or policy contract.
 2. Pick the correct test layer before writing coverage.
    - **Pure transforms, parsers, selectors, reducers, helpers** → unit tests.
    - **Component rendering, focus, keyboard, async state, modal behavior** → Storybook stories plus `play` functions.
    - **Navigation, persistence, network stacks, multi-page flows** → end-to-end tests.
-3. Represent each meaningful externally visible state or configuration with its own story.
-4. Reuse an existing story when it already expresses the needed UI state. Otherwise add a story for the exact state you need.
-5. Keep story harnesses deterministic.
+3. Treat Storybook as the canonical component-behavior artifact when the repo is story-first.
+   - Keep component structure and interaction coverage in the story layer instead of splitting the same behavior across ad-hoc story and test files.
+4. Represent each meaningful externally visible state or configuration with its own story.
+5. Reuse an existing story when it already expresses the needed UI state. Otherwise add a story for the exact state you need.
+6. Keep story harnesses deterministic.
    - Initialize state directly or via lazy `useState(() => ...)`.
    - Avoid mount-only `useEffect` resets that merely restate initial state.
    - Keep mocked callbacks and network boundaries explicit.
-6. Write behavior-focused `play` tests with `within`, `userEvent`, accessible queries, and observable assertions.
-7. Run the narrowest Storybook test target first, then the broader suite.
-8. Treat warnings and unhandled errors as failures. Fix the root cause instead of hiding the signal.
+7. Write behavior-focused `play` tests with `within`, `userEvent`, accessible queries, and observable assertions.
+8. Run the narrowest Storybook test target first, then the broader suite.
+9. Treat warnings and unhandled errors as failures. Fix the root cause instead of hiding the signal.
+
+## Policy-Driven Story File Contract
+
+When a repo uses `@alexgorbatchev/typescript-ai-policy`, follow this exact shape:
+
+- Put every `*.stories.tsx` file under a sibling `stories/` directory.
+- Keep each story file mapped to a sibling component ownership file by basename.
+- Bind the default export as a top-level typed const:
+
+  ```tsx
+  const meta: Meta<typeof ComponentName> = {
+    component: ComponentName,
+    title: "@scope/package/path/ComponentName",
+  };
+
+  export default meta;
+  ```
+
+- Do not use `as Meta<...>` or `satisfies Meta<...>` for the meta object. Use the const type annotation instead.
+- Set `meta.title` from the package-relative story path with structural `src/` and `stories/` segments removed.
+- Keep story exports limited to the approved Storybook surface. Move helpers and support code into fixture or helper modules instead of exporting them from the story file.
+- Give every exported story a typed `Story` binding and a `play` function.
+- Use the correct export shape:
+  - single exported story: `const Default: Story = { ... }; export { Default as ComponentName };`
+  - multiple exported stories: `export const StoryName: Story = { ... };`
+
+If the repo does not use that policy package, prefer the same typed-meta and typed-story patterns unless the local project documents a different contract.
 
 ## Coverage
 
@@ -53,11 +82,21 @@ Cover at least these user-visible scenarios when they exist:
 ## Story Authoring Rules
 
 - Create one story per meaningful user-visible state: loading, empty, populated, error, destructive confirm, disabled, submitting, and similar states.
+- Keep story files under the canonical story area for the owning component instead of colocating them as loose siblings beside runtime files.
 - Prefer lightweight harness components when local state is required.
 - Keep harness state close to the story file unless multiple story files need the same helper.
+- Move reusable helpers and shared fixtures out of the story file when they would otherwise become extra exports.
 - Expose accessible names for all interactive controls.
 - Add dialog semantics to modal components so stories and tests can target them reliably.
 - Keep assertions user-facing; do not assert implementation details, CSS class names, or DOM order unless that order is the product requirement.
+
+## Story Fixtures And Helpers
+
+If multiple stories need shared fixtures or factories, define them in the canonical fixture support area and import them through the fixture entrypoint.
+
+- Do not declare `fixture_...` or `factory_...` bindings inline inside consumer stories when the repo's policy requires fixture entrypoints.
+- Do not reach into private fixture implementation files from stories.
+- Keep fixture files focused on shared data and factories rather than story execution logic.
 
 ## Play Tests
 

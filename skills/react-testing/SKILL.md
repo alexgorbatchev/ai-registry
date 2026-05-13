@@ -28,8 +28,20 @@ Use this skill for React-specific testing strategy and failure analysis. Keep ge
    - Initialize state directly or via lazy `useState(() => ...)`.
    - Avoid mount-only `useEffect` resets that merely restate initial state.
    - Keep mocked callbacks and network boundaries explicit.
-5. Run the narrowest relevant test target first, then the broader suite.
-6. Treat warnings and unhandled errors as failures. Fix the root cause instead of hiding the signal.
+5. Keep test files under sibling `__tests__/` directories, keep shared fixtures behind a local `./fixtures` entrypoint, and keep test files private with no exports.
+6. Run the narrowest relevant test target first, then the broader suite.
+7. Treat warnings and unhandled errors as failures. Fix the root cause instead of hiding the signal.
+
+## Test file and fixture rules
+
+- Keep committed tests runnable by default.
+- Do not use conditional logic in committed tests; use separate cases or `assert(...)`-based narrowing that still executes.
+- Do not throw manually from test bodies.
+- Do not mock whole modules when dependency injection or explicit collaborator stubs can exercise the real wiring.
+- Keep runtime code out of `__tests__` imports.
+- Keep shared fixtures behind one local `./fixtures` entrypoint.
+- Use `fixture_<lowerCamelCase>` and `factory_<lowerCamelCase>` names for shared fixtures when the repository standardizes fixture naming.
+- Import fixtures from `./fixtures` with named imports and avoid aliasing those bindings.
 
 ## React Failure Policy
 

@@ -10,7 +10,7 @@ Use existing React patterns before introducing new ones. Preserve accessibility,
 
 ## Workflow
 
-1. Inspect the existing component, shared primitives, hooks, and nearby tests before editing.
+1. Inspect the existing component, shared primitives, hooks, stories, and nearby tests before editing.
 2. Reuse an existing component or hook when one already expresses the pattern.
 3. Keep rendering in JSX. Extract helpers or hooks instead of switching to `createElement`.
 4. Apply the test ID contract exactly when a tagged element is needed.
@@ -134,8 +134,11 @@ Keep enhancers presentation-oriented. If the trailing element is the component's
 ## Code organization rules
 
 - Organize code by feature or domain folders.
-- Name component files in PascalCase, matching the exported component name when the file primarily defines one component.
-- Name hook files in camelCase, matching the exported hook name when the file primarily defines one hook.
+- Name component files in PascalCase or kebab-case, matching the exported component name when the file primarily defines one component.
+- Name hook files in camelCase or kebab-case, matching the exported hook name when the file primarily defines one hook.
+- Keep each component story under a sibling `stories/` directory with a matching basename when the repo uses Storybook coverage.
+- Keep hook tests in a sibling `__tests__/` directory with a matching basename.
+- Keep raw intrinsic JSX and direct styling props inside component ownership files when the repository separates component-owned TSX from consumer TSX.
 - Do not dump unrelated modules into broad `lib/` directories.
 - When `lib/` is necessary, keep it for shared infrastructure and move feature-specific code into named subfolders such as `lib/githubExtraction/` or `lib/youtubeExtraction/`.
 
@@ -161,13 +164,13 @@ Before finishing a React change, verify all of the following:
 - product-surface consumers do not pass `className` or `style` to imported components for spacing, size, color, typography, layout, or state styling
 - optional leading and trailing visual slots use `startEnhancer` and `endEnhancer`
 - feature-specific modules live in named feature or domain folders instead of a broad unrelated `lib/` dump
-- component files use PascalCase and hook files use camelCase
+- component files match the exported component name and hook files match the exported hook name
 - repeated inline styles, consumer-side class names, wrapper markup, and visual constants were evaluated for extraction into shared components or variants
 - touched views and pages remain consistent in layout, colors, spacing, sizing, typography, and component states
 - no new `createElement` usage was introduced without an explicit documented exception
 - shared primitives were reused where appropriate
 - accessible queries remain possible for user-facing controls
-- relevant type and test commands were run
+- relevant stories, type checks, and tests were run
 
 ## Companion skills
 

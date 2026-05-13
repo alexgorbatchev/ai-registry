@@ -100,6 +100,7 @@ When an exception is truly required, isolate it, document why JSX is insufficien
 - Prefer function components and hooks over class components unless the codebase already requires a class boundary.
 - Keep props narrow and typed.
 - Expose supported visual choices through typed props owned by the component, such as `variant`, `size`, `tone`, `density`, `layout`, or explicit state props. Do not expose `className` or `style` from app or feature components as public styling escape hatches.
+- Use direct `style={...}` only for dynamic geometry that cannot be represented statically. Do not use inline styles for ordinary colors, spacing, typography, state styling, or other static presentation choices.
 - Treat any file rendering a React component imported from another module or package as a consumer. Product-surface consumers must not pass `className` or `style` to imported components to change spacing, size, color, typography, layout, or state styling. Add or extend a named variant on the owning component instead.
 - Use `startEnhancer` and `endEnhancer` prop names for optional leading and trailing visual slots around a component's main content. Do not invent one-off names like `leftIcon`, `rightElement`, `prefix`, `suffix`, or `actionSlot` for this shape unless the surrounding codebase already standardizes on them.
 - Extract pure transforms into helpers instead of embedding large calculations in render.
@@ -156,6 +157,7 @@ Before finishing a React change, verify all of the following:
 - child test IDs use `ComponentName--thing`
 - helper components with their own tagged roots use their own names
 - visual design choices use typed component-owned props, not app or feature component `className` or `style` escape hatches
+- direct `style={...}` is limited to dynamic geometry that cannot be represented statically
 - product-surface consumers do not pass `className` or `style` to imported components for spacing, size, color, typography, layout, or state styling
 - optional leading and trailing visual slots use `startEnhancer` and `endEnhancer`
 - feature-specific modules live in named feature or domain folders instead of a broad unrelated `lib/` dump

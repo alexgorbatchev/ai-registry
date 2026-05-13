@@ -134,10 +134,14 @@ Keep enhancers presentation-oriented. If the trailing element is the component's
 ## Code organization rules
 
 - Organize code by feature or domain folders.
+- Keep component ownership `.tsx` files under canonical `components/`, `templates/`, or `layouts/` directories instead of loose feature-root `.tsx` files.
 - Name component files in PascalCase or kebab-case, matching the exported component name when the file primarily defines one component.
 - Name hook files in camelCase or kebab-case, matching the exported hook name when the file primarily defines one hook.
+- Keep exported runtime hooks whose names start with `use` in direct-child `hooks/use*.ts[x]` ownership files.
 - Keep each component story under a sibling `stories/` directory with a matching basename when the repo uses Storybook coverage.
+- Keep story support files in that `stories/` area limited to `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`.
 - Keep hook tests in a sibling `__tests__/` directory with a matching basename.
+- Keep test support files in that `__tests__/` area limited to `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`.
 - Keep raw intrinsic JSX and direct styling props inside component ownership files when the repository separates component-owned TSX from consumer TSX.
 - Do not dump unrelated modules into broad `lib/` directories.
 - When `lib/` is necessary, keep it for shared infrastructure and move feature-specific code into named subfolders such as `lib/githubExtraction/` or `lib/youtubeExtraction/`.

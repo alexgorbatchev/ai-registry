@@ -29,6 +29,7 @@ Use this skill for React-specific testing strategy and failure analysis. Keep ge
    - Avoid mount-only `useEffect` resets that merely restate initial state.
    - Keep mocked callbacks and network boundaries explicit.
 5. Keep test files under sibling `__tests__/` directories, keep shared fixtures behind a local `./fixtures` entrypoint, and keep test files private with no exports.
+   - Reserve the `__tests__/` area for `*.test.ts[x]`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/` only.
 6. Run the narrowest relevant test target first, then the broader suite.
 7. Treat warnings and unhandled errors as failures. Fix the root cause instead of hiding the signal.
 

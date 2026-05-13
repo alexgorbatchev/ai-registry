@@ -26,6 +26,8 @@ Mandatory testing guidelines for TypeScript projects using Bun's test runner.
 - Shared fixtures: a single local `./fixtures` entrypoint per test area using `fixtures.ts`, `fixtures.tsx`, or `fixtures/`
 - Fixture exports: `fixture_<lowerCamelCase>` for constant fixtures and `factory_<lowerCamelCase>` for factories
 
+The `__tests__/` area is reserved for `*.test.ts[x]`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/` only.
+
 **Colocation rule:** The `__tests__` directory must be a sibling of the source file(s) it tests. Each directory containing source files should have its own `__tests__` directory.
 
 Example structure:

@@ -41,6 +41,13 @@ Each file should have a single primary export. If multiple related items are exp
 - Index files: `index.ts` (re-exports public API only)
 - Tests: `{sourceFileName}.test.ts` in `__tests__/`
 
+Also follow these ownership-location rules:
+
+- component ownership `.tsx` files live under `components/`, `templates/`, or `layouts/`
+- exported runtime hooks whose names start with `use` live in direct-child `hooks/use*.ts[x]` files
+- `stories/` directories are reserved for `*.stories.tsx`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`
+- `__tests__/` directories are reserved for `*.test.ts[x]`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`
+
 ## Naming Conventions
 
 | Pattern                | Use For                                   |

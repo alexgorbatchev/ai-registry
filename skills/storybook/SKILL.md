@@ -8,7 +8,7 @@ author: alexgorbatchev
 
 For Storybook review-only tasks, use `{{skills_dir}}/storybook-review/SKILL.md`.
 
-If the repository uses `@alexgorbatchev/typescript-ai-policy`, treat that package's CLI guidance and lint rules as hard requirements for Storybook files.
+Treat this repository's Storybook guidance and lint rules as hard requirements for Storybook files.
 
 ## Workflow
 
@@ -32,10 +32,11 @@ If the repository uses `@alexgorbatchev/typescript-ai-policy`, treat that packag
 
 ## Policy-Driven Story File Contract
 
-When a repo uses `@alexgorbatchev/typescript-ai-policy`, follow this exact shape:
+Follow this exact shape:
 
 - Put every `*.stories.tsx` file under a sibling `stories/` directory.
 - Keep each story file mapped to a sibling component ownership file by basename.
+- Keep the owning component itself under a canonical `components/`, `templates/`, or `layouts/` directory.
 - Bind the default export as a top-level typed const:
 
   ```tsx
@@ -55,7 +56,7 @@ When a repo uses `@alexgorbatchev/typescript-ai-policy`, follow this exact shape
   - single exported story: `const Default: Story = { ... }; export { Default as ComponentName };`
   - multiple exported stories: `export const StoryName: Story = { ... };`
 
-If the repo does not use that policy package, prefer the same typed-meta and typed-story patterns unless the local project documents a different contract.
+Use the same typed-meta and typed-story patterns consistently; do not rely on looser local conventions.
 
 ## Coverage
 
@@ -86,6 +87,7 @@ Cover at least these user-visible scenarios when they exist:
 - Prefer lightweight harness components when local state is required.
 - Keep harness state close to the story file unless multiple story files need the same helper.
 - Move reusable helpers and shared fixtures out of the story file when they would otherwise become extra exports.
+- Keep story support files inside the `stories/` area limited to `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`.
 - Expose accessible names for all interactive controls.
 - Add dialog semantics to modal components so stories and tests can target them reliably.
 - Keep assertions user-facing; do not assert implementation details, CSS class names, or DOM order unless that order is the product requirement.

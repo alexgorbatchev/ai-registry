@@ -1,11 +1,12 @@
 ---
 name: storybook-review
 description: Review Storybook stories and Storybook-owned testing coverage in this repository. Use when asked to audit `*.stories.*` files, play tests, or Storybook coverage quality without making implementation changes.
+author: alexgorbatchev
 ---
 
 # Storybook Review
 
-Read `storybook/SKILL.md` first. Treat every rule in that skill as the review rubric.
+Read `{{skills_dir}}/storybook/SKILL.md` first. Treat every rule in that skill as the review rubric.
 
 Do not modify the reviewed Storybook files while reviewing unless the user explicitly asks for fixes.
 
@@ -50,7 +51,7 @@ Use this exact report shape:
 Git SHA: <exact git SHA captured before the review>
 Overall: <PASS|FAIL>
 Files reviewed: <comma-separated list of reviewed files>
-Reference rubric: `.agents/skills/storybook/SKILL.md`
+Reference rubric: `{{skills_dir}}/storybook/SKILL.md`
 Summary: <short summary>
 
 ## Action checklist

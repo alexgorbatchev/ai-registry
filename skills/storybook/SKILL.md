@@ -1,13 +1,32 @@
 ---
 name: storybook
-description: Use when creating or changing Storybook stories in this repository, especially `*.stories.*` files. Applies to story coverage, `play` tests, and shared Storybook setup. Use `storybook-review` for review-only tasks.
+description: Use whenever touching Storybook files.
+author: alexgorbatchev
 ---
 
 # Storybook
 
 Use `packages/devhost/src/devtools/features/externalDevtoolsPanel/stories/ExternalDevtoolsPanel.stories.tsx` as the reference model for shared setup helpers and behavior-focused `play` tests.
 
-For Storybook review-only tasks, use `.agents/skills/storybook-review/SKILL.md`.
+For Storybook review-only tasks, use `{{skills_dir}}/storybook-review/SKILL.md`.
+
+## Workflow
+
+1. Inspect the existing Storybook and test setup before adding anything new.
+   - If the repo already has Storybook browser tests, follow its conventions.
+2. Pick the correct test layer before writing coverage.
+   - **Pure transforms, parsers, selectors, reducers, helpers** → unit tests.
+   - **Component rendering, focus, keyboard, async state, modal behavior** → Storybook stories plus `play` functions.
+   - **Navigation, persistence, network stacks, multi-page flows** → end-to-end tests.
+3. Represent each meaningful externally visible state or configuration with its own story.
+4. Reuse an existing story when it already expresses the needed UI state. Otherwise add a story for the exact state you need.
+5. Keep story harnesses deterministic.
+   - Initialize state directly or via lazy `useState(() => ...)`.
+   - Avoid mount-only `useEffect` resets that merely restate initial state.
+   - Keep mocked callbacks and network boundaries explicit.
+6. Write behavior-focused `play` tests with `within`, `userEvent`, accessible queries, and observable assertions.
+7. Run the narrowest Storybook test target first, then the broader suite.
+8. Treat warnings and unhandled errors as failures. Fix the root cause instead of hiding the signal.
 
 ## Coverage
 
@@ -21,6 +40,25 @@ Add a `play` test to every stateful story.
 
 If a component is purely presentational, keep the `play` test simple and assert the rendered output directly.
 
+Cover at least these user-visible scenarios when they exist:
+
+- initial render and empty states
+- loading, success, and error transitions
+- keyboard interaction and focus management
+- destructive confirmations and cancellation
+- async submit, save, and delete flows
+- callback payloads and visible result text
+- accessibility-critical semantics for controls, dialogs, and alerts
+
+## Story Authoring Rules
+
+- Create one story per meaningful user-visible state: loading, empty, populated, error, destructive confirm, disabled, submitting, and similar states.
+- Prefer lightweight harness components when local state is required.
+- Keep harness state close to the story file unless multiple story files need the same helper.
+- Expose accessible names for all interactive controls.
+- Add dialog semantics to modal components so stories and tests can target them reliably.
+- Keep assertions user-facing; do not assert implementation details, CSS class names, or DOM order unless that order is the product requirement.
+
 ## Play Tests
 
 Assert the behavior that the current story is meant to demonstrate.
@@ -33,9 +71,38 @@ Assert the observable result of that interaction: changed text, pressed state, c
 
 Use `waitFor` around async transitions and browser-rendered state changes.
 
+Start with `within(canvasElement)`.
+
+Prefer `getByRole` / `findByRole` with an accessible name.
+
+Use `findBy*` for async appearance.
+
+Use `waitFor` for disappearance or state transitions that are not naturally expressed as appearance.
+
+Scope follow-up queries to the relevant region, dialog, menu, or card with `within(...)`.
+
+Use `userEvent` for clicks, typing, tabbing, and keyboard interaction.
+
+Avoid brittle selectors such as `getAllByRole(...)[1]` when a semantic scope is available.
+
 Never use hard-coded timeouts such as fixed `setTimeout`, `sleep`, or arbitrary delay-based waiting in stories or `play` tests.
 
 Wait on observable browser behavior instead: rendered elements, changed attributes, callback effects, text updates, opened panels, closed overlays, or other user-visible state.
+
+## Warning and Failure Policy
+
+- Do not suppress React `act(...)` warnings, console warnings, or unhandled errors just to make the suite green.
+- Fix the component or story timing so the warning disappears.
+- When a warning appears only in Storybook, still treat it as real unless you can prove it is a framework bug.
+- If a story intentionally exercises an error boundary, keep any error-log handling narrowly scoped and install it before the crashing child renders; effect-time interception is too late for render-time crashes.
+
+## High-Value Fix Patterns
+
+- **Async mount/disappearance**: wait for the textbox, dialog, menu, or spinner to appear or disappear before asserting the next state.
+- **Focused input teardown on Enter/Escape**: if pressing Enter or Escape unmounts the active input and triggers `act(...)` warnings, move commit/cancel teardown onto the blur path and let `onBlur` own the unmount.
+- **Modal confirmation checks**: add `role="dialog"`, `aria-modal`, `aria-labelledby`, and optional `aria-describedby`, then query within the dialog instead of relying on button order.
+- **Story harness churn**: remove mount-only `useEffect` state resets that duplicate initial state.
+- **Expected crash stories**: keep crash noise scoped to the story harness instead of muting logging globally.
 
 ## Reuse
 

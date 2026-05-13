@@ -31,6 +31,7 @@ Harnesses are only built into `.output/` when they provide `harnesses/<name>/scr
 
 - Register external OpenCode plugins in `harnesses/opencode/opencode.jsonc` under the `plugin` array.
 - Keep the OpenCode unified-output plugin in `harnesses/opencode/scripts/build.ts`.
+- OpenCode agent generation auto-allows harness-local skills that match the current harness prefix (for example `opencode-*`) in addition to matched global skills and profile-local skills.
 - Prefer direct package specs such as `name@version`.
 - For unpublished plugins, use a pinned Git spec or a direct `file://...` spec.
 - If a local file plugin needs runtime dependencies from the repo install, vendor the package under `vendor/<name>/` as a Bun workspace and point `opencode.jsonc` at `file://{{repo_root}}/vendor/<name>/...`.

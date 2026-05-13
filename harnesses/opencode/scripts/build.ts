@@ -21,7 +21,7 @@
  */
 import { copyFile, mkdir, readdir, rm, writeFile } from "fs/promises";
 import { existsSync } from "fs";
-import { join } from "path";
+import { basename, join } from "path";
 import { homedir } from "os";
 import { dedentTemplate } from "@alexgorbatchev/dedent-string";
 
@@ -69,6 +69,7 @@ function createAgentMarkdown(context: IProfileBuildContext): string {
     skill: createSkillPermission(
       context.globalMatchedSkills,
       context.profileLocalSkills,
+      basename(context.harnessDir),
     ),
   };
 

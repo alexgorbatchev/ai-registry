@@ -5,6 +5,15 @@ import {
 } from "../profileLocalAssetRules";
 
 describe("createSkillPermission", () => {
+  it("auto-allows harness-local skills by harness name prefix", () => {
+    expect(createSkillPermission(["alpha", "beta"], [], "opencode")).toEqual({
+      "*": "deny",
+      "opencode-*": "allow",
+      alpha: "allow",
+      beta: "allow",
+    });
+  });
+
   it("expands wildcard manifests to an explicit global skill allowlist", () => {
     expect(createSkillPermission(["alpha", "beta"], [])).toEqual({
       "*": "deny",

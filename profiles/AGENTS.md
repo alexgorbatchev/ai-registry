@@ -9,7 +9,7 @@ Profile manifests in this directory assemble reusable global assets plus profile
 ## Local conventions
 - Keep reusable skills in `skills/` and reusable commands in `commands/`. Put assets under `profiles/<name>/skills/` or `profiles/<name>/commands/` only when they are intentionally owned by a single profile.
 - Treat `profiles/default/` as the special shared baseline for harnesses that do not support native profile switching. In the current build, Codex uses `default` as the shared root that plain bootstrap links into `~/.codex`, and non-default Codex outputs inherit shared top-level entries from that generated `default` root.
-- In profile manifests, `skills: ['*']` means all global skills only. A profile also gets its own `profiles/<name>/skills/*` skills, but it must not gain access to another profile's local skills.
+- In profile manifests, `skills: ['*']` means all global skills only. A profile also gets its own `profiles/<name>/skills/*` skills, and OpenCode auto-allows harness-local skills matching `<harness-name>-*`, but it must not gain access to another profile's local skills.
 - Treat `profiles/<name>/skills/*` as isolated to that profile. If another profile should use the same skill, promote it to `skills/<skill-name>/` instead of duplicating or relying on wildcard access.
 - Profile-local commands are namespaced automatically as `--<profile>-<filename>.md` in OpenCode outputs. Pi keeps the original filename inside each profile's isolated `prompts/` directory. Do not pre-prefix filenames with `--`.
 

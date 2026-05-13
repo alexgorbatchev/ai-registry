@@ -48,6 +48,8 @@ Use this skill for React-specific testing strategy and failure analysis. Keep ge
 - Verify that the chosen layer matches the behavior under test.
 - Verify that async UI transitions settle before assertions run.
 - Verify that focus management, modal semantics, and teardown order match real user behavior.
+- Avoid tests that only assert static CSS, Tailwind class strings, theme token values, exact color values, xterm palettes, or full stylesheet text when those values are implementation details.
+- Prefer assertions on observable behavior, accessibility state, config registration, or browser-visible interactions.
 - Verify that the fix removes the warning or failure rather than hiding it.
 
 Read these references as needed:

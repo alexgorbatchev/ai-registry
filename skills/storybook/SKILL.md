@@ -69,6 +69,8 @@ Exercise the component through realistic interactions when it has behavior: clic
 
 Assert the observable result of that interaction: changed text, pressed state, callback effects, opened or closed UI, disabled state, layout constraints, or other user-visible behavior.
 
+Do not write tests that only assert static CSS, Tailwind class strings, theme token values, exact color values, xterm palettes, or full stylesheet text when those values are implementation details. Prefer assertions on observable behavior, accessibility state, config registration, or browser-visible interactions.
+
 Use `waitFor` around async transitions and browser-rendered state changes.
 
 Start with `within(canvasElement)`.

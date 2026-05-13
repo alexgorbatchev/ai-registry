@@ -29,6 +29,8 @@
   },
 
   "permission": {
+    "question": "allow",
+
     "external_directory": {
       "{{repo_root}}/**": "allow",
       "~/**": "allow",

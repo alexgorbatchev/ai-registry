@@ -135,9 +135,9 @@ Keep enhancers presentation-oriented. If the trailing element is the component's
 
 - Organize code by feature or domain folders.
 - Keep component ownership `.tsx` files under canonical `components/`, `templates/`, or `layouts/` directories instead of loose feature-root `.tsx` files.
-- Name component files in PascalCase or kebab-case, matching the exported component name when the file primarily defines one component.
-- Name hook files in camelCase or kebab-case, matching the exported hook name when the file primarily defines one hook.
-- Keep exported runtime hooks whose names start with `use` in direct-child `hooks/use*.ts[x]` ownership files.
+- Name component files to match the exported PascalCase component name in the repo's configured ownership style: `ComponentName.tsx` by default, or `component-name.tsx` when the shared config uses `FilenameStyle.DashCase`.
+- Name hook files to match the exported `[use]PascalCase` hook name in the repo's configured ownership style: `useThing.ts[x]` by default, or `use-thing.ts[x]` when the shared config uses `FilenameStyle.DashCase`.
+- Keep exported runtime hooks whose names start with `use` in direct-child `hooks/useThing.ts[x]` ownership files by default, or `hooks/use-thing.ts[x]` when the shared config uses `FilenameStyle.DashCase`.
 - Keep each component story under a sibling `stories/` directory with a matching basename when the repo uses Storybook coverage.
 - Keep story support files in that `stories/` area limited to `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`.
 - Keep hook tests in a sibling `__tests__/` directory with a matching basename.
@@ -168,7 +168,7 @@ Before finishing a React change, verify all of the following:
 - product-surface consumers do not pass `className` or `style` to imported components for spacing, size, color, typography, layout, or state styling
 - optional leading and trailing visual slots use `startEnhancer` and `endEnhancer`
 - feature-specific modules live in named feature or domain folders instead of a broad unrelated `lib/` dump
-- component files match the exported component name and hook files match the exported hook name
+- component files and hook files match the exported names in the repo's configured filename style
 - repeated inline styles, consumer-side class names, wrapper markup, and visual constants were evaluated for extraction into shared components or variants
 - touched views and pages remain consistent in layout, colors, spacing, sizing, typography, and component states
 - no new `createElement` usage was introduced without an explicit documented exception

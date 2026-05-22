@@ -35,7 +35,7 @@ Treat this repository's Storybook guidance and lint rules as hard requirements f
 Follow this exact shape:
 
 - Put every `*.stories.tsx` file under a sibling `stories/` directory.
-- Keep each story file mapped to a sibling component ownership file by basename.
+- Keep each story file mapped to a sibling component ownership file by exact basename. By default use `ComponentName.tsx` with `ComponentName.stories.tsx`; when the shared config uses `FilenameStyle.DashCase`, use `component-name.tsx` with `component-name.stories.tsx`.
 - Keep the owning component itself under a canonical `components/`, `templates/`, or `layouts/` directory.
 - Bind the default export as a top-level typed const:
 
@@ -51,7 +51,7 @@ Follow this exact shape:
 - Do not use `as Meta<...>` or `satisfies Meta<...>` for the meta object. Use the const type annotation instead.
 - Set `meta.title` from the package-relative story path with structural `src/` and `stories/` segments removed.
 - Keep story exports limited to the approved Storybook surface. Move helpers and support code into fixture or helper modules instead of exporting them from the story file.
-- Give every exported story a typed `Story` binding and a `play` function.
+- Give every exported story a typed `Story` binding and a `play` function unless `meta.tags` or `story.tags` remove Storybook's built-in `test` tag with `"!test"`.
 - Use the correct export shape:
   - single exported story: `const Default: Story = { ... }; export { Default as ComponentName };`
   - multiple exported stories: `export const StoryName: Story = { ... };`
@@ -66,7 +66,7 @@ Let a user scroll through the story list and see the component in each supported
 
 Prefer one story per externally meaningful state instead of hiding multiple states inside a single story.
 
-Add a `play` test to every stateful story.
+Add a `play` test to every stateful story unless that story is intentionally excluded from Storybook test runs with `"!test"`.
 
 If a component is purely presentational, keep the `play` test simple and assert the rendered output directly.
 

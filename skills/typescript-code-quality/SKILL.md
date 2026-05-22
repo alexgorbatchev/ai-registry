@@ -43,8 +43,8 @@ Each file should have a single primary export. If multiple related items are exp
 
 Also follow these ownership-location rules:
 
-- component ownership `.tsx` files live under `components/`, `templates/`, or `layouts/`
-- exported runtime hooks whose names start with `use` live in direct-child `hooks/use*.ts[x]` files
+- component ownership `.tsx` files live under `components/`, `templates/`, or `layouts/`, using `ComponentName.tsx` by default or `component-name.tsx` when the shared config uses `FilenameStyle.DashCase`
+- exported runtime hooks whose names start with `use` live in direct-child `hooks/useThing.ts[x]` files by default or `hooks/use-thing.ts[x]` when the shared config uses `FilenameStyle.DashCase`
 - `stories/` directories are reserved for `*.stories.tsx`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`
 - `__tests__/` directories are reserved for `*.test.ts[x]`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`
 

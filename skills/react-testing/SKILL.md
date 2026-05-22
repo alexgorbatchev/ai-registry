@@ -21,7 +21,7 @@ Use this skill for React-specific testing strategy and failure analysis. Keep ge
    - If setup is missing or unclear, read `references/setup.md`.
 2. Pick the correct test layer.
    - **Pure transforms, parsers, selectors, reducers, helpers** → unit tests.
-   - **Component rendering, focus, keyboard, async state, modal behavior** → Storybook stories plus `play` functions.
+- **Component rendering, focus, keyboard, async state, modal behavior** → Storybook stories plus `play` functions unless a story is intentionally excluded from Storybook test runs with `"!test"`.
    - **Navigation, persistence, network stacks, multi-page flows** → end-to-end tests.
 3. If the task changes `*.stories.*` files or `play` functions, follow `{{skills_dir}}/storybook/SKILL.md` for story coverage and browser-test rules.
 4. Keep React harness state deterministic.

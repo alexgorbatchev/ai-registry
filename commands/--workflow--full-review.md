@@ -1,14 +1,14 @@
 ---
-description: Comprehensive code review — full on first run, incremental on subsequent runs, writes REVIEW.md
+description: Comprehensive code review — full on first run, incremental on subsequent runs, writes docs/internal/audit/review.md
 ---
 
-Perform a comprehensive code review of this codebase. The output is always a holistic review of the entire project — but the exploration scope depends on whether a previous review exists.
+Perform a comprehensive code review of this codebase. The output is always a holistic review of the entire project written to `docs/internal/audit/review.md` — but the exploration scope depends on whether a previous review exists. A past review file may already exist at that path; preserve and update its valid accumulated knowledge instead of ignoring it.
 
 ## Step 1: Determine review mode
 
-Use `REVIEW.md` frontmatter as the baseline source of truth.
+Use `docs/internal/audit/review.md` frontmatter as the baseline source of truth.
 
-Expected `REVIEW.md` frontmatter:
+Expected `docs/internal/audit/review.md` frontmatter:
 
 ```yaml
 ---
@@ -25,12 +25,12 @@ BASELINE_SHA=$(awk '
   NR==1 && $0=="---" { in_frontmatter=1; next }
   in_frontmatter && $0=="---" { exit }
   in_frontmatter && $1=="review_sha:" { print $2; exit }
-' REVIEW.md 2>/dev/null)
+' docs/internal/audit/review.md 2>/dev/null)
 ```
 
-- **If `REVIEW.md` does not exist**: this is a **full review**. Proceed to Step 2a.
-- **If `REVIEW.md` exists and `review_sha` is present and valid**: this is an **incremental review**. Use `review_sha` as your baseline and proceed to Step 2b.
-- **If `REVIEW.md` exists but `review_sha` is missing/invalid**: treat this as a **full review** and regenerate `REVIEW.md` with valid frontmatter in Step 5.
+- **If `docs/internal/audit/review.md` does not exist**: this is a **full review**. Proceed to Step 2a.
+- **If `docs/internal/audit/review.md` exists and `review_sha` is present and valid**: this is an **incremental review**. Use `review_sha` as your baseline and proceed to Step 2b.
+- **If `docs/internal/audit/review.md` exists but `review_sha` is missing/invalid**: treat this as a **full review** and regenerate `docs/internal/audit/review.md` with valid frontmatter in Step 5.
 
 ## Step 2a: Full review — explore the entire codebase
 
@@ -50,13 +50,13 @@ Also discover and validate project execution details that future reviews can reu
 - Build/typecheck/lint commands (if present)
 - Required environment variables, services, fixtures, or working-directory assumptions
 
-Record these in the `# Project Review Runbook` section in `REVIEW.md` (Step 5).
+Record these in the `# Project Review Runbook` section in `docs/internal/audit/review.md` (Step 5).
 
 Then skip to Step 3.
 
 ## Step 2b: Incremental review — explore only what changed
 
-Read the existing `REVIEW.md` — this is your accumulated knowledge of the full codebase.
+Read the existing `docs/internal/audit/review.md` — this is your accumulated knowledge of the full codebase.
 
 First, read and reuse the `# Project Review Runbook` section (commands, setup, env, services). Do not rediscover commands from scratch unless:
 - a stored command fails,
@@ -78,7 +78,7 @@ Then proceed to Step 3, but scope your scan (Step 3b) to the changed files and a
 
 ### 3a. Verify previous issues (incremental only)
 
-If `REVIEW.md` existed, check every issue listed against the current code:
+If `docs/internal/audit/review.md` existed, check every issue listed against the current code:
 - Read the specific file and function mentioned
 - Determine if the issue is **FIXED**, **STILL OPEN**, or **PARTIALLY FIXED**
 - If a change touched a file with an existing issue, re-examine that issue carefully
@@ -172,6 +172,20 @@ Severity guidance for duplication findings:
 When reporting duplication, include the specific duplicate locations and a concrete consolidation direction.
 Do not flag intentional small repetition that improves readability or is performance-motivated and documented.
 
+#### Overlapping functionality and responsibility drift
+- Multiple modules, commands, APIs, workflows, or UI paths that solve the same or highly similar problem independently
+- Competing abstractions where ownership of behavior is unclear or split across layers without an explicit boundary
+- Parallel implementations that are not direct copy-paste duplicates but can drift semantically over time
+- Similar user-facing features exposed through inconsistent names, options, defaults, validation, errors, or side effects
+- One feature path becoming a partial replacement for another while both remain active and undocumented
+
+Severity guidance for overlapping-functionality findings:
+- **critical**: overlap causes inconsistent user-visible behavior, data loss/corruption, security bypass, or runtime failure.
+- **moderate**: overlap creates meaningful drift risk, duplicated maintenance burden, or unclear ownership that can cause future bugs.
+- **minor**: overlap is currently low-risk but confusing enough that ownership or consolidation should be documented.
+
+When reporting overlap, cite every overlapping location, explain whether the overlap appears intentional or accidental, and recommend either a consolidation path or a clear ownership boundary.
+
 #### File size and modularity
 - Flag files that are too large and should be split into smaller modules.
 - Heuristic thresholds (guidance, not absolute rules):
@@ -207,7 +221,7 @@ Skip this section for applications. For libraries, evaluate:
 
 ## Step 4: Run tests and coverage
 
-Use commands from `# Project Review Runbook` in `REVIEW.md` first.
+Use commands from `# Project Review Runbook` in `docs/internal/audit/review.md` first.
 
 - On a full review: discover commands, run them, and persist them in the runbook.
 - On an incremental review: reuse runbook commands; only re-discover when commands are outdated or failing.
@@ -227,11 +241,11 @@ If you had to change any runbook command, update `# Project Review Runbook` with
 - why it changed,
 - and when it was last verified.
 
-## Step 5: Write REVIEW.md
+## Step 5: Write docs/internal/audit/review.md
 
-Write `REVIEW.md` as a complete, holistic review of the entire project — not just the changes. Merge new findings with carried-forward issues from the previous review (if any). Remove issues that are fixed. The result should be a single coherent document that stands on its own.
+Write `docs/internal/audit/review.md` as a complete, holistic review of the entire project — not just the changes. A past review file may already exist there; merge new findings with carried-forward issues from the previous review (if any). Remove issues that are fixed. The result should be a single coherent document that stands on its own.
 
-At the top of `REVIEW.md`, include YAML frontmatter with the current review metadata:
+At the top of `docs/internal/audit/review.md`, include YAML frontmatter with the current review metadata:
 
 ```yaml
 ---
@@ -301,6 +315,9 @@ reviewed_at: <timestamp>
 ...
 
 ## Dead Code
+...
+
+## Overlapping Functionality and Responsibility Drift
 ...
 
 ## Optimization Opportunities

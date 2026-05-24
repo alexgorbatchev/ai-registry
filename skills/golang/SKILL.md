@@ -10,7 +10,7 @@ description: >-
 
 # Go Baseline Skill
 
-This skill defines the non-negotiable idioms and design principles for writing Go code. Every piece of Go code produced must conform to these rules. When in doubt, bias toward simplicity, clarity, and what the Go standard library itself would do.
+This skill defines the non-negotiable idioms and design principles for writing Go code. Every piece of Go code produced must conform to these rules.
 
 ## References
 
@@ -287,7 +287,7 @@ if err != nil {
 
 ### 4.3 Sentinel Errors and Custom Types
 
-Define sentinel errors (`var ErrNotFound = errors.New(...)`) when callers need to branch on the error kind. Use custom error types when callers need structured data from the error. Otherwise, a simple wrapped string is fine.
+Define sentinel errors (`var ErrNotFound = errors.New(...)`) when callers need to branch on the error kind. Use custom error types when callers need structured data from the error. Otherwise, a wrapped string is fine.
 
 ### 4.4 Don't Panic
 
@@ -364,7 +364,7 @@ Pass `ctx` as the first parameter. Respect cancellation. Don't store contexts in
 
 ### 6.3 Protect Shared State
 
-If data is shared across goroutines, protect it. Prefer channels for communication and `sync.Mutex` for simple state protection. Don't mix both for the same data.
+If data is shared across goroutines, protect it. Prefer channels for communication and `sync.Mutex` for direct state protection. Don't mix both for the same data.
 
 ### 6.4 Never Leak Goroutines
 
@@ -476,7 +476,7 @@ Use post-1.22 language features when they make code clearer, not because they ar
 - `for range` over iterator functions (Go 1.23+) can remove custom iterator boilerplate.
 - `new(expr)` (Go 1.26+) is a concise way to produce pointers to computed values in literals.
 
-Keep the same readability bar: if the newer form is less obvious to your team, use the simpler form.
+Keep the same readability bar: use the form that makes intent easiest to review for the team.
 
 ---
 
@@ -489,7 +489,7 @@ Reach for the standard library before any third-party dependency. Go's stdlib is
 | gorilla/mux              | `net/http.ServeMux` (1.22+ has patterns)     |
 | logrus/zap (maybe)       | `log/slog` (1.21+)                           |
 | testify                  | `testing` + table-driven tests               |
-| uuid libraries           | `crypto/rand` + simple formatting             |
+| uuid libraries           | `crypto/rand` + explicit formatting           |
 | config libraries         | `os.Getenv` + a small struct                  |
 
 ### 8.1 Manage Build/Dev Tools as Module Tools

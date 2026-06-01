@@ -35,6 +35,7 @@ Treat this repository's Storybook guidance and lint rules as hard requirements f
 Follow this exact shape:
 
 - Put every `*.stories.tsx` file under a sibling `stories/` directory.
+- Keep Storybook project-support TSX files under `.storybook/*.tsx` or `.storybook/**/*.tsx`; those files are Storybook harness files, not component ownership files.
 - Keep each story file mapped to a sibling component ownership file by exact basename. By default use `ComponentName.tsx` with `ComponentName.stories.tsx`; when the shared config uses `FilenameStyle.DashCase`, use `component-name.tsx` with `component-name.stories.tsx`.
 - Keep the owning component itself under a canonical `components/`, `templates/`, or `layouts/` directory.
 - Bind the default export as a top-level typed const:

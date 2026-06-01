@@ -140,9 +140,10 @@ Keep enhancers presentation-oriented. If the trailing element is the component's
 - Keep exported runtime hooks whose names start with `use` in direct-child `hooks/useThing.ts[x]` ownership files by default, or `hooks/use-thing.ts[x]` when the shared config uses `FilenameStyle.DashCase`.
 - Keep each component story under a sibling `stories/` directory with a matching basename when the repo uses Storybook coverage.
 - Keep story support files in that `stories/` area limited to `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`.
+- Treat `.storybook/*.tsx` and `.storybook/**/*.tsx` files as Storybook project-support harness files, not product component ownership files.
 - Keep hook tests in a sibling `__tests__/` directory with a matching basename.
 - Keep test support files in that `__tests__/` area limited to `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`.
-- Keep raw intrinsic JSX and direct styling props inside component ownership files when the repository separates component-owned TSX from consumer TSX.
+- Keep raw intrinsic JSX and direct styling props inside component ownership files when the repository separates component-owned TSX from consumer TSX. Storybook `.storybook/` support files are the narrow harness exception.
 - Do not dump unrelated modules into broad `lib/` directories.
 - When `lib/` is necessary, keep it for shared infrastructure and move feature-specific code into named subfolders such as `lib/githubExtraction/` or `lib/youtubeExtraction/`.
 

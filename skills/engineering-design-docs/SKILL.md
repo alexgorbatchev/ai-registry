@@ -1,6 +1,7 @@
 ---
 name: engineering-design-docs
 description: Write or tighten implementation-ready engineering design documents, technical design specs, and exact implementation plans. Use when drafting new build-ready design docs, converting recommendation-style plans into exact implementation specs, or reviewing design docs for ambiguity before engineering starts.
+author: alexgorbatchev
 ---
 
 # Engineering Design Docs
@@ -10,20 +11,19 @@ Prefer exact contracts over recommendations.
 
 ## Default output path
 
-- Write new engineering design docs to `docs/internal/eng-designs/<topic>/DESIGN.md`.
+- Write new engineering design docs to `docs/internal/eng-designs/<topic>.md`.
 - Derive `<topic>` from the feature, subsystem, or initiative name and use descriptive `kebab-case`.
-- Create the topic directory if it does not exist.
-- Start `DESIGN.md` with `created_on`, `last_modified`, and `status` YAML frontmatter so the doc follows the internal-doc lifecycle contract.
+- Create `docs/internal/eng-designs/` if it does not exist.
+- Start the design doc with `created_on`, `last_modified`, and `status` YAML frontmatter so the doc follows the internal-doc lifecycle contract.
 - When tightening an existing design doc, keep its canonical path unless the user explicitly asks to move it.
 
-## Archive superseded design sets
+## Archive superseded design docs
 
-- Do not archive a design doc set only because the implementation shipped.
-- Archive a design doc set when it is superseded or no longer the active design reference.
-- Move the whole topic folder to `docs/internal/eng-designs/archived/<topic>/`.
-- Keep `DESIGN.md` and any supporting files together in the archived folder.
-- Preserve `created_on`, update `last_modified`, and set `status: archived` when archiving the design set.
-- Make the archived state obvious in `DESIGN.md` and point to the replacement doc when one exists.
+- Do not archive a design doc only because the implementation shipped.
+- Archive a design doc when it is superseded or no longer the active design reference.
+- Move the design doc to `docs/internal/eng-designs/archived/<topic>.md`.
+- Preserve `created_on`, update `last_modified`, and set `status: archived` when archiving the design doc.
+- Make the archived state obvious in the design doc and point to the replacement doc when one exists.
 
 ## Choose the mode
 

@@ -9,6 +9,7 @@ Use this reference when a Go repo needs GitHub Actions CI, release-on-tag automa
 - [Release workflow](#release-workflow)
 - [Version metadata strategy](#version-metadata-strategy)
 - [Pre-tag release checklist](#pre-tag-release-checklist)
+- [Executing a release](#executing-a-release)
 - [Minimal workflow shape](#minimal-workflow-shape)
 - [Common failure modes](#common-failure-modes)
 - [Sources](#sources)
@@ -144,6 +145,52 @@ Minimum expectation for CLIs with `--version`:
 - runtime `--version` output matches the tag
 
 If any one of those disagrees, the release process is incomplete.
+
+## Executing a release
+
+To trigger the automated release pipeline, you must create and push a Git tag. Follow these steps:
+
+### 1. Create an annotated tag locally
+
+Always prefer annotated tags (`git tag -a`) over lightweight tags. GoReleaser uses the annotation message and creation date to generate the release changelog and metadata correctly.
+
+```bash
+# Create an annotated tag
+git tag -a v1.0.0 -m "Release v1.0.0"
+```
+
+### 2. Push the tag to GitHub
+
+Pushing the tag triggers the `.github/workflows/release.yml` pipeline:
+
+```bash
+# Push the tag to the remote origin
+git push origin v1.0.0
+```
+
+### 3. Track the release progress
+
+You can inspect the release run using the GitHub CLI or the GitHub repository's Actions tab:
+
+```bash
+# Monitor the running workflow
+gh run list --workflow="Release Binaries"
+```
+
+### 4. Recovering from a failed release
+
+If your release pipeline fails (e.g., due to a syntax error in your configuration or build mismatch):
+
+1. Delete the local and remote tags:
+   ```bash
+   # Delete locally
+   git tag -d v1.0.0
+
+   # Delete from GitHub
+   git push --delete origin v1.0.0
+   ```
+2. Correct the codebase or workflow file and make a new commit.
+3. Re-tag and push the version again.
 
 ## Minimal workflow shape
 

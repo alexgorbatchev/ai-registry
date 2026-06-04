@@ -1,3 +1,9 @@
+---
+name: readme-writer
+description: Write, rewrite, and update `README.md` files for projects. Use when creating a project README from scratch, tightening an existing README, or updating evergreen documentation after project changes. Ground claims in the available source materials and describe the project as it exists today, not as a narration of what just changed.
+author: alexgorbatchev
+---
+
 # README Writer
 
 Write README content for current and future users of the repository. A README is evergreen reference documentation for the project's present state, not a changelog, PR summary, or narration of the edit that just happened.

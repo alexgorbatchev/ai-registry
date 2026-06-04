@@ -30,18 +30,20 @@ ticket_status: open
 2.  **Define the Problem:** Write a clear explanation of the current system gap, codebase limitation, or user friction in the `## Problem` section. Avoid vague generalities.
 3.  **Establish Value:** Explain *why* resolving this problem is critical, detailing performance gains, stability enhancements, or future capability enablement in `## Why this matters`.
 4.  **Map Observed Context:** Search the repository to identify exactly which files, designs, ADRs, or configurations are relevant. List them explicitly under `## Observed context`.
-5.  **Formulate Acceptance Criteria:** Write a precise, exhaustive checklist under `## Acceptance criteria` detailing:
-    *   Specific interfaces, modules, properties, or functions to implement or refactor.
-    *   Preservation of key system properties (e.g., memory limits, reference equality).
-    *   Strict test suites, coverage baselines, or golden snapshot verifications that must pass.
-    *   **Mandatory Review Pass:** Include a required item to run a separate review pass on the ticket using an independent review workflow or review subagent, resolving all identified feedback/issues until a completely clean review is returned.
+5.  **Formulate Acceptance Criteria:** Write a precise, exhaustive markdown checklist (using `- [ ]` checkboxes) under `## Acceptance criteria` detailing:
+    - [ ] Specific interfaces, modules, properties, or functions to implement or refactor.
+    - [ ] Preservation of key system properties (e.g., memory limits, reference equality).
+    - [ ] Strict test suites, coverage baselines, or golden snapshot verifications that must pass.
+    - [ ] **Mandatory Review Pass:** Include a required item to run a separate review pass on the ticket using an independent review workflow or review subagent, resolving all identified feedback/issues until a completely clean review is returned.
 6.  **Validate against template:** Ensure the formatting matches `assets/tickets-template.md`.
 
 ## Lifecycle and Archiving Rules
 
 -   **Closing a Ticket:**
-    -   When a ticket's work is completed and verified, update its frontmatter to `ticket_status: closed` and set the `last_modified` timestamp.
-    -   Move the closed ticket file into the `closed/` subdirectory (e.g., `{{ env "DOCS_INTERNAL_DIR" }}/tickets/closed/<date>-wave-<number>-<description>.md`) to keep the active tickets directory uncluttered.
+    -   Ensure all checklist items under `## Acceptance criteria` have been fully checked off (transitioned to `- [x]`).
+    -   Update the ticket's frontmatter: set `ticket_status: closed` and update the `last_modified` timestamp.
+    -   Relocate the closed ticket file into the `closed/` subdirectory (e.g., `{{ env "DOCS_INTERNAL_DIR" }}/tickets/closed/<date>-wave-<number>-<description>.md`) to keep the active tickets directory uncluttered.
+    -   **Git Commit Reference:** The final Git commit that completes and closes the ticket must explicitly reference the ticket's final closed file path in its commit message.
 -   **Archiving a Stale Ticket:**
     -   If a ticket is superseded, canceled, or no longer relevant, update its frontmatter to `status: archived` and move it to `{{ env "DOCS_INTERNAL_DIR" }}/tickets/archived/` folder.
 

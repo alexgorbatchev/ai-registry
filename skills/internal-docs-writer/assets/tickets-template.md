@@ -34,10 +34,10 @@ ticket_status: open
 
 ## Acceptance criteria
 
-- <Verifiable action-oriented item 1, e.g., "Implement `path/domhost.js` exposing W3C-compliant Document classes">
-- <Verifiable item 2, e.g., "The cache maintains a map linking stable numeric handle IDs to wrappers">
-- <Verifiable testing item, e.g., "Write unit test `path/mount_test.go` asserting component rendering">
-- <Verifiable quality/visual verification item, e.g., "Generate visual golden snapshot files inside `testdata/` and verify they match">
-- <Verifiable task command, e.g., "Run `bun run test` to verify all checks and coverage baselines pass cleanly">
-- Run a separate review pass on this ticket using an independent review workflow or review subagent, and resolve all identified feedback/issues until a completely clean review is returned.
+- [ ] <Verifiable action-oriented item 1, e.g., "Implement `path/domhost.js` exposing W3C-compliant Document classes">
+- [ ] <Verifiable item 2, e.g., "The cache maintains a map linking stable numeric handle IDs to wrappers">
+- [ ] <Verifiable testing item, e.g., "Write unit test `path/mount_test.go` asserting component rendering">
+- [ ] <Verifiable quality/visual verification item, e.g., "Generate visual golden snapshot files inside `testdata/` and verify they match">
+- [ ] <Verifiable task command, e.g., "Run `bun run test` to verify all checks and coverage baselines pass cleanly">
+- [ ] Run a separate review pass on this ticket using an independent review workflow or review subagent, and resolve all identified feedback/issues until a completely clean review is returned.
 ```

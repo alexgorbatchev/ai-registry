@@ -10,7 +10,7 @@ Read `{{skills_dir}}/storybook/SKILL.md` first. Treat every rule in that skill a
 
 Do not modify the reviewed Storybook files while reviewing unless the user explicitly asks for fixes.
 
-Write the final review to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/storybook.md`. Create `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/` if it does not exist. Overwrite the file on each fresh review so it only contains the current result.
+Write the final review to `{{ env "DOCS_INTERNAL_DIR" }}/audit/storybook.md`. Create `{{ env "DOCS_INTERNAL_DIR" }}/audit/` if it does not exist. Overwrite the file on each fresh review so it only contains the current result.
 
 Capture the current git SHA before the review begins and preserve that exact SHA in the report.
 

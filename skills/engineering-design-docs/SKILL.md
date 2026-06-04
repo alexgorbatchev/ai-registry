@@ -11,7 +11,7 @@ Prefer exact contracts over recommendations.
 
 ## Default output path
 
-- Write new engineering design docs to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/<topic>.md`.
+- Write new engineering design docs to `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/<topic>.md`.
 - Derive `<topic>` from the feature, subsystem, or initiative name and use descriptive `kebab-case`.
 - Start the design doc with `created_on`, `last_modified`, and `status` YAML frontmatter so the doc follows the internal-doc lifecycle contract defined in the `internal-docs-writer` skill.
 - When tightening an existing design doc, keep its canonical path unless the user explicitly asks to move it.
@@ -19,8 +19,8 @@ Prefer exact contracts over recommendations.
 ## Implemented and superseded design docs
 
 - Refer to the `internal-docs-writer` skill for overall internal documentation lifecycle rules.
-- **When implemented:** When an engineering design is fully implemented, follow the `Completed Engineering Designs Rule` in the `internal-docs-writer` skill to promote and move the completed document to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/references/` as long-term, maintained reference documentation.
-- **When superseded:** If a design is superseded or no longer the active design reference (and is not promoted to references/), archive the design document by moving it to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/archived/<topic>.md`.
+- **When implemented:** When an engineering design is fully implemented, follow the `Completed Engineering Designs Rule` in the `internal-docs-writer` skill to promote and move the completed document to `{{ env "DOCS_INTERNAL_DIR" }}/references/` as long-term, maintained reference documentation.
+- **When superseded:** If a design is superseded or no longer the active design reference (and is not promoted to references/), archive the design document by moving it to `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/archived/<topic>.md`.
 - Preserve `created_on`, update `last_modified`, and set `status: archived` in the frontmatter of any archived design document.
 - Make the archived state obvious in the document and point to the replacement doc when one exists.
 

@@ -46,13 +46,13 @@ If a `CONTEXT-MAP.md` exists at the root, the repo has multiple contexts. The ma
 ├── src/
 │   ├── ordering/
 │   │   ├── CONTEXT.md
-│   │   └── {{ env "SKILL_DOCS_INTERNAL_DIR" }}/adr/        ← context-specific decisions
+│   │   └── {{ env "DOCS_INTERNAL_DIR" }}/adr/        ← context-specific decisions
 │   └── billing/
 │       ├── CONTEXT.md
-│       └── {{ env "SKILL_DOCS_INTERNAL_DIR" }}/adr/
+│       └── {{ env "DOCS_INTERNAL_DIR" }}/adr/
 ```
 
-Create files lazily — only when you have something to write. If no `CONTEXT.md` exists, create one when the first term is resolved. If no `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/adr/` exists, create it when the first ADR is needed.
+Create files lazily — only when you have something to write. If no `CONTEXT.md` exists, create one when the first term is resolved. If no `{{ env "DOCS_INTERNAL_DIR" }}/adr/` exists, create it when the first ADR is needed.
 
 ## During the session
 

@@ -67,6 +67,17 @@ status: current
 - Deviate only when the user explicitly requests another location or repository conventions clearly assign the topic elsewhere.
 - Treat `docs/internal/` as the canonical home for internal-only Markdown docs, not public product docs such as `README.md`.
 
+## Completed Engineering Designs Rule
+
+- When an engineering design (typically located under `docs/internal/eng-designs/`) is fully implemented, move the completed document to `docs/internal/references/` to serve as the long-term, maintained reference documentation.
+- **Reference Document Format:**
+  - **YAML Frontmatter:** Include standard keys (`created_on`, `last_modified`, `status: current`) formatted in `YYYY-MM-DD HH:MM`.
+  - **Title:** Use a clear conceptual title (e.g. `# Feature Name`).
+  - **Introduction:** A clear introductory sentence (e.g., "This is the maintained internal reference for the implemented shared overlay surface lifecycle contract...").
+  - **Implementation Record (`## Implementation Record`):** Document how the implementation landed, detailing closed tickets, pull requests, or key commits/branches.
+  - **Conceptual Architecture:** Detail the active and current contracts, component integration details, styling ownership, boundaries, and validation requirements.
+  - **Validation Requirements (`## Validation Requirements`):** Explicitly list the test suites, verification commands, and snapshot expectations for future engineers changing this feature.
+
 ## Archive Location Rule
 
 - Move archived content to the nearest `archived/` folder instead of leaving active and archived docs mixed together.

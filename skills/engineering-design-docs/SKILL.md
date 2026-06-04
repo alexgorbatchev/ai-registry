@@ -11,19 +11,18 @@ Prefer exact contracts over recommendations.
 
 ## Default output path
 
-- Write new engineering design docs to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/<topic>.md`.
+- Default new engineering design docs to folder-based sets under `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/<topic>/DESIGN.md` (creating the topic directory if needed) to ensure alignment with general document archival and management rules.
 - Derive `<topic>` from the feature, subsystem, or initiative name and use descriptive `kebab-case`.
-- Create `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/` if it does not exist.
-- Start the design doc with `created_on`, `last_modified`, and `status` YAML frontmatter so the doc follows the internal-doc lifecycle contract.
+- Start the design doc with `created_on`, `last_modified`, and `status` YAML frontmatter so the doc follows the internal-doc lifecycle contract defined in the `internal-docs-writer` skill.
 - When tightening an existing design doc, keep its canonical path unless the user explicitly asks to move it.
 
-## Archive superseded design docs
+## Implemented and superseded design docs
 
-- Do not archive a design doc only because the implementation shipped.
-- Archive a design doc when it is superseded or no longer the active design reference.
-- Move the design doc to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/archived/<topic>.md`.
-- Preserve `created_on`, update `last_modified`, and set `status: archived` when archiving the design doc.
-- Make the archived state obvious in the design doc and point to the replacement doc when one exists.
+- Refer to the `internal-docs-writer` skill for overall internal documentation lifecycle rules.
+- **When implemented:** When an engineering design is fully implemented, follow the `Completed Engineering Designs Rule` in the `internal-docs-writer` skill to promote and move the completed document to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/references/` as long-term, maintained reference documentation.
+- **When superseded:** If a design is superseded or no longer the active design reference (and is not promoted to references/), archive the design folder by moving it to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/archived/<topic>/`.
+- Preserve `created_on`, update `last_modified`, and set `status: archived` in the frontmatter of any archived design document.
+- Make the archived state obvious in the document and point to the replacement doc when one exists.
 
 ## Choose the mode
 

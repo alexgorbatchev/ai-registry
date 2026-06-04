@@ -27,11 +27,10 @@ Most repos have a single context:
 ```
 /
 ├── CONTEXT.md
-├── docs/
-│   └── internal/
-│       └── adr/
-│          ├── 0001-event-sourced-orders.md
-│          └── 0002-postgres-for-write-model.md
+├── {{ env "DOCS_INTERNAL_DIR" }}/
+│   └── adr/
+│       ├── 0001-event-sourced-orders.md
+│       └── 0002-postgres-for-write-model.md
 └── src/
 ```
 
@@ -40,9 +39,8 @@ If a `CONTEXT-MAP.md` exists at the root, the repo has multiple contexts. The ma
 ```
 /
 ├── CONTEXT-MAP.md
-├── docs/
-│   └── internal/
-│       └── adr/                      ← system-wide decisions
+├── {{ env "DOCS_INTERNAL_DIR" }}/
+│   └── adr/                      ← system-wide decisions
 ├── src/
 │   ├── ordering/
 │   │   ├── CONTEXT.md
@@ -52,7 +50,23 @@ If a `CONTEXT-MAP.md` exists at the root, the repo has multiple contexts. The ma
 │       └── {{ env "DOCS_INTERNAL_DIR" }}/adr/
 ```
 
-Create files lazily — only when you have something to write. If no `CONTEXT.md` exists, create one when the first term is resolved. If no `{{ env "DOCS_INTERNAL_DIR" }}/adr/` exists, create it when the first ADR is needed.
+## Document Naming and Location Rules
+
+### 1. Glossary & Context Map (CONTEXT.md / CONTEXT-MAP.md)
+- **Single Context (most repos):** Use a single `CONTEXT.md` at the repo root.
+- **Multiple Contexts:** A `CONTEXT-MAP.md` at the repo root lists the contexts, their directory locations, and relationships.
+- **Discovery and Inference:**
+  - If `CONTEXT-MAP.md` exists, read it to locate individual context-specific directories.
+  - If only a root `CONTEXT.md` exists, treat the repo as a single context.
+  - If neither exists, create a root `CONTEXT.md` lazily when the first glossary term is resolved.
+  - When multiple contexts exist, infer which context directory the current topic belongs to. If unclear, ask.
+- **Format:** For new glossary files, use the template in `assets/context-template.md`. For new context maps, use `assets/context-map-template.md`.
+
+### 2. Architecture Decision Records (ADRs)
+- **Location:** System-wide ADRs live in `{{ env "DOCS_INTERNAL_DIR" }}/adr/`. Context-specific ADRs live in `{{ env "DOCS_INTERNAL_DIR" }}/adr/` relative to their respective context directory.
+- **Directory Creation:** Create the `adr/` directory lazily — only when the first ADR is needed.
+- **Naming & Sequential Numbering:** Use `0001-slug.md`, `0002-slug.md`, etc., with sequential 4-digit zero-padded numbers. Scan the target `adr/` folder for the highest existing number and increment by one.
+- **Format:** For new ADRs, use the template in `assets/adr-template.md`.
 
 ## During the session
 
@@ -74,7 +88,7 @@ When the user states how something works, check whether the code agrees. If you 
 
 ### Update CONTEXT.md inline
 
-When a term is resolved, update `CONTEXT.md` right there. Don't batch these up — capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
+When a term is resolved, update the appropriate `CONTEXT.md` right there. Don't batch these up — capture them as they happen. Use the template in `assets/context-template.md` (or `assets/context-map-template.md` if updating a context map).
 
 `CONTEXT.md` should be totally devoid of implementation details. Do not treat `CONTEXT.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
 
@@ -86,6 +100,6 @@ Only offer to create an ADR when all three are true:
 2. **Surprising without context** — a future reader will wonder "why did they do it this way?"
 3. **The result of a real trade-off** — there were genuine alternatives and you picked one for specific reasons
 
-If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md).
+If any of the three is missing, skip the ADR. When creating a new ADR, increment the sequence number according to the **Architecture Decision Records (ADRs)** naming rules, and use the template in `assets/adr-template.md`.
 
 </supporting-info>

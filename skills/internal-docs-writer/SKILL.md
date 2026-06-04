@@ -1,123 +1,82 @@
 ---
 name: internal-docs-writer
-description: Write, rewrite, reorganize, and archive internal Markdown documentation for maintainers, operators, and collaborators. Use when creating repo-local process docs, runbooks, decision notes, adrs, reference material and, eng design docs, tickets, etc.
+description: Write, rewrite, reorganize, and archive internal and public Markdown documentation. Unified documentation writer that manages general internal docs, technical engineering designs, project tickets, and README/AGENTS guidelines.
 author: alexgorbatchev
 ---
 
 # Internal Docs Writer
 
-Write internal documentation for people who work inside the repository or organization. Default new files to `{{ env "DOCS_INTERNAL_DIR" }}/`, keep the content grounded in source materials, and enforce the required Markdown frontmatter contract on every file.
+Write and manage high-quality technical documentation for people who work inside the repository or organization (runbooks, designs, tickets, AGENTS guidelines) as well as public evergreen documentation (READMEs).
 
-## Workflow
+Keep all content strictly grounded in actual source materials, write in a factual current-state tone, and enforce appropriate metadata lifecycles on all documents.
 
-1. Identify the documentation job.
-- Determine whether the request is for a runbook, procedure, decision note, onboarding guide, architecture note, or reference page.
-- Prefer updating an existing document when the topic already has a canonical home.
-- **For Engineering Design Docs:** If the task involves writing, tightening, or modifying engineering design documents (typically under `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/`), delegate to and follow the `eng-design-writer` skill for exact requirements on tech specs, request/response API contracts, TypeScript types, and ambiguity sweeps.
-- **For Tickets:** If the task involves writing, updating, or formatting project or issue tickets (typically under `{{ env "DOCS_INTERNAL_DIR" }}/tickets/`), delegate to and follow the `tickets-writer` skill for exact requirements on problem statements, observed context mapping, and testable acceptance criteria.
+---
 
-2. Choose the default location.
-- Write new internal docs to `{{ env "DOCS_INTERNAL_DIR" }}/` relative to the repository root unless the user or repository already defines a different canonical location.
-- Create `{{ env "DOCS_INTERNAL_DIR" }}/` if it does not exist.
-- Use descriptive `kebab-case` filenames such as `{{ env "DOCS_INTERNAL_DIR" }}/deploy-runbook.md` or `{{ env "DOCS_INTERNAL_DIR" }}/auth/session-lifecycle.md`.
-- Create subdirectories only when they improve navigation for multiple related documents.
-- When one topic needs multiple Markdown files, create a folder-based doc set and keep the related files together under the same active collection root.
+## Baseline Standards
 
-3. Build from source material.
-- Read the code, configuration, scripts, tests, and existing docs that support the content.
-- Do not invent system behavior, guarantees, URLs, commands, or ownership details.
-- Mark unknowns explicitly instead of guessing.
-
-4. Apply the required frontmatter.
-- Start every internal Markdown file with YAML frontmatter containing at least these required keys:
+Every internal documentation file (procedures, runbooks, designs, tickets) must start with a standard YAML frontmatter contract:
 
 ```yaml
 ---
-created_on: 2026-04-23 14:00
-last_modified: 2026-04-23 14:00
+created_on: YYYY-MM-DD HH:MM
+last_modified: YYYY-MM-DD HH:MM
 status: current
 ---
 ```
 
-- Use the `YYYY-MM-DD HH:MM` timestamp format.
-- Set `created_on` and `last_modified` to the same timestamp when creating a new file.
-- Preserve `created_on` and update only `last_modified` when editing an existing file.
-- Use only `current` or `archived` for `status`.
-- Switch to `archived` when the document is superseded or no longer the active source of truth.
+- **Timestamps:** Must use the strict `YYYY-MM-DD HH:MM` format. Set both to the current timestamp on file creation; update only `last_modified` when editing.
+- **Status Schema:** Use only `current` (active guidance) or `archived` (superseded historical reference). Do not invent other values unless explicitly requested.
+- **Protect Sensitive Data:** Never write secrets, raw tokens, credentials, or private internal hostnames into any document.
+- **Write for Readers:** Put purpose and target audience near the top. Keep procedures ordered, concrete, and copy-pasteable. Use clear headings for scannability.
 
-5. Write for internal readers.
-- Put the purpose and audience near the top.
-- Prefer current-state instructions and facts over change narration.
-- Keep procedures ordered, concrete, and copy-pasteable where possible.
-- Use headings that let readers scan quickly.
-- Use role-based language rather than personal names when possible.
+---
 
-6. Protect sensitive information.
-- Do not write secrets, private keys, raw tokens, or unredacted credentials into docs.
-- Avoid unnecessary private hostnames or internal URLs unless they are already an accepted checked-in convention for the repository.
-- Sanitize examples when the real values are not required.
+## Default Directory Mapping
 
-7. Keep docs coherent over time.
-- Rewrite surrounding sections so the document reads as one maintained artifact, not a stack of patches.
-- Archive or replace stale guidance instead of adding contradictory footnotes.
-- When archiving, add a short note near the top that points to the current replacement if one exists.
-- When archiving a folder-based doc set, move the whole folder intact instead of scattering individual files into different archive locations.
+*   **General Internal Docs & Reference Guides:** Write to `{{ env "DOCS_INTERNAL_DIR" }}/`.
+*   **Engineering Design Documents:** Write to `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/`.
+*   **Active Project/Wave Tickets:** Write to `{{ env "DOCS_INTERNAL_DIR" }}/tickets/`.
 
-## Default Output Rule
+---
 
-- Default new files to `{{ env "DOCS_INTERNAL_DIR" }}/`.
-- Deviate only when the user explicitly requests another location or repository conventions clearly assign the topic elsewhere.
-- Treat `{{ env "DOCS_INTERNAL_DIR" }}/` as the canonical home for internal-only Markdown docs, not public product docs such as `README.md`.
+## Archival and Transition Rules
 
-## Documentation Agent Guidance Rule
+-   **General Documents:** Move archived content to the nearest `archived/` subdirectory (e.g., `{{ env "DOCS_INTERNAL_DIR" }}/archived/` or `{{ env "DOCS_INTERNAL_DIR" }}/auth/archived/`) to keep active directories clean.
+-   **Completed Engineering Designs:** When a design is fully implemented, promote/move the document to `{{ env "DOCS_INTERNAL_DIR" }}/references/` as a long-term reference.
+-   **Closed Wave/Project Tickets:** Follow the specific ticket-archiving rules (transitioning frontmatter to `ticket_status: closed` and moving the file under `{{ env "DOCS_INTERNAL_DIR" }}/tickets/closed/`).
 
-- When adding or modifying internal documentation conventions, folder structures, or templates, create or update the nested `docs/AGENTS.md` and `{{ env "DOCS_INTERNAL_DIR" }}/AGENTS.md` files.
-- `docs/AGENTS.md` should guide agents on general documentation structure, naming, and file topology under `docs/`.
-- `{{ env "DOCS_INTERNAL_DIR" }}/AGENTS.md` should guide agents on internal-only runbooks, procedures, metadata frontmatter contracts, and archival locations under `{{ env "DOCS_INTERNAL_DIR" }}/`.
-- Ensure that the `docs/` directory is registered in the root-level `AGENTS.md` under File Conventions.
+---
 
-## Completed Engineering Designs Rule
+## Sub-Skill Navigation (Progressive Disclosure)
 
-- When an engineering design (typically located under `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/`) is fully implemented, move the completed document to `{{ env "DOCS_INTERNAL_DIR" }}/references/` to serve as the long-term, maintained reference documentation.
-- **Reference Document Format:**
-  - **YAML Frontmatter:** Include standard keys (`created_on`, `last_modified`, `status: current`) formatted in `YYYY-MM-DD HH:MM`.
-  - **Title:** Use a clear conceptual title (e.g. `# Feature Name`).
-  - **Introduction:** A clear introductory sentence (e.g., "This is the maintained internal reference for the implemented shared overlay surface lifecycle contract...").
-  - **Implementation Record (`## Implementation Record`):** Document how the implementation landed, detailing closed tickets, pull requests, or key commits/branches.
-  - **Conceptual Architecture:** Detail the active and current contracts, component integration details, styling ownership, boundaries, and validation requirements.
-  - **Validation Requirements (`## Validation Requirements`):** Explicitly list the test suites, verification commands, and snapshot expectations for future engineers changing this feature.
+When tasked with a specialized documentation job, immediately read the corresponding reference file and template asset to guide your execution:
 
-## Archive Location Rule
+### 1. Engineering Design Documents
+For drafting technical specs, request/response API contracts, TypeScript types, and running ambiguity sweeps:
+-   **Guidelines:** Read `references/eng-designs.md`
+-   **Template:** Use `assets/eng-designs-template.md`
 
-- Move archived content to the nearest `archived/` folder instead of leaving active and archived docs mixed together.
-- If an active file lives directly under `{{ env "DOCS_INTERNAL_DIR" }}/`, archive it under `{{ env "DOCS_INTERNAL_DIR" }}/archived/`.
-- If an active file lives under a collection root such as `{{ env "DOCS_INTERNAL_DIR" }}/auth/`, archive it under that collection root's `archived/` folder, for example `{{ env "DOCS_INTERNAL_DIR" }}/auth/session-lifecycle.md` -> `{{ env "DOCS_INTERNAL_DIR" }}/auth/archived/session-lifecycle.md`.
-- If a topic is a folder-based doc set, move the whole folder under the nearest collection root's `archived/` folder and preserve the internal layout, for example `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/auth-refresh/` -> `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/archived/auth-refresh/`.
-- If the repository keeps ticket docs as folder-based sets, archive the whole ticket folder the same way, for example `{{ env "DOCS_INTERNAL_DIR" }}/tickets/ENG-123-session-cleanup/` -> `{{ env "DOCS_INTERNAL_DIR" }}/tickets/archived/ENG-123-session-cleanup/`.
-- If the repository keeps ticket docs as flat files (under `{{ env "DOCS_INTERNAL_DIR" }}/tickets/`), follow the closing and archiving procedures (e.g., transitioning `ticket_status` to `closed` and moving files to the `closed/` directory, or archiving stale tickets to `archived/`) as defined in the `tickets-writer` skill.
-- Update links that point to the old active path after moving a file or folder.
-- Do not leave a duplicate copy at the old active path unless the user explicitly asks for a redirect stub.
+### 2. Project & Issue Tickets
+For writing wave-based roadmap tickets with detailed problems, value justifications, and precise acceptance criteria:
+-   **Guidelines:** Read `references/tickets.md`
+-   **Template:** Use `assets/tickets-template.md`
 
-## Current And Archived States
+### 3. Repository READMEs
+For creating or updating public-facing, evergreen present-state project overviews:
+-   **Guidelines:** Read `references/readme.md`
 
-- Use `status: current` for active guidance people should follow today.
-- Use `status: archived` for superseded or historical docs that are kept only for reference.
-- Do not invent extra lifecycle values such as `draft`, `deprecated`, or `final` unless the user explicitly changes the schema.
-- For a current doc, describe the expected present-state process or system behavior.
-- For an archived doc, keep the historical content intact but make its archived state obvious near the top.
-- Keep current docs out of `archived/` paths.
-- Move archived docs into the correct nearest `archived/` folder so the path matches the archived lifecycle state.
-- For archived folder-based doc sets, move the entire folder rather than cherry-picking files out of it.
+### 4. Agent Persona Guidelines (AGENTS.md)
+For maintaining, generating, auditing, or topology splits of canonical root or nested AGENTS.md instructions:
+-   **Guidelines:** Read `references/agents.md`
+-   **Templates:** Use `assets/agents-templates.md`
 
-## Final Checklist
+---
 
-- File lives under `{{ env "DOCS_INTERNAL_DIR" }}/` unless there is a verified exception.
-- Archived files or doc sets live under the correct nearest `archived/` folder.
-- Frontmatter includes `created_on`, `last_modified`, and `status`.
-- Timestamps use `YYYY-MM-DD HH:MM`.
-- `status` is exactly `current` or `archived`.
-- Claims are grounded in the repository or supplied materials.
-- Sensitive values are omitted or sanitized.
-- Links were updated if an archived file or folder moved.
-- The document reads as a maintained internal reference, not a PR summary or assistant note.
-- The nested `docs/AGENTS.md` and `{{ env "DOCS_INTERNAL_DIR" }}/AGENTS.md` files are created or updated if folder structures or conventions are modified, and `docs/` is registered in the root-level `AGENTS.md`.
+## Final Baseline Checklist
+
+-   [ ] Frontmatter starts with standard `created_on`, `last_modified`, and `status`.
+-   [ ] All timestamps use the strict `YYYY-MM-DD HH:MM` format.
+-   [ ] The document is written in present tense and represents a maintained current-state reference.
+-   [ ] All facts and claims are grounded in repository code, config, or verified source docs.
+-   [ ] Stale, transitional, or changelog-like narration is completely removed.
+-   [ ] Sub-skill references and assets are fully loaded and respected where applicable.

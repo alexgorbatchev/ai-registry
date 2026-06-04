@@ -1,9 +1,3 @@
----
-name: tickets-writer
-description: Write, format, organize, and transition implementation-ready ticket documents. Use when creating or refining structured project tickets with detailed problems, observed contexts, and precise acceptance criteria.
-author: alexgorbatchev
----
-
 # Tickets Writer
 
 Write and maintain structured, implementation-ready project tickets. Ensure every ticket is grounded in real repository context, defines a clear and compelling problem space, and includes highly precise, testable acceptance criteria.
@@ -41,7 +35,7 @@ ticket_status: open
     *   Preservation of key system properties (e.g., memory limits, reference equality).
     *   Strict test suites, coverage baselines, or golden snapshot verifications that must pass.
     *   **Mandatory Review Pass:** Include a required item to run a separate review pass on the ticket using an independent review workflow or review subagent, resolving all identified feedback/issues until a completely clean review is returned.
-6.  **Validate against template:** Ensure the formatting matches `references/template.md`.
+6.  **Validate against template:** Ensure the formatting matches `assets/tickets-template.md`.
 
 ## Lifecycle and Archiving Rules
 
@@ -56,5 +50,5 @@ ticket_status: open
 -   File is written to `{{ env "DOCS_INTERNAL_DIR" }}/tickets/` (or `closed/` / `archived/` depending on lifecycle state).
 -   Frontmatter contains standard `created_on`, `last_modified`, `status`, and `ticket_status` keys.
 -   Timestamps follow `YYYY-MM-DD HH:MM` format.
--   The file structure strictly adheres to `references/template.md`.
+-   The file structure strictly adheres to `assets/tickets-template.md`.
 -   Acceptance criteria are exhaustive, testable, and completely unambiguous.

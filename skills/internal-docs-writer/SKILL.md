@@ -14,6 +14,7 @@ Write internal documentation for people who work inside the repository or organi
 - Determine whether the request is for a runbook, procedure, decision note, onboarding guide, architecture note, or reference page.
 - Prefer updating an existing document when the topic already has a canonical home.
 - **For Engineering Design Docs:** If the task involves writing, tightening, or modifying engineering design documents (typically under `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/`), delegate to and follow the `eng-design-writer` skill for exact requirements on tech specs, request/response API contracts, TypeScript types, and ambiguity sweeps.
+- **For Tickets:** If the task involves writing, updating, or formatting project or issue tickets (typically under `{{ env "DOCS_INTERNAL_DIR" }}/tickets/`), delegate to and follow the `tickets-writer` skill for exact requirements on problem statements, observed context mapping, and testable acceptance criteria.
 
 2. Choose the default location.
 - Write new internal docs to `{{ env "DOCS_INTERNAL_DIR" }}/` relative to the repository root unless the user or repository already defines a different canonical location.
@@ -93,6 +94,7 @@ status: current
 - If an active file lives under a collection root such as `{{ env "DOCS_INTERNAL_DIR" }}/auth/`, archive it under that collection root's `archived/` folder, for example `{{ env "DOCS_INTERNAL_DIR" }}/auth/session-lifecycle.md` -> `{{ env "DOCS_INTERNAL_DIR" }}/auth/archived/session-lifecycle.md`.
 - If a topic is a folder-based doc set, move the whole folder under the nearest collection root's `archived/` folder and preserve the internal layout, for example `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/auth-refresh/` -> `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/archived/auth-refresh/`.
 - If the repository keeps ticket docs as folder-based sets, archive the whole ticket folder the same way, for example `{{ env "DOCS_INTERNAL_DIR" }}/tickets/ENG-123-session-cleanup/` -> `{{ env "DOCS_INTERNAL_DIR" }}/tickets/archived/ENG-123-session-cleanup/`.
+- If the repository keeps ticket docs as flat files (under `{{ env "DOCS_INTERNAL_DIR" }}/tickets/`), follow the closing and archiving procedures (e.g., transitioning `ticket_status` to `closed` and moving files to the `closed/` directory, or archiving stale tickets to `archived/`) as defined in the `tickets-writer` skill.
 - Update links that point to the old active path after moving a file or folder.
 - Do not leave a duplicate copy at the old active path unless the user explicitly asks for a redirect stub.
 

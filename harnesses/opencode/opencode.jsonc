@@ -10,8 +10,8 @@
     },
   },
 
+    //"@tarquinen/opencode-dcp@3.1.9",
   "plugin": [
-    "@tarquinen/opencode-dcp@3.1.9",
     // Vendored as a repo workspace and loaded from source so root bun install satisfies runtime imports.
     "file://{{repo_root}}/vendor/opencode-context-inspector/src/index.ts"
   ],

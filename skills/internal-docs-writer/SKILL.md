@@ -13,7 +13,7 @@ Write internal documentation for people who work inside the repository or organi
 1. Identify the documentation job.
 - Determine whether the request is for a runbook, procedure, decision note, onboarding guide, architecture note, or reference page.
 - Prefer updating an existing document when the topic already has a canonical home.
-- **For Engineering Design Docs:** If the task involves writing, tightening, or modifying engineering design documents (typically under `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/`), delegate to and follow the `engineering-design-docs` skill for exact requirements on tech specs, request/response API contracts, TypeScript types, and ambiguity sweeps.
+- **For Engineering Design Docs:** If the task involves writing, tightening, or modifying engineering design documents (typically under `{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/`), delegate to and follow the `eng-design-writer` skill for exact requirements on tech specs, request/response API contracts, TypeScript types, and ambiguity sweeps.
 
 2. Choose the default location.
 - Write new internal docs to `{{ env "DOCS_INTERNAL_DIR" }}/` relative to the repository root unless the user or repository already defines a different canonical location.

@@ -1,5 +1,5 @@
 ---
-name: engineering-design-docs
+name: eng-design-writer
 description: Write or tighten implementation-ready engineering design documents, technical design specs, and exact implementation plans. Use when drafting new build-ready design docs, converting recommendation-style plans into exact implementation specs, or reviewing design docs for ambiguity before engineering starts.
 author: alexgorbatchev
 ---

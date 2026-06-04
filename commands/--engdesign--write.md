@@ -19,7 +19,7 @@ If the target path is not provided, stop and ask for it.
 ## Non-negotiables
 
 - Follow all project instructions and mandatory skills before writing or editing files.
-- Read the `engineering-design-docs` skill and its template before drafting or hardening.
+- Read the `eng-design-writer` skill and its template before drafting or hardening.
 - Use repository structure discovery before broad file reading. If the active environment provides a dedicated repository-mapping capability, use it; otherwise use the best project-approved structural discovery workflow.
 - Ground the design in the actual repository, not assumptions.
 - Separate verified current-state baseline from proposed target-state requirements.
@@ -51,7 +51,7 @@ If a critical product or architecture decision is still unresolved, stop and ask
 Before drafting:
 1. read repository instruction files recognized by the active workflow (`AGENTS.md`, `CLAUDE.md`, `.rulesync` rules, or equivalent repository guidance)
 2. identify applicable mandatory skills from the project and read them fully
-3. read the `engineering-design-docs` skill and its template
+3. read the `eng-design-writer` skill and its template
 4. before broad file reading, use the strongest repository-structure discovery capability available in the active environment. If the task is narrow, keep this pass lightweight and then move to targeted reads
 
 If the repository has topic-specific docs that the requested feature depends on, read those too.

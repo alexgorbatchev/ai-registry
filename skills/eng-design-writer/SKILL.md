@@ -43,8 +43,8 @@ Prefer exact contracts over recommendations.
 4. Specify exact files, modules, routes, types, schema changes, validation rules, and UI/runtime behavior.
 5. Define request/response contracts as TypeScript types, not prose bullets.
 6. Define implementation order that minimizes integration risk.
-7. Define tests and a concrete definition of done.
-8. Run an ambiguity sweep before finishing.
+7. Define tests and a concrete definition of done, including a mandatory review pass.
+8. Run an ambiguity sweep, then perform a mandatory review pass using an independent review workflow or review subagent, resolving all identified feedback/issues until a completely clean review is returned.
 
 ## Enforce these rules
 
@@ -71,7 +71,7 @@ Include exact decisions for:
 - implementation order
 - test coverage
 - out-of-scope items to reject during implementation review
-- definition of done
+- definition of done, including a mandatory clean review pass using a review subagent
 
 ## Run the ambiguity sweep
 

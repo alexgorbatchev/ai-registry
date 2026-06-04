@@ -48,6 +48,7 @@ Use this structure unless the user asks for a narrower doc:
     - State what implementations must be rejected.
 14. **Definition of done**
     - Make completion objectively testable.
+    - Run a separate review pass on this design document using an independent review workflow or review subagent (e.g., `engdesign:review` or equivalent), and resolve all identified issues/feedback until a completely clean review is returned.
 
 ## 2. Language rules
 

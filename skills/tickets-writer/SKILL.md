@@ -40,6 +40,7 @@ ticket_status: open
     *   Specific interfaces, modules, properties, or functions to implement or refactor.
     *   Preservation of key system properties (e.g., memory limits, reference equality).
     *   Strict test suites, coverage baselines, or golden snapshot verifications that must pass.
+    *   **Mandatory Review Pass:** Include a required item to run a separate review pass on the ticket using an independent review workflow or review subagent, resolving all identified feedback/issues until a completely clean review is returned.
 6.  **Validate against template:** Ensure the formatting matches `references/template.md`.
 
 ## Lifecycle and Archiving Rules

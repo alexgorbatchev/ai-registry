@@ -67,6 +67,13 @@ status: current
 - Deviate only when the user explicitly requests another location or repository conventions clearly assign the topic elsewhere.
 - Treat `docs/internal/` as the canonical home for internal-only Markdown docs, not public product docs such as `README.md`.
 
+## Documentation Agent Guidance Rule
+
+- When adding or modifying internal documentation conventions, folder structures, or templates, create or update the nested `docs/AGENTS.md` and `docs/internal/AGENTS.md` files.
+- `docs/AGENTS.md` should guide agents on general documentation structure, naming, and file topology under `docs/`.
+- `docs/internal/AGENTS.md` should guide agents on internal-only runbooks, procedures, metadata frontmatter contracts, and archival locations under `docs/internal/`.
+- Ensure that the `docs/` directory is registered in the root-level `AGENTS.md` under File Conventions.
+
 ## Completed Engineering Designs Rule
 
 - When an engineering design (typically located under `docs/internal/eng-designs/`) is fully implemented, move the completed document to `docs/internal/references/` to serve as the long-term, maintained reference documentation.
@@ -110,3 +117,4 @@ status: current
 - Sensitive values are omitted or sanitized.
 - Links were updated if an archived file or folder moved.
 - The document reads as a maintained internal reference, not a PR summary or assistant note.
+- The nested `docs/AGENTS.md` and `docs/internal/AGENTS.md` files are created or updated if folder structures or conventions are modified, and `docs/` is registered in the root-level `AGENTS.md`.

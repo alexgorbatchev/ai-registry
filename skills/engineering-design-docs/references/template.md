@@ -1,6 +1,6 @@
 # Engineering Design Doc Template
 
-Default new design docs to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/<topic>/DESIGN.md` and create the topic directory if needed. Start `DESIGN.md` with `created_on`, `last_modified`, and `status` YAML frontmatter. Archive superseded design doc sets by moving the whole topic directory to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/archived/<topic>/`.
+Default new design docs to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/<topic>.md`. Start the design doc with `created_on`, `last_modified`, and `status` YAML frontmatter. Archive superseded design docs by moving the document to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/archived/<topic>.md`.
 
 ## Table of contents
 - [1. Required sections](#1-required-sections)

@@ -11,9 +11,9 @@ Prefer exact contracts over recommendations.
 
 ## Default output path
 
-- Write new engineering design docs to `docs/internal/eng-designs/<topic>.md`.
+- Write new engineering design docs to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/<topic>.md`.
 - Derive `<topic>` from the feature, subsystem, or initiative name and use descriptive `kebab-case`.
-- Create `docs/internal/eng-designs/` if it does not exist.
+- Create `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/` if it does not exist.
 - Start the design doc with `created_on`, `last_modified`, and `status` YAML frontmatter so the doc follows the internal-doc lifecycle contract.
 - When tightening an existing design doc, keep its canonical path unless the user explicitly asks to move it.
 
@@ -21,7 +21,7 @@ Prefer exact contracts over recommendations.
 
 - Do not archive a design doc only because the implementation shipped.
 - Archive a design doc when it is superseded or no longer the active design reference.
-- Move the design doc to `docs/internal/eng-designs/archived/<topic>.md`.
+- Move the design doc to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/archived/<topic>.md`.
 - Preserve `created_on`, update `last_modified`, and set `status: archived` when archiving the design doc.
 - Make the archived state obvious in the design doc and point to the replacement doc when one exists.
 

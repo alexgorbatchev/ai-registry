@@ -1,12 +1,12 @@
 ---
 name: internal-docs-writer
-description: 'Write, rewrite, reorganize, and archive internal Markdown documentation for maintainers, operators, and collaborators. Use when creating repo-local process docs, runbooks, decision notes, reference material, or folder-based doc sets that should default to `docs/internal/`, move archived content into the nearest `archived/` folder, and include `created_on`, `last_modified`, and `status: current|archived` frontmatter.'
+description: Write, rewrite, reorganize, and archive internal Markdown documentation for maintainers, operators, and collaborators. Use when creating repo-local process docs, runbooks, decision notes, adrs, reference material and, eng design docs, tickets, etc.
 author: alexgorbatchev
 ---
 
 # Internal Docs Writer
 
-Write internal documentation for people who work inside the repository or organization. Default new files to `docs/internal/`, keep the content grounded in source materials, and enforce the required Markdown frontmatter contract on every file.
+Write internal documentation for people who work inside the repository or organization. Default new files to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/`, keep the content grounded in source materials, and enforce the required Markdown frontmatter contract on every file.
 
 ## Workflow
 
@@ -15,9 +15,9 @@ Write internal documentation for people who work inside the repository or organi
 - Prefer updating an existing document when the topic already has a canonical home.
 
 2. Choose the default location.
-- Write new internal docs to `docs/internal/` relative to the repository root unless the user or repository already defines a different canonical location.
-- Create `docs/internal/` if it does not exist.
-- Use descriptive `kebab-case` filenames such as `docs/internal/deploy-runbook.md` or `docs/internal/auth/session-lifecycle.md`.
+- Write new internal docs to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/` relative to the repository root unless the user or repository already defines a different canonical location.
+- Create `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/` if it does not exist.
+- Use descriptive `kebab-case` filenames such as `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/deploy-runbook.md` or `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/auth/session-lifecycle.md`.
 - Create subdirectories only when they improve navigation for multiple related documents.
 - When one topic needs multiple Markdown files, create a folder-based doc set and keep the related files together under the same active collection root.
 
@@ -63,20 +63,20 @@ status: current
 
 ## Default Output Rule
 
-- Default new files to `docs/internal/`.
+- Default new files to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/`.
 - Deviate only when the user explicitly requests another location or repository conventions clearly assign the topic elsewhere.
-- Treat `docs/internal/` as the canonical home for internal-only Markdown docs, not public product docs such as `README.md`.
+- Treat `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/` as the canonical home for internal-only Markdown docs, not public product docs such as `README.md`.
 
 ## Documentation Agent Guidance Rule
 
-- When adding or modifying internal documentation conventions, folder structures, or templates, create or update the nested `docs/AGENTS.md` and `docs/internal/AGENTS.md` files.
+- When adding or modifying internal documentation conventions, folder structures, or templates, create or update the nested `docs/AGENTS.md` and `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/AGENTS.md` files.
 - `docs/AGENTS.md` should guide agents on general documentation structure, naming, and file topology under `docs/`.
-- `docs/internal/AGENTS.md` should guide agents on internal-only runbooks, procedures, metadata frontmatter contracts, and archival locations under `docs/internal/`.
+- `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/AGENTS.md` should guide agents on internal-only runbooks, procedures, metadata frontmatter contracts, and archival locations under `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/`.
 - Ensure that the `docs/` directory is registered in the root-level `AGENTS.md` under File Conventions.
 
 ## Completed Engineering Designs Rule
 
-- When an engineering design (typically located under `docs/internal/eng-designs/`) is fully implemented, move the completed document to `docs/internal/references/` to serve as the long-term, maintained reference documentation.
+- When an engineering design (typically located under `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/`) is fully implemented, move the completed document to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/references/` to serve as the long-term, maintained reference documentation.
 - **Reference Document Format:**
   - **YAML Frontmatter:** Include standard keys (`created_on`, `last_modified`, `status: current`) formatted in `YYYY-MM-DD HH:MM`.
   - **Title:** Use a clear conceptual title (e.g. `# Feature Name`).
@@ -88,10 +88,10 @@ status: current
 ## Archive Location Rule
 
 - Move archived content to the nearest `archived/` folder instead of leaving active and archived docs mixed together.
-- If an active file lives directly under `docs/internal/`, archive it under `docs/internal/archived/`.
-- If an active file lives under a collection root such as `docs/internal/auth/`, archive it under that collection root's `archived/` folder, for example `docs/internal/auth/session-lifecycle.md` -> `docs/internal/auth/archived/session-lifecycle.md`.
-- If a topic is a folder-based doc set, move the whole folder under the nearest collection root's `archived/` folder and preserve the internal layout, for example `docs/internal/eng-designs/auth-refresh/` -> `docs/internal/eng-designs/archived/auth-refresh/`.
-- If the repository keeps ticket docs as folder-based sets, archive the whole ticket folder the same way, for example `docs/internal/tickets/ENG-123-session-cleanup/` -> `docs/internal/tickets/archived/ENG-123-session-cleanup/`.
+- If an active file lives directly under `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/`, archive it under `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/archived/`.
+- If an active file lives under a collection root such as `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/auth/`, archive it under that collection root's `archived/` folder, for example `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/auth/session-lifecycle.md` -> `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/auth/archived/session-lifecycle.md`.
+- If a topic is a folder-based doc set, move the whole folder under the nearest collection root's `archived/` folder and preserve the internal layout, for example `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/auth-refresh/` -> `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/eng-designs/archived/auth-refresh/`.
+- If the repository keeps ticket docs as folder-based sets, archive the whole ticket folder the same way, for example `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/tickets/ENG-123-session-cleanup/` -> `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/tickets/archived/ENG-123-session-cleanup/`.
 - Update links that point to the old active path after moving a file or folder.
 - Do not leave a duplicate copy at the old active path unless the user explicitly asks for a redirect stub.
 
@@ -108,7 +108,7 @@ status: current
 
 ## Final Checklist
 
-- File lives under `docs/internal/` unless there is a verified exception.
+- File lives under `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/` unless there is a verified exception.
 - Archived files or doc sets live under the correct nearest `archived/` folder.
 - Frontmatter includes `created_on`, `last_modified`, and `status`.
 - Timestamps use `YYYY-MM-DD HH:MM`.
@@ -117,4 +117,4 @@ status: current
 - Sensitive values are omitted or sanitized.
 - Links were updated if an archived file or folder moved.
 - The document reads as a maintained internal reference, not a PR summary or assistant note.
-- The nested `docs/AGENTS.md` and `docs/internal/AGENTS.md` files are created or updated if folder structures or conventions are modified, and `docs/` is registered in the root-level `AGENTS.md`.
+- The nested `docs/AGENTS.md` and `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/AGENTS.md` files are created or updated if folder structures or conventions are modified, and `docs/` is registered in the root-level `AGENTS.md`.

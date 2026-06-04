@@ -1,14 +1,14 @@
 ---
-description: Comprehensive code review — full on first run, incremental on subsequent runs, writes docs/internal/audit/review.md
+description: Comprehensive code review — full on first run, incremental on subsequent runs, writes {{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md
 ---
 
-Perform a comprehensive code review of this codebase. The output is always a holistic review of the entire project written to `docs/internal/audit/review.md` — but the exploration scope depends on whether a previous review exists. A past review file may already exist at that path; preserve and update its valid accumulated knowledge instead of ignoring it.
+Perform a comprehensive code review of this codebase. The output is always a holistic review of the entire project written to `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` — but the exploration scope depends on whether a previous review exists. A past review file may already exist at that path; preserve and update its valid accumulated knowledge instead of ignoring it.
 
 ## Step 1: Determine review mode
 
-Use `docs/internal/audit/review.md` frontmatter as the baseline source of truth.
+Use `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` frontmatter as the baseline source of truth.
 
-Expected `docs/internal/audit/review.md` frontmatter:
+Expected `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` frontmatter:
 
 ```yaml
 ---
@@ -25,12 +25,12 @@ BASELINE_SHA=$(awk '
   NR==1 && $0=="---" { in_frontmatter=1; next }
   in_frontmatter && $0=="---" { exit }
   in_frontmatter && $1=="review_sha:" { print $2; exit }
-' docs/internal/audit/review.md 2>/dev/null)
+' {{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md 2>/dev/null)
 ```
 
-- **If `docs/internal/audit/review.md` does not exist**: this is a **full review**. Proceed to Step 2a.
-- **If `docs/internal/audit/review.md` exists and `review_sha` is present and valid**: this is an **incremental review**. Use `review_sha` as your baseline and proceed to Step 2b.
-- **If `docs/internal/audit/review.md` exists but `review_sha` is missing/invalid**: treat this as a **full review** and regenerate `docs/internal/audit/review.md` with valid frontmatter in Step 5.
+- **If `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` does not exist**: this is a **full review**. Proceed to Step 2a.
+- **If `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` exists and `review_sha` is present and valid**: this is an **incremental review**. Use `review_sha` as your baseline and proceed to Step 2b.
+- **If `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` exists but `review_sha` is missing/invalid**: treat this as a **full review** and regenerate `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` with valid frontmatter in Step 5.
 
 ## Step 2a: Full review — explore the entire codebase
 
@@ -50,13 +50,13 @@ Also discover and validate project execution details that future reviews can reu
 - Build/typecheck/lint commands (if present)
 - Required environment variables, services, fixtures, or working-directory assumptions
 
-Record these in the `# Project Review Runbook` section in `docs/internal/audit/review.md` (Step 5).
+Record these in the `# Project Review Runbook` section in `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` (Step 5).
 
 Then skip to Step 3.
 
 ## Step 2b: Incremental review — explore only what changed
 
-Read the existing `docs/internal/audit/review.md` — this is your accumulated knowledge of the full codebase.
+Read the existing `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` — this is your accumulated knowledge of the full codebase.
 
 First, read and reuse the `# Project Review Runbook` section (commands, setup, env, services). Do not rediscover commands from scratch unless:
 - a stored command fails,
@@ -78,7 +78,7 @@ Then proceed to Step 3, but scope your scan (Step 3b) to the changed files and a
 
 ### 3a. Verify previous issues (incremental only)
 
-If `docs/internal/audit/review.md` existed, check every issue listed against the current code:
+If `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` existed, check every issue listed against the current code:
 - Read the specific file and function mentioned
 - Determine if the issue is **FIXED**, **STILL OPEN**, or **PARTIALLY FIXED**
 - If a change touched a file with an existing issue, re-examine that issue carefully
@@ -221,7 +221,7 @@ Skip this section for applications. For libraries, evaluate:
 
 ## Step 4: Run tests and coverage
 
-Use commands from `# Project Review Runbook` in `docs/internal/audit/review.md` first.
+Use commands from `# Project Review Runbook` in `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` first.
 
 - On a full review: discover commands, run them, and persist them in the runbook.
 - On an incremental review: reuse runbook commands; only re-discover when commands are outdated or failing.
@@ -241,11 +241,11 @@ If you had to change any runbook command, update `# Project Review Runbook` with
 - why it changed,
 - and when it was last verified.
 
-## Step 5: Write docs/internal/audit/review.md
+## Step 5: Write {{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md
 
-Write `docs/internal/audit/review.md` as a complete, holistic review of the entire project — not just the changes. A past review file may already exist there; merge new findings with carried-forward issues from the previous review (if any). Remove issues that are fixed. The result should be a single coherent document that stands on its own.
+Write `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md` as a complete, holistic review of the entire project — not just the changes. A past review file may already exist there; merge new findings with carried-forward issues from the previous review (if any). Remove issues that are fixed. The result should be a single coherent document that stands on its own.
 
-At the top of `docs/internal/audit/review.md`, include YAML frontmatter with the current review metadata:
+At the top of `{{ env "SKILL_DOCS_INTERNAL_DIR" }}/audit/review.md`, include YAML frontmatter with the current review metadata:
 
 ```yaml
 ---

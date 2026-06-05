@@ -4,7 +4,6 @@ bun.lockb
 bun.lock
 
 # Environment variables
-.env
 .env.local
 
 # Local skills-cli installs and state

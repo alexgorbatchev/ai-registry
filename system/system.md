@@ -6,7 +6,7 @@
 2. Read the full SKILL.md file for each applicable skill
 3. Only then proceed with implementation
 
-**Skills are NOT optional reference material. They are REQUIRED prerequisites.**
+**Skills are NOT optional reference material. They are REQUIRED prerequisites.** Never generate output from memory when references are available.
 
 **Failure mode to avoid:** Jumping straight into debugging/coding without reading skills first. This leads to violations of project standards that are explicitly documented in skills.
 

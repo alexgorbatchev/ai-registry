@@ -37,6 +37,13 @@ Prefer concise examples over verbose explanations.
 
 Treat the frontmatter `description` as routing metadata, not as a mini playbook. It should help the agent decide whether to load the skill, not try to enforce workflow rules before the skill body is read.
 
+#### Eliminate Prompt Debt and Redundancy
+To keep skills highly efficient and avoid wasting tokens on useless meta-commentary:
+- **No Markdown Title/Headers**: Do not start `SKILL.md` with `# Skill Name` or similar. The model already knows the skill name from the metadata.
+- **No Overviews or Meta-Commentary**: Do not add `## Overview` or explanatory sentences like "This skill acts as a proxy..." or "Below are the guidelines...". Jump straight into the action, rules, or decision logic.
+- **Minimalist Descriptions**: Strip the frontmatter `description` to the absolute bare minimum needed to trigger. For example, use `Use when asked to commit changes in a Git repository.` instead of verbose sentences detailing every scenario.
+- **Remove Implied Steps**: Do not write out steps that are completely obvious or implied. For example, if working with a review agent, do not instruct to "address issues" as that is the definition of pairing with a review agent.
+
 ### Set Appropriate Degrees of Freedom
 
 Match the level of specificity to the task's fragility and variability:

@@ -1,6 +1,6 @@
 # React Testing
 
-Use this reference for React-specific testing strategy, component logic validation, and failure analysis. For Storybook-specific interaction, visual state, and `play` tests, refer to the `storybook` skill.
+Use this reference for React-specific testing strategy, component logic validation, and failure analysis. For Storybook-specific interaction, visual state, and `play` tests, refer to [storybook.md](storybook.md).
 
 ## Scope
 
@@ -12,7 +12,7 @@ Use this reference for React-specific testing strategy, component logic validati
 1. Inspect the existing component and hook test setup before adding anything new.
 2. Pick the correct test layer:
    - **Pure transforms, parsers, selectors, reducers, helpers, and isolated hooks** → standard unit/integration tests (using React Testing Library, hook testing utilities, etc.).
-   - **Component rendering, focus, keyboard, async state, modal behavior** → use the `storybook` skill for interaction/browser tests.
+   - **Component rendering, focus, keyboard, async state, modal behavior** → use [storybook.md](storybook.md) for interaction/browser tests.
 3. Keep React harness state deterministic in tests:
    - Initialize state directly or via lazy `useState(() => ...)`.
    - Avoid mount-only `useEffect` resets that merely restate initial state.

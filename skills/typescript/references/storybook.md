@@ -1,20 +1,12 @@
----
-name: storybook
-description: Create and update Storybook stories, story-owned fixtures, and `play` tests. Use when touching `*.stories.*` files or Storybook-driven component coverage; use `storybook-review` instead for review-only audits.
-author: alexgorbatchev
----
-
 # Storybook
 
-For Storybook review-only tasks, use `{{skills_dir}}/storybook-review/SKILL.md`.
-
-Treat this repository's Storybook guidance and lint rules as hard requirements for Storybook files.
+Treat this repository's Storybook guidance and lint rules as hard requirements for Storybook files. For review-only tasks, see `{{skills_dir}}/storybook-review/SKILL.md`.
 
 ## Workflow
 
 1. Inspect the existing Storybook and test setup before adding anything new.
    - If the repo already has Storybook browser tests, follow its conventions unless they conflict with an explicit lint or policy contract.
-2. Pick the correct test layer before writing coverage.
+2. Pick the correct test layer before writing coverage:
    - **Pure transforms, parsers, selectors, reducers, helpers** → unit tests.
    - **Component rendering, focus, keyboard, async state, modal behavior** → Storybook stories plus `play` functions.
    - **Navigation, persistence, network stacks, multi-page flows** → end-to-end tests.
@@ -181,5 +173,5 @@ Before finishing a story file, verify all of the following:
 ## References
 
 Read these references as needed:
-- [setup.md](references/setup.md) — Storybook setup and shared harness configuration guidance
-- [debugging.md](references/debugging.md) — Root-cause playbook for warnings, async timing, modal targeting, and brittle story checks
+- [storybook-setup.md](storybook-setup.md) — Storybook setup and shared harness configuration guidance
+- [storybook-debugging.md](storybook-debugging.md) — Root-cause playbook for warnings, async timing, modal targeting, and brittle story checks

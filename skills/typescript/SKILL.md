@@ -281,4 +281,9 @@ For testing guidelines, patterns, and organization (including conditional logic 
 
 When working on React components or tests:
 - For component design, JSX requirements, custom hook files, and UI consistency guidelines, see [react-development.md](references/react-development.md).
-- For React/Storybook-specific testing strategies, `act(...)` warning failure policies, and interaction test patterns, see [react-testing.md](references/react-testing.md).
+- For React-specific testing strategies, `act(...)` warning failure scheduling, and component logic test patterns, see [react-testing.md](references/react-testing.md).
+
+## Storybook Development and Testing
+
+When creating, updating, or reviewing Storybook stories or writing `play` browser interaction tests:
+- For story contracts, default typed metadata, play function patterns, and browser execution rules, see [storybook.md](references/storybook.md).

@@ -6,7 +6,7 @@ author: alexgorbatchev
 
 # Storybook Review
 
-Read `{{skills_dir}}/storybook/SKILL.md` first. Treat every rule in that skill as the review rubric.
+Read `{{skills_dir}}/typescript/references/storybook.md` first. Treat every rule in that skill as the review rubric.
 
 Do not modify the reviewed Storybook files while reviewing unless the user explicitly asks for fixes.
 
@@ -51,7 +51,7 @@ Use this exact report shape:
 Git SHA: <exact git SHA captured before the review>
 Overall: <PASS|FAIL>
 Files reviewed: <comma-separated list of reviewed files>
-Reference rubric: `{{skills_dir}}/storybook/SKILL.md`
+Reference rubric: `{{skills_dir}}/typescript/references/storybook.md`
 Summary: <short summary>
 
 ## Action checklist

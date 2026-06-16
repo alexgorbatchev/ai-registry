@@ -335,6 +335,10 @@ Use `internal/` to prevent external import of implementation details. Anything n
 
 A package should export the minimum needed. Start every type, function, and constant as unexported. Promote to exported only when an external package has a demonstrated need.
 
+### 5.5 Never Commit Compiled Binaries
+
+Compiled Go binaries (executables, `.exe` files, shared libraries, etc.) are platform-specific, huge, and must never be committed to git repositories. Always exclude them from the workspace using `.gitignore` (typically by adding rules like `bin/` or individual binary output names) and distribute them solely through CI/CD pipelines, package registries, or release platforms.
+
 ---
 
 ## 6. Concurrency
@@ -516,6 +520,7 @@ Before producing any Go code, verify:
 - [ ] Packages named for responsibility, not layer
 - [ ] Exported API is minimal — only what external consumers need
 - [ ] Standard library used unless a dependency provides substantial value
+- [ ] No compiled Go binaries committed to git repositories (enforced via `.gitignore`)
 - [ ] Module tool dependencies use `tool` directives (not `tools.go` blank imports)
 - [ ] Comments explain why, code explains what
 - [ ] Zero values are useful

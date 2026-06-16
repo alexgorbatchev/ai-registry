@@ -1,12 +1,6 @@
----
-name: react-testing
-description: Use whenever touching or debugging React related tests.
-author: alexgorbatchev
----
-
 # React Testing
 
-Use this skill for React-specific testing strategy and failure analysis. Keep generic Storybook authoring, coverage, and `play`-test rules in `{{skills_dir}}/storybook/SKILL.md`.
+Use this reference for React-specific testing strategy and failure analysis. Keep generic Storybook authoring, coverage, and `play`-test rules in `{{skills_dir}}/storybook/SKILL.md`.
 
 ## Scope
 
@@ -18,10 +12,10 @@ Use this skill for React-specific testing strategy and failure analysis. Keep ge
 
 1. Inspect the existing component test setup before adding anything new.
    - If the relevant coverage already lives in Storybook, review those stories first.
-   - If setup is missing or unclear, read `references/setup.md`.
+   - If setup is missing or unclear, read [react-testing-setup.md](react-testing-setup.md).
 2. Pick the correct test layer.
    - **Pure transforms, parsers, selectors, reducers, helpers** → unit tests.
-- **Component rendering, focus, keyboard, async state, modal behavior** → Storybook stories plus `play` functions unless a story is intentionally excluded from Storybook test runs with `"!test"`.
+   - **Component rendering, focus, keyboard, async state, modal behavior** → Storybook stories plus `play` functions unless a story is intentionally excluded from Storybook test runs with `"!test"`.
    - **Navigation, persistence, network stacks, multi-page flows** → end-to-end tests.
 3. If the task changes `*.stories.*` files or `play` functions, follow `{{skills_dir}}/storybook/SKILL.md` for story coverage and browser-test rules.
 4. Keep React harness state deterministic.
@@ -62,5 +56,5 @@ For standard test file constraints, conditional logic restrictions, manual throw
 
 Read these references as needed:
 
-- `references/setup.md` — setup and shared harness guidance
-- `references/debugging.md` — root-cause playbook for warnings, async timing, modal targeting, and brittle story checks
+- [react-testing-setup.md](react-testing-setup.md) — setup and shared harness guidance
+- [react-testing-debugging.md](react-testing-debugging.md) — root-cause playbook for warnings, async timing, modal targeting, and brittle story checks

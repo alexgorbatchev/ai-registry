@@ -276,3 +276,9 @@ Configuration objects derived from external sources (like environment variables)
 ## Testing
 
 For testing guidelines, patterns, and organization (including conditional logic restrictions, exact string matching, snapshots, and fixtures), see [testing.md](references/testing.md).
+
+## React Development and Testing
+
+When working on React components or tests:
+- For component design, JSX requirements, custom hook files, and UI consistency guidelines, see [react-development.md](references/react-development.md).
+- For React/Storybook-specific testing strategies, `act(...)` warning failure policies, and interaction test patterns, see [react-testing.md](references/react-testing.md).

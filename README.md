@@ -119,8 +119,8 @@ The repo now exposes its skills in the standard top-level `skills/` location, so
 
 ```bash
 npx skills add /path/to/ai-registry --list
-npx skills add /path/to/ai-registry --skill react-development
-npx skills add owner/repo --skill react-development
+npx skills add /path/to/ai-registry --skill typescript
+npx skills add owner/repo --skill typescript
 ```
 
 Use `--agent` to target specific harnesses and `-g` to install globally.

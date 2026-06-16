@@ -1,9 +1,3 @@
----
-name: react-development
-description: Must be used any time React code is touched.
-author: alexgorbatchev
----
-
 # React Development
 
 Use existing React patterns before introducing new ones. Preserve accessibility, composability, and readable JSX.
@@ -172,10 +166,3 @@ Before finishing a React change, verify all of the following:
 - shared primitives were reused where appropriate
 - accessible queries remain possible for user-facing controls
 - relevant stories, type checks, and tests were run
-
-## Companion skills
-
-Use related skills when the task goes deeper in those areas:
-
-- `react-testing` for Storybook stories, play functions, and interaction coverage
-- `typescript` when TypeScript structure and type-safety rules matter heavily

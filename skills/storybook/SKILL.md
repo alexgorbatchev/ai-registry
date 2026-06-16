@@ -177,3 +177,9 @@ Before finishing a story file, verify all of the following:
 5. Shared setup and repeated flows are extracted into helpers when the file would otherwise repeat itself.
 6. Assertions prove functionality, not just presence, for interactive components.
 7. No hard-coded timeouts or arbitrary delays are used.
+
+## References
+
+Read these references as needed:
+- [setup.md](references/setup.md) — Storybook setup and shared harness configuration guidance
+- [debugging.md](references/debugging.md) — Root-cause playbook for warnings, async timing, modal targeting, and brittle story checks

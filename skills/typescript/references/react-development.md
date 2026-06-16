@@ -131,9 +131,7 @@ For general TypeScript file naming, export patterns, and ownership-location rule
 
 - Organize code by feature or domain folders.
 - Keep component ownership `.tsx` files under canonical `components/`, `templates/`, or `layouts/` directories.
-- Keep each component story under a sibling `stories/` directory with a matching basename when the repo uses Storybook coverage.
-- Treat `.storybook/*.tsx` and `.storybook/**/*.tsx` files as Storybook project-support harness files, not product component ownership files.
-- Keep raw intrinsic JSX and direct styling props inside component ownership files when the repository separates component-owned TSX from consumer TSX. Storybook `.storybook/` support files are the narrow harness exception.
+- Keep raw intrinsic JSX and direct styling props inside component ownership files when the repository separates component-owned TSX from consumer TSX.
 - Do not dump unrelated modules into broad `lib/` directories.
 - When `lib/` is necessary, keep it for shared infrastructure and move feature-specific code into named subfolders such as `lib/githubExtraction/` or `lib/youtubeExtraction/`.
 

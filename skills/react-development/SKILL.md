@@ -182,4 +182,4 @@ Before finishing a React change, verify all of the following:
 Use related skills when the task goes deeper in those areas:
 
 - `react-testing` for Storybook stories, play functions, and interaction coverage
-- `typescript-code-quality` when TypeScript structure and type-safety rules matter heavily
+- `typescript` when TypeScript structure and type-safety rules matter heavily

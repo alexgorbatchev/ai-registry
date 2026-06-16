@@ -1,14 +1,12 @@
 ---
-name: typescript-code-quality
-description: >-
-  TypeScript code quality requirements and patterns. Use when writing,
-  reviewing, or modifying TypeScript code. Covers type safety, naming
-  conventions, file organization, module structure, functional programming
-  patterns, and import/export rules.
+name: typescript
+description: Must use any time a TypeScript file is read or written.
 author: alexgorbatchev
 ---
 
-# TypeScript Code Quality
+# TypeScript
+
+Guidelines, conventions, and requirements for writing high-quality, type-safe, and maintainable TypeScript code.
 
 ## Prohibited Patterns
 
@@ -274,3 +272,7 @@ Configuration objects derived from external sources (like environment variables)
 - Use shortest import path for `@foo/bar` packages
 - Indent multiline template literals to match the surrounding code
 - Use modern TypeScript and ECMAScript features when supported by the project's runtime targets, tsconfig, and polyfill/transpile strategy
+
+## Testing
+
+For testing guidelines, patterns, and organization (including conditional logic restrictions, exact string matching, snapshots, and fixtures), see [testing.md](references/testing.md).

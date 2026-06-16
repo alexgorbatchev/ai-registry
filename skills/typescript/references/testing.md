@@ -1,12 +1,3 @@
----
-name: typescript-testing
-description: >-
-  TypeScript testing guidelines and patterns. Use when writing, reviewing, or
-  fixing TypeScript tests. Covers test structure, assertions, snapshots,
-  conditional logic restrictions, and test organization patterns.
-author: alexgorbatchev
----
-
 # TypeScript Testing
 
 Mandatory testing guidelines for TypeScript projects using Bun's test runner.

@@ -26,7 +26,7 @@ describe("createSkillUsageReport", () => {
         {
           session_id: "sub-a",
           time_created: 2 * DAY_IN_MILLISECONDS,
-          data: JSON.stringify({ type: "tool", tool: "skill", state: { input: { name: "typescript-code-quality" } } }),
+          data: JSON.stringify({ type: "tool", tool: "skill", state: { input: { name: "typescript" } } }),
         },
         {
           session_id: "root-b",
@@ -56,7 +56,7 @@ describe("createSkillUsageReport", () => {
         skills: [
           { name: "bun", count: 3, averagePerDay: 1 },
           { name: "opencode-sessions", count: 1, averagePerDay: 1 / 3 },
-          { name: "typescript-code-quality", count: 1, averagePerDay: 1 / 3 },
+          { name: "typescript", count: 1, averagePerDay: 1 / 3 },
         ],
       },
       byProject: [
@@ -68,7 +68,7 @@ describe("createSkillUsageReport", () => {
           usageDays: 2,
           skills: [
             { name: "bun", count: 2, averagePerDay: 1 },
-            { name: "typescript-code-quality", count: 1, averagePerDay: 0.5 },
+            { name: "typescript", count: 1, averagePerDay: 0.5 },
           ],
         },
         {

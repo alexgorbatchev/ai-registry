@@ -183,7 +183,7 @@ function createDatabase(
     "child-a",
     baseTime + 10_000,
     baseTime + 10_000,
-    JSON.stringify({ type: "tool", tool: "skill", state: { input: { name: "typescript-code-quality" } } }),
+    JSON.stringify({ type: "tool", tool: "skill", state: { input: { name: "typescript" } } }),
   ]);
   database.run("INSERT INTO part (session_id, time_created, time_updated, data) VALUES (?, ?, ?, ?)", [
     "session-b",
@@ -288,7 +288,7 @@ Commands:
 "<project-a>
 | Skill | Usages | Avg/day |
 | bun | 1 | 1.00 |
-| typescript-code-quality | 1 | 1.00 |
+| typescript | 1 | 1.00 |
 | Total | 2 | 2.00 |
 "
 `);
@@ -301,7 +301,7 @@ Commands:
 | bun | 1 | 0.17 |
 | opencode-sessions | 1 | 0.17 |
 | readme-writer | 1 | 0.17 |
-| typescript-code-quality | 1 | 0.17 |
+| typescript | 1 | 0.17 |
 | Total | 4 | 0.67 |
 "
 `);

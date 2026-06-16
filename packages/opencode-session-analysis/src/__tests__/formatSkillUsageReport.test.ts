@@ -12,7 +12,7 @@ const FIXTURE_SKILL_USAGE_REPORT = {
     skills: [
       { name: "bun", count: 3, averagePerDay: 1 },
       { name: "opencode-sessions", count: 1, averagePerDay: 0.33 },
-      { name: "typescript-code-quality", count: 1, averagePerDay: 0.33 },
+      { name: "typescript", count: 1, averagePerDay: 0.33 },
     ],
   },
   byProject: [
@@ -24,7 +24,7 @@ const FIXTURE_SKILL_USAGE_REPORT = {
       usageDays: 2,
       skills: [
         { name: "bun", count: 2, averagePerDay: 1 },
-        { name: "typescript-code-quality", count: 1, averagePerDay: 0.5 },
+        { name: "typescript", count: 1, averagePerDay: 0.5 },
       ],
     },
     {
@@ -50,15 +50,15 @@ describe("formatSkillUsageReport", () => {
 
     expect(output).toMatchInlineSnapshot(`
 "All projects
-┌─────────────────────────┬────────┬─────────┐
-│ Skill                   │ Usages │ Avg/day │
-├─────────────────────────┼────────┼─────────┤
-│ bun                     │      3 │    1.00 │
-│ opencode-sessions       │      1 │    0.33 │
-│ typescript-code-quality │      1 │    0.33 │
-├─────────────────────────┼────────┼─────────┤
-│ Total                   │      5 │    1.67 │
-└─────────────────────────┴────────┴─────────┘
+┌───────────────────┬────────┬─────────┐
+│ Skill             │ Usages │ Avg/day │
+├───────────────────┼────────┼─────────┤
+│ bun               │      3 │    1.00 │
+│ opencode-sessions │      1 │    0.33 │
+│ typescript        │      1 │    0.33 │
+├───────────────────┼────────┼─────────┤
+│ Total             │      5 │    1.67 │
+└───────────────────┴────────┴─────────┘
 "
 `);
   });
@@ -71,14 +71,14 @@ describe("formatSkillUsageReport", () => {
 
     expect(output).toMatchInlineSnapshot(`
 "/repo-a
-┌─────────────────────────┬────────┬─────────┐
-│ Skill                   │ Usages │ Avg/day │
-├─────────────────────────┼────────┼─────────┤
-│ bun                     │      2 │    1.00 │
-│ typescript-code-quality │      1 │    0.50 │
-├─────────────────────────┼────────┼─────────┤
-│ Total                   │      3 │    1.50 │
-└─────────────────────────┴────────┴─────────┘
+┌────────────┬────────┬─────────┐
+│ Skill      │ Usages │ Avg/day │
+├────────────┼────────┼─────────┤
+│ bun        │      2 │    1.00 │
+│ typescript │      1 │    0.50 │
+├────────────┼────────┼─────────┤
+│ Total      │      3 │    1.50 │
+└────────────┴────────┴─────────┘
 
 /repo-b
 ┌───────────────────┬────────┬─────────┐

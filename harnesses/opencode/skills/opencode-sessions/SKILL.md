@@ -33,6 +33,22 @@ The export includes:
 
 Use this exporter for deep analysis bundles. It intentionally excludes `account` and `account_state` because they contain auth/account state rather than session context.
 
+## Bundled Search Script
+
+Use the bundled Bun script to search for specific terms across all sessions, identifying which sessions mention a keyword or phrase, and when they were first mentioned.
+
+Run:
+
+```bash
+bun scripts/search.ts <search-term> [--db <path-to-opencode.db>]
+```
+
+Notes:
+
+- Returns all matching sessions sorted chronologically by first mention of the search term
+- Scans `message`, `part`, `session_message`, and `session_input` tables
+- Override the database location with `--db <path-to-opencode.db>` if needed
+
 ## Primary Storage
 
 - Main session store: `~/.local/share/opencode/opencode.db`

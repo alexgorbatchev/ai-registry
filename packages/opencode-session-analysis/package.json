@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "check": "bun run src/cli.ts --help",
-    "lint": "tsgo -p tsconfig.json",
+    "lint": "tsc -p tsconfig.json",
     "test": "bun test src"
   },
   "keywords": [
@@ -41,6 +41,6 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.12",
-    "typescript": "^5.7.0"
+    "typescript": "rc"
   }
 }

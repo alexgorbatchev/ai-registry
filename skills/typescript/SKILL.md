@@ -261,8 +261,7 @@ Configuration objects derived from external sources (like environment variables)
 
 ## Tooling
 
-- **Critical:** Prefer `tsgo` over `tsc` whenever `tsgo` is available in the project/toolchain
-- Fall back to `tsc` only when `tsgo` is not available or a task explicitly requires `tsc`
+- **Critical:** Always prefer `tsc` as the default compiler and typechecker.
 
 ## Formatting
 

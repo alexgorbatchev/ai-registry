@@ -26,7 +26,7 @@
   "devDependencies": {
     "@opencode-ai/plugin": "^1.2.5",
     "tiktoken": "^1.0.21",
-    "typescript": "^5.7.0",
+    "typescript": "rc",
     "vitest": "^3.0.0"
   },
   "dependencies": {

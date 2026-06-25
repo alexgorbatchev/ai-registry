@@ -1,9 +1,9 @@
 ---
 name: skill-writer
 description: >-
-  Create, revise, and package effective skills. Use when adding a new skill or
+  Create, revise, and validate effective skills. Use when adding a new skill or
   changing an existing skill's SKILL.md, bundled scripts, references, assets,
-  scaffold templates, or validation/packaging tooling.
+  scaffold templates, or validation tooling.
 author: alexgorbatchev
 ---
 
@@ -55,6 +55,15 @@ Match the level of specificity to the task's fragility and variability:
 **Low freedom (specific scripts, few parameters)**: Use when operations are fragile and error-prone, consistency is critical, or a specific sequence must be followed.
 
 Think of Claude as exploring a path: a narrow bridge with cliffs needs specific guardrails (low freedom), while an open field allows many routes (high freedom).
+
+### Portability (No Local References)
+
+Skills must be portable and reusable across different environments, machines, and projects. 
+
+**Never include local references or hardcoded absolute paths** in your skill files (`SKILL.md`, scripts, references, etc.).
+- Avoid paths like `/Users/alex/development/...` or `C:\Users\...`.
+- Use relative paths, or environment variables, or parameterize paths so they are evaluated at runtime by the agent.
+- When referring to other files within the skill itself, always use paths relative to the skill directory (e.g., `scripts/my_script.ts` or `references/docs.md`). 
 
 ### Anatomy of a Skill
 
@@ -223,7 +232,7 @@ Skill writing and maintenance involve these steps:
 2. Plan reusable skill contents (scripts, references, assets)
 3. Initialize the skill when needed (run `bun {{skills_dir}}/skill-writer/scripts/init_skill.ts`)
 4. Edit the skill (implement resources and write SKILL.md)
-5. Validate and package the skill (run `bun {{skills_dir}}/skill-writer/scripts/quick_validate.ts` and `bun {{skills_dir}}/skill-writer/scripts/package_skill.ts`)
+5. Validate the skill (run `bun {{skills_dir}}/skill-writer/scripts/quick_validate.ts`)
 6. Iterate based on real usage
 
 Follow these steps in order, skipping only if there is a clear reason why they are not applicable.
@@ -273,15 +282,19 @@ To establish the skill's contents, analyze each concrete example to create a lis
 
 At this point, it is time to actually create the skill.
 
-Skip this step only if the skill being developed already exists, and iteration or packaging is needed. In this case, continue to the next step.
+Skip this step only if the skill being developed already exists, and iteration or validation is needed. In this case, continue to the next step.
 
-When creating a new skill from scratch in this registry, always run the `init_skill.ts` script with Bun and create the new skill under `{{skills_dir}}`. The script conveniently generates a new template skill directory that automatically includes everything a skill requires, making the skill creation process much more efficient and reliable.
+When creating a new skill from scratch, ALWAYS default to creating the new skill in the current project folder under `.agents/skills` (e.g., `{proj-dir}/.agents/skills`), unless the user explicitly mentions creating it in the ai-registry or globally. Always run the `init_skill.ts` script with Bun. The script conveniently generates a new template skill directory that automatically includes everything a skill requires, making the skill creation process much more efficient and reliable.
 
 When maintaining `init_skill.ts`, scaffold template content, or validator-adjacent code, first generate a fresh skill with `init_skill.ts` and immediately run `quick_validate.ts` against that untouched scaffold before making any manual edits. Treat that init-to-validate pass as the first regression check for scaffold/validator compatibility, because it catches frontmatter and template contract drift that hand-edited examples can hide.
 
 Usage:
 
 ```bash
+# For a project-specific skill (default):
+bun {{skills_dir}}/skill-writer/scripts/init_skill.ts <skill-name> --path .agents/skills
+
+# For a global/registry skill (only if explicitly requested):
 bun {{skills_dir}}/skill-writer/scripts/init_skill.ts <skill-name> --path {{skills_dir}}
 ```
 
@@ -366,9 +379,9 @@ Write instructions for using the skill and its bundled resources.
 
 For a project-local `<base-skill>-addendum`, keep the body focused on the project-specific delta from the base skill. State clearly that project-specific guidance in the addendum supersedes conflicting guidance from the base skill for that project, and avoid repeating unchanged parts of the base skill.
 
-### Step 5: Packaging a Skill
+### Step 5: Validating a Skill
 
-Once development of the skill is complete, it must be packaged into a distributable .skill file that gets shared with the user. Run the validator explicitly first with Bun when iterating quickly, then package with Bun. Packaging also validates automatically.
+Once development of the skill is complete, validate it. Run the validator explicitly with Bun.
 
 These entrypoint scripts are Bun scripts. Invoke them as `bun <script> ...`.
 
@@ -380,30 +393,12 @@ bun {{skills_dir}}/skill-writer/scripts/quick_validate.ts <path/to/skill-folder>
 
 If you changed scaffold generation or validator behavior, validate a freshly generated skill before validating a hand-edited one.
 
-Packaging:
+The script will report any validation errors and exit. Fix any validation errors and run the validation command again. The validation checks:
 
-```bash
-bun {{skills_dir}}/skill-writer/scripts/package_skill.ts <path/to/skill-folder>
-```
-
-Optional output directory specification:
-
-```bash
-bun {{skills_dir}}/skill-writer/scripts/package_skill.ts <path/to/skill-folder> ./dist
-```
-
-The packaging script will:
-
-1. **Validate** the skill automatically, checking:
-
-   - YAML frontmatter format and required fields
-   - Skill naming conventions and directory structure
-   - Description completeness and quality
-   - File organization and resource references
-
-2. **Package** the skill if validation passes, creating a .skill file named after the skill (e.g., `my-skill.skill`) that includes all files and maintains the proper directory structure for distribution. The .skill file is a zip file with a .skill extension.
-
-If validation fails, the script will report the errors and exit without creating a package. Fix any validation errors and run the packaging command again.
+- YAML frontmatter format and required fields
+- Skill naming conventions and directory structure
+- Description completeness and quality
+- File organization and resource references
 
 When changing scaffold or validator contracts, keep an end-to-end regression that covers `initSkill(...)` followed by `validateSkill(...)` so the generated default scaffold remains valid without manual cleanup.
 

@@ -175,6 +175,10 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
 
       if (isDefaultProfile) {
         await copyFile(masterSettingsPath, join(visibleProfileDir, "settings.json"));
+        const masterModelsPath = join(context.harnessDir, "models.json");
+        if (existsSync(masterModelsPath)) {
+          await copyFile(masterModelsPath, join(visibleProfileDir, "models.json"));
+        }
         await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
         await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
 

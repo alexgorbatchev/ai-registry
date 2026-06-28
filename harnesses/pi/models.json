@@ -1,0 +1,14 @@
+{
+  "providers": {
+    "google": {
+      "models": [
+        {
+          "id": "gemini-3.5-flash",
+          "name": "Gemini 3.5 Flash",
+          "contextWindow": 1048576,
+          "maxTokens": 8192
+        }
+      ]
+    }
+  }
+}

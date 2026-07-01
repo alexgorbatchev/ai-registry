@@ -419,6 +419,7 @@ and [references/authentication.md](references/authentication.md).
 
 ## When to load another skill
 
+- **Web Search**: For searching the web (Google, DuckDuckGo, Bing, etc.), do not use agent-browser as you will be blocked by CAPTCHAs. Use the `firecrawl-cli` skill (`firecrawl search`) instead.
 - **Electron desktop app** (VS Code, Slack desktop, Discord, Figma, etc.):
   `agent-browser skills get electron`
 - **Slack workspace automation**: `agent-browser skills get slack`

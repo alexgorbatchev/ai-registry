@@ -18,6 +18,7 @@ The `firecrawl` CLI provides four main commands:
 4. **`agent`**: Search and gather data from the web using natural language prompts.
 
 **Important**: 
+- **DO NOT** set or override the `FIRECRAWL_API_URL` environment variable (e.g., `export FIRECRAWL_API_URL="https://api.firecrawl.dev"`). The system is intentionally configured to use a local private server. Rely on the default environment.
 - You can output structured JSON using the `--json` flag or format flags.
 
 ### Quick Examples

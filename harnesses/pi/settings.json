@@ -1,5 +1,4 @@
 {
-  "lastChangelogVersion": "0.73.0",
   "skills": [],
   "prompts": [],
   "defaultProvider": "google",
@@ -9,7 +8,7 @@
     "npm:@aliou/pi-processes",
     "npm:pi-extmgr",
     "npm:pi-tool-display",
-    //"npm:pi-subagents",
+    "npm:pi-subagents",
     "npm:pi-interactive-shell",
     "npm:pi-web-access",
     "npm:pi-ask-user",
@@ -20,11 +19,7 @@
   ],
   "steeringMode": "one-at-a-time",
   "enabledModels": [
-    "openai/gpt-5.4",
-    "openai/gpt-5.4-mini",
-    "openai/gpt-5.5",
     "google/gemini-3.1-pro-preview",
-    "google/gemini-3.1-flash-lite-preview",
     "google/gemini-3.5-flash"
   ],
   "@alexgorbatchev/pi-env": {

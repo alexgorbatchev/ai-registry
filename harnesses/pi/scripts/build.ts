@@ -5,6 +5,8 @@ import { homedir } from "os";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 
+import { syncBack } from "./lib/syncBack";
+
 import type {
   IProfileBuildContext,
   IUnifiedHarnessBuildContext,
@@ -268,6 +270,7 @@ const plugin: IUnifiedHarnessPlugin = {
   finalizeOutput,
   stageProfile,
   getBootstrapTargets,
+  syncBack,
   target: "pi",
 };
 

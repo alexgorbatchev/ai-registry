@@ -2,7 +2,7 @@ type ITomlScalar = boolean | number | string;
 
 interface ITomlArray extends Array<ITomlValue> {}
 
-interface ITomlTable {
+export interface ITomlTable {
   [key: string]: ITomlValue;
 }
 
@@ -239,7 +239,7 @@ function appendTomlArrayTableSections(pathSegments: string[], tableArray: ITomlT
   }
 }
 
-function stringifyTomlTable(table: ITomlTable): string {
+export function stringifyTomlTable(table: ITomlTable): string {
   const sections: string[] = [];
   appendTomlTableSections([], table, sections);
   return sections.join("\n\n");

@@ -411,7 +411,7 @@ async function buildUnifiedOutputs(
 }
 
 async function main() {
-  console.log("🚀 Building Unified Agent Outputs...\n");
+  console.log("🚀 Building Unified Agent Outputs...");
 
   const hasAutoConfirm = hasAutoConfirmFlag();
 
@@ -419,6 +419,27 @@ async function main() {
   const unifiedHarnessPlugins = await loadUnifiedHarnessPlugins(HARNESSES_DIR, availableHarnessBuildTargets);
 
   try {
+    const buildSupport: IBuildSupport = {
+      copyDirectoryWithTemplateVariables,
+      copyPathWithTemplateVariables,
+      mergeDirectory,
+      stageProfileAssets,
+      writeBinScript,
+    };
+
+    for (const plugin of unifiedHarnessPlugins) {
+      if (plugin.syncBack) {
+        await plugin.syncBack({
+          harnessDir: join(HARNESSES_DIR, plugin.target),
+          outputDir: UNIFIED_OUTPUT_DIR,
+          templateContext: TEMPLATE_CONTEXT,
+          buildSupport,
+        });
+      }
+    }
+
+    console.log();
+
     const existingManifest = await readGeneratedOutputManifest();
 
     await buildUnifiedOutputs(

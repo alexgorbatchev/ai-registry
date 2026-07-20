@@ -25,6 +25,8 @@ import { basename, join } from "path";
 import { homedir } from "os";
 import { dedentTemplate } from "@alexgorbatchev/dedent-string";
 
+import { syncBack } from "./lib/syncBack";
+
 import type {
   IProfileBuildContext,
   IUnifiedHarnessBuildContext,
@@ -206,6 +208,7 @@ const plugin: IUnifiedHarnessPlugin = {
   stageProfile,
   finalizeOutput,
   getBootstrapTargets,
+  syncBack,
 };
 
 export default plugin;

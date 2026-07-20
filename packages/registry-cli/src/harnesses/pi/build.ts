@@ -12,7 +12,6 @@ import type {
 } from "../../lib/harnessBuild";
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
 import { assertSupportedPiManifest } from "./lib/profileOutputRules";
-import { syncBackFiles } from "../../lib/syncBack";
 
 const PROFILE_STAGING_DIR_NAME = ".pi-profiles";
 const APPEND_SYSTEM_FILE_NAME = "APPEND_SYSTEM.md";
@@ -173,6 +172,10 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
         if (existsSync(masterModelsPath)) {
           await copyFile(masterModelsPath, join(visibleProfileDir, "models.json"));
         }
+        const masterWebSearchPath = join(context.harnessDir, "web-search.json");
+        if (existsSync(masterWebSearchPath)) {
+          await copyFile(masterWebSearchPath, join(visibleProfileDir, "web-search.json"));
+        }
         await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
         await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
 
@@ -257,32 +260,10 @@ async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePat
   ];
 }
 
-async function syncBack(context: IUnifiedHarnessBuildContext): Promise<void> {
-  const activeDir = process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent");
-  
-  await syncBackFiles(context, [
-    {
-      filename: "settings.json",
-      desc: "Pi settings.json",
-      activePath: join(activeDir, "settings.json"),
-      sourcePath: join(context.harnessDir, "settings.json"),
-      compiledPath: join(context.outputDir, "pi", "default", "settings.json"),
-    },
-    {
-      filename: "models.json",
-      desc: "Pi models.json",
-      activePath: join(activeDir, "models.json"),
-      sourcePath: join(context.harnessDir, "models.json"),
-      compiledPath: join(context.outputDir, "pi", "default", "models.json"),
-    }
-  ]);
-}
-
 const plugin: IUnifiedHarnessPlugin = {
   finalizeOutput,
   stageProfile,
   getBootstrapTargets,
-  syncBack,
   target: "pi",
 };
 

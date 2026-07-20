@@ -72,7 +72,6 @@ export type IUnifiedHarnessPlugin = {
   stageProfile?(context: IProfileBuildContext): Promise<void>;
   finalizeOutput?(context: IUnifiedHarnessBuildContext): Promise<void>;
   getBootstrapTargets?(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>>;
-  syncBack?(context: IUnifiedHarnessBuildContext): Promise<void>;
 };
 
 export function getObjectValue(object: object, key: string): unknown {
@@ -88,14 +87,12 @@ export function isUnifiedHarnessPlugin(value: unknown): value is IUnifiedHarness
   const stageProfile = getObjectValue(value, "stageProfile");
   const finalizeOutput = getObjectValue(value, "finalizeOutput");
   const getBootstrapTargets = getObjectValue(value, "getBootstrapTargets");
-  const syncBack = getObjectValue(value, "syncBack");
 
   return (
     typeof target === "string" &&
     (stageProfile === undefined || typeof stageProfile === "function") &&
     (finalizeOutput === undefined || typeof finalizeOutput === "function") &&
-    (getBootstrapTargets === undefined || typeof getBootstrapTargets === "function") &&
-    (syncBack === undefined || typeof syncBack === "function")
+    (getBootstrapTargets === undefined || typeof getBootstrapTargets === "function")
   );
 }
 

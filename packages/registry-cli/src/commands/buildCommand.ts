@@ -287,17 +287,6 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
     writeBinScript,
   };
 
-  for (const plugin of unifiedHarnessPlugins) {
-    if (plugin.syncBack) {
-      await plugin.syncBack({
-        harnessDir: join(harnesses, plugin.target),
-        outputDir: output,
-        templateContext: TEMPLATE_CONTEXT,
-        buildSupport,
-      });
-    }
-  }
-
   console.log();
 
   const existingManifest = await readGeneratedOutputManifest(output);

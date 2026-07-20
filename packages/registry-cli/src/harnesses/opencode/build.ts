@@ -11,7 +11,6 @@ import type {
 } from "../../lib/harnessBuild";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
 import { createSkillPermission } from "./lib/profileLocalAssetRules";
-import { syncBackFiles } from "../../lib/syncBack";
 
 const AGENT_STAGING_DIR_NAME = ".opencode-agents";
 const COMMAND_STAGING_DIR_NAME = ".opencode-commands";
@@ -176,34 +175,11 @@ async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePat
   ];
 }
 
-async function syncBack(context: IUnifiedHarnessBuildContext): Promise<void> {
-  const getConfigHome = () => process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
-  const activeDir = process.env.OPENCODE_CONFIG_DIR?.trim() || join(getConfigHome(), "opencode");
-
-  await syncBackFiles(context, [
-    {
-      filename: "opencode.jsonc",
-      desc: "OpenCode config",
-      activePath: join(activeDir, "opencode.jsonc"),
-      sourcePath: join(context.harnessDir, "opencode.jsonc"),
-      compiledPath: join(context.outputDir, "opencode", "opencode.jsonc"),
-    },
-    {
-      filename: "dcp.jsonc",
-      desc: "OpenCode DCP config",
-      activePath: join(activeDir, "dcp.jsonc"),
-      sourcePath: join(context.harnessDir, "dcp.jsonc"),
-      compiledPath: join(context.outputDir, "opencode", "dcp.jsonc"),
-    },
-  ]);
-}
-
 const plugin: IUnifiedHarnessPlugin = {
   target: "opencode",
   stageProfile,
   finalizeOutput,
   getBootstrapTargets,
-  syncBack,
 };
 
 export default plugin;

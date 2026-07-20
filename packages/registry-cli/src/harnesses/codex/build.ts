@@ -12,8 +12,6 @@ import type {
 } from "../../lib/harnessBuild";
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
-import { buildMutableCodexConfig } from "./buildMutableCodexConfig";
-import { syncBackFiles } from "../../lib/syncBack";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
 const CODEX_MUTABLE_STATE_DIR_NAME = "codex";
@@ -29,10 +27,6 @@ function getMutableCodexStateDir(repositoryRoot: string): string {
 
 function getMutableCodexConfigPath(repositoryRoot: string): string {
   return join(getMutableCodexStateDir(repositoryRoot), "config.toml");
-}
-
-function getManagedCodexConfigSnapshotPath(repositoryRoot: string): string {
-  return join(getMutableCodexStateDir(repositoryRoot), "managed-config.json");
 }
 
 async function renderCodexConfigSeed(context: IProfileBuildContext): Promise<string> {
@@ -53,23 +47,14 @@ async function renderCodexConfigSeed(context: IProfileBuildContext): Promise<str
 
 async function seedMutableCodexConfig(context: IProfileBuildContext): Promise<string> {
   const mutableConfigPath = getMutableCodexConfigPath(context.templateContext.repo_root);
-  const managedConfigSnapshotPath = getManagedCodexConfigSnapshotPath(context.templateContext.repo_root);
   const sourceConfigText = await renderCodexConfigSeed(context);
-  const currentConfigText = existsSync(mutableConfigPath)
-    ? await readFile(mutableConfigPath, "utf-8")
-    : null;
-  const previousManagedConfigText = existsSync(managedConfigSnapshotPath)
-    ? await readFile(managedConfigSnapshotPath, "utf-8")
-    : null;
-  const nextConfig = buildMutableCodexConfig({
-    currentConfigText,
-    previousManagedConfigText,
-    sourceConfigText,
-  });
 
   await mkdir(getMutableCodexStateDir(context.templateContext.repo_root), { recursive: true });
-  await writeFile(mutableConfigPath, nextConfig.configText, "utf-8");
-  await writeFile(managedConfigSnapshotPath, nextConfig.managedConfigSnapshotText, "utf-8");
+  
+  if (!existsSync(mutableConfigPath)) {
+    await writeFile(mutableConfigPath, sourceConfigText, "utf-8");
+  }
+
   return mutableConfigPath;
 }
 
@@ -302,29 +287,11 @@ async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePat
   ];
 }
 
-async function syncBack(context: IUnifiedHarnessBuildContext): Promise<void> {
-  const repositoryRoot = context.templateContext.repo_root;
-  const activePath = join(repositoryRoot, ".tmp", "codex", "config.toml");
-  const sourcePath = join(context.harnessDir, "config.toml");
-  const compiledPath = join(context.outputDir, "codex", "default", "config.toml");
-
-  await syncBackFiles(context, [
-    {
-      filename: "config.toml",
-      desc: "Codex config.toml",
-      activePath,
-      sourcePath,
-      compiledPath,
-    }
-  ]);
-}
-
 const plugin: IUnifiedHarnessPlugin = {
   target: CODEX_OUTPUT_DIR_NAME,
   stageProfile,
   finalizeOutput,
   getBootstrapTargets,
-  syncBack,
 };
 
 export default plugin;

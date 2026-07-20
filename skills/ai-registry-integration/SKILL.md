@@ -79,7 +79,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Add Harness Overrides
 
 - Put harness-specific shipped files under `harnesses/<target>/` beneath the repo_root token.
-- Put unified harness-specific build logic in `harnesses/<target>/packages/registry-cli/src/bin/build.ts` beneath the repo_root token for every generated harness target; the root build only discovers harness outputs through that plugin entrypoint.
+- Put unified harness-specific build logic in `packages/registry-cli/src/harnesses/<target>/build.ts` beneath the repo_root token for every generated harness target.
 - Put repo-local vendored code packages that a harness references by file path under `vendor/` beneath the repo_root token.
 - Put shared repo-level system guidance under `system/` beneath the repo_root token and harness-specific guidance in `harnesses/AGENTS.md` or the relevant `harnesses/<target>/` directory.
 - Only files under a harness directory are copied into generated output for that harness, subject to `.registry-ignore`.
@@ -114,7 +114,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Build And Generated Output
 
 - The local build entrypoint is `packages/registry-cli/src/bin/build.ts` beneath the repo_root token.
-- Unified harness plugins are discovered from `harnesses/<target>/packages/registry-cli/src/bin/build.ts` beneath the repo_root token.
+- Unified harness plugins are located at `packages/registry-cli/src/harnesses/<target>/build.ts` beneath the repo_root token.
 - Generated outputs are written under the output_dir token.
 - The generated-output manifest tracks only registry-managed entries under the output_dir token, and `bun run build` overwrites only those managed paths instead of replacing the entire output tree.
 - Verify generated files that match the change, especially:

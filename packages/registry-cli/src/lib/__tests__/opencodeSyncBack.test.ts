@@ -128,7 +128,7 @@ describe("OpenCode syncBack", () => {
     };
 
     await expect(syncBack(context)).rejects.toThrow(
-      "Conflict detected in OpenCode config! Both repository source and active settings have changed. Please resolve manually."
+      "Conflict detected in OpenCode config at keys: plugin! Both repository source and active settings have changed. Please resolve manually."
     );
   });
 });

@@ -24,7 +24,7 @@ When reporting progress, always including 1-10 completion score and explain: why
 
 Use `rg` instead of `grep` and `find` to do file search
 
-Do not pass multi-line scripts to interpreters via stdin, heredocs, pipes, or -e/-c flags. This includes patterns like python3 - <<, node - <<, python -c, and similar constructs when used for non-trivial logic, instead write it to a file under the project’s .tmp/ directory and execute that file instead (exception: trivial one-liners with no control flow, imports, or multi-step logic are allowed)
+**NEVER use heredoc for any reason.**
 
 Use .tmp in the project folder instead of global /tmp.
 

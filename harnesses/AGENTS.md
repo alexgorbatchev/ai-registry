@@ -8,18 +8,18 @@ This directory contains source-of-truth harness overrides and maintenance notes 
 - Only files under `harnesses/<name>/` are copied into that harness output during `bun run build`.
 - Shared repo-level system instruction fragments live under `system/`; they are referenced from harness configs and profile includes, not copied verbatim into `.output/` unless a harness explicitly ships them.
 - Do not place repo-only maintenance notes inside a harness subdirectory unless they are intentionally meant to ship into generated output.
-- If a unified harness needs custom output shaping beyond raw file copying, put the repo-local build plugin at `harnesses/<name>/packages/registry-cli/src/bin/build.ts` and keep that path ignored via `.registry-ignore`.
+- If a unified harness needs custom output shaping beyond raw file copying, put the repo-local build plugin at `packages/registry-cli/src/harnesses/<name>/build.ts`.
 - Prefer the harness's native configuration surface over local wrapper files when the harness already supports the feature directly.
 - Pin external plugin versions and commit SHAs so generated outputs stay reproducible.
 
-Harnesses are only built into `.output/` when they provide `harnesses/<name>/packages/registry-cli/src/bin/build.ts`.
+Harnesses are only built into `.output/` when they provide `packages/registry-cli/src/harnesses/<name>/build.ts`.
 
 ## Codex
 
 - Keep the checked-in Codex reference docs under `harnesses/codex/docs/`.
 - Treat `harnesses/codex/docs/` as an upstream documentation snapshot; refresh it from `https://github.com/openai/codex/tree/main/docs` when the local copy drifts.
 - Preserve upstream filenames when refreshing the snapshot so links and diffs stay easy to compare.
-- Keep the Codex unified-output plugin in `harnesses/codex/packages/registry-cli/src/bin/build.ts`.
+- Keep the Codex unified-output plugin in `packages/registry-cli/src/harnesses/codex/build.ts`.
 - Put Codex-only shipped skills under `harnesses/codex/skills/`; the Codex build merges them into each generated `.output/codex/<profile>/skills/` root.
 - The Codex harness treats `.output/codex/default/` as the shared Codex base. Every non-default generated profile root under `.output/codex/<profile>/` symlinks all top-level entries from `default/` except `AGENTS.md` and `skills/`.
 - Map reusable commands only from the `default` profile. Render `AGENTS.md` separately for each profile from that profile's `system_prompt`, and generate selected skills into each profile's own Codex `skills/` directory.
@@ -30,7 +30,7 @@ Harnesses are only built into `.output/` when they provide `harnesses/<name>/pac
 ## OpenCode
 
 - Register external OpenCode plugins in `harnesses/opencode/opencode.jsonc` under the `plugin` array.
-- Keep the OpenCode unified-output plugin in `harnesses/opencode/packages/registry-cli/src/bin/build.ts`.
+- Keep the OpenCode unified-output plugin in `packages/registry-cli/src/harnesses/opencode/build.ts`.
 - OpenCode agent generation auto-allows harness-local skills that match the current harness prefix (for example `opencode-*`) in addition to matched global skills and profile-local skills.
 - Prefer direct package specs such as `name@version`.
 - For unpublished plugins, use a pinned Git spec or a direct `file://...` spec.
@@ -42,7 +42,7 @@ Harnesses are only built into `.output/` when they provide `harnesses/<name>/pac
 ## Pi
 
 - Keep shipped Pi skeleton files under `harnesses/pi/agent/`.
-- Keep the Pi unified-output plugin in `harnesses/pi/packages/registry-cli/src/bin/build.ts`.
+- Keep the Pi unified-output plugin in `packages/registry-cli/src/harnesses/pi/build.ts`.
 - The Pi harness treats `.output/pi/default/` as the shared Pi base. Every non-default generated profile root under `.output/pi/<profile>/` symlinks all top-level entries from `default/` except `APPEND_SYSTEM.md` and `skills/`.
 - Map reusable commands, the shared `settings.json`, and the static shared `sessions/` directory only from the `default` profile. Render `APPEND_SYSTEM.md` separately for each profile from that profile's `system_prompt`, and generate selected skills into each profile's own Pi `skills/` directory.
 - Plain `bun run bootstrap` links the generated `default` Pi profile root into `${PI_CODING_AGENT_DIR:-~/.pi/agent}`. Use `bun run bootstrap -- --pi-profile <profile>` to override that link with another generated Pi profile root.

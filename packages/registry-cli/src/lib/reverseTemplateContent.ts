@@ -1,6 +1,29 @@
 import { realpathSync, existsSync } from "fs";
 import type { ITemplateContext } from "./harnessBuild";
 
+export function reverseTemplateObject(
+  obj: unknown,
+  templateContext: ITemplateContext
+): unknown {
+  if (typeof obj === "string") {
+    return reverseTemplateContent(obj, templateContext);
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => reverseTemplateObject(item, templateContext));
+  }
+  
+  if (typeof obj === "object" && obj !== null) {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = reverseTemplateObject(value, templateContext);
+    }
+    return result;
+  }
+  
+  return obj;
+}
+
 export function reverseTemplateContent(content: string, templateContext: ITemplateContext): string {
   let result = content;
 

@@ -98,6 +98,11 @@ describe("Codex syncBack", () => {
     expect(Bun.TOML.parse(sourceContent)).toEqual({
       approval_policy: "always",
       sandbox_mode: "danger-full-access",
+      projects: {
+        "/repo": {
+          trust_level: "trusted"
+        }
+      }
     });
   });
 
@@ -112,7 +117,7 @@ describe("Codex syncBack", () => {
 
     const context = createUnifiedContext(repositoryRoot);
     await expect(syncBack(context)).rejects.toThrow(
-      "Conflict detected in config.toml at keys: approval_policy! Both repository source and active settings have changed. Please resolve manually."
+      "Conflict detected in Codex config.toml at keys: approval_policy! Both repository source and active settings have changed. Please resolve manually."
     );
   });
 });

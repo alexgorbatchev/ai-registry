@@ -38,7 +38,7 @@ The final generated harness artifacts. The registry updates only the files and p
 
 This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that resolves the profiles and builds generated harness outputs directly from the checked-in source tree.
 
-Generated harness outputs are discovered from plugin entrypoints at `harnesses/<target>/packages/registry-cli/src/bin/build.ts`. The root build loads those plugins dynamically and lets them stage per-profile artifacts plus finalize the generated harness output.
+Generated harness outputs are compiled by plugins at `packages/registry-cli/src/harnesses/<target>/build.ts`. The root build statically imports those plugins and lets them stage per-profile artifacts plus finalize the generated harness output.
 
 Generated output files may use a small set of build-time template tags. `bun run build` scans generated text outputs recursively and resolves them wherever they appear. Unsupported tags, unknown variables, missing include files, circular includes, and missing environment variables all fail the build. Supported forms:
 
@@ -111,7 +111,7 @@ Run `bun run bootstrap` to symlink these wrappers into `~/.local/bin`. If you pr
 
 These wrappers execute the checked-in Bun source from this repository, so the clone and its installed dependencies must remain available on disk.
 
-*Generated outputs are discovered from the checked-in harness build plugins under `harnesses/<target>/packages/registry-cli/src/bin/build.ts`. Today that produces `.output/opencode`, `.output/codex`, and `.output/pi`.*
+*Generated outputs are compiled by the harness build plugins under `packages/registry-cli/src/harnesses/<target>/build.ts`. Today that produces `.output/opencode`, `.output/codex`, and `.output/pi`.*
 
 ### Installing a Skill with `npx skills`
 
@@ -173,9 +173,9 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
-- `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/packages/registry-cli/src/bin/build.ts`.
-- `.output/codex/<profile>`: Codex profile root for one ai-registry profile. Each generated profile renders its own `AGENTS.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `prompts/` plus a symlinked mutable `config.toml`, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Codex-specific shaping lives in `harnesses/codex/packages/registry-cli/src/bin/build.ts`, which reapplies `harnesses/codex/config.toml` as managed defaults into `{{repo_root}}/.tmp/codex/config.toml` on each build while preserving local Codex state. Runtime files such as `auth.json` stay Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
-- `.output/pi/<profile>`: Pi profile root for one ai-registry profile. Each generated profile renders its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json`, `prompts/`, and static `sessions/` directory, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Pi-specific final shaping lives in `harnesses/pi/packages/registry-cli/src/bin/build.ts`.
+- `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `packages/registry-cli/src/harnesses/opencode/build.ts`.
+- `.output/codex/<profile>`: Codex profile root for one ai-registry profile. Each generated profile renders its own `AGENTS.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `prompts/` plus a symlinked mutable `config.toml`, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Codex-specific shaping lives in `packages/registry-cli/src/harnesses/codex/build.ts`, which reapplies `harnesses/codex/config.toml` as managed defaults into `{{repo_root}}/.tmp/codex/config.toml` on each build while preserving local Codex state. Runtime files such as `auth.json` stay Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
+- `.output/pi/<profile>`: Pi profile root for one ai-registry profile. Each generated profile renders its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json`, `prompts/`, and static `sessions/` directory, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Pi-specific final shaping lives in `packages/registry-cli/src/harnesses/pi/build.ts`.
 - `.output/manifest.json`: SHA-256 manifest for the generated files, directories, and symlinks that the registry manages under `.output/`. The next `bun run build` checks those managed entries before overwriting them so externally edited generated files are not overwritten silently.
 
 The build writes only final generated outputs into `.output/` and updates only the managed paths recorded in the manifest.
@@ -242,4 +242,4 @@ Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch
 
 ### Other Harnesses
 
-Add other generated harness outputs by putting the source of truth under `harnesses/<target>/` plus a build plugin at `harnesses/<target>/packages/registry-cli/src/bin/build.ts`.
+Add other generated harness outputs by putting the source of truth under `harnesses/<target>/` plus a build plugin at `packages/registry-cli/src/harnesses/<target>/build.ts`.

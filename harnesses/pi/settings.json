@@ -16,7 +16,8 @@
     "npm:@alexgorbatchev/pi-skill-library",
     "npm:@alexgorbatchev/pi-env",
     "npm:pi-timestamps",
-    "npm:pi-herdr-btw"
+    "npm:pi-herdr-btw",
+    "npm:@isac322/pi-codegraph"
   ],
   "steeringMode": "one-at-a-time",
   "enabledModels": [

@@ -315,7 +315,6 @@ async function syncBack(context: IUnifiedHarnessBuildContext): Promise<void> {
       activePath,
       sourcePath,
       compiledPath,
-      mergeStrategy: "toml"
     }
   ]);
 }

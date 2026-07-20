@@ -117,7 +117,7 @@ describe("Pi syncBack", () => {
 
     const context = createUnifiedContext(repositoryRoot);
     await expect(syncBack(context)).rejects.toThrow(
-      "Conflict detected in Pi settings.json! Both repository source and active settings have changed. Please resolve manually."
+      "Conflict detected in Pi settings.json at keys: packages! Both repository source and active settings have changed. Please resolve manually."
     );
   });
 });

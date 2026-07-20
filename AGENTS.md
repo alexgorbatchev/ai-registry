@@ -17,6 +17,8 @@ This repository manages reusable AI skills and commands plus the configurations 
   - When a task says to change OpenCode config "in ai-registry", edit the checked-in source file under `harnesses/opencode/`, not the machine-local installed config under `~/.config/opencode/`.
   - The checked-in OpenCode docs snapshot lives under `harnesses/opencode/docs/`; refresh it with `bun run sync:opencode-docs`, which runs `packages/registry-cli/src/bin/sync-opencode-docs.ts`.
   - Repository-local harness maintenance guidance belongs in `harnesses/AGENTS.md`.
+  - Each harness contains a `fetch-source.sh` script to clone or update its upstream source code into a local, git-ignored scratch folder at `harnesses/<harness>/.tmp/<harness>-source/` for reference and inspection. These scripts and folders are omitted from the generated harness outputs using `.registry-ignore`.
+  - **USE SOURCE REFERENCE FIRST:** When diagnosing harness-specific issues, analyzing behavioral contracts, or updating configurations, ALWAYS consult the local checked-out source code under `harnesses/<harness>/.tmp/<harness>-source/` first. Never guess, assume, or rely on memory. Run the respective `fetch-source.sh` first if the directory is absent.
   - Only files inside `harnesses/<target>/` are injected directly into the matching target output directories during the build process, subject to `.registry-ignore` rules.
   - Current generated harnesses are OpenCode (`harnesses/opencode/`), Codex (`harnesses/codex/`), and Pi (`harnesses/pi/`).
 - **Standalone Packages (`packages/<package-name>/`)**:

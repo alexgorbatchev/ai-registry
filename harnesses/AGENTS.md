@@ -49,6 +49,20 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 - Generate `pi` for the `default` profile and `pi-<profile>` for other generated Pi profiles under `.output/bin/`.
 - Do not silently ignore profile `tools` or `permission`; the Pi build must fail until an exact Pi-native mapping exists.
 
+## Local Source Code References
+
+For each harness, we maintain its upstream source code locally in a `.tmp/` scratch directory. This is used for inspection, code reference, and development comparison.
+
+- Each harness directory contains a `fetch-source.sh` script.
+- Execute this script to perform a shallow clone (depth 1) of the upstream repository, or to pull the latest changes if already checked out:
+  ```bash
+  ./harnesses/opencode/fetch-source.sh
+  ./harnesses/codex/fetch-source.sh
+  ./harnesses/pi/fetch-source.sh
+  ```
+- The cloned sources are saved to `harnesses/<harness>/.tmp/<harness>-source/`.
+- These checkouts and fetch scripts are ignored by Git (via root `.gitignore`) and are never bundled into the generated config outputs (via `.registry-ignore`).
+
 ## Maintenance
 
 - After editing anything in `harnesses/`, run `bun run build`.

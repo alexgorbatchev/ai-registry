@@ -29,6 +29,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Treat `.output/` beneath the repo_root token as generated output, not an editing surface. The registry manages only the generated files, directories, and symlinks recorded in `.output/manifest.json`; other harness-owned files under `.output/` are preserved across builds.
 - After modifying any file under `skills/`, `commands/`, `profiles/`, `harnesses/`, or `skills-lock.json` beneath the repo_root token, run `bun run build` from the repo_root token.
 - If a change alters repo structure, build architecture, or workflow contracts, update `AGENTS.md` and `README.md` beneath the repo_root token in the same change.
+- **USE SOURCE REFERENCE FIRST:** When diagnosing harness issues, analyzing behavioral contracts, or updating configurations, ALWAYS consult the local checked-out harness source code under the respective `harnesses/<target>/.tmp/<target>-source/` folder first. Never guess, assume, or rely on memory. If the source is not yet checked out on disk, run that harness's `./harnesses/<target>/fetch-source.sh` script first to pull it down.
 
 ## Workflow
 

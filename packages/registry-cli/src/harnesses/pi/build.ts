@@ -163,18 +163,34 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
 
       const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
       if (existsSync(stagedAppendSystemPath)) {
-        await copyFile(stagedAppendSystemPath, join(visibleProfileDir, APPEND_SYSTEM_FILE_NAME));
+        await context.buildSupport.copyPathWithTemplateVariables(
+          stagedAppendSystemPath,
+          join(visibleProfileDir, APPEND_SYSTEM_FILE_NAME),
+          context.templateContext,
+        );
       }
 
       if (isDefaultProfile) {
-        await copyFile(masterSettingsPath, join(visibleProfileDir, "settings.json"));
+        await context.buildSupport.copyPathWithTemplateVariables(
+          masterSettingsPath,
+          join(visibleProfileDir, "settings.json"),
+          context.templateContext,
+        );
         const masterModelsPath = join(context.harnessDir, "models.json");
         if (existsSync(masterModelsPath)) {
-          await copyFile(masterModelsPath, join(visibleProfileDir, "models.json"));
+          await context.buildSupport.copyPathWithTemplateVariables(
+            masterModelsPath,
+            join(visibleProfileDir, "models.json"),
+            context.templateContext,
+          );
         }
         const masterWebSearchPath = join(context.harnessDir, "web-search.json");
         if (existsSync(masterWebSearchPath)) {
-          await copyFile(masterWebSearchPath, join(visibleProfileDir, "web-search.json"));
+          await context.buildSupport.copyPathWithTemplateVariables(
+            masterWebSearchPath,
+            join(visibleProfileDir, "web-search.json"),
+            context.templateContext,
+          );
         }
         await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
         await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));

@@ -150,9 +150,10 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     for (const stagedAgent of stagedAgents) {
       if (!stagedAgent.isFile()) continue;
 
-      await copyFile(
+      await context.buildSupport.copyPathWithTemplateVariables(
         join(agentStagingDir, stagedAgent.name),
         join(agentOutputDir, stagedAgent.name),
+        context.templateContext,
       );
     }
 

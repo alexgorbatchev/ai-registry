@@ -25,6 +25,12 @@ type IPromptForYesNoArgs = {
   createPromptInterface?: ICreatePromptInterface;
 };
 
+type IPromptForOverwriteDecisionArgs = {
+  message: string;
+  interruptMessage?: string;
+  createPromptInterface?: ICreatePromptInterface;
+};
+
 const DEFAULT_INTERRUPT_MESSAGE = "Prompt cancelled by Ctrl+C.";
 
 function createDefaultPromptInterface(options: ICreatePromptInterfaceOptions): IPromptQuestionInterface {
@@ -51,6 +57,36 @@ export async function promptForYesNo(args: IPromptForYesNoArgs): Promise<boolean
     const answer = await promptInterface.question(`${args.message} [y/N] `, { signal: abortController.signal });
     const normalizedAnswer = answer.trim().toLowerCase();
     return normalizedAnswer === "y" || normalizedAnswer === "yes";
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new Error(args.interruptMessage ?? DEFAULT_INTERRUPT_MESSAGE);
+    }
+
+    throw error;
+  } finally {
+    promptInterface.off("SIGINT", interruptQuestion);
+    promptInterface.close();
+  }
+}
+
+export async function promptForOverwriteDecision(args: IPromptForOverwriteDecisionArgs): Promise<"yes" | "no" | "sync"> {
+  const abortController = new AbortController();
+  const createPromptInterface = args.createPromptInterface ?? createDefaultPromptInterface;
+  const promptInterface = createPromptInterface({ input: stdin, output: stdout });
+  const interruptQuestion = (): void => abortController.abort();
+
+  promptInterface.on("SIGINT", interruptQuestion);
+
+  try {
+    const answer = await promptInterface.question(`${args.message} (y)es / (n)o / (s)ync back [y/N/s]: `, { signal: abortController.signal });
+    const normalizedAnswer = answer.trim().toLowerCase();
+    if (normalizedAnswer === "y" || normalizedAnswer === "yes") {
+      return "yes";
+    }
+    if (normalizedAnswer === "s" || normalizedAnswer === "sync") {
+      return "sync";
+    }
+    return "no";
   } catch (error) {
     if (isAbortError(error)) {
       throw new Error(args.interruptMessage ?? DEFAULT_INTERRUPT_MESSAGE);

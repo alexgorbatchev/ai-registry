@@ -1,4 +1,5 @@
 import {
+  copyFile,
   mkdir,
   readdir,
   readFile,
@@ -36,7 +37,8 @@ import {
   type IGeneratedOutputManifestEntry,
   syncManagedGeneratedOutputs,
 } from "../lib/generatedOutputUtils";
-import { promptForYesNo } from "../lib/promptForYesNo";
+import { promptForYesNo, promptForOverwriteDecision } from "../lib/promptForYesNo";
+import { reverseTemplateContent } from "../lib/reverseTemplateContent";
 
 // Statically import harness plugins
 import codexPlugin from "../harnesses/codex/build";
@@ -190,11 +192,53 @@ async function formatGeneratedOutputDrift(
   return `\n⚠️ Detected external changes in generated outputs (${drift.length} ${fileLabel}):\n${sections.join("\n")}`;
 }
 
+export async function syncBackModifiedFiles(
+  drift: IGeneratedOutputDrift[],
+  outputDir: string,
+  nextOutputDir: string,
+  sourcePathByOutputPath: Map<string, string>,
+  templateContext: Record<string, string>,
+): Promise<void> {
+  console.log("\n🔄 Syncing modified files back to source directories...");
+
+  for (const entry of drift) {
+    if (entry.reason !== "modified") {
+      console.log(`  - Skipping non-modified entry: ${entry.path} (${entry.reason})`);
+      continue;
+    }
+
+    const nextOutputPath = join(nextOutputDir, entry.path);
+    const sourcePath = sourcePathByOutputPath.get(nextOutputPath);
+
+    if (!sourcePath) {
+      console.warn(`  - ⚠️ Cannot sync back ${entry.path}: No original source file found.`);
+      continue;
+    }
+
+    try {
+      const modifiedOutputPath = join(outputDir, entry.path);
+      const modifiedContent = await readFile(modifiedOutputPath, "utf-8");
+      const reversedContent = reverseTemplateContent(modifiedContent, templateContext);
+
+      await writeFile(sourcePath, reversedContent, "utf-8");
+      console.log(`  - ✅ Synced ${entry.path} -> ${sourcePath}`);
+
+      // Now copy the modified file from outputDir to nextOutputDir so the current build
+      // stages this updated version and correctly updates the manifest checksum!
+      await copyFile(modifiedOutputPath, nextOutputPath);
+    } catch (error) {
+      console.error(`  - ❌ Failed to sync back ${entry.path}: ${error}`);
+    }
+  }
+}
+
 async function confirmGeneratedOutputOverwrite(
   drift: IGeneratedOutputDrift[],
   outputDir: string,
   nextOutputDir: string,
   hasAutoConfirm: boolean,
+  sourcePathByOutputPath: Map<string, string>,
+  templateContext: Record<string, string>,
 ): Promise<void> {
   if (drift.length === 0) {
     return;
@@ -214,14 +258,24 @@ async function confirmGeneratedOutputOverwrite(
     );
   }
 
-  const shouldOverwrite = await promptForYesNo({
+  const decision = await promptForOverwriteDecision({
     message: "\nProceed and overwrite these generated files?",
     interruptMessage: "Build cancelled by Ctrl+C. Generated outputs were modified outside the build.",
   });
 
-  if (!shouldOverwrite) {
+  if (decision === "no") {
     throw new Error(
       "Build cancelled. Generated outputs were modified outside the build.",
+    );
+  }
+
+  if (decision === "sync") {
+    await syncBackModifiedFiles(
+      drift,
+      outputDir,
+      nextOutputDir,
+      sourcePathByOutputPath,
+      templateContext,
     );
   }
 }
@@ -231,6 +285,8 @@ async function assertGeneratedOutputsAreSafeToReplace(
   outputDir: string,
   nextOutputDir: string,
   hasAutoConfirm: boolean,
+  sourcePathByOutputPath: Map<string, string>,
+  templateContext: Record<string, string>,
 ): Promise<void> {
   if (!manifest) {
     return;
@@ -238,7 +294,14 @@ async function assertGeneratedOutputsAreSafeToReplace(
 
   const currentEntries = await collectGeneratedOutputEntries(outputDir);
   const drift = getGeneratedOutputDrift(manifest, currentEntries);
-  await confirmGeneratedOutputOverwrite(drift, outputDir, nextOutputDir, hasAutoConfirm);
+  await confirmGeneratedOutputOverwrite(
+    drift,
+    outputDir,
+    nextOutputDir,
+    hasAutoConfirm,
+    sourcePathByOutputPath,
+    templateContext,
+  );
 }
 
 async function writeGeneratedOutputManifest(
@@ -387,13 +450,16 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
   await applyTemplateVariablesToGeneratedOutput(GENERATED_OUTPUT_STAGING_DIR, TEMPLATE_CONTEXT, sourcePathByOutputPath);
   console.log("   ✅ Successfully compiled unified outputs!");
 
-  const nextManagedEntries = await collectGeneratedOutputEntries(GENERATED_OUTPUT_STAGING_DIR);
   await assertGeneratedOutputsAreSafeToReplace(
     existingManifest,
     output,
     GENERATED_OUTPUT_STAGING_DIR,
     options.hasAutoConfirm,
+    sourcePathByOutputPath,
+    TEMPLATE_CONTEXT,
   );
+
+  const nextManagedEntries = await collectGeneratedOutputEntries(GENERATED_OUTPUT_STAGING_DIR);
 
   await syncManagedGeneratedOutputs({
     nextEntries: nextManagedEntries,

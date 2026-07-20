@@ -4,12 +4,9 @@
   "defaultProvider": "google",
   "defaultModel": "google/gemini-3.5-flash",
   "packages": [
-    "npm:@juanibiapina/pi-extension-settings",
     "npm:@aliou/pi-processes",
-    "npm:pi-extmgr",
     "npm:pi-tool-display",
     "npm:pi-subagents",
-    "npm:pi-interactive-shell",
     "npm:pi-web-access",
     "npm:pi-ask-user",
     "npm:pi-file-change-reminder",

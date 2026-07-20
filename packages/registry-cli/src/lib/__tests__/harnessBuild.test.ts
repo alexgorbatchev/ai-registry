@@ -2,8 +2,10 @@ import { afterAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
+import { existsSync } from "fs";
 import {
   applyTemplateVariablesToGeneratedOutput,
+  copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
   type ITemplateContext,
 } from "../harnessBuild";
@@ -89,5 +91,25 @@ describe("harnessBuild template rendering", () => {
     );
 
     expect(await Bun.file(outputPath).text()).toBe(`ROOT=${repositoryRoot}\n`);
+  });
+
+  it("respects .registry-ignore when copying a directory", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const templateContext = createTemplateContext(repositoryRoot);
+
+    const sourceDir = join(repositoryRoot, "harness-source");
+    const targetDir = join(repositoryRoot, "harness-target");
+
+    await writeTestFile(sourceDir, "should-be-kept.txt", "Keep this");
+    await writeTestFile(sourceDir, "fetch-source.sh", "#!/bin/bash");
+    await writeTestFile(sourceDir, ".tmp/some-source/file.txt", "source content");
+    await writeTestFile(sourceDir, ".registry-ignore", "./fetch-source.sh\n./.tmp/\n");
+
+    await copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext);
+
+    expect(existsSync(join(targetDir, "should-be-kept.txt"))).toBe(true);
+    expect(existsSync(join(targetDir, "fetch-source.sh"))).toBe(false);
+    expect(existsSync(join(targetDir, ".tmp"))).toBe(false);
+    expect(existsSync(join(targetDir, ".tmp/some-source/file.txt"))).toBe(false);
   });
 });

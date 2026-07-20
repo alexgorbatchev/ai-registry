@@ -1,0 +1,26 @@
+{
+  "name": "@alexgorbatchev/registry-cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "air-add-vendored-skill": "./src/bin/add-vendored-skill.ts",
+    "air-bootstrap": "./src/bin/bootstrap.ts",
+    "air-build": "./src/bin/build.ts",
+    "air-install-git-hooks": "./src/bin/install-git-hooks.ts",
+    "air-smoke-bootstrap": "./src/bin/smoke-bootstrap.ts",
+    "air-sync-opencode-docs": "./src/bin/sync-opencode-docs.ts",
+    "air-update-vendored-skills": "./src/bin/update-vendored-skills.ts"
+  },
+  "dependencies": {
+    "@alexgorbatchev/dedent-string": "^1.0.1",
+    "@alexgorbatchev/template-resolver": "workspace:*",
+    "@types/ignore-walk": "^4.0.3",
+    "globby": "^16.2.0",
+    "ignore-walk": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13",
+    "typescript": "rc"
+  }
+}

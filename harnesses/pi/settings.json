@@ -15,7 +15,8 @@
     "npm:pi-file-change-reminder",
     "npm:@alexgorbatchev/pi-skill-library",
     "npm:@alexgorbatchev/pi-env",
-    "npm:pi-timestamps"
+    "npm:pi-timestamps",
+    "npm:pi-herdr-btw"
   ],
   "steeringMode": "one-at-a-time",
   "enabledModels": [
@@ -25,5 +26,7 @@
   "@alexgorbatchev/pi-env": {
     "AGENT": "1"
   },
-  "enableSkillCommands": true
+  "enableSkillCommands": true,
+  "lastChangelogVersion": "0.80.7",
+  "theme": "dark"
 }

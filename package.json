@@ -8,15 +8,15 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "bun run typecheck && bun run scripts/build.ts",
-    "bootstrap": "bun run scripts/bootstrap.ts",
-    "bootstrap:smoke": "bun run scripts/smoke-bootstrap.ts",
-    "prepare": "bun run scripts/install-git-hooks.ts",
+    "build": "bun run typecheck && air-build",
+    "bootstrap": "air-bootstrap",
+    "bootstrap:smoke": "air-smoke-bootstrap",
+    "prepare": "bun run packages/registry-cli/src/bin/install-git-hooks.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "sync:opencode-docs": "bun run harnesses/opencode/scripts/sync-docs.ts",
-    "skills:add": "bun run scripts/add-vendored-skill.ts",
+    "sync:opencode-docs": "air-sync-opencode-docs",
+    "skills:add": "air-add-vendored-skill",
     "skills:list": "npx skills add . --list",
-    "skills:update": "bun run scripts/update-vendored-skills.ts && bun run build"
+    "skills:update": "air-update-vendored-skills && bun run build"
   },
   "dependencies": {
     "@alexgorbatchev/dedent-string": "^1.0.1",
@@ -27,6 +27,6 @@
   },
   "devDependencies": {
     "@types/bun": "^1.3.13",
-    "typescript": "rc"
+    "typescript": "rc", "@alexgorbatchev/registry-cli": "workspace:*"
   }
 }

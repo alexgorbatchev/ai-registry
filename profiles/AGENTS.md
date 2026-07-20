@@ -4,7 +4,7 @@ Profile manifests in this directory assemble reusable global assets plus profile
 
 ## Commands
 - Rebuild generated outputs after profile changes: `bun run build`
-- Recheck the OpenCode skill isolation rule tests when changing profile-local skill behavior: `bun test harnesses/opencode/scripts/lib/__tests__/profileLocalAssetRules.test.ts`
+- Recheck the OpenCode skill isolation rule tests when changing profile-local skill behavior: `bun test packages/registry-cli/src/harnesses/opencode/lib/__tests__/profileLocalAssetRules.test.ts`
 
 ## Local conventions
 - Keep reusable skills in `skills/` and reusable commands in `commands/`. Put assets under `profiles/<name>/skills/` or `profiles/<name>/commands/` only when they are intentionally owned by a single profile.
@@ -21,5 +21,5 @@ Profile manifests in this directory assemble reusable global assets plus profile
 ## References
 - `README.md`
 - `AGENTS.md`
-- `harnesses/opencode/scripts/lib/profileLocalAssetRules.ts`
-- `harnesses/pi/scripts/lib/profileOutputRules.ts`
+- `packages/registry-cli/src/harnesses/opencode/lib/profileLocalAssetRules.ts`
+- `packages/registry-cli/src/harnesses/pi/lib/profileOutputRules.ts`

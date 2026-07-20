@@ -9,7 +9,7 @@ The reusable source-of-truth layer.
 - **`skills/`**: Domain-specific AI skills. Each skill lives in its own folder with a `SKILL.md`. This directory is also the repo's install surface for `npx skills`.
 - **`commands/`**: Reusable slash commands, system prompts, and task blueprints.
 - **`system/`**: Shared repo-level instruction fragments and persistent-memory guidance that harness configs and profiles can reference via template includes.
-- **`harnesses/`**: Harness-specific config overrides, unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic lives under `harnesses/<target>/scripts/` when excluded via `.registry-ignore`.
+- **`harnesses/`**: Harness-specific config overrides, unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic lives under `packages/registry-cli/src/harnesses/<target>/` when excluded via `.registry-ignore`.
 - **`vendor/`**: Third-party code packages vendored into this repo as Bun workspaces when a harness needs a repo-local file path with installed runtime dependencies.
 - **`packages/`**: Publishable repo-local packages distributed independently from the generated harness outputs.
 - **`packages/opencode-session-analysis/`**: Bun CLI package for OpenCode session and skill-usage reporting.
@@ -29,16 +29,16 @@ The assembled agents. These folders contain `profile.yaml` manifests that cherry
 ### 3. Setup (`bun run bootstrap`)
 `bun run bootstrap` is the repo-local clone-and-run entrypoint for this repository.
 
-Root script entrypoints live directly under `scripts/` and use dash-based filenames. Helper modules that are imported by those entrypoints and are not intended to be executed directly belong under `scripts/lib/`.
+Root script entrypoints live directly under `packages/registry-cli/src/bin/` and use dash-based filenames. Helper modules that are imported by those entrypoints and are not intended to be executed directly belong under `packages/registry-cli/src/lib/`.
 
 ### 4. Generated Outputs (`.output/`)
 The final generated harness artifacts. The registry updates only the files and paths it manages there, writes a manifest for those managed entries, and leaves unrelated harness-owned files in place.
 
 ## Building and Usage
 
-This repository includes a custom local compiler (`scripts/build.ts`) that resolves the profiles and builds generated harness outputs directly from the checked-in source tree.
+This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that resolves the profiles and builds generated harness outputs directly from the checked-in source tree.
 
-Generated harness outputs are discovered from plugin entrypoints at `harnesses/<target>/scripts/build.ts`. The root build loads those plugins dynamically and lets them stage per-profile artifacts plus finalize the generated harness output.
+Generated harness outputs are discovered from plugin entrypoints at `harnesses/<target>/packages/registry-cli/src/bin/build.ts`. The root build loads those plugins dynamically and lets them stage per-profile artifacts plus finalize the generated harness output.
 
 Generated output files may use a small set of build-time template tags. `bun run build` scans generated text outputs recursively and resolves them wherever they appear. Unsupported tags, unknown variables, missing include files, circular includes, and missing environment variables all fail the build. Supported forms:
 
@@ -55,7 +55,7 @@ Generated output files may use a small set of build-time template tags. `bun run
 
 When the build stages files from `skills/`, `commands/`, or `harnesses/<target>/`, it also honors nested `.registry-ignore` files using `.gitignore`-style matching. Use those files to keep repo-local scratch assets, harness build scripts, or other non-shipping files out of generated outputs.
 
-When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/system/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/scripts/...`. Includes are always repository-root-relative, so `{{include "system/system.md"}}` resolves from the repo root no matter which source file contains it.
+When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/system/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/packages/registry-cli/...`. Includes are always repository-root-relative, so `{{include "system/system.md"}}` resolves from the repo root no matter which source file contains it.
 
 For the normal machine setup flow after cloning, run:
 
@@ -111,7 +111,7 @@ Run `bun run bootstrap` to symlink these wrappers into `~/.local/bin`. If you pr
 
 These wrappers execute the checked-in Bun source from this repository, so the clone and its installed dependencies must remain available on disk.
 
-*Generated outputs are discovered from the checked-in harness build plugins under `harnesses/<target>/scripts/build.ts`. Today that produces `.output/opencode`, `.output/codex`, and `.output/pi`.*
+*Generated outputs are discovered from the checked-in harness build plugins under `harnesses/<target>/packages/registry-cli/src/bin/build.ts`. Today that produces `.output/opencode`, `.output/codex`, and `.output/pi`.*
 
 ### Installing a Skill with `npx skills`
 
@@ -164,7 +164,7 @@ When you vendor or update external skills:
 
 - commit both `skills/<name>/` and `skills-lock.json`
 - use `bun run skills:update` to refresh all vendored external skills safely
-- use `bun run scripts/update-vendored-skills.ts <name>` to refresh only one vendored skill
+- use `bun run packages/registry-cli/src/bin/update-vendored-skills.ts <name>` to refresh only one vendored skill
 - run `bun run build` afterward so generated outputs stay current
 
 Avoid plain `npx skills update` in this repo. The upstream project-update flow does not preserve the `openclaw --copy` target and may create extra agent directories such as `.claude/` or `.pi/`.
@@ -173,9 +173,9 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
-- `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/scripts/build.ts`.
-- `.output/codex/<profile>`: Codex profile root for one ai-registry profile. Each generated profile renders its own `AGENTS.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `prompts/` plus a symlinked mutable `config.toml`, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Codex-specific shaping lives in `harnesses/codex/scripts/build.ts`, which reapplies `harnesses/codex/config.toml` as managed defaults into `{{repo_root}}/.tmp/codex/config.toml` on each build while preserving local Codex state. Runtime files such as `auth.json` stay Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
-- `.output/pi/<profile>`: Pi profile root for one ai-registry profile. Each generated profile renders its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json`, `prompts/`, and static `sessions/` directory, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Pi-specific final shaping lives in `harnesses/pi/scripts/build.ts`.
+- `.output/opencode`: OpenCode config with skills, commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `harnesses/opencode/packages/registry-cli/src/bin/build.ts`.
+- `.output/codex/<profile>`: Codex profile root for one ai-registry profile. Each generated profile renders its own `AGENTS.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `prompts/` plus a symlinked mutable `config.toml`, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Codex-specific shaping lives in `harnesses/codex/packages/registry-cli/src/bin/build.ts`, which reapplies `harnesses/codex/config.toml` as managed defaults into `{{repo_root}}/.tmp/codex/config.toml` on each build while preserving local Codex state. Runtime files such as `auth.json` stay Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
+- `.output/pi/<profile>`: Pi profile root for one ai-registry profile. Each generated profile renders its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json`, `prompts/`, and static `sessions/` directory, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/`. The Pi-specific final shaping lives in `harnesses/pi/packages/registry-cli/src/bin/build.ts`.
 - `.output/manifest.json`: SHA-256 manifest for the generated files, directories, and symlinks that the registry manages under `.output/`. The next `bun run build` checks those managed entries before overwriting them so externally edited generated files are not overwritten silently.
 
 The build writes only final generated outputs into `.output/` and updates only the managed paths recorded in the manifest.
@@ -242,4 +242,4 @@ Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch
 
 ### Other Harnesses
 
-Add other generated harness outputs by putting the source of truth under `harnesses/<target>/` plus a build plugin at `harnesses/<target>/scripts/build.ts`.
+Add other generated harness outputs by putting the source of truth under `harnesses/<target>/` plus a build plugin at `harnesses/<target>/packages/registry-cli/src/bin/build.ts`.

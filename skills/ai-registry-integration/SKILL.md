@@ -21,8 +21,8 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Keep new content anonymized and reusable. Do not introduce private company names, internal URLs, secrets, or personal details.
 - When checked-in guidance or generated text refers to repository paths, use template tokens instead of machine-specific absolute paths.
 - Put reusable assets under the directories referenced by the repo_root token: `skills/`, `commands/`, `profiles/`, or `harnesses/`.
-- Keep executable repo entrypoints under `scripts/` beneath the repo_root token and use dash-based filenames. Put imported TypeScript helper modules that are not direct entrypoints under `scripts/lib/`.
-- Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `codex`, `codex-*`, `pi`, or `pi-*` wrappers) MUST NOT be checked into `scripts/` beneath the repo_root token. Generate them from `scripts/build.ts` into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
+- Keep executable repo entrypoints under `packages/registry-cli/src/bin/` beneath the repo_root token and use dash-based filenames. Put imported TypeScript helper modules that are not direct entrypoints under `packages/registry-cli/src/lib/`.
+- Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `codex`, `codex-*`, `pi`, or `pi-*` wrappers) MUST NOT be checked into `packages/registry-cli/src/bin/` beneath the repo_root token. Generate them from `packages/registry-cli/src/bin/build.ts` into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
 - Put publishable standalone packages under `packages/<package-name>/` beneath the repo_root token.
 - Put vendored third-party code packages that need Bun workspace installs under `vendor/` beneath the repo_root token.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
@@ -50,7 +50,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Put only the project-specific delta in the addendum body. When project-specific guidance conflicts with the base skill, the addendum supersedes the base skill for that project.
 - Do not make a global skill refer to project-local addenda, and do not create multiple addenda for the same base skill in one project.
 - Add bundled resources only when needed, inside the same skill folder:
-  - `scripts/` beneath the skill folder
+  - `packages/registry-cli/src/bin/` beneath the skill folder
   - `references/` beneath the skill folder
   - `assets/` beneath the skill folder
 - Keep the body procedural and specific for another AI agent.
@@ -79,7 +79,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Add Harness Overrides
 
 - Put harness-specific shipped files under `harnesses/<target>/` beneath the repo_root token.
-- Put unified harness-specific build logic in `harnesses/<target>/scripts/build.ts` beneath the repo_root token for every generated harness target; the root build only discovers harness outputs through that plugin entrypoint.
+- Put unified harness-specific build logic in `harnesses/<target>/packages/registry-cli/src/bin/build.ts` beneath the repo_root token for every generated harness target; the root build only discovers harness outputs through that plugin entrypoint.
 - Put repo-local vendored code packages that a harness references by file path under `vendor/` beneath the repo_root token.
 - Put shared repo-level system guidance under `system/` beneath the repo_root token and harness-specific guidance in `harnesses/AGENTS.md` or the relevant `harnesses/<target>/` directory.
 - Only files under a harness directory are copied into generated output for that harness, subject to `.registry-ignore`.
@@ -113,8 +113,8 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 ## Build And Generated Output
 
-- The local build entrypoint is `scripts/build.ts` beneath the repo_root token.
-- Unified harness plugins are discovered from `harnesses/<target>/scripts/build.ts` beneath the repo_root token.
+- The local build entrypoint is `packages/registry-cli/src/bin/build.ts` beneath the repo_root token.
+- Unified harness plugins are discovered from `harnesses/<target>/packages/registry-cli/src/bin/build.ts` beneath the repo_root token.
 - Generated outputs are written under the output_dir token.
 - The generated-output manifest tracks only registry-managed entries under the output_dir token, and `bun run build` overwrites only those managed paths instead of replacing the entire output tree.
 - Verify generated files that match the change, especially:

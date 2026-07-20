@@ -31,3 +31,5 @@ profiles/*/.generated/
 /.graymatter
 /.workspaces
 /.codegraph
+/.pi-subagents
+

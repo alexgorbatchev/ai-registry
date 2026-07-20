@@ -1,3 +1,5 @@
 ./docs/
 ./scripts/
+./fetch-source.sh
+./.tmp/
 

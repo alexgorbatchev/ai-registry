@@ -1,8 +1,4 @@
 {
-  "skills": [],
-  "prompts": [],
-  "defaultProvider": "google",
-  "defaultModel": "google/gemini-3.5-flash",
   "packages": [
     "npm:@aliou/pi-processes",
     "npm:pi-tool-display",
@@ -26,5 +22,6 @@
   },
   "enableSkillCommands": true,
   "lastChangelogVersion": "0.80.7",
-  "theme": "dark"
+  "theme": "dark",
+  "hideThinkingBlock": false
 }

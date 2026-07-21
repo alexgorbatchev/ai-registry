@@ -141,7 +141,7 @@ The skill should only contain the information needed for an AI agent to do the j
 Skills use a three-level loading system to manage context efficiently:
 
 1. **Metadata (name + description)** - Always in context (~100 words)
-2. **SKILL.md body** - When skill triggers (<5k words)
+2. **SKILL.md body** - When skill triggers (~5k words)
 3. **Bundled resources** - As needed by Claude (Unlimited because scripts can be executed without reading into context window)
 
 #### Progressive Disclosure Patterns
@@ -335,6 +335,8 @@ Any example files and directories not needed for the skill should be deleted. Th
 #### Self-review to 10/10
 
 Do not stop at the first draft that seems acceptable. Self-review the skill against an explicit quality bar, correct weaknesses, and repeat until the result would reasonably score **10/10** against the rubric below.
+
+**Mandatory Watertightness Audit:** Before finalizing any skill's instructions, you MUST consult the `prompt-composer` skill to perform a formal **Watertightness Audit** (using the $W = 10 \times P \times (1 - L) \times C$ formula). If $W < 9.0$, you must identify the logical loopholes, lack of semantic precision, or weak behavioral coupling, and write surgically precise negative guardrails (e.g. "Do not use X", "Prohibited justifications") to close them until $W \ge 9.0$.
 
 Use a bounded review loop:
 

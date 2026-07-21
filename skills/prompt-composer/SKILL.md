@@ -6,64 +6,83 @@ author: alexgorbatchev
 
 # Prompt Composer
 
-Turn vague prompt requests into explicit prompt contracts that another model can execute reliably. Keep the guidance universal and interface-agnostic. Focus on stable prompt design principles such as structure, grounding, output contracts, and iteration. Treat every prompt as a reusable starting point that still needs validation in its target runtime.
+Turn vague prompt requests into explicit, mathematically watertight prompt contracts that another model can execute with 100% reliability. Keep the guidance universal and interface-agnostic, focusing on stable design principles: structure, grounding, output contracts, and constraint-based verification.
 
 ## Workflow
 
-1. Identify the target runtime.
-- Determine the interface constraints before drafting: system/developer/user roles, reusable prompt templates, tool calling, structured outputs, long context, or prompt caching.
-- If the execution environment is unspecified, write a general-purpose prompt, label it as a starting point, and re-test it in the target runtime before treating it as stable.
+1. **Identify the Target Runtime**: Determine the interface constraints before drafting (system/developer/user roles, tool calling, structured outputs, or context limits).
+2. **Define the Semantic Contract**: Capture the task, grounding boundary, exact inputs, and output formatting before writing any instructions.
+3. **Choose the Lightest Skeleton**: Start with the smallest, most structured prompt shape that can work. Use consistent Markdown headers or XML-style tags.
+4. **Compose from Labeled Blocks**:
+   - `role`: who the model is for the task
+   - `task`: the exact operational job
+   - `constraints`: mathematically objective rules (no vague adjectives)
+   - `examples`: representative input/output pairs that clarify edge cases
+   - `output_contract`: exact return shape and fallback behaviors
+5. **Run the Watertightness Audit**: Critically score the draft using the **Constraint Satisfaction Audit** below. Identify and plug any loophole leakages ($L$) until the score is $W \ge 9.0$.
+6. **Design the Verification Loop**: Propose representative test cases, edge cases, and static compiler/output assertions to continuously validate the prompt.
 
-2. Define the contract before writing the prompt.
-- Capture the task, audience, inputs, constraints, grounding boundary, output format, tone, and completion criteria.
-- Define what the model should do when information is missing, conflicting, or out of scope.
-- If success cannot be checked, tighten the request before drafting.
+## Watertightness Audit Framework (Constraint Satisfaction)
 
-3. Choose the smallest prompt shape that can work.
-- Start with a minimal structure. Add examples, verification rules, or tool policies when they clarify the target behavior, reduce ambiguity, or improve reliability.
-- Separate stable instructions from variable inputs so the prompt can be reused and versioned.
-- Pick one delimiter style, usually Markdown headings or XML-style tags, and use it consistently.
-- Prefer clear sections, numbered steps, and explicit delimiters over dense prose.
+To guarantee that a composed instruction set will not be ignored, bypassed, or violated under runtime/context pressure, calculate the **Watertightness Index ($W$)** on a scale of `0.0` to `10.0` using this formula:
 
-4. Compose the prompt from labeled blocks.
-- `role`: who the model is for this task
-- `task`: the job to perform
-- `context`: source material, background, or retrieved documents
-- `constraints`: rules, non-goals, or limits
-- `examples`: representative examples that define behavior, format, or edge cases
-- `output_contract`: exact return shape
-- `grounding_rules`, `tool_rules`, or `fallback_rules`: only when needed
+$$W = 10 \times P \times (1 - L) \times C$$
 
-5. Review the draft for failure modes.
-- Remove duplicated or contradictory instructions.
-- Define vague words like `concise`, `important`, `better`, or `complete`.
-- Check that examples match the actual task and output contract.
-- Separate prompt text from runtime controls. Do not bake runtime-specific knobs into reusable prompt text unless the target environment requires them.
+Where:
+- **Semantic Precision ($P$)**: The operational objectivity of the rules.
+- **Loophole Density ($L$)**: The presence of logical escape paths or excuses.
+- **Behavioral Coupling ($C$)**: The direct observability of a violation.
 
-6. Recommend an evaluation loop.
-- Propose representative test cases, edge cases, and failure cases.
-- Treat prompt writing as iterative engineering. Revise against observed failures instead of adding random extra instructions.
+### Scoring Rubrics (Strict Criteria)
 
-## Portability
+#### 1. Semantic Precision ($P$)
+* **`1.0` (Absolute Objective):** 100% objective, mathematically bounded instructions with zero subjective adjectives. Employs explicit string-matching vetos or strict structural requirements.
+* **`0.8` (Domain Bounded):** Clear rules, but relies on established standard domain terminology (e.g., "REST-compliant status codes", "W3C semantic tags") that carries minor interpretive overhead.
+* **`0.5` (Subjective Prose):** Contains fuzzy, undefined adjectives (such as "clean", "concise", "complete", "elegant", "optimal").
+* **`0.0` (Vague Intent):** Dense prose focusing on intent rather than mechanics (e.g., "try to write high-quality code").
 
-- A reusable prompt is a portable starting point, not a portability guarantee.
-- When moving a prompt between runtimes or model versions, preserve the task contract but re-test the prompt on a small eval set.
-- Prompt text is only one control surface. Check whether the target environment exposes native controls for reasoning, verbosity, or tool behavior before compensating with extra prompt scaffolding.
-- Watch for shifts in instruction-following, verbosity, formatting, grounding, and tool behavior.
-- Adjust examples, scaffolding, and output constraints based on observed behavior.
+#### 2. Loophole Density ($L$)
+* **`0.0` (Zero Escape Paths):** Negative guardrails explicitly block all possible workarounds, cosmetic mimicry (e.g., "banning CSS overrides to mask wrong HTML tags"), and conversational excuses (e.g., forbidden string quotes for "quick shortcut").
+* **`0.2` (Weak Guardrails):** Basic "do not do X" rules are present, but lacks explicit blocks on deceptive surface mimicry or faking syntax.
+* **`0.5` (Conditional Escape Hatches):** The prompt explicitly includes fallback clauses that allow the model to bypass the standard (e.g., "if too difficult, do X instead" or "use stubs/placeholders when appropriate").
+* **`1.0` (No Negative Boundaries):** No negative guardrails or forbidden states are defined. The model is completely free to decide when to bypass the rule.
 
-## Runtime And State Management
+#### 3. Behavioral Coupling ($C$)
+* **`1.0` (Static/State Coupled):** Violations result in statically observable states, such as compilation/linter failures, specific tool budget blocks, or forbidden string output.
+* **`0.7` (Output Coupled):** Violations are observable in the emitted file structures or visual rendered assets, but require runtime execution or rendering to verify.
+* **`0.4` (Conversational Coupled):** Violations are only observable through manual code review or deep dialog flow.
+* **`0.0` (Uncoupled):** Abstract guidelines that do not affect the output properties directly (e.g., "always keep the end user in mind").
 
-- Treat long-context reliability as both a prompt problem and a runtime design problem.
-- For long-running sessions, watch for context rot, duplicated history, and stale instructions that no longer reflect the active task.
-- When the runtime supports compaction or context editing, preserve the active contract, critical constraints, and unresolved work while dropping stale detail.
-- When caching matters, keep stable prefixes stable. Avoid rewriting early prompt segments unless the behavioral contract truly changed.
-- For append-only chat systems, prefer adding corrected guidance in a new turn over silently mutating prior turns.
-- For document-heavy tasks, decide explicitly whether you are optimizing for long-context accuracy, cache locality, or both.
+### Audit & Redesign Workflow
+1. **Identify the Core Rules**: List each separate instruction in the draft.
+2. **Assign Ratings**: Apply the exact rubrics above to calculate the $P$, $L$, and $C$ values.
+3. **Calculate the Index**: Run the watertightness equation to get the $W$ score.
+4. **Close the Leakage**: If $W < 9.0$, identify the specific loopholes ($L$) or weak semantic precision ($P$) that caused the leakage, and write surgically precise, negative-guardrail rules to close them until $W \ge 9.0$.
+
+## Design Decisions (Agnostic Prompt Architecture)
+
+### 1. Ground the Model with Objective Data (Improves $P$)
+- Avoid fanning out into general-purpose knowledge. Supply the exact source material, schemas, and standards needed for the task.
+- Explicitly define the grounding boundary: State whether the model is restricted *only* to the supplied context, or if it may draw on background knowledge.
+- For long-context grounding, place the instructions and final question *after* the bulk data to maximize attention retention.
+
+### 2. Make the Output Contract Explicit (Improves $C$)
+- Specify the exact sections, schema, citations, allowed output formats, and token limits.
+- State exactly what to do when information is missing, blocked, or ambiguous, leaving zero room for speculation.
+- If a task only requires a delta, patch, or classification, explicitly restrict the output to that slice instead of permitting a full rewrite.
+
+### 3. Deliberate Use of Reasoning Scaffolds (Improves $L$)
+- Do not add verbose reasoning steps (like "think step-by-step") to simple, statically coupled tasks—it wastes tokens and increases instruction-following drift.
+- Request intermediate reasoning ONLY when the workflow requires that specific audit log.
+- For complex, error-prone loops, use structural milestones or checkpoints (e.g., "First verify X, then perform Y") instead of raw prose.
+
+### 4. Direct Tool & Agent Guardrails
+- If the prompt controls tools, define exactly when tools are required, when to stop, and what must be verified before finalizing.
+- Allow parallel execution only for independent steps, and require explicit permission checks before executing executing irreversible or external actions.
 
 ## Prompt Skeleton
 
-Use a simple labeled structure like this. Markdown headings, bullets, or XML-style tags can all work; choose the lightest wrapper that keeps boundaries clear in the target environment.
+Use a simple, cleanly delimited structure:
 
 ```md
 ## Role
@@ -90,107 +109,16 @@ Use a simple labeled structure like this. Markdown headings, bullets, or XML-sty
 - If information is missing or unsupported, [[fallback_behavior]].
 ```
 
-Keep placeholders explicit, for example `[[variable_name]]`. If the prompt will be reused, isolate variable fields instead of hardcoding them into the instruction text.
+## Anti-Patterns to Avoid
 
-## Decision Rules
-
-### Use examples to define target behavior
-
-- Examples are a useful way to specify format, tone, boundary cases, and decision criteria.
-- For trivial tasks, direct instructions may be enough.
-- For other tasks, representative examples may improve consistency.
-- If unsure, compare a direct-instruction version and an example-based version on a small eval set.
-- Keep examples relevant, consistent, and aligned with the instructions.
-
-### Ground the model instead of hoping
-
-- Supply the source material needed for the task instead of assuming the model already knows it.
-- For factual or document-based tasks, tell the model whether it may use only the supplied context or also its own background knowledge.
-- For long-document question answering, consider asking the model to quote or extract the relevant evidence before answering.
-- If optimizing for long-context quality, put bulk context before the final question.
-- If optimizing for prompt caching, keep static instructions and examples at the beginning of the prompt and append variable content later.
-- If a monolithic prompt mixes large context with instructions, separate the two and keep the instructions concise.
-
-### Make the output contract explicit
-
-- Name the exact sections, schema, citations, verbosity, and allowed output formats.
-- State what to do when the answer is unavailable, blocked, or ambiguous.
-- Prefer native structured-output features over prompt-only JSON when the target API supports them.
-- If the task needs only a delta, patch, or classification label, say that directly instead of inviting a full rewrite.
-
-### Add tool and agent rules only when applicable
-
-- If the prompt controls tools, define when tools are required, when to stop, and what must be verified before finalizing.
-- Make dependency checks explicit when later actions rely on earlier retrieval or validation steps.
-- Allow parallel work only for independent steps or workstreams.
-- Add permission checks before irreversible or external actions.
-
-### Use reasoning scaffolds deliberately
-
-- Treat reasoning scaffolds as optional controls, not universal defaults.
-- Check whether the target environment already exposes native controls for reasoning or effort before adding more prompt scaffolding.
-- For simple tasks, use direct instructions.
-- For complex or error-prone tasks, consider decomposition, checkpoints, or explicit verification steps.
-- Request visible intermediate reasoning only when the workflow actually needs that artifact.
-- Keep or remove a reasoning scaffold based on eval results, not doctrine.
-
-## Prompt Assets And Optimization Loop
-
-- Treat reusable prompts as maintained assets, not disposable text snippets.
-- Keep a stable template plus clearly named variables instead of cloning near-duplicate prompts.
-- Version prompts when behavior changes in a meaningful way.
-- Tie prompt changes to eval cases so you can tell whether a rewrite improved or regressed behavior.
-- Use prompt improvers or optimizers as assistants, not as an authority. Review their suggestions for overfitting and unnecessary reasoning scaffolds.
-
-## Rewriting Existing Prompts
-
-When the user gives you an existing prompt to improve:
-
-1. Extract the real contract.
-- Separate instructions, context, examples, output rules, and hidden assumptions.
-- Preserve the intended behavior unless the user asks for a behavior change.
-
-2. Remove prompt debt.
-- Delete repetition, contradictions, and filler language.
-- Replace vague adjectives with measurable requirements.
-- Turn buried assumptions into explicit rules.
-
-3. Rebuild the prompt in clean blocks.
-- Keep context separate from instructions.
-- Move reusable rules into the stable prefix.
-- Leave variable data in placeholders or clearly marked context sections.
-
-4. Explain the change in terms of behavior.
-- Say what failure mode each rewrite addresses: ambiguity, format drift, hallucination, over-verbosity, missing coverage, weak grounding, or interface mismatch.
-
-## Anti-Patterns
-
-- Vague words like `better`, `interesting`, `short`, or `detailed` without concrete meaning
-- Contradictory instructions or examples that teach a different behavior than the rules
-- One giant prompt that mixes reusable policy, volatile context, and the user turn with no boundaries
-- Prompt-only JSON constraints when the API already offers structured outputs
-- Cargo-cult reasoning scaffolds copied across unrelated tasks
-- Runtime-specific tuning copied into reusable prompts without a concrete need
-- Assuming one interface's role hierarchy or caching semantics apply everywhere
-
-## Review Checklist
-
-Before finalizing a prompt, verify:
-
-- A colleague with little context could follow it correctly.
-- The task, constraints, and output contract are explicit.
-- The grounding boundary is clear.
-- Ambiguous terms are defined.
-- Examples, if present, are relevant and consistently formatted.
-- The prompt has been treated as a starting point and re-tested in its target runtime.
-- The prompt uses only interface features that the target runtime actually supports.
-- The prompt includes a plan for handling missing information or unsupported requests.
-- The prompt has at least a small eval set or test plan.
+- **Vague Adjectives**: Using words like `better`, `interesting`, `short`, or `detailed` without concrete, measurable parameters (Collapses $P$ to `0.5` or lower).
+- **Loose Boundaries**: Letting the model decide when to follow a rule by omitting negative guardrails (Spikes $L$ to `0.5` or higher).
+- **Uncoupled Intentions**: Instructing the model to "feel" or "aim" for a certain style instead of binding rules directly to syntax or output structures (Collapses $C$ to `0.0`).
+- **Cargo-Cult Scaffolds**: Copying heavy Chain-of-Thought or reasoning blocks into simple tasks where direct, structured instructions are more reliable.
 
 ## Deliverables
 
-When asked to produce a prompt, return:
-
-- the final prompt
-- any runtime assumptions that still matter
-- a short list of suggested test cases or evals
+When asked to produce or revise a prompt:
+1. **The Final Composed Prompt**: Cleanly structured and delimited.
+2. **The Watertightness Audit Report**: Explicit $P$, $L$, and $C$ ratings with the final $W$ index calculation and a description of closed loop leakages.
+3. **The Verification Plan**: A short list of suggested test cases and static compile/output assertions.

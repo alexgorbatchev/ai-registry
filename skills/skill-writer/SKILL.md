@@ -91,7 +91,7 @@ skill-name/
 
 Every SKILL.md consists of:
 
-- **Frontmatter** (YAML): `name` and `description` are the important triggering fields. In this repo, also include `author: alexgorbatchev` in skill frontmatter. Keep frontmatter minimal. In this toolchain, the validator requires `name` and `description`, permits `author`, and currently permits only `license`, `allowed-tools`, and `metadata` as additional keys beyond those. Default to `name`, `description`, and `author` unless you have a validated reason to add one of those supported extras.
+- **Frontmatter** (YAML): `name`, `description`, and `author` (e.g., `author: alexgorbatchev`) are required triggering and attribution fields. Additionally, in this repository, you **MUST** include a `metadata` dictionary containing `created_on` and `last_modified` (using strict `YYYY-MM-DD HH:MM` format) plus `status: current` to keep track of the skill's history and metadata lifecycle. Keep frontmatter minimal, and place these historical attributes exclusively within the nested `metadata` block.
 - **Body** (Markdown): Instructions and guidance for using the skill. Only loaded AFTER the skill triggers (if at all).
 
 #### Bundled Resources (optional)
@@ -363,9 +363,26 @@ Write the YAML frontmatter with `name`, `description`, and `author`:
   - Narrow exception for project-specific addenda: when authoring a project-local companion skill named `<base-skill>-addendum`, use the description to declare the dependency because current harnesses route skills from `name` and `description`. Use this exact pattern: `If <base-skill> skill is used, this skill must be used as well.`
   - Keep that exception narrow. Do not make the base global skill describe project-local addenda, do not create multiple addenda for the same base skill in one project, and do not duplicate the global skill into the project just to add project-specific rules.
 - `author`: Use `alexgorbatchev` for skills maintained in this registry (but do not modify existing `author`).
+- `metadata`: **REQUIRED** for all skills in this repository to track history and lifecycle. It must contain:
+  - `created_on`: Creation date and time in `YYYY-MM-DD HH:MM` format. Set once on file creation.
+  - `last_modified`: Last modification date and time in `YYYY-MM-DD HH:MM` format. ALWAYS update this on every revision of the skill.
+  - `status`: Use `current` (active guidance) or `archived` (superseded reference).
 
-Default to `name`, `description`, and `author`.
-If you need extra frontmatter for a specific distribution flow, verify first that the local validator accepts it. In this toolchain, the allowed extra keys beyond those are currently `license`, `allowed-tools`, and `metadata`.
+**Example YAML Frontmatter:**
+```yaml
+---
+name: skill-name
+description: REQUIRED when creating...
+author: alexgorbatchev
+metadata:
+  created_on: 2026-07-22 08:30
+  last_modified: 2026-07-22 08:47
+  status: current
+---
+```
+
+Default to `name`, `description`, `author`, and `metadata`.
+The allowed extra keys beyond those in this toolchain are `license` and `allowed-tools`.
 
 ##### Body
 
@@ -377,7 +394,8 @@ For a project-local `<base-skill>-addendum`, keep the body focused on the projec
 
 Once development of the skill is complete, self-validate its structure and frontmatter:
 
-- **Format**: Ensure valid YAML frontmatter with `name`, `description`, and `author` keys.
+- **Format**: Ensure valid YAML frontmatter with `name`, `description`, `author`, and `metadata` keys.
+- **Metadata**: Verify `created_on` and `last_modified` are present and in strict `YYYY-MM-DD HH:MM` format, and `status` is set correctly.
 - **Constraints**: Verify that descriptions contain no `<` or `>` tags, are strings, and stay below the 1024-character maximum.
 - **Rules**: Check that all principles and critical rules are clear, imperative, and actionable.
 

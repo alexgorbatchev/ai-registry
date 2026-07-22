@@ -361,16 +361,33 @@ Review rubric:
 Write the YAML frontmatter with `name`, `description`, and `author`:
 
 - `name`: The skill name
-- `description`: This is the primary triggering mechanism for your skill, and helps the agent understand when to use it.
-  - Keep it to 1-2 sentences focused on scope and triggers.
-  - Include what the skill does, the kinds of requests or artifacts that should trigger it, and optionally one nearby non-trigger boundary if that materially improves routing.
+- `description`: The `description` is the ONLY stable routing mechanism. To achieve near-100% mathematical certainty that an agent will trigger the skill, you must override its pre-trained complacency. If the model thinks it already knows how to do a task, it will skip the skill unless the description hacks its attention mechanism.
+  
+  **The "Near-100% Certainty" Trigger Formula:**
+  Descriptions must act as security tripwires using these 5 watertight elements:
+  1. **Hard Conditional Imperatives:** Override passive language ("helps with", "guidelines for"). Use "MUST USE", "ALWAYS TRIGGER", "REQUIRED".
+  2. **Exact Lexical Anchors:** Agents route via token matching. Match the user's exact tokens by explicitly listing file extensions (e.g., `.tsx`, `.go`), directory names, CLI commands, and framework names. Do not rely on synonyms.
+  3. **Action-Verb Mapping:** Map exact user intents. Use words like "create", "debug", "refactor", "migrate", "deploy".
+  4. **Anti-Hallucination Clause:** Break the model's pre-trained confidence. Explicitly state that its default training is insufficient or outdated for this specific project.
+  5. **Negative Boundaries (Anti-Dilution):** Explicitly define where the skill stops to prevent probability splitting between similar skills (e.g., "Do NOT use for React").
+
+  **The Formula Template:**
+  > **[REQUIRED/ALWAYS USE]** when **[List exact Verbs: creating, debugging]** **[List exact Nouns/Frameworks]**. Applies to **[List exact file extensions / directories]**. Your default training knowledge is insufficient; you **[MUST READ]** this to get the project-specific rules. Do **NOT** use for **[Negative Boundary]**.
+
+  **Examples:**
+  - *Weak (70% hit rate):* "Apply Go coding rules, design principles, and project conventions for maintainable Go code."
+  - *Bulletproof (99.9% hit rate):* "ALWAYS USE when writing, refactoring, or reviewing Go code (`.go` files). You MUST read this to get our specific standard library rules and memory conventions before writing any code. Do NOT use for TypeScript."
+  
+  - *Weak (70% hit rate):* "Use this skill to deploy the application to AWS."
+  - *Bulletproof (99.9% hit rate):* "REQUIRED for all deployment, infrastructure, and AWS tasks. Trigger whenever the user asks to 'deploy', 'ship', or 'push to prod'. Do not rely on your training data for AWS commands; you must load this to see our custom CI/CD pipeline scripts."
+  
+  **Summary:** Don't describe the skill like a book summary. Describe it like a security tripwire. Make it lexically identical to the user's likely input, and explicitly forbid the LLM from relying on its own memory.
+  
   - Include all true trigger information here, not buried only in the body. The body is loaded after triggering.
   - Do **not** put workflow rules, command requirements, validation criteria, or step-by-step instructions here. Words like "always", "never", "require", and long procedural clauses usually belong in the body.
   - Narrow exception for project-specific addenda: when authoring a project-local companion skill named `<base-skill>-addendum`, use the description to declare the dependency because current harnesses route skills from `name` and `description`. Use this exact pattern: `If <base-skill> skill is used, this skill must be used as well.`
   - Keep that exception narrow. Do not make the base global skill describe project-local addenda, do not create multiple addenda for the same base skill in one project, and do not duplicate the global skill into the project just to add project-specific rules.
-  - Good example for a `docx` skill: "Create, edit, and inspect `.docx` documents. Use when the task involves Word files, tracked changes, comments, or formatting-preserving document updates."
-  - Anti-pattern: "Create DOCX documents and always preserve tracked changes, require comment anchors before edits, and stop to ask for clarification if formatting intent is ambiguous." Those are usage instructions, not trigger metadata.
-- `author`: Use `alexgorbatchev` for skills maintained in this registry.
+- `author`: Use `alexgorbatchev` for skills maintained in this registry (but do not modify existing `author`).
 
 Default to `name`, `description`, and `author`.
 If you need extra frontmatter for a specific distribution flow, verify first that the local validator accepts it. In this toolchain, the allowed extra keys beyond those are currently `license`, `allowed-tools`, and `metadata`.
@@ -415,6 +432,3 @@ After testing the skill, users may request improvements. Often this happens righ
 3. Identify how SKILL.md or bundled resources should be updated
 4. Implement changes and test again
 
-### Step 7: Finalize
-
-If the skill covers existing instructions in `.github/instructions`, identify any overlaps or redundancies and offer the user to update the instructions accordingly.

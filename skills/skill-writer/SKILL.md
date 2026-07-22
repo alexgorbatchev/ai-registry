@@ -5,6 +5,10 @@ description: >-
   changing an existing skill's SKILL.md, bundled scripts, references, assets,
   scaffold templates, or validation tooling.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-04-14 12:00
+  last_modified: 2026-07-22 08:47
+  status: current
 ---
 
 # Skill Writer

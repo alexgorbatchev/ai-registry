@@ -307,7 +307,7 @@ Added scripts must be tested by actually running them to ensure there are no bug
 
 Do not stop at the first draft that seems acceptable. Self-review the skill against an explicit quality bar, correct weaknesses, and repeat until the result would reasonably score **10/10** against the rubric below.
 
-**Mandatory Watertightness Audit:** Before finalizing any skill's instructions, you MUST consult the `prompt-composer` skill to perform a formal **Watertightness Audit** (using the $W = 10 \times P \times (1 - L) \times C$ formula). If $W < 9.0$, you must identify the logical loopholes, lack of semantic precision, or weak behavioral coupling, and write surgically precise negative guardrails (e.g. "Do not use X", "Prohibited justifications") to close them until $W \ge 9.0$.
+**Mandatory Watertightness Audit:** Before finalizing any skill's instructions, you MUST consult the `prompt-writer` skill to perform a formal **Watertightness Audit** (using the $W = 10 \times P \times (1 - L) \times C$ formula). If $W < 9.0$, you must identify the logical loopholes, lack of semantic precision, or weak behavioral coupling, and write surgically precise negative guardrails (e.g. "Do not use X", "Prohibited justifications") to close them until $W \ge 9.0$.
 
 Use a bounded review loop:
 

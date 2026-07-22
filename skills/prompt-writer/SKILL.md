@@ -1,10 +1,10 @@
 ---
-name: prompt-composer
+name: prompt-writer
 description: Compose, rewrite, refactor, and adapt prompts for LLM applications. Use when drafting system, developer, or user prompts; turning vague requirements into reusable prompt templates; improving prompt reliability or output format; or deciding prompt structure for grounded, long-context, tool-using, or structured-output workflows.
 author: alexgorbatchev
 ---
 
-# Prompt Composer
+# Prompt Writer
 
 Turn vague prompt requests into explicit, mathematically watertight prompt contracts that another model can execute with 100% reliability. Keep the guidance universal and interface-agnostic, focusing on stable design principles: structure, grounding, output contracts, and constraint-based verification.
 

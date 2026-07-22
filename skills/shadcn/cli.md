@@ -121,7 +121,15 @@ npx shadcn@latest add button --diff globals.css
 
 #### Smart Merge from Upstream
 
-See [Updating Components in SKILL.md](./SKILL.md#updating-components) for the full workflow.
+When the user asks to update a component from upstream while keeping their local changes, use `--dry-run` and `--diff` to intelligently merge. **NEVER fetch raw files from GitHub manually — always use the CLI.**
+
+1. Run `npx shadcn@latest add <component> --dry-run` to see all files that would be affected.
+2. For each file, run `npx shadcn@latest add <component> --diff <file>` to see what changed upstream vs local.
+3. Decide per file based on the diff:
+   - No local changes → safe to overwrite.
+   - Has local changes → read the local file, analyze the diff, and apply upstream updates while preserving local modifications.
+   - User says "just update everything" → use `--overwrite`, but confirm first.
+4. **Never use `--overwrite` without the user's explicit approval.**
 
 ### `search` — Search registries
 
@@ -154,6 +162,8 @@ npx shadcn@latest docs <components...> [options]
 
 Outputs resolved URLs for component documentation, examples, and API references. Accepts one or more component names. Fetch the URLs to get the actual content.
 
+> **CRITICAL:** When creating, fixing, debugging, or using a component, always run `npx shadcn@latest docs` and fetch the URLs first. This ensures you're working with the correct API and usage patterns rather than guessing.
+
 Example output for `npx shadcn@latest docs input button`:
 
 ```
@@ -173,6 +183,21 @@ Some components include an `api` link to the underlying library (e.g. `cmdk` for
 ### `diff` — Check for updates
 
 Do not use this command. Use `npx shadcn@latest add --diff` instead.
+
+### `preset` — Inspect and manage presets
+
+```bash
+npx shadcn@latest preset <command> [args]
+```
+
+Tools for inspecting and resolving presets. 
+
+- `npx shadcn@latest preset decode <code>` — Decode a preset configuration.
+- `npx shadcn@latest preset url <code>` — Get the URL for a preset code.
+- `npx shadcn@latest preset open <code>` — Open the preset in the browser.
+- `npx shadcn@latest preset resolve` — Detect and display the current project's preset configuration based on installed components and styles. Add `--json` for structured output.
+
+> **IMPORTANT:** Never try to decode, fetch, or resolve preset codes manually. Preset codes are opaque — pass them directly to `npx shadcn@latest preset` commands.
 
 ### `info` — Project information
 
@@ -258,7 +283,7 @@ All templates support monorepo scaffolding via the `--monorepo` flag. When passe
 
 Three ways to specify a preset via `--preset`:
 
-1. **Named:** `--preset nova` or `--preset lyra`
+1. **Named:** `--preset nova` or `--preset lyra` (available: `nova`, `vega`, `maia`, `lyra`, `mira`, `luma`)
 2. **Code:** `--preset a2r6bw` (version-prefixed base62 string, e.g. `a2r6bw` or `b0`)
 3. **URL:** `--preset "https://ui.shadcn.com/init?base=radix&style=nova&..."`
 
@@ -267,10 +292,13 @@ Three ways to specify a preset via `--preset`:
 
 ## Switching Presets
 
-Ask the user first: **overwrite**, **merge**, or **skip** existing components?
+Ask the user first: **overwrite**, **partial**, **merge**, or **skip** existing components?
 
-- **Overwrite / Re-install** → `npx shadcn@latest apply --preset <code>`. Overwrites all detected component files with the new preset styles. Use when the user hasn't customized components.
-- **Merge** → `npx shadcn@latest init --preset <code> --force --no-reinstall`, then run `npx shadcn@latest info` to get the list of installed components and use the [smart merge workflow](./SKILL.md#updating-components) to update them one by one, preserving local changes. Use when the user has customized components.
-- **Skip** → `npx shadcn@latest init --preset <code> --force --no-reinstall`. Only updates config and CSS variables, leaves existing components as-is.
+- **Inspect current preset**: `npx shadcn@latest preset resolve`. Use `--json` when you need structured values.
+- **Inspect incoming preset**: `npx shadcn@latest preset decode <code>`. Use `preset url <code>` or `preset open <code>` to share or open the preset builder.
+- **Overwrite / Re-install** → `npx shadcn@latest apply <code>`. Overwrites detected components, fonts, and CSS variables. Use when the user hasn't customized components.
+- **Partial** → `npx shadcn@latest apply <code> --only theme,font`. Updates only the selected preset parts without reinstalling UI components. Supported values are `theme` and `font`; comma-separated combinations are allowed. `icon` is intentionally not supported, because icon changes may require full component reinstall and transforms.
+- **Merge** → `npx shadcn@latest init --preset <code> --force --no-reinstall`, then run `npx shadcn@latest info` to list installed components, then for each installed component use `--dry-run` and `--diff` to smart merge it individually. Use when the user has customized components.
+- **Skip** → `npx shadcn@latest init --preset <code> --force --no-reinstall`. Only updates config and CSS, leaves components as-is.
 
 Always run preset commands inside the user's project directory. `apply` only works in an existing project with a `components.json` file. The CLI automatically preserves the current base (`base` vs `radix`) from `components.json`. If you must use a scratch/temp directory (e.g. for `--dry-run` comparisons), pass `--base <current-base>` explicitly — preset codes do not encode the base.

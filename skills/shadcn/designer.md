@@ -1,8 +1,3 @@
----
-name: shadcn-ui-designer
-description: Design and build modern UI components and pages using shadcn/ui. Creates clean, accessible interfaces with Tailwind CSS following shadcn principles. Use when building UI components, pages, forms, dashboards, or any interface work.
----
-
 # Shadcn UI Designer
 
 Build production-ready UI components using shadcn/ui principles: minimal, accessible, composable, and beautiful by default.

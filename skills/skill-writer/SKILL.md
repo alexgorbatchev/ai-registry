@@ -230,9 +230,9 @@ Skill writing and maintenance involve these steps:
 
 1. Understand the skill with concrete examples
 2. Plan reusable skill contents (scripts, references, assets)
-3. Initialize the skill when needed (run `bun {{skills_dir}}/skill-writer/scripts/init_skill.ts`)
+3. Initialize the skill (create the folder and `SKILL.md` manually, or use `bun run skills:add` for vendoring)
 4. Edit the skill (implement resources and write SKILL.md)
-5. Validate the skill (run `bun {{skills_dir}}/skill-writer/scripts/quick_validate.ts`)
+5. Validate the skill's formatting and frontmatter against project requirements
 6. Iterate based on real usage
 
 Follow these steps in order, skipping only if there is a clear reason why they are not applicable.
@@ -280,53 +280,24 @@ To establish the skill's contents, analyze each concrete example to create a lis
 
 ### Step 3: Initializing the Skill
 
-At this point, it is time to actually create the skill.
+When creating a new skill from scratch, create the directory under the appropriate skills folder and create a `SKILL.md` file.
 
-Skip this step only if the skill being developed already exists, and iteration or validation is needed. In this case, continue to the next step.
+- **For a global/registry skill**: Create `skills/<skill-name>/SKILL.md`.
+- **For project-local skills**: Typically placed under `.agents/skills/<skill-name>/SKILL.md`.
 
-When creating a new skill from scratch, ALWAYS default to creating the new skill in the current project folder under `.agents/skills` (e.g., `{proj-dir}/.agents/skills`), unless the user explicitly mentions creating it in the ai-registry or globally. Always run the `init_skill.ts` script with Bun. The script conveniently generates a new template skill directory that automatically includes everything a skill requires, making the skill creation process much more efficient and reliable.
-
-When maintaining `init_skill.ts`, scaffold template content, or validator-adjacent code, first generate a fresh skill with `init_skill.ts` and immediately run `quick_validate.ts` against that untouched scaffold before making any manual edits. Treat that init-to-validate pass as the first regression check for scaffold/validator compatibility, because it catches frontmatter and template contract drift that hand-edited examples can hide.
-
-Usage:
-
-```bash
-# For a project-specific skill (default):
-bun {{skills_dir}}/skill-writer/scripts/init_skill.ts <skill-name> --path .agents/skills
-
-# For a global/registry skill (only if explicitly requested):
-bun {{skills_dir}}/skill-writer/scripts/init_skill.ts <skill-name> --path {{skills_dir}}
-```
-
-The script:
-
-- Creates the skill directory at the specified path
-- Generates a SKILL.md template with proper frontmatter and TODO placeholders
-- Creates example resource directories: `scripts/`, `references/`, and `assets/`
-- Adds example files in each directory that can be customized or deleted
-
-After initialization, customize or remove the generated SKILL.md and example files as needed.
+Ensure the directory contains:
+- `SKILL.md` (required, with valid YAML frontmatter)
+- Optional `scripts/`, `references/`, or `assets/` directories if the skill contains reusable, portable code, resources, or files.
 
 ### Step 4: Edit the Skill
 
 When editing the (newly-generated or existing) skill, remember that the skill is being created for another instance of the agent to use. Include information that would be beneficial and non-obvious to the agent. Consider what procedural knowledge, domain-specific details, or reusable assets would help another agent execute these tasks more effectively.
-
-#### Learn Proven Design Patterns
-
-Consult these helpful guides based on your skill's needs:
-
-- **Multi-step processes**: See references/workflows.md for sequential workflows and conditional logic
-- **Specific output formats or quality standards**: See references/output-patterns.md for template and example patterns
-
-These files contain established best practices for effective skill design.
 
 #### Start with Reusable Skill Contents
 
 To begin implementation, start with the reusable resources identified above: `scripts/`, `references/`, and `assets/` files. Note that this step may require user input. For example, when implementing a `brand-guidelines` skill, the user may need to provide brand assets or templates to store in `assets/`, or documentation to store in `references/`.
 
 Added scripts must be tested by actually running them to ensure there are no bugs and that the output matches what is expected. If there are many similar scripts, only a representative sample needs to be tested to ensure confidence that they all work while balancing time to completion.
-
-Any example files and directories not needed for the skill should be deleted. The initialization script creates example files in `scripts/`, `references/`, and `assets/` to demonstrate structure, but most skills won't need all of them.
 
 #### Update SKILL.md
 
@@ -400,26 +371,11 @@ For a project-local `<base-skill>-addendum`, keep the body focused on the projec
 
 ### Step 5: Validating a Skill
 
-Once development of the skill is complete, validate it. Run the validator explicitly with Bun.
+Once development of the skill is complete, self-validate its structure and frontmatter:
 
-These entrypoint scripts are Bun scripts. Invoke them as `bun <script> ...`.
-
-Quick validation:
-
-```bash
-bun {{skills_dir}}/skill-writer/scripts/quick_validate.ts <path/to/skill-folder>
-```
-
-If you changed scaffold generation or validator behavior, validate a freshly generated skill before validating a hand-edited one.
-
-The script will report any validation errors and exit. Fix any validation errors and run the validation command again. The validation checks:
-
-- YAML frontmatter format and required fields
-- Skill naming conventions and directory structure
-- Description completeness and quality
-- File organization and resource references
-
-When changing scaffold or validator contracts, keep an end-to-end regression that covers `initSkill(...)` followed by `validateSkill(...)` so the generated default scaffold remains valid without manual cleanup.
+- **Format**: Ensure valid YAML frontmatter with `name`, `description`, and `author` keys.
+- **Constraints**: Verify that descriptions contain no `<` or `>` tags, are strings, and stay below the 1024-character maximum.
+- **Rules**: Check that all principles and critical rules are clear, imperative, and actionable.
 
 ### Step 6: Iterate
 

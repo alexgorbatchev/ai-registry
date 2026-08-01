@@ -262,6 +262,9 @@ Configuration objects derived from external sources (like environment variables)
 ## Tooling
 
 - **Critical:** Always prefer `tsc` as the default compiler and typechecker.
+n## TypeScript 7 Updates
+
+When updating a project to TypeScript 7 or supporting side-by-side legacy TypeScript 6 usage, see [typescript-7-update.md](references/typescript-7-update.md) for alias requirements and LSP integration strategies.
 
 ## Formatting
 

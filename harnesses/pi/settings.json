@@ -15,13 +15,16 @@
   "steeringMode": "one-at-a-time",
   "enabledModels": [
     "google/gemini-3.1-pro-preview",
-    "google/gemini-3.5-flash"
+    "google/gemini-3.5-flash",
+    "google/gemini-3.6-flash"
   ],
   "@alexgorbatchev/pi-env": {
     "AGENT": "1"
   },
   "enableSkillCommands": true,
-  "lastChangelogVersion": "0.80.10",
+  "lastChangelogVersion": "0.83.0",
   "theme": "dark",
-  "hideThinkingBlock": false
+  "hideThinkingBlock": false,
+  "defaultProvider": "google",
+  "defaultModel": "gemini-3.6-flash"
 }

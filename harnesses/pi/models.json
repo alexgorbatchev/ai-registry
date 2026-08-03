@@ -7,6 +7,12 @@
           "name": "Gemini 3.5 Flash",
           "contextWindow": 1048576,
           "maxTokens": 65536
+        },
+        {
+          "id": "gemini-3.6-flash",
+          "name": "Gemini 3.6 Flash",
+          "contextWindow": 1048576,
+          "maxTokens": 65536
         }
       ]
     }

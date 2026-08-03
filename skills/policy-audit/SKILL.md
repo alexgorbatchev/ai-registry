@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: policy-audit
 description: Audit whether a repository's checked-in code, scripts, workflows, and docs actually define and enforce repository policies. Use when asked to verify tests, CI, pre-commit, AGENTS, deploy, or release enforcement and produce a formal policy audit.
 ---

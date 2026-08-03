@@ -1,14 +1,8 @@
 ---
 name: firecrawl-cli
-description: Use when the user wants to scrape websites, crawl or map URLs, search the web, extract structured data from web pages, or run AI web agents using the Firecrawl API from the command line.
+description: Use to scrape or crawl websites, map URLs, search the web, extract structured data from web pages, or run AI web agents.
 author: alexgorbatchev
 ---
-
-## Firecrawl CLI Commands
-
-Use the `firecrawl` CLI to interact with the Firecrawl API. Note that this is not the official Firecrawl CLI, but rather a small Golang implementation: [https://github.com/alexgorbatchev/firecrawl-cli](https://github.com/alexgorbatchev/firecrawl-cli). It supports mapping, scraping, searching, and agent tasks.
-
-### Core Capabilities
 
 The `firecrawl` CLI provides four main commands:
 

@@ -4,11 +4,12 @@ description: Use to decide if files be added to git or ignored?
 author: alexgorbatchev
 ---
 
-The following files/folders should always be added to .gitignore:
+The following files/folders should always be added to .gitignore if they are present in the project:
 
 .pi-subagents
 .codegraph
 .tmp
 .cache
 .dist or dist
+*.sqlite-wal and *.sqlite-shm
 

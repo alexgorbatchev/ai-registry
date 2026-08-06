@@ -44,6 +44,16 @@ curl -fsSL https://raw.githubusercontent.com/alexgorbatchev/ai-registry/main/ins
 
 See [`INSTALL_CLAUDE_SKILLS.md`](INSTALL_CLAUDE_SKILLS.md) for detailed usage and customization options.
 
+### Standalone `simple-ptt` Installation
+
+To download and extract the latest release of `simple-ptt` into `.tmp/simple-ptt`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/alexgorbatchev/ai-registry/main/install-simple-ptt.sh | bash
+```
+
+See [`INSTALL_SIMPLE_PTT.md`](INSTALL_SIMPLE_PTT.md) for detailed usage and customization options.
+
 ## Building and Usage
 
 This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that resolves the profiles and builds generated harness outputs directly from the checked-in source tree.

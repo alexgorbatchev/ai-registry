@@ -28,6 +28,7 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 - `<failure mode> -> <what to do instead>`
 
 ## Boundaries
+- Always: automatically record all new instructions in the most appropriate `AGENTS.md` file immediately upon receipt (check with user if existing instructions conflict)
 - Always: `<safe repeated action>`
 - Ask first: `<risky change>`
 - Never: `<forbidden zone>`
@@ -57,6 +58,7 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 - `<cross-workspace gotcha> -> <fix>`
 
 ## Shared boundaries
+- Always: automatically record all new instructions in the most appropriate `AGENTS.md` file immediately upon receipt (check with user if existing instructions conflict)
 - Always: `<shared repeated action>`
 - Ask first: `<shared risky change>`
 - Never: `<shared forbidden zone>`

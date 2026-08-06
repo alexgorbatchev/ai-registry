@@ -34,6 +34,16 @@ Root script entrypoints live directly under `packages/registry-cli/src/bin/` and
 ### 4. Generated Outputs (`.output/`)
 The final generated harness artifacts. The registry updates only the files and paths it manages there, writes a manifest for those managed entries, and leaves unrelated harness-owned files in place.
 
+### Standalone Claude Skills Installation
+
+To install all skills into your current directory's `.claude/skills/` folder without `bun`, `git clone`, or repository bootstrapping:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/alexgorbatchev/ai-registry/main/install-claude-skills.sh | bash
+```
+
+See [`INSTALL_CLAUDE_SKILLS.md`](INSTALL_CLAUDE_SKILLS.md) for detailed usage and customization options.
+
 ## Building and Usage
 
 This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that resolves the profiles and builds generated harness outputs directly from the checked-in source tree.

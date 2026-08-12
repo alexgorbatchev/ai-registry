@@ -267,13 +267,24 @@ async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePat
     throw new Error(formatMissingPiProfileMessage(sourcePath, availableProfiles));
   }
 
-  return [
+  const targets = [
     {
       sourcePath,
       targetPath: process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent"),
       description: `Pi config (${profile})`,
     },
   ];
+
+  const webSearchSource = join(sourcePath, "web-search.json");
+  if (existsSync(webSearchSource)) {
+    targets.push({
+      sourcePath: webSearchSource,
+      targetPath: join(homedir(), ".pi", "web-search.json"),
+      description: "Pi web search config",
+    });
+  }
+
+  return targets;
 }
 
 const plugin: IUnifiedHarnessPlugin = {

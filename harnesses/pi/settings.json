@@ -22,7 +22,7 @@
     "AGENT": "1"
   },
   "enableSkillCommands": true,
-  "lastChangelogVersion": "0.83.0",
+  "lastChangelogVersion": "0.84.1",
   "theme": "dark",
   "hideThinkingBlock": false,
   "defaultProvider": "google",

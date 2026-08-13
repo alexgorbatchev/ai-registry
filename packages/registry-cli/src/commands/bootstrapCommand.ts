@@ -2,6 +2,7 @@ import { cp, lstat, mkdir, readlink, realpath, rename, rm, symlink } from "fs/pr
 import { existsSync } from "fs";
 import { homedir } from "os";
 import { dirname, join } from "path";
+import { parseArgs } from "node:util";
 
 import { runCommand } from "../lib/runCommand";
 import { syncPublicScripts, type ISyncPublicScriptsResult } from "../lib/syncPublicScripts";
@@ -31,7 +32,14 @@ function getTimestamp(): string {
 }
 
 function hasAutoConfirmFlag(): boolean {
-  return process.argv.includes("-y") || process.argv.includes("--yes");
+  const { values } = parseArgs({
+    args: process.argv.slice(2),
+    options: {
+      yes: { type: "boolean", short: "y" },
+    },
+    strict: false,
+  });
+  return Boolean(values.yes);
 }
 
 function getBackupPath(targetPath: string): string {

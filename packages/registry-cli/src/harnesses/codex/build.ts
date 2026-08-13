@@ -2,6 +2,7 @@ import { mkdir, readFile, readdir, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
+import { parseArgs } from "node:util";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 
@@ -241,19 +242,24 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
 }
 
 function getRequestedCodexProfile(argv: string[]): string | null {
-  const overrideIndex = argv.indexOf("--codex-profile");
-  if (overrideIndex === -1) {
-    return null;
+  const { values } = parseArgs({
+    args: argv.slice(2),
+    options: {
+      "codex-profile": { type: "string" },
+    },
+    strict: false,
+  });
+
+  const value = values["codex-profile"];
+  if (value === true || (typeof value === "string" && value.trim().length === 0)) {
+    throw new Error("Missing Codex profile name after --codex-profile.");
   }
 
-  if (overrideIndex + 1 < argv.length) {
-    const profileName = argv[overrideIndex + 1]?.trim() ?? "";
-    if (profileName.length > 0) {
-      return profileName;
-    }
+  if (typeof value === "string") {
+    return value.trim();
   }
 
-  throw new Error("Missing Codex profile name after --codex-profile.");
+  return null;
 }
 
 async function getGeneratedCodexProfileNames(outputDir: string): Promise<string[]> {

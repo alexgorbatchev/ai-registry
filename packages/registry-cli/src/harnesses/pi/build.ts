@@ -2,6 +2,7 @@ import { copyFile, mkdir, readdir, rm, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
+import { parseArgs } from "node:util";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 
@@ -223,19 +224,24 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
 }
 
 function getRequestedPiProfile(argv: string[]): string | null {
-  const overrideIndex = argv.indexOf("--pi-profile");
-  if (overrideIndex === -1) {
-    return null;
+  const { values } = parseArgs({
+    args: argv.slice(2),
+    options: {
+      "pi-profile": { type: "string" },
+    },
+    strict: false,
+  });
+
+  const value = values["pi-profile"];
+  if (value === true || (typeof value === "string" && value.trim().length === 0)) {
+    throw new Error("Missing Pi profile name after --pi-profile.");
   }
 
-  if (overrideIndex + 1 < argv.length) {
-    const profileName = argv[overrideIndex + 1]?.trim() ?? "";
-    if (profileName.length > 0) {
-      return profileName;
-    }
+  if (typeof value === "string") {
+    return value.trim();
   }
 
-  throw new Error("Missing Pi profile name after --pi-profile.");
+  return null;
 }
 
 async function getGeneratedPiProfileNames(outputDir: string): Promise<string[]> {

@@ -174,6 +174,9 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
 
   if (isDefaultProfile) {
     await mkdir(promptsDir, { recursive: true });
+    await mkdir(join(profileOutputDir, "sessions"), { recursive: true });
+    await mkdir(join(profileOutputDir, "log"), { recursive: true });
+    await mkdir(join(profileOutputDir, ".tmp"), { recursive: true });
     await stageMutableCodexState(context, profileOutputDir);
     await stageHarnessRules(context, profileOutputDir);
 
@@ -215,9 +218,14 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
           continue;
         }
 
+        const targetPath = join(profileOutputDir, defaultProfileEntry.name);
+        if (existsSync(targetPath)) {
+          continue;
+        }
+
         await symlink(
           join(finalCodexOutputDir, DEFAULT_PROFILE_NAME, defaultProfileEntry.name),
-          join(profileOutputDir, defaultProfileEntry.name),
+          targetPath,
         );
       }
     }

@@ -1,4 +1,4 @@
-import { lstat, mkdir, readlink, realpath, rename, symlink } from "fs/promises";
+import { cp, lstat, mkdir, readlink, realpath, rename, rm, symlink } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
 import { dirname, join } from "path";
@@ -22,6 +22,7 @@ type IBootstrapTarget = {
 
 type IApplyResult =
   | { action: "linked" }
+  | { action: "relinked" }
   | { action: "unchanged" }
   | { action: "backed_up"; backupPath: string };
 
@@ -51,7 +52,19 @@ async function resolveSymlinkTarget(targetPath: string): Promise<string> {
   try {
     return await realpath(absoluteLinkPath);
   } catch (error) {
-    return absoluteLinkPath;
+    if (getErrorCode(error) === "ENOENT") {
+      return absoluteLinkPath;
+    }
+    throw error;
+  }
+}
+
+async function getSymlinkType(sourcePath: string): Promise<"dir" | "file"> {
+  try {
+    const stat = await lstat(sourcePath);
+    return stat.isDirectory() ? "dir" : "file";
+  } catch (error) {
+    return "dir";
   }
 }
 
@@ -76,8 +89,52 @@ async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[
   return targets;
 }
 
+async function preserveExistingRuntimeData(backupPath: string, sourcePath: string): Promise<void> {
+  const runtimeEntries = [
+    "auth.json",
+    "trust.json",
+    "history.jsonl",
+    "history.json",
+    "installation_id",
+    "models-store.json",
+    "state_5.sqlite",
+    "state_5.sqlite-wal",
+    "state_5.sqlite-shm",
+    "memories_1.sqlite",
+    "memories_1.sqlite-wal",
+    "memories_1.sqlite-shm",
+    "logs_2.sqlite",
+    "logs_2.sqlite-wal",
+    "logs_2.sqlite-shm",
+    "goals_1.sqlite",
+    "goals_1.sqlite-wal",
+    "goals_1.sqlite-shm",
+    "sessions",
+    "log",
+    "memories",
+    "missions",
+    "npm",
+    "shell_snapshots",
+  ];
+
+  for (const entryName of runtimeEntries) {
+    const backupEntryPath = join(backupPath, entryName);
+    const sourceEntryPath = join(sourcePath, entryName);
+
+    if (existsSync(backupEntryPath) && !existsSync(sourceEntryPath)) {
+      try {
+        await cp(backupEntryPath, sourceEntryPath, { recursive: true });
+        console.log(`    migrated runtime data '${entryName}' from backup to generated target`);
+      } catch (error) {
+        console.warn(`    warning: failed to migrate '${entryName}' from backup: ${error}`);
+      }
+    }
+  }
+}
+
 async function applyTarget(target: IBootstrapTarget): Promise<IApplyResult> {
   await mkdir(dirname(target.targetPath), { recursive: true });
+  const symlinkType = await getSymlinkType(target.sourcePath);
   try {
     const targetStats = await lstat(target.targetPath);
     if (targetStats.isSymbolicLink()) {
@@ -88,10 +145,20 @@ async function applyTarget(target: IBootstrapTarget): Promise<IApplyResult> {
       if (resolvedTargetPath === resolvedSourcePath) {
         return { action: "unchanged" };
       }
+
+      await rm(target.targetPath, { force: true });
+      await symlink(target.sourcePath, target.targetPath, symlinkType);
+      return { action: "relinked" };
     }
+
     const backupPath = getBackupPath(target.targetPath);
     await rename(target.targetPath, backupPath);
-    await symlink(target.sourcePath, target.targetPath, "dir");
+    await symlink(target.sourcePath, target.targetPath, symlinkType);
+
+    if (existsSync(backupPath)) {
+      await preserveExistingRuntimeData(backupPath, target.sourcePath);
+    }
+
     return { action: "backed_up", backupPath };
   } catch (error) {
     const errorCode = getErrorCode(error);
@@ -99,7 +166,7 @@ async function applyTarget(target: IBootstrapTarget): Promise<IApplyResult> {
       throw error;
     }
   }
-  await symlink(target.sourcePath, target.targetPath, "dir");
+  await symlink(target.sourcePath, target.targetPath, symlinkType);
   return { action: "linked" };
 }
 
@@ -151,6 +218,10 @@ export async function bootstrapCommand(): Promise<void> {
     const result = await applyTarget(target);
     if (result.action === "unchanged") {
       console.log(`  reused ${target.description}: ${target.targetPath}`);
+      continue;
+    }
+    if (result.action === "relinked") {
+      console.log(`  relinked ${target.description}: ${target.targetPath}`);
       continue;
     }
     console.log(`  linked ${target.description}: ${target.targetPath}`);

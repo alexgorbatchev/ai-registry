@@ -33,3 +33,4 @@ profiles/*/.generated/
 /.codegraph
 /.pi-subagents
 
+/.pi/subagents

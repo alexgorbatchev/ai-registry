@@ -18,6 +18,14 @@ This skill defines the non-negotiable idioms and design principles for writing G
 
 ---
 
+## 0. Toolchain, Build & Automation Rules
+
+- **Latest Go Version**: Always use the latest version of Go (currently at least Go 1.26+). Declare `go 1.26` or higher in `go.mod`.
+- **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory (e.g., `go build -o bin/app ./cmd/app`). Never output binaries into root or source directories. Always git-ignore `bin/`.
+- **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
+
+---
+
 ## 1. Naming
 
 Go naming communicates scope and intent through brevity. Names earn their length.
@@ -337,7 +345,7 @@ A package should export the minimum needed. Start every type, function, and cons
 
 ### 5.5 Never Commit Compiled Binaries
 
-Compiled Go binaries (executables, `.exe` files, shared libraries, etc.) are platform-specific, huge, and must never be committed to git repositories. Always exclude them from the workspace using `.gitignore` (typically by adding rules like `bin/` or individual binary output names) and distribute them solely through CI/CD pipelines, package registries, or release platforms.
+Compiled Go binaries (executables, `.exe` files, shared libraries, etc.) are platform-specific, huge, and must never be committed to git repositories. Always output binaries strictly into `bin/`, exclude `bin/` from git using `.gitignore`, and distribute compiled assets solely through CI/CD pipelines, package registries, or release platforms.
 
 ---
 
@@ -511,6 +519,9 @@ Add a dependency only when it provides clear, substantial value that the stdlib 
 
 Before producing any Go code, verify:
 
+- [ ] Go version is latest (at least Go 1.26+) declared in `go.mod`
+- [ ] Binaries are built strictly into the `bin/` folder
+- [ ] Task automation uses `just` with a `justfile` (`just build`, `just test`, etc.)
 - [ ] Variable names match scope distance — short for tight, descriptive for wide
 - [ ] No duplicated logic blocks — extract on second occurrence
 - [ ] Every interface has 2+ production implementations or genuine decoupling need
@@ -520,7 +531,7 @@ Before producing any Go code, verify:
 - [ ] Packages named for responsibility, not layer
 - [ ] Exported API is minimal — only what external consumers need
 - [ ] Standard library used unless a dependency provides substantial value
-- [ ] No compiled Go binaries committed to git repositories (enforced via `.gitignore`)
+- [ ] No compiled Go binaries committed to git repositories (enforced via `.gitignore` on `bin/`)
 - [ ] Module tool dependencies use `tool` directives (not `tools.go` blank imports)
 - [ ] Comments explain why, code explains what
 - [ ] Zero values are useful

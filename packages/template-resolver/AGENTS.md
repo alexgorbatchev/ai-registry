@@ -32,6 +32,8 @@ This package implements the repository's build-time template resolver.
 
 - Run `bun test` from `packages/template-resolver` after changing package code or tests.
 - Run `bun run build` from the repository root after changing resolver behavior, because the build pipeline is the main integration surface.
+- Any time code is changed such that results from running that code are changed, a test file must be changed as well.
+- Minimum 90% code coverage is required (the `scripts/` folder is excluded from this rule).
 
 ## Editing Notes
 

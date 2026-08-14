@@ -68,4 +68,5 @@ This repository uses a custom build script (`packages/registry-cli/src/commands/
 - When vendoring a third-party code package for a harness integration, place it under `vendor/` and wire it through the root Bun workspaces instead of placing installable package source inside a generated harness directory.
 - After modifying any skill, command, profile, harness file, or `skills-lock.json`, ALWAYS run `bun run build` to regenerate the configurations.
 - **CRITICAL:** This `AGENTS.md` and the `README.md` must be kept strictly up to date whenever structural or architectural changes are made to this repository. Do not leave documentation stale.
+- **Testing & Code Coverage:** Any time code is changed such that results from running that code are changed, a test file must be changed as well. A minimum of 90% code coverage is required. (Note: The `scripts/` folder is excluded from this rule.)
 - When structural, workflow, or location changes affect how agents should add things to this registry, update `skills/ai-registry-integration/SKILL.md` in the same change so the registry-integration guidance stays accurate.

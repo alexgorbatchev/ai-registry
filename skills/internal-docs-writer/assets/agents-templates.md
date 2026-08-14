@@ -29,6 +29,7 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 
 ## Boundaries
 - Always: automatically record all new instructions in the most appropriate `AGENTS.md` file immediately upon receipt (check with user if existing instructions conflict)
+- Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (scripts/ folder is excluded from this rule)
 - Always: `<safe repeated action>`
 - Ask first: `<risky change>`
 - Never: `<forbidden zone>`
@@ -59,6 +60,7 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 
 ## Shared boundaries
 - Always: automatically record all new instructions in the most appropriate `AGENTS.md` file immediately upon receipt (check with user if existing instructions conflict)
+- Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (scripts/ folder is excluded from this rule)
 - Always: `<shared repeated action>`
 - Ask first: `<shared risky change>`
 - Never: `<shared forbidden zone>`
@@ -87,6 +89,7 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 - `<local failure mode> -> <fix>`
 
 ## Boundaries
+- Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (scripts/ folder is excluded from this rule)
 - Ask first: `<local risky change>`
 - Never: `<local forbidden zone>`
 

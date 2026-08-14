@@ -9,6 +9,7 @@ These guidelines are for the canonical repository `AGENTS.md` format. Do **not**
 - **Put executable commands early** and include copy-paste ready flags when they matter.
 - **Prefer one real example or gotcha** over paragraphs of generic advice.
 - **Make boundaries explicit** with `Always`, `Ask first`, and `Never` when risk is non-trivial.
+- **Mandatory Testing & Coverage in Code-Based Projects:** For code-based projects, any time code is changed such that results from running that code are changed, a test file must be changed as well, and 90% code coverage is required (the `scripts/` folder is explicitly excluded from this rule). These instructions must ONLY be added to `AGENTS.md` for code-based projects.
 - **Automatic instruction recording.** Automatically record all new user instructions in the most appropriate `AGENTS.md` file without requiring the user to ask. If existing instructions conflict or would be modified, check with the user first.
 - **Keep the root file lean.** Split into nested `AGENTS.md` files when module rules diverge.
 - **Treat `AGENTS.md` as the source of truth.**
@@ -69,7 +70,7 @@ Use this workflow when creating a new `AGENTS.md` or refactoring a bloated one.
     *   **Exclude:** Architecture essays, framework docs, style rules already enforced by linters/formatters, duplication of `README.md`, or aspirational rules.
 3.  **Put Commands First:** List runnable and copy-paste ready commands early. Prefer package-scoped or file-scoped commands over full-repo commands when available.
 4.  **Use Concrete Examples over Prose:** Point to a real file or show a short code block to clarify a convention rather than writing generic guidelines.
-5.  **Make Boundaries Explicit:** Use a three-tier boundary model (`Always` / `Ask first` / `Never`) grounded in actual repository risk (e.g. database migrations, secrets, or dependency changes). Always include the rule to automatically record new user instructions in the appropriate `AGENTS.md` file upon receipt (and check first if conflicts exist).
+5.  **Make Boundaries Explicit:** Use a three-tier boundary model (`Always` / `Ask first` / `Never`) grounded in actual repository risk (e.g. database migrations, secrets, or dependency changes). Always include the rule to automatically record new user instructions in the appropriate `AGENTS.md` file upon receipt (and check first if conflicts exist). For code-based projects, explicitly include the mandatory rule: any time code is changed such that results from running that code are changed, a test file must be changed as well, and 90% code coverage is required (the `scripts/` folder is excluded from this rule; omit this rule for non-code projects/subtrees).
 6.  **Compatibility Files:** If the repo uses adjacent instruction files or legacy names (like `AGENT.md`), prefer `AGENTS.md` as the canonical name. Migrate or alias if supported and useful, but do not overwrite legacy files destructively without confirmation.
 
 ---
@@ -148,6 +149,7 @@ Use this checklist before finalizing a new or updated `AGENTS.md`:
 *   [ ] **Signal:** Only contains repository-specific, non-inferable guidance.
 *   [ ] **Gotchas:** At least one real gotcha or counterintuitive pattern is documented with a clear corrective action.
 *   [ ] **Boundaries:** Explicit where risk exists.
+*   [ ] **Code Testing & Coverage (Code-Based Projects Only):** Includes the rule requiring a corresponding test file change and 90% code coverage whenever code changes affect runtime execution results (excluding the `scripts/` folder; omitted for non-code projects).
 *   [ ] **Conventions:** Clear examples or file paths are provided instead of abstract prose.
 *   [ ] **Scope:** Root file contains only shared rules, and nested `AGENTS.md` files exist where package rules diverge.
 *   [ ] **Hygiene:** README/framework duplication is removed, and linked paths resolve.

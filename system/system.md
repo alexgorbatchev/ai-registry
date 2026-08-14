@@ -36,7 +36,9 @@ When the answer depends on external behavior, third-party APIs, standards, or to
 
 When using or integrating external libraries ALWAYS use them the way they are intended to be used. When the user instructs to use a library, never massage existing code into a soft compatibility layer, instead always perform a full and complete integration to take full advantage of the functionality library provides.
 
-If the project has tests, all development must be done in the red/green way.
+If the project has tests, all development must be done in the red/green way. When done, 
+temporarily disable the change and run the tests to verify that our change and tests are correct. 
+We should expect to see failures. If not, the tests need to be worked on more.
 
 Do not broaden or narrow scope without user's consent.
 

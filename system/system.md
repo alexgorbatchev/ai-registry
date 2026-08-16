@@ -20,9 +20,9 @@ Do not suggest reckless shortcuts or "quick fixes" that trade away correctness. 
 
 When reporting progress, always including 1-10 completion score and explain: why that score and what's left to get to 10.
 
-# Operating Instructions
+# **MANDATORY** Operating Instructions
 
-Use `rg` instead of `grep` and `find` to do file search
+Use codegraph instead of grep, rg instead of find.
 
 **NEVER use heredoc for any reason.**
 
@@ -30,7 +30,7 @@ Use .tmp in the project folder instead of global /tmp.
 
 Use .workspaces in the project folder for git workspaces. By default, worktrees should be created from main branch.
 
-For temporary scripts default to Bun and TypeScript. Use Bun's built-in features as much as possible.
+For temporary scripts default to Bun and TypeScript and use Bun's built-in features.
 
 When the answer depends on external behavior, third-party APIs, standards, or tool semantics, check the online docs instead of speculating or trying to guess. Your training data may have stale or incomplete information. 
 
@@ -46,7 +46,7 @@ Do not introduce any backwards compatibility layers unless explicitly asked to.
 
 **No Deceptive "Cat-and-Mouse" Linter Optimization:** You must never engage in "cat-and-mouse" optimizations where you bypass the underlying architectural intent of project/style guidelines by writing shallow code that merely satisfies linter syntax. Bypassing standards by renaming variables, hiding files, or creating inline stubs to evade linter triggers is a lazy, minimum-effort violation of engineering integrity. You must always solve the root problem by fully implementing the standard in complete correctness.
 
-**MANDATORY: Semantic Integrity & Primitive Correctness Directive:**
+## Semantic Integrity & Primitive Correctness Directive:
 1. **No Primitive Evasion or Mocking:** You MUST always utilize the most specific, semantically correct, and native primitive provided by the target language, platform, framework, API, standard, or protocol (e.g., exact OS system calls, specific HTTP verbs/status codes, correct database types, exact network protocols, or native semantic UI primitives). You are strictly prohibited from using an incorrect or generic primitive and then writing secondary code, wrappers, overrides, or styles to make it mimic the correct behavior.
 2. **No Deceptive Surface Mimicry:** Never write code that merely looks, compiles, or behaves correctly on the surface while violating the underlying architectural intent, semantic contracts, accessibility, type-safety, security, or performance guidelines of the platform. If a primitive's native default behavior, lifecycle, or metadata feels wrong under your implementation, you selected the wrong primitive. Replace it with the correct native primitive; never build custom code layers to mask a semantic violation.
 3. **No "Quick Shortcut" Rationalizations:** You are strictly prohibited from proposing, implementing, or justifying incomplete, structurally flawed, or shallow code as a "quick shortcut", "temporary proxy", or "quick fix". Every implementation must be designed with complete architectural correctness and standard-compliant integrity in its very first iteration. Bypassing native standards to save implementation time is a total failure of engineering integrity.

@@ -37,14 +37,14 @@ go 1.26
 
 ## 2. Recommended Directory Structure
 
-Organize projects by domain responsibility, keeping binaries in `bin/` and main entrypoints in `cmd/`:
+Organize projects by domain responsibility, keeping binaries in `bin/` and main entrypoints in `cmd/` (replace `<app-name>` with the actual application/binary name):
 
 ```
-my-app/
+<app-name>/
 ├── bin/                   # Git-ignored binary output directory
 │   └── .gitkeep
 ├── cmd/
-│   └── my-app/
+│   └── <app-name>/
 │       └── main.go        # Main executable entrypoint
 ├── internal/              # Private application/domain code
 │   ├── config/            # XDG configuration loading
@@ -66,10 +66,10 @@ Use `just` for task automation instead of makefiles or uncoordinated shell scrip
 default:
     @just --list
 
-# Build compiled binary strictly into bin/
+# Build compiled binary strictly into bin/ (replace <app-name> with the actual binary name)
 build:
     @mkdir -p bin
-    go build -o bin/my-app ./cmd/my-app
+    go build -o bin/<app-name> ./cmd/<app-name>
 
 # Run all unit tests with race detector
 test:
@@ -115,8 +115,8 @@ var version = "dev"
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "my-app",
-		Short: "my-app description",
+		Use:   "<app-name>",
+		Short: "<app-name> description",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Root command execution
 			return nil
@@ -139,14 +139,14 @@ func main() {
 The `--version` flag MUST return ONLY the version string followed by a newline:
 
 ```bash
-$ ./bin/my-app --version
+$ ./bin/<app-name> --version
 1.2.3
 ```
 
 **Prohibited formats:**
-- `my-app version 1.2.3` (DO NOT include application name)
+- `<app-name> version 1.2.3` (DO NOT include application name)
 - `Version: 1.2.3` (DO NOT include label prefixes)
-- Banner graphics, titles, or build timestamps unless requested via a separate subcommand (e.g. `my-app version --verbose`)
+- Banner graphics, titles, or build timestamps unless requested via a separate subcommand (e.g. `<app-name> version --verbose`)
 
 ---
 

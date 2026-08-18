@@ -9,7 +9,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-08-16 08:25
+  last_modified: 2026-08-16 08:30
   status: current
 ---
 
@@ -28,7 +28,7 @@ This skill defines the non-negotiable idioms and design principles for writing G
 
 - **Project Setup & Environment Reference**: For new Go project setup, `justfile` task automation templates, Cobra initialization, XDG directory helpers, and `.gitignore` baseline, see [references/setup.md](references/setup.md).
 - **Latest Go Version**: Always use the latest version of Go (currently at least Go 1.26+). Declare `go 1.26` or higher in `go.mod`.
-- **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory (e.g., `go build -o bin/app ./cmd/app`). Never output binaries into root or source directories. Always git-ignore `bin/`.
+- **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory using the project's actual application name (e.g., `go build -o bin/<app-name> ./cmd/<app-name>`). Never output binaries into root or source directories, and never output literally as `bin/app` (replace `<app-name>` with the project binary name). Always git-ignore `bin/`.
 - **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
 - **CLI Framework & Argument Parsing (Cobra)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) for CLI command structure, flags, and argument parsing. Do not use the standard library `flag` package or write custom argument parsers.
 - **Version Flag Output (`--version`)**: `--version` must return ONLY the raw version string (e.g., `1.2.3` or `v1.2.3`), followed by a newline. Do not include application names, banners, labels, or extra formatting (e.g., NOT `app version 1.2.3` or `Version: 1.2.3`). Clean version output is strictly required for automated scripting, tooling, and CI/CD validation.

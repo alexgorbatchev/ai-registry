@@ -9,7 +9,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-08-16 08:03
+  last_modified: 2026-08-16 08:04
   status: current
 ---
 
@@ -30,6 +30,7 @@ This skill defines the non-negotiable idioms and design principles for writing G
 - **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
 - **CLI Framework & Argument Parsing (Cobra)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) for CLI command structure, flags, and argument parsing. Do not use the standard library `flag` package or write custom argument parsers.
 - **Version Flag Output (`--version`)**: `--version` must return ONLY the version string (e.g., `1.2.3` or `v1.2.3`), followed by a newline. Do not include application names, banners, labels, or extra formatting (e.g., NOT `app version 1.2.3` or `Version: 1.2.3`). Clean version output is strictly required for automated scripting, tooling, and CI/CD validation.
+- **XDG Base Directory Specification**: Applications must strictly follow XDG Base Directory conventions (`$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_CACHE_HOME`, `$XDG_STATE_HOME`) for user configuration, data, cache, and state directories unless otherwise explicitly specified by requirements or CLI flags. Leverage standard APIs like `os.UserCacheDir()` or `os.UserConfigDir()` with appropriate fallbacks.
 
 ---
 
@@ -533,6 +534,7 @@ Before producing any Go code, verify:
 - [ ] Task automation uses `just` with a `justfile` (`just build`, `just test`, etc.)
 - [ ] CLI tools use Cobra (`github.com/spf13/cobra`) for flags, subcommands, and argument parsing
 - [ ] `--version` returns ONLY the version string (no app name, prefix, or extra text)
+- [ ] Follows XDG Base Directory conventions (`$XDG_CONFIG_HOME`, `$XDG_CACHE_HOME`, etc.) for user paths unless explicitly specified otherwise
 - [ ] Variable names match scope distance — short for tight, descriptive for wide
 - [ ] No duplicated logic blocks — extract on second occurrence
 - [ ] Every interface has 2+ production implementations or genuine decoupling need

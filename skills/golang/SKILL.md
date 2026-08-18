@@ -6,6 +6,11 @@ description: >-
   or releasing Go code, or when working on Go-specific project structure, APIs,
   tests, CI, or binaries. Do not use for non-Go codebases or for language-agnostic
   tasks that do not depend on Go conventions.
+author: alexgorbatchev
+metadata:
+  created_on: 2026-04-14 12:00
+  last_modified: 2026-08-16 08:03
+  status: current
 ---
 
 # Go Baseline Skill
@@ -23,6 +28,8 @@ This skill defines the non-negotiable idioms and design principles for writing G
 - **Latest Go Version**: Always use the latest version of Go (currently at least Go 1.26+). Declare `go 1.26` or higher in `go.mod`.
 - **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory (e.g., `go build -o bin/app ./cmd/app`). Never output binaries into root or source directories. Always git-ignore `bin/`.
 - **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
+- **CLI Framework & Argument Parsing (Cobra)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) for CLI command structure, flags, and argument parsing. Do not use the standard library `flag` package or write custom argument parsers.
+- **Version Flag Output (`--version`)**: `--version` must return ONLY the version string (e.g., `1.2.3` or `v1.2.3`), followed by a newline. Do not include application names, banners, labels, or extra formatting (e.g., NOT `app version 1.2.3` or `Version: 1.2.3`). Clean version output is strictly required for automated scripting, tooling, and CI/CD validation.
 
 ---
 
@@ -504,6 +511,8 @@ Reach for the standard library before any third-party dependency. Go's stdlib is
 | uuid libraries           | `crypto/rand` + explicit formatting           |
 | config libraries         | `os.Getenv` + a small struct                  |
 
+*Exception for CLI applications*: Use Cobra (`github.com/spf13/cobra`) for CLI commands and argument handling instead of stdlib `flag`.
+
 ### 8.1 Manage Build/Dev Tools as Module Tools
 
 For CLI tooling used by the repo (linters, generators, etc.), prefer `tool` directives in `go.mod` (Go 1.24+) over `tools.go` blank-import stubs.
@@ -522,6 +531,8 @@ Before producing any Go code, verify:
 - [ ] Go version is latest (at least Go 1.26+) declared in `go.mod`
 - [ ] Binaries are built strictly into the `bin/` folder
 - [ ] Task automation uses `just` with a `justfile` (`just build`, `just test`, etc.)
+- [ ] CLI tools use Cobra (`github.com/spf13/cobra`) for flags, subcommands, and argument parsing
+- [ ] `--version` returns ONLY the version string (no app name, prefix, or extra text)
 - [ ] Variable names match scope distance — short for tight, descriptive for wide
 - [ ] No duplicated logic blocks — extract on second occurrence
 - [ ] Every interface has 2+ production implementations or genuine decoupling need

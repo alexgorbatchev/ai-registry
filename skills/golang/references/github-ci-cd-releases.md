@@ -122,7 +122,7 @@ Use `-buildvcs=false` only when there is a specific reason to suppress that meta
 
 ### Practical rule
 
-If the CLI has a real `--version` command, require explicit `ldflags` wiring and verify the produced release binary reports the tag version.
+If the CLI has a real `--version` command, require explicit `ldflags` wiring and verify the produced release binary reports the tag version. The runtime `--version` output must return ONLY the version string (e.g., `1.2.3` or `v1.2.3`), with no application name, prefix, or extra formatting.
 If it does not, do not pretend release versioning is solved just because artifacts are tagged.
 Add the command or document that only build metadata is embedded.
 

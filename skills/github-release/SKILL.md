@@ -2,6 +2,10 @@
 name: github-release
 description: Create, inspect, edit, and publish GitHub releases with the `gh release` CLI, including writing release notes, verifying tags, managing draft/prerelease state, and uploading assets. Use when asked to create a GitHub release, fix or replace release notes, publish an existing tag, inspect release metadata, or attach release assets. Do not use for generic git tagging or repository publishing flows that do not involve GitHub Releases.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-05-04 13:11
+  last_modified: 2026-08-16 08:20
+  status: current
 ---
 
 # GitHub Release
@@ -16,6 +20,7 @@ Use this workflow to manage GitHub Releases with `gh release` instead of guessin
 - Prefer `--notes-file` for multi-line release notes instead of stuffing large Markdown into `--notes`.
 - Prefer `gh release view --json ...` for verification before and after changes.
 - Treat `--generate-notes` as a drafting aid at most, not the final release text.
+- Do not include installation instructions or changelogs/commit lists in release notes by default unless explicitly requested.
 - Use `--verify-tag` when creating or editing a release for an existing tag. Without it, `gh release create` can create a missing tag from the default branch automatically.
 - Do not use `gh release upload --clobber` unless the user explicitly accepts the risk. GitHub CLI deletes the existing asset before uploading the replacement.
 
@@ -140,19 +145,13 @@ Default note structure:
 - User-visible change 1
 - User-visible change 2
 - Operationally important change 3
-
-## Notable Commits Since vA.B.C
-
-- `abc1234` type(scope): meaningful commit summary
-- `def5678` type(scope): meaningful commit summary
-
-**Full Changelog**: https://<host>/<owner>/<repo>/compare/vA.B.C...vX.Y.Z
 ```
 
 ## Notes Quality Bar
 
 - Prefer 2-5 bullets in `## Summary`.
 - Lead with user-visible behavior, fixes, or operator-relevant changes.
+- **No Default Installation Steps or Changelogs**: Release notes do not need installation instructions or commit lists/changelogs by default unless explicitly requested. GitHub Releases already links release assets and tag compare diffs automatically. Keep notes focused on concise user-visible changes.
 - Exclude routine noise such as pure version bumps, trivial housekeeping, or local-only cleanup unless those changes materially affect users or release operators.
 - Do not claim a change shipped if it is not in the release range.
 - If the release is infra-only or docs-only, say that directly instead of padding the notes.

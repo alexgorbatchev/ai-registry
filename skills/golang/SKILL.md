@@ -9,7 +9,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-08-16 08:04
+  last_modified: 2026-08-16 08:25
   status: current
 ---
 
@@ -19,17 +19,19 @@ This skill defines the non-negotiable idioms and design principles for writing G
 
 ## References
 
+- `references/setup.md` — Complete guide for initializing new Go projects, `justfile` templates, Cobra CLI setup, and XDG directory integration.
 - `references/github-ci-cd-releases.md` — GitHub Actions CI, tagged releases, GoReleaser config, or binary version metadata. 
 
 ---
 
 ## 0. Toolchain, Build & Automation Rules
 
+- **Project Setup & Environment Reference**: For new Go project setup, `justfile` task automation templates, Cobra initialization, XDG directory helpers, and `.gitignore` baseline, see [references/setup.md](references/setup.md).
 - **Latest Go Version**: Always use the latest version of Go (currently at least Go 1.26+). Declare `go 1.26` or higher in `go.mod`.
 - **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory (e.g., `go build -o bin/app ./cmd/app`). Never output binaries into root or source directories. Always git-ignore `bin/`.
 - **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
 - **CLI Framework & Argument Parsing (Cobra)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) for CLI command structure, flags, and argument parsing. Do not use the standard library `flag` package or write custom argument parsers.
-- **Version Flag Output (`--version`)**: `--version` must return ONLY the version string (e.g., `1.2.3` or `v1.2.3`), followed by a newline. Do not include application names, banners, labels, or extra formatting (e.g., NOT `app version 1.2.3` or `Version: 1.2.3`). Clean version output is strictly required for automated scripting, tooling, and CI/CD validation.
+- **Version Flag Output (`--version`)**: `--version` must return ONLY the raw version string (e.g., `1.2.3` or `v1.2.3`), followed by a newline. Do not include application names, banners, labels, or extra formatting (e.g., NOT `app version 1.2.3` or `Version: 1.2.3`). Clean version output is strictly required for automated scripting, tooling, and CI/CD validation.
 - **XDG Base Directory Specification**: Applications must strictly follow XDG Base Directory conventions (`$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_CACHE_HOME`, `$XDG_STATE_HOME`) for user configuration, data, cache, and state directories unless otherwise explicitly specified by requirements or CLI flags. Leverage standard APIs like `os.UserCacheDir()` or `os.UserConfigDir()` with appropriate fallbacks.
 
 ---

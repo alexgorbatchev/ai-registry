@@ -5,7 +5,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-20 14:15
-  last_modified: 2026-08-20 14:15
+  last_modified: 2026-08-20 14:25
   status: current
 ---
 
@@ -36,7 +36,8 @@ When executing a rapid local demo or practice problem under tight time constrain
   - The Web UI MUST NOT contain any `<script>` tags or client-side JavaScript execution.
   - All UI state transitions and mutations MUST use native HTML forms (`<form method="GET">` for searching, `<form method="POST">` for mutations).
   - Mutations handle form submissions (`application/x-www-form-urlencoded`) and return `302 Found` redirects back to `/` with query parameter flash messages (`?message=...` or `?error=...`).
-- **Layout & Container Styling**:
+- **Layout & CSS Styling Design System**:
+  - Follow the canonical CSS design tokens, card grid layout, status badges, forms, and table styles in [references/html-styling.md](references/html-styling.md).
   - Main container styling must use `width: 90%; max-width: 1800px; margin: 0 auto;` for wide screen visibility.
 - **Datetime Local Normalization**:
   - HTML `datetime-local` inputs format dates as `YYYY-MM-DDTHH:mm` without a timezone.

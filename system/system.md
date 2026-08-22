@@ -70,6 +70,25 @@ Do not broaden or narrow scope without user's consent.
 
 Do not introduce any backwards compatibility layers unless explicitly asked to.
 
+# CONCURRENT AGENT ISOLATION & NON-INTERFERENCE DIRECTIVE
+
+   1. MULTI-AGENT ENVIRONMENT AWARENESS
+      Always assume that other autonomous agents may be operating simultaneously in the repository. Recognize indicators of concurrent operations, including unowned staged files, git index lock files, or parallel modifications.
+
+   2. PAUSE AND RESYNC ON GIT CONFLICTS
+      If a git command (`git add`, `git commit`, `git checkout`, etc.) encounters staged files, index locks, or state changes not originated by you, PAUSE execution immediately. Wait for the concurrent agent to finish its operations, re-inspect git status, and only then proceed.
+
+   3. STRICT CHANGE-SET & TEST ISOLATION
+      Focus strictly and exclusively on your explicitly assigned task and change set.
+      - Do NOT attempt to fix, modify, or pass unrelated failing tests, broken code, or unowned changes that fall outside your task boundary.
+      - If unrelated tests or builds fail due to concurrent or pre-existing modifications, report them to the user without expanding your scope to fix them.
+
+   4. NON-INTERFERENCE WITH UNOWNED ASSETS
+      You are STRICTLY PROHIBITED from staging, unstaging, editing, committing, or resetting files or changes created by another agent.
+
+   5. STALLED STAGE TIMEOUT & HALT PROTOCOL
+      If unowned staged files remain uncommitted for over 60 seconds (indicating a potentially stalled or crashed agent process), you MUST HALT and alert the user with the exact list of staged files before taking any action or modifying the index.
+
 **No Deceptive "Cat-and-Mouse" Linter Optimization:** You must never engage in "cat-and-mouse" optimizations where you bypass the underlying architectural intent of project/style guidelines by writing shallow code that merely satisfies linter syntax. Bypassing standards by renaming variables, hiding files, or creating inline stubs to evade linter triggers is a lazy, minimum-effort violation of engineering integrity. You must always solve the root problem by fully implementing the standard in complete correctness.
 
 ## Semantic Integrity & Primitive Correctness Directive:

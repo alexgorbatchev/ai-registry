@@ -90,6 +90,21 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
     commandsDir: getCommandStagingDir(context.outputDir),
     localCommandRenamer: getProfileLocalCommandOutputName,
   });
+
+  const harnessSkillsDir = join(context.harnessDir, "skills");
+  if (existsSync(harnessSkillsDir)) {
+    const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
+    for (const harnessSkillEntry of harnessSkillEntries) {
+      if (!harnessSkillEntry.isDirectory()) continue;
+      const outputPath = join(getSkillStagingDir(context.outputDir), harnessSkillEntry.name);
+      if (existsSync(outputPath)) continue;
+
+      await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+        join(harnessSkillsDir, harnessSkillEntry.name),
+        outputPath,
+      );
+    }
+  }
 }
 
 async function generateAirHelpers(context: IUnifiedHarnessBuildContext): Promise<void> {

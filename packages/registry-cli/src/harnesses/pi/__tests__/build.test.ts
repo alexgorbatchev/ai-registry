@@ -10,6 +10,7 @@ import {
   copyPathWithTemplateVariables,
   mergeDirectory,
   stageProfileAssets,
+  symlinkDirectoryWithOriginalFiles,
   writeBinScript,
   type IBuildSupport,
   type IProfileBuildContext,
@@ -59,6 +60,7 @@ function createBuildSupport(): IBuildSupport {
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
+    symlinkDirectoryWithOriginalFiles,
   };
 }
 
@@ -242,12 +244,21 @@ describe("Pi harness bootstrap targets", () => {
     expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe(
       "# Shared skill\n",
     );
+    expect(
+      (await lstat(join(repositoryRoot, ".output", "pi", "default", "skills", "shared-skill", "SKILL.md"))).isSymbolicLink(),
+    ).toBe(true);
     expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "skills", "local-skill", "SKILL.md"), "utf-8")).toBe(
       "# Local skill\n",
     );
+    expect(
+      (await lstat(join(repositoryRoot, ".output", "pi", "default", "skills", "local-skill", "SKILL.md"))).isSymbolicLink(),
+    ).toBe(true);
     expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe(
       "# Harness skill\n",
     );
+    expect(
+      (await lstat(join(repositoryRoot, ".output", "pi", "default", "skills", "harness-skill", "SKILL.md"))).isSymbolicLink(),
+    ).toBe(true);
     expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isDirectory()).toBe(true);
     expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isSymbolicLink()).toBe(false);
   });

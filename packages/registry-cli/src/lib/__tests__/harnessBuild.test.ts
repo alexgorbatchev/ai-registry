@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
+import { lstat, mkdir, mkdtemp, readlink, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { existsSync } from "fs";
@@ -7,6 +7,7 @@ import {
   applyTemplateVariablesToGeneratedOutput,
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
+  symlinkDirectoryWithOriginalFiles,
   type ITemplateContext,
 } from "../harnessBuild";
 
@@ -111,5 +112,25 @@ describe("harnessBuild template rendering", () => {
     expect(existsSync(join(targetDir, "fetch-source.sh"))).toBe(false);
     expect(existsSync(join(targetDir, ".tmp"))).toBe(false);
     expect(existsSync(join(targetDir, ".tmp/some-source/file.txt"))).toBe(false);
+  });
+
+  it("creates symbolic links to original files when symlinking a skill directory", async () => {
+    const repositoryRoot = await createTestDirectory();
+
+    const sourceDir = join(repositoryRoot, "skills", "my-skill");
+    const targetDir = join(repositoryRoot, "output", "skills", "my-skill");
+
+    await writeTestFile(sourceDir, "SKILL.md", "# Skill Title");
+    await writeTestFile(sourceDir, "references/ref.md", "# Reference");
+
+    await symlinkDirectoryWithOriginalFiles(sourceDir, targetDir);
+
+    const skillStat = await lstat(join(targetDir, "SKILL.md"));
+    expect(skillStat.isSymbolicLink()).toBe(true);
+    expect(await readlink(join(targetDir, "SKILL.md"))).toBe(join(sourceDir, "SKILL.md"));
+
+    const refStat = await lstat(join(targetDir, "references", "ref.md"));
+    expect(refStat.isSymbolicLink()).toBe(true);
+    expect(await readlink(join(targetDir, "references", "ref.md"))).toBe(join(sourceDir, "references", "ref.md"));
   });
 });

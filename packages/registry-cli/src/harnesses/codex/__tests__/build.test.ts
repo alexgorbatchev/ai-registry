@@ -10,6 +10,7 @@ import {
   copyPathWithTemplateVariables,
   mergeDirectory,
   stageProfileAssets,
+  symlinkDirectoryWithOriginalFiles,
   writeBinScript,
   type IBuildSupport,
   type IProfileBuildContext,
@@ -58,6 +59,7 @@ function createBuildSupport(): IBuildSupport {
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
+    symlinkDirectoryWithOriginalFiles,
   };
 }
 
@@ -146,12 +148,21 @@ describe("Codex harness build plugin", () => {
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe(
       "# Shared skill\n",
     );
+    expect(
+      (await lstat(join(repositoryRoot, ".output", "codex", "default", "skills", "shared-skill", "SKILL.md"))).isSymbolicLink(),
+    ).toBe(true);
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "skills", "local-skill", "SKILL.md"), "utf-8")).toBe(
       "# Local skill\n",
     );
+    expect(
+      (await lstat(join(repositoryRoot, ".output", "codex", "default", "skills", "local-skill", "SKILL.md"))).isSymbolicLink(),
+    ).toBe(true);
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe(
       "# Harness skill\n",
     );
+    expect(
+      (await lstat(join(repositoryRoot, ".output", "codex", "default", "skills", "harness-skill", "SKILL.md"))).isSymbolicLink(),
+    ).toBe(true);
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "rules", "default.rules"), "utf-8")).toBe(
       "prefix_rule(pattern = [\"git\", \"reset\"], decision = \"forbidden\")\n",
     );

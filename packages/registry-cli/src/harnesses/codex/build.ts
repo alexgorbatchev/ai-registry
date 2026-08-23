@@ -99,10 +99,9 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
       throw new Error(`Cannot stage Codex harness skill because the output path already exists: ${outputPath}`);
     }
 
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
+    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
       sourcePath,
       outputPath,
-      context.templateContext,
     );
   }
 }
@@ -114,10 +113,9 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsDir: stri
       continue;
     }
 
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
+    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
       join(context.templateContext.skills_dir, matchedSkill),
       outputPath,
-      context.templateContext,
     );
   }
 
@@ -129,10 +127,9 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsDir: stri
       );
     }
 
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
+    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
       join(context.profileDir, "skills", profileLocalSkill),
       outputPath,
-      context.templateContext,
     );
   }
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { afterEach, describe, expect, it } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import plugin from "../../opencode/build";
@@ -9,6 +9,7 @@ import {
   copyPathWithTemplateVariables,
   mergeDirectory,
   stageProfileAssets,
+  symlinkDirectoryWithOriginalFiles,
   writeBinScript,
   type IBuildSupport,
   type IProfileBuildContext,
@@ -46,6 +47,7 @@ function createBuildSupport(): IBuildSupport {
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
+    symlinkDirectoryWithOriginalFiles,
   };
 }
 
@@ -75,6 +77,20 @@ function getStageProfile(): NonNullable<typeof plugin.stageProfile> {
   return plugin.stageProfile;
 }
 
+function createUnifiedContext(repositoryRoot: string): import("../../../lib/harnessBuild").IUnifiedHarnessBuildContext {
+  return {
+    harnessDir: join(repositoryRoot, "harnesses", "opencode"),
+    outputDir: join(repositoryRoot, ".output"),
+    templateContext: createTemplateContext(repositoryRoot),
+    buildSupport: createBuildSupport(),
+  };
+}
+
+function getFinalizeOutput(): NonNullable<typeof plugin.finalizeOutput> {
+  assert(plugin.finalizeOutput);
+  return plugin.finalizeOutput;
+}
+
 describe("OpenCode harness build plugin", () => {
   afterEach(async () => {
     await rm(TEST_ROOT, { force: true, recursive: true });
@@ -100,5 +116,26 @@ describe("OpenCode harness build plugin", () => {
       "---",
       "Follow the repo guidance.",
     ].join("\n"));
+  });
+
+  it("stages skills as symlinks in finalizeOutput", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/opencode/.registry-ignore", "./skills/\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(repositoryRoot, "harnesses/opencode/skills/harness-skill/SKILL.md", "# Harness skill\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    expect(
+      (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "shared-skill", "SKILL.md"))).isSymbolicLink(),
+    ).toBe(true);
+    expect(
+      (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "local-skill", "SKILL.md"))).isSymbolicLink(),
+    ).toBe(true);
+    expect(
+      (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "harness-skill", "SKILL.md"))).isSymbolicLink(),
+    ).toBe(true);
   });
 });

@@ -32,10 +32,9 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsOutputDir
     if (existsSync(outputPath)) {
       continue;
     }
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
+    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
       join(context.templateContext.skills_dir, matchedSkill),
       outputPath,
-      context.templateContext,
     );
   }
 
@@ -46,10 +45,9 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsOutputDir
         `Cannot stage profile-local skill ${profileLocalSkill} for profile ${context.profileName} because the output path already exists: ${outputPath}`,
       );
     }
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
+    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
       join(context.profileDir, "skills", profileLocalSkill),
       outputPath,
-      context.templateContext,
     );
   }
 }
@@ -160,7 +158,17 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       await mkdir(visibleProfileDir, { recursive: true });
 
       await context.buildSupport.mergeDirectory(join(stagedProfileDir, "skills"), join(visibleProfileDir, "skills"));
-      await context.buildSupport.mergeDirectory(join(context.harnessDir, "skills"), join(visibleProfileDir, "skills"));
+      const harnessSkillsDir = join(context.harnessDir, "skills");
+      if (existsSync(harnessSkillsDir)) {
+        const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
+        for (const entry of harnessSkillEntries) {
+          if (!entry.isDirectory()) continue;
+          await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+            join(harnessSkillsDir, entry.name),
+            join(visibleProfileDir, "skills", entry.name),
+          );
+        }
+      }
 
       const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
       if (existsSync(stagedAppendSystemPath)) {

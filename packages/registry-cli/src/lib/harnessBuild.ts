@@ -5,8 +5,10 @@ import {
   mkdir,
   readdir,
   readFile,
+  readlink,
   rename,
   rm,
+  symlink,
   writeFile,
 } from "fs/promises";
 import { existsSync } from "fs";
@@ -43,6 +45,10 @@ export type IBuildSupport = {
     sourcePath: string,
     targetPath: string,
     templateContext: ITemplateContext,
+  ): Promise<void>;
+  symlinkDirectoryWithOriginalFiles(
+    sourceDir: string,
+    targetDir: string,
   ): Promise<void>;
 };
 
@@ -263,6 +269,42 @@ async function copyFileWithTemplateVariables(
   registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
 }
 
+export async function symlinkDirectoryWithOriginalFiles(
+  sourceDir: string,
+  targetDir: string,
+  sourcePathByOutputPath?: ISourcePathByOutputPath,
+): Promise<void> {
+  await mkdir(targetDir, { recursive: true });
+
+  const entries = await getSourceCopyEntries(sourceDir);
+  for (const relativePath of entries) {
+    const sourcePath = join(sourceDir, relativePath);
+    const targetPath = join(targetDir, relativePath);
+    const sourceStats = await lstat(sourcePath);
+
+    if (sourceStats.isSymbolicLink()) {
+      const existingTarget = await readlink(sourcePath);
+      await mkdir(dirname(targetPath), { recursive: true });
+      await symlink(existingTarget, targetPath);
+      registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
+      continue;
+    }
+
+    if (sourceStats.isDirectory()) {
+      await mkdir(targetPath, { recursive: true });
+      continue;
+    }
+
+    if (!sourceStats.isFile()) {
+      continue;
+    }
+
+    await mkdir(dirname(targetPath), { recursive: true });
+    await symlink(sourcePath, targetPath);
+    registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
+  }
+}
+
 export async function copyDirectoryWithTemplateVariables(
   sourceDir: string,
   targetDir: string,
@@ -404,6 +446,18 @@ export async function mergeDirectory(
       throw new Error(`Cannot merge generated output because destination already exists: ${destinationPath}`);
     }
 
+    if (sourceEntry.isSymbolicLink()) {
+      const target = await readlink(sourcePath);
+      if (options.move) {
+        await rename(sourcePath, destinationPath);
+        moveOriginalSourcePathForFile(sourcePath, destinationPath, sourcePathByOutputPath);
+      } else {
+        await symlink(target, destinationPath);
+        moveOriginalSourcePathForFile(sourcePath, destinationPath, sourcePathByOutputPath, false);
+      }
+      continue;
+    }
+
     if (options.move) {
       await rename(sourcePath, destinationPath);
       moveOriginalSourcePathForFile(sourcePath, destinationPath, sourcePathByOutputPath);
@@ -458,20 +512,18 @@ export async function stageProfileAssets(
   for (const matchedSkill of context.globalMatchedSkills) {
     const outputPath = join(skillsDir, matchedSkill);
     if (existsSync(outputPath)) continue;
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
+    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
       join(context.templateContext.skills_dir, matchedSkill),
       outputPath,
-      context.templateContext,
     );
   }
 
   for (const profileLocalSkill of context.profileLocalSkills) {
     const outputPath = join(skillsDir, profileLocalSkill);
     assertMissingOutputPath(outputPath, `profile-local skill ${profileLocalSkill} for profile ${context.profileName}`);
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
+    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
       join(context.profileDir, "skills", profileLocalSkill),
       outputPath,
-      context.templateContext,
     );
   }
 }

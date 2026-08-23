@@ -2,4 +2,4 @@
 ./scripts/
 ./fetch-source.sh
 ./.tmp/
-
+./skills/

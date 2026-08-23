@@ -40,5 +40,5 @@
   "theme": "dark",
   "hideThinkingBlock": false,
   "defaultProvider": "litellm",
-  "defaultModel": "gemini-3.6-flash"
+  "defaultModel": "gemini-3.7-flash"
 }

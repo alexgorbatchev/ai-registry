@@ -1,15 +1,15 @@
 ---
-description: Audit and refresh all root and nested AGENTS.md files based on the latest internal-docs-writer skill guidelines and current codebase reality.
+description: Audit and refresh all root and nested AGENTS.md files based on the latest docs-writer skill guidelines and current codebase reality.
 ---
 
-Audit and refresh all `AGENTS.md` files (both root and nested) across the repository to eliminate drift, verify commands, and bring them into compliance with the latest `internal-docs-writer` skill instructions.
+Audit and refresh all `AGENTS.md` files (both root and nested) across the repository to eliminate drift, verify commands, and bring them into compliance with the latest `docs-writer` skill instructions.
 
 ## Step 1: Load Latest Skill Guidelines & Discover Files
 
-1. Load and read the `internal-docs-writer` skill and its reference guidance:
-   - Read `skills/internal-docs-writer/SKILL.md`
-   - Read `skills/internal-docs-writer/references/agents.md`
-   - Read `skills/internal-docs-writer/assets/agents-templates.md`
+1. Load and read the `docs-writer` skill and its reference guidance:
+   - Read `skills/docs-writer/SKILL.md`
+   - Read `skills/docs-writer/references/agents.md`
+   - Read `skills/docs-writer/assets/agents-templates.md`
 2. Discover all existing `AGENTS.md` (and legacy `AGENT.md` or `agents.md`) files across the repository:
    - Root `AGENTS.md`
    - All nested `**/AGENTS.md` files in packages, apps, harnesses, or subdirectories

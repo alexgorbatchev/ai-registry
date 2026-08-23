@@ -1,12 +1,16 @@
 ---
-name: internal-docs-writer
-description: Read, write, rewrite, reorganize, and archive internal .md files. Unified documentation writer that manages general internal docs, engineering designs, tickets, and AGENTS guidelines. Must be used whenever touching files in {{ env "DOCS_INTERNAL_DIR" }}.
+name: docs-writer
+description: Read, write, rewrite, reorganize, and archive internal and project documentation including README.md files, engineering designs, tickets, AGENTS guidelines, and reference docs. Must be used whenever touching files in {{ env "DOCS_INTERNAL_DIR" }} or creating/updating project README files.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-06-04 11:44
+  last_modified: 2026-08-23 07:40
+  status: current
 ---
 
-# Internal Docs Writer
+# Docs Writer
 
-Write and manage high-quality technical documentation for people who work inside the repository or organization (runbooks, designs, tickets, AGENTS guidelines).
+Write and manage high-quality technical documentation for people who work inside the repository or organization (runbooks, designs, tickets, AGENTS guidelines, and READMEs).
 
 Keep all content strictly grounded in actual source materials, write in a factual current-state tone, and enforce appropriate metadata lifecycles on all documents.
 
@@ -65,6 +69,11 @@ For writing wave-based roadmap tickets with detailed problems, value justificati
 For maintaining, generating, auditing, or topology splits of canonical root or nested AGENTS.md instructions:
 -   **Guidelines:** Read `references/agents.md`
 -   **Templates:** Use `assets/agents-templates.md`
+
+### 4. Repository READMEs (README.md)
+For writing, structuring, or updating public-facing or internal project READMEs:
+-   **Guidelines:** Read `references/readme.md`
+-   **Template:** Use `assets/readme-template.md`
 
 ---
 

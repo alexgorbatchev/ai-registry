@@ -10,21 +10,35 @@
     "npm:@alexgorbatchev/pi-env",
     "npm:pi-timestamps",
     "npm:pi-herdr-btw",
-    "npm:@isac322/pi-codegraph"
+    "npm:@isac322/pi-codegraph",
+    "npm:pi-provider-litellm"
   ],
   "steeringMode": "one-at-a-time",
   "enabledModels": [
     "google/gemini-3.1-pro-preview",
     "google/gemini-3.5-flash",
-    "google/gemini-3.6-flash"
+    "google/gemini-3.6-flash",
+    "google/gemini-3.7-flash",
+    "litellm/*"
   ],
   "@alexgorbatchev/pi-env": {
     "AGENT": "1"
+  },
+  "litellm": {
+    "providers": {
+      "litellm": {
+        "headers": {
+          "User-Agent": "pi/0.84.2"
+        }
+      }
+    },
+    "skills": { "enabled": false },
+    "mcp": { "enabled": false }
   },
   "enableSkillCommands": true,
   "lastChangelogVersion": "0.84.2",
   "theme": "dark",
   "hideThinkingBlock": false,
-  "defaultProvider": "google",
+  "defaultProvider": "litellm",
   "defaultModel": "gemini-3.6-flash"
 }

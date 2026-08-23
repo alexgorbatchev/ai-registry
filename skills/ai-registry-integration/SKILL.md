@@ -117,6 +117,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - The local build entrypoint is `packages/registry-cli/src/bin/build.ts` beneath the repo_root token.
 - Unified harness plugins are located at `packages/registry-cli/src/harnesses/<target>/build.ts` beneath the repo_root token.
 - Generated outputs are written under the output_dir token.
+- All generated files for harness skills (`skills/` entries across OpenCode, Codex, and Pi outputs) are created as symbolic links to original source files instead of copies.
 - The generated-output manifest tracks only registry-managed entries under the output_dir token, and `bun run build` overwrites only those managed paths instead of replacing the entire output tree.
 - Verify generated files that match the change, especially:
   - `opencode/` beneath the output_dir token

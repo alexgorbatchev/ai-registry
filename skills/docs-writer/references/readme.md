@@ -20,8 +20,8 @@ Structure project README files using the standard layout defined in `assets/read
 1. **Title & Value Proposition:**
    - Single top-level `# <project-name>` header.
    - One-sentence pitch defining what the tool does, who it is for, and the core problem it solves.
-2. **Intended Audience / Disclaimer (Optional):**
-   - Use a blockquote callout (`> **⚠️ ...**`) when legal notices, safety warnings, audience boundaries, or critical assumptions are essential.
+2. **Intended Audience / Disclaimer / Alerts (Optional):**
+   - Use GitHub-style markdown alert callouts (e.g., `> [!IMPORTANT]`, `> [!NOTE]`, `> [!WARNING]`, `> [!TIP]`, `> [!CAUTION]`) when legal notices, safety warnings, audience boundaries, or critical assumptions are essential.
 3. **What It Does:**
    - Bulleted list of 4–6 core capabilities in active voice with bold descriptive prefixes.
 4. **How It Works:**

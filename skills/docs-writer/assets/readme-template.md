@@ -11,7 +11,7 @@ Do **not** ship placeholder text verbatim. Replace all placeholders with actual 
 
 `<project-name>` is a <concise one-sentence description of purpose, core capability, and target audience>.
 
-> **⚠️ Intended Audience / Note (Optional):**  
+> [!IMPORTANT]
 > <Optional callout clarifying legal constraints, audience boundaries, safety warnings, or critical runtime assumptions>.
 
 ## What It Does

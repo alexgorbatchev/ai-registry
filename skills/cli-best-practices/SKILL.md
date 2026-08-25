@@ -10,7 +10,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-08-25 14:25
+  last_modified: 2026-08-25 14:30
   status: current
 ---
 
@@ -18,11 +18,12 @@ metadata:
 
 1. **Dual-Mode Output via `AGENT=1`**: Detect the `AGENT=1` environment variable. When unset or `0`, produce clean, polished human-facing output. When `1` (or truthy), switch to token-conservative agent-facing output.
 2. **Command Structure (`cli subject [subject] verb ...`)**: Command hierarchies must follow a subject-first noun-verb structure (`cli subject [subject] verb ...`) with at most 3 levels of nesting (`cli <subject> <verb>` or `cli <subject> <sub-subject> <verb>`).
-3. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
-4. **Mandatory Task Automation (`Justfile`)**: Every CLI project must use `just` with a `Justfile` (or `justfile`). It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`.
-5. **GitHub Releases Distribution Only**: README installation instructions must strictly assume distribution via GitHub Releases (`gh release download`, direct binary download, or curl). Never instruct users to build from source.
-6. **Strict README Section Order & Bullet Lists**: CLI `README.md` files must follow the mandatory sequential section layout. `# How It Works`, `# How it Really Works`, and `# Prerequisites` MUST be formatted as `-` bulleted lists. The document must end with `# License`.
-7. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
+3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it.
+4. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
+5. **Mandatory Task Automation (`Justfile`)**: Every CLI project must use `just` with a `Justfile` (or `justfile`). It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`.
+6. **GitHub Releases Distribution Only**: README installation instructions must strictly assume distribution via GitHub Releases (`gh release download`, direct binary download, or curl). Never instruct users to build from source.
+7. **Strict README Section Order & Bullet Lists**: CLI `README.md` files must follow the mandatory sequential section layout. `# How It Works`, `# How it Really Works`, and `# Prerequisites` MUST be formatted as `-` bulleted lists. The document must end with `# License`.
+8. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
 
 ---
 
@@ -86,6 +87,55 @@ engine-cli
      ├── rm <track...>                  # Delete track from collection
      ├── move <track> <dest-path>       # Move audio file on disk
      └── relocate                       # Relocate broken file paths
+```
+
+### Tree-View Help Screen Standard
+
+The CLI help output (e.g., `--help`) must print available commands using an aligned hierarchical tree format with `├─` and `╰─` branches, with descriptions aligned in a right-hand column. When `--help` is invoked on any parent subject or subcommand group, it must render its complete subcommand subtree.
+
+#### Root Help (`cli --help`) Example
+
+```
+Available Commands:
+  artwork                                              Manage and fix album cover artwork
+  ├─ normalize                                         Crop album cover art to 1:1 square for DJ jog wheels a...
+  ╰─ prune                                             Clean up unused cover art and reclaim disk space
+  backup                                               Create a safety backup snapshot of your Engine DJ library
+  playlist                                             Inspect and manage playlists and folders
+  ├─ create <name>                                     Create a new playlist or folder
+  ├─ inspect <playlist>                                Display all songs inside a playlist
+  ├─ list                                              Display all playlists and folders in your library
+  ├─ move <playlist>                                   Relocate a playlist or folder under a parent folder
+  ├─ rm <playlist>                                     Delete a playlist or folder
+  ╰─ track                                             Manage track memberships inside playlists
+     ├─ add <playlist> <track...>                      Add track(s) to a playlist
+     ├─ move <src-playlist> <dst-playlist> <track...>  Move track(s) from one playlist to another
+     ╰─ rm <playlist> <track...>                       Remove track(s) from a playlist
+  restore <backup-dir>                                 Restore your Engine DJ library from a previous backup ...
+  sync                                                 Update song information in Engine DJ from audio files ...
+  track                                                Manage audio files and collection tracks
+  ├─ add <file-path...>                                Import audio file(s) into your collection
+  ├─ move <track-id|path> <dest-path>                  Move an audio file on disk and update its collection path
+  ├─ relocate                                          Batch-fix audio file paths across drives or directories
+  ╰─ rm <track-id|path...>                             Remove track(s) from your collection
+  verify                                               Check your library for missing songs, broken links, an...
+```
+
+#### Subcommand Group Help (`cli playlist --help`) Example
+
+When requesting help for a subcommand group, print its full subtree:
+
+```
+Available Commands:
+  create <name>                                     Create a new playlist or folder
+  inspect <playlist>                                Display all songs inside a playlist
+  list                                              Display all playlists and folders in your library
+  move <playlist>                                   Relocate a playlist or folder under a parent folder
+  rm <playlist>                                     Delete a playlist or folder
+  track                                             Manage track memberships inside playlists
+  ├─ add <playlist> <track...>                      Add track(s) to a playlist
+  ├─ move <src-playlist> <dst-playlist> <track...>  Move track(s) from one playlist to another
+  ╰─ rm <playlist> <track...>                       Remove track(s) from a playlist
 ```
 
 ---
@@ -186,6 +236,8 @@ For a full copy-pasteable template, see [references/readme-template.md](referenc
 Before publishing or finalizing any CLI tool, verify:
 
 - [ ] Command hierarchy follows `cli subject [subject] verb ...` pattern with a maximum depth of 3 levels.
+- [ ] Root help screen prints available commands as an aligned hierarchical tree view using `├─` and `╰─`.
+- [ ] Subcommand group help screens display their complete command subtree with aligned descriptions.
 - [ ] `AGENT=1` detection is implemented across all output pathways.
 - [ ] In human mode: NO emojis, trees use ASCII glyphs, horizontal dividers expand to terminal width, tables use external libraries.
 - [ ] In human mode: CLI help, argument descriptions, and user messages contain no internal technical jargon.

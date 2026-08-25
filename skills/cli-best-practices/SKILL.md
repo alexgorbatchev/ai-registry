@@ -10,18 +10,19 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-08-24 09:56
+  last_modified: 2026-08-25 14:25
   status: current
 ---
 
 ## Core Non-Negotiable Rules
 
 1. **Dual-Mode Output via `AGENT=1`**: Detect the `AGENT=1` environment variable. When unset or `0`, produce clean, polished human-facing output. When `1` (or truthy), switch to token-conservative agent-facing output.
-2. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
-3. **Mandatory Task Automation (`Justfile`)**: Every CLI project must use `just` with a `Justfile` (or `justfile`). It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`.
-4. **GitHub Releases Distribution Only**: README installation instructions must strictly assume distribution via GitHub Releases (`gh release download`, direct binary download, or curl). Never instruct users to build from source.
-5. **Strict README Section Order & Bullet Lists**: CLI `README.md` files must follow the mandatory sequential section layout. `# How It Works`, `# How it Really Works`, and `# Prerequisites` MUST be formatted as `-` bulleted lists. The document must end with `# License`.
-6. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
+2. **Command Structure (`cli subject [subject] verb ...`)**: Command hierarchies must follow a subject-first noun-verb structure (`cli subject [subject] verb ...`) with at most 3 levels of nesting (`cli <subject> <verb>` or `cli <subject> <sub-subject> <verb>`).
+3. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
+4. **Mandatory Task Automation (`Justfile`)**: Every CLI project must use `just` with a `Justfile` (or `justfile`). It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`.
+5. **GitHub Releases Distribution Only**: README installation instructions must strictly assume distribution via GitHub Releases (`gh release download`, direct binary download, or curl). Never instruct users to build from source.
+6. **Strict README Section Order & Bullet Lists**: CLI `README.md` files must follow the mandatory sequential section layout. `# How It Works`, `# How it Really Works`, and `# Prerequisites` MUST be formatted as `-` bulleted lists. The document must end with `# License`.
+7. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
 
 ---
 
@@ -51,7 +52,45 @@ For concrete implementation patterns in TypeScript, Go, Python, and Rust, see [r
 
 ---
 
-## 2. Argument Parsing & Framework Standards
+## 2. Command Hierarchy & Structure (`subject [subject] verb`)
+
+Commands must follow a subject-first noun-verb architecture rather than leading with top-level verbs:
+`cli subject [subject] verb [arguments/flags...]`
+
+### Rules
+
+- **Subject-First Ordering**: Top-level identifiers represent domain subjects/entities (nouns). Verbs/actions are nested under their respective subjects.
+- **Maximum 3 Levels**: Command hierarchy must not exceed 3 levels deep:
+  1. `cli <subject> <verb>` (2 levels)
+  2. `cli <subject> <sub-subject> <verb>` (3 levels max)
+- **Consistency**: Keep verb names consistent across subjects (`list`, `inspect`, `create`, `rm`, `move`, `add`, etc.).
+
+### Example Hierarchy
+
+```
+engine-cli
+ ├── playlist                           # Subject: Playlists
+ │   ├── list                           # List playlists
+ │   ├── inspect <playlist>             # Inspect a playlist
+ │   ├── create <name>                  # Create a playlist
+ │   ├── rm <playlist>                  # Delete a playlist
+ │   ├── move <playlist>                # Move playlist to new parent
+ │   │
+ │   └── track                          # Sub-Subject: Playlist Track Memberships
+ │       ├── add <playlist> <track...>  # Add track membership
+ │       ├── rm <playlist> <track...>   # Remove track membership
+ │       └── move <from> <to> <track..> # Transfer track membership
+ │
+ └── track                              # Subject: Master Tracks & Audio Files
+     ├── add <file...>                  # Add audio file to collection
+     ├── rm <track...>                  # Delete track from collection
+     ├── move <track> <dest-path>       # Move audio file on disk
+     └── relocate                       # Relocate broken file paths
+```
+
+---
+
+## 3. Argument Parsing & Framework Standards
 
 Never roll custom argument parsers. Always select the ecosystem standard for the language:
 
@@ -73,7 +112,7 @@ For setup templates and code snippets per framework, see [references/framework-s
 
 ---
 
-## 3. Mandatory `Justfile` Standard
+## 4. Mandatory `Justfile` Standard
 
 Every repository and CLI tool must use `just` for workflow and task orchestration.
 
@@ -103,7 +142,7 @@ For complete `Justfile` templates for Bun/Node, Go, Python, and Rust, see [refer
 
 ---
 
-## 4. Documentation & README Structure
+## 5. Documentation & README Structure
 
 CLI `README.md` files must follow a strict, mandatory section layout and distribution contract:
 
@@ -134,7 +173,7 @@ For a full copy-pasteable template, see [references/readme-template.md](referenc
 
 ---
 
-## 5. Licensing Requirements
+## 6. Licensing Requirements
 
 - **Default License**: MIT License.
 - **Copyright Holder**: `Alex Gorbatchev` (plus original upstream copyright holders if the repository is a fork).
@@ -142,10 +181,11 @@ For a full copy-pasteable template, see [references/readme-template.md](referenc
 
 ---
 
-## 6. Verification Checklist
+## 7. Verification Checklist
 
 Before publishing or finalizing any CLI tool, verify:
 
+- [ ] Command hierarchy follows `cli subject [subject] verb ...` pattern with a maximum depth of 3 levels.
 - [ ] `AGENT=1` detection is implemented across all output pathways.
 - [ ] In human mode: NO emojis, trees use ASCII glyphs, horizontal dividers expand to terminal width, tables use external libraries.
 - [ ] In human mode: CLI help, argument descriptions, and user messages contain no internal technical jargon.

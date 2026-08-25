@@ -9,7 +9,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-08-16 08:30
+  last_modified: 2026-08-25 14:35
   status: current
 ---
 
@@ -30,7 +30,7 @@ This skill defines the non-negotiable idioms and design principles for writing G
 - **Latest Go Version**: Always use the latest version of Go (currently at least Go 1.26+). Declare `go 1.26` or higher in `go.mod`.
 - **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory using the project's actual application name (e.g., `go build -o bin/<app-name> ./cmd/<app-name>`). Never output binaries into root or source directories, and never output literally as `bin/app` (replace `<app-name>` with the project binary name). Always git-ignore `bin/`.
 - **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
-- **CLI Framework & Argument Parsing (Cobra)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) for CLI command structure, flags, and argument parsing. Do not use the standard library `flag` package or write custom argument parsers.
+- **CLI Framework & Argument Parsing (Cobra & cobra-help-tree)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) for CLI command structure, flags, and argument parsing. Do not use the standard library `flag` package or write custom argument parsers. For help screen output, always use `github.com/alexgorbatchev/cobra-help-tree` (`cobrahelptree.Setup(rootCmd)`) to display aligned hierarchical tree-view help screens across all command levels.
 - **Version Flag Output (`--version`)**: `--version` must return ONLY the raw version string (e.g., `1.2.3` or `v1.2.3`), followed by a newline. Do not include application names, banners, labels, or extra formatting (e.g., NOT `app version 1.2.3` or `Version: 1.2.3`). Clean version output is strictly required for automated scripting, tooling, and CI/CD validation.
 - **XDG Base Directory Specification**: Applications must strictly follow XDG Base Directory conventions (`$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_CACHE_HOME`, `$XDG_STATE_HOME`) for user configuration, data, cache, and state directories unless otherwise explicitly specified by requirements or CLI flags. Leverage standard APIs like `os.UserCacheDir()` or `os.UserConfigDir()` with appropriate fallbacks.
 
@@ -514,7 +514,7 @@ Reach for the standard library before any third-party dependency. Go's stdlib is
 | uuid libraries           | `crypto/rand` + explicit formatting           |
 | config libraries         | `os.Getenv` + a small struct                  |
 
-*Exception for CLI applications*: Use Cobra (`github.com/spf13/cobra`) for CLI commands and argument handling instead of stdlib `flag`.
+*Exception for CLI applications*: Use Cobra (`github.com/spf13/cobra`) with `github.com/alexgorbatchev/cobra-help-tree` for CLI commands, argument handling, and tree-structured help screens instead of stdlib `flag`.
 
 ### 8.1 Manage Build/Dev Tools as Module Tools
 
@@ -534,7 +534,7 @@ Before producing any Go code, verify:
 - [ ] Go version is latest (at least Go 1.26+) declared in `go.mod`
 - [ ] Binaries are built strictly into the `bin/` folder
 - [ ] Task automation uses `just` with a `justfile` (`just build`, `just test`, etc.)
-- [ ] CLI tools use Cobra (`github.com/spf13/cobra`) for flags, subcommands, and argument parsing
+- [ ] CLI tools use Cobra (`github.com/spf13/cobra`) with `github.com/alexgorbatchev/cobra-help-tree` for flags, subcommands, argument parsing, and tree help screens
 - [ ] `--version` returns ONLY the version string (no app name, prefix, or extra text)
 - [ ] Follows XDG Base Directory conventions (`$XDG_CONFIG_HOME`, `$XDG_CACHE_HOME`, etc.) for user paths unless explicitly specified otherwise
 - [ ] Variable names match scope distance — short for tight, descriptive for wide

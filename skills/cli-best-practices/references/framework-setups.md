@@ -39,6 +39,7 @@ import (
 	"fmt"
 	"os"
 
+	cobrahelptree "github.com/alexgorbatchev/cobra-help-tree"
 	"github.com/spf13/cobra"
 )
 
@@ -60,6 +61,9 @@ var syncCmd = &cobra.Command{
 }
 
 func Execute() {
+	// Enable hierarchical tree help screens across all command levels
+	cobrahelptree.Setup(rootCmd)
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

@@ -7,7 +7,7 @@ This reference provides setup instructions, boilerplate templates, and configura
 - [1. Initializing a New Go Project](#1-initializing-a-new-go-project)
 - [2. Recommended Directory Structure](#2-recommended-directory-structure)
 - [3. Justfile Automation Template](#3-justfile-automation-template)
-- [4. Cobra CLI Setup & Version Flag](#4-cobra-cli-setup--version-flag)
+- [4. Cobra CLI Setup, Tree Help & Version Flag](#4-cobra-cli-setup-tree-help--version-flag)
 - [5. XDG Base Directory Compliance](#5-xdg-base-directory-compliance)
 - [6. GitIgnore Baseline](#6-gitignore-baseline)
 
@@ -88,14 +88,15 @@ clean:
 
 ---
 
-## 4. Cobra CLI Setup & Version Flag
+## 4. Cobra CLI Setup, Tree Help & Version Flag
 
-When building CLI applications, use Cobra (`github.com/spf13/cobra`) for flag and argument parsing.
+When building CLI applications, use Cobra (`github.com/spf13/cobra`) for flag and argument parsing, and `github.com/alexgorbatchev/cobra-help-tree` for hierarchical tree help formatting.
 
-### 4.1 Installing Cobra
+### 4.1 Installing Cobra & cobra-help-tree
 
 ```bash
 go get github.com/spf13/cobra@latest
+go get github.com/alexgorbatchev/cobra-help-tree@latest
 ```
 
 ### 4.2 Main Command Setup
@@ -107,6 +108,7 @@ import (
 	"fmt"
 	"os"
 
+	cobrahelptree "github.com/alexgorbatchev/cobra-help-tree"
 	"github.com/spf13/cobra"
 )
 
@@ -126,6 +128,9 @@ func main() {
 	// Set version explicitly so --version prints ONLY the raw version string followed by a newline
 	rootCmd.Version = version
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
+
+	// Enable hierarchical tree help screens across all command levels
+	cobrahelptree.Setup(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

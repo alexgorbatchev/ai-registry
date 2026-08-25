@@ -32,6 +32,7 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 - Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (scripts/ folder is excluded from this rule)
 - Always: `<safe repeated action>`
 - Ask first: `<risky change>`
+- Never: publish releases automatically without explicit user authorization
 - Never: `<forbidden zone>`
 
 ## References
@@ -63,6 +64,7 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 - Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (scripts/ folder is excluded from this rule)
 - Always: `<shared repeated action>`
 - Ask first: `<shared risky change>`
+- Never: publish releases automatically without explicit user authorization
 - Never: `<shared forbidden zone>`
 
 ## References
@@ -105,7 +107,7 @@ Use only when true for the repository.
 ## Boundaries
 - Always: run `pnpm --filter web test` after changing `apps/web/`
 - Ask first: database migrations, dependency additions, CI edits
-- Never: modify `vendor/`, commit secrets, remove failing tests to get a green run
+- Never: publish releases automatically without explicit user authorization, modify `vendor/`, commit secrets, remove failing tests to get a green run
 ```
 
 ## Example-driven convention block

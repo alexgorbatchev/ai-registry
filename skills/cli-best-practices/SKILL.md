@@ -10,7 +10,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-08-25 14:30
+  last_modified: 2026-08-25 23:45
   status: current
 ---
 
@@ -18,7 +18,7 @@ metadata:
 
 1. **Dual-Mode Output via `AGENT=1`**: Detect the `AGENT=1` environment variable. When unset or `0`, produce clean, polished human-facing output. When `1` (or truthy), switch to token-conservative agent-facing output.
 2. **Command Structure (`cli subject [subject] verb ...`)**: Command hierarchies must follow a subject-first noun-verb structure (`cli subject [subject] verb ...`) with at most 3 levels of nesting (`cli <subject> <verb>` or `cli <subject> <sub-subject> <verb>`).
-3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it.
+3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it. Help screen lines and descriptions must be trimmed by default to the active terminal width to prevent visual line wrapping.
 4. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
 5. **Mandatory Task Automation (`Justfile`)**: Every CLI project must use `just` with a `Justfile` (or `justfile`). It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`.
 6. **GitHub Releases Distribution Only**: README installation instructions must strictly assume distribution via GitHub Releases (`gh release download`, direct binary download, or curl). Never instruct users to build from source.
@@ -46,7 +46,7 @@ isAgent = (env.AGENT === "1" || env.AGENT === "true" || env.AGENT === "yes")
 | **Hierarchies / Trees** | ASCII / Box-drawing tree glyphs (`├──`, `└──`, `│`). | Indented bullets (`* `, `- `) with minimal nesting spaces. |
 | **Tabular Data** | Well-formatted box / ASCII tables using dedicated external table libraries. | Flat key-value pairs, TSV, or concise line-by-line output. **No tables**. |
 | **Whitespace & Padding** | Formatted spacing, aligned columns, visual breathing room. | Minimal whitespace. **No alignment spaces or padding**. |
-| **Descriptions & Help** | Non-technical language, user-friendly, no internal implementation details. | May include technical implementation details, exact types, error codes, and stack traces. |
+| **Descriptions & Help** | Non-technical language, user-friendly, trimmed to terminal width by default, no internal implementation details. | May include technical implementation details, exact types, error codes, and stack traces. Full untruncated content. |
 | **Error Handling** | Concise user-facing error message with actionable resolution hints. | Full error details, underlying cause, internal code, and stack trace if relevant. |
 
 For concrete implementation patterns in TypeScript, Go, Python, and Rust, see [references/dual-mode-patterns.md](references/dual-mode-patterns.md).
@@ -92,6 +92,12 @@ engine-cli
 ### Tree-View Help Screen Standard
 
 The CLI help output (e.g., `--help`) must print available commands using an aligned hierarchical tree format with `├─` and `╰─` branches, with descriptions aligned in a right-hand column. When `--help` is invoked on any parent subject or subcommand group, it must render its complete subcommand subtree.
+
+#### Terminal Width Trimming by Default
+
+- **Trim to Terminal Width**: Help screen lines and command descriptions must be trimmed/truncated by default to match the active terminal width (query `process.stdout.columns`, `COLUMNS`, `term.GetWinsize`, `shutil.get_terminal_size()`, or terminal width fallback such as 80 or 100 columns when stdout is not a TTY).
+- **Prevent Wrapping Breaks**: Descriptions that exceed the available terminal width must be truncated with a trailing ellipsis (`...`) so that multi-line text wrapping never breaks tree column alignment or visual structure.
+- **Agent Mode Exemption**: In token-conservative agent mode (`AGENT=1`), terminal-width truncation and padding are omitted in favor of compact, untruncated bulleted lines for machine inspection.
 
 #### Root Help (`cli --help`) Example
 
@@ -237,6 +243,7 @@ Before publishing or finalizing any CLI tool, verify:
 
 - [ ] Command hierarchy follows `cli subject [subject] verb ...` pattern with a maximum depth of 3 levels.
 - [ ] Root help screen prints available commands as an aligned hierarchical tree view using `├─` and `╰─`.
+- [ ] Help screen output and command descriptions are trimmed by default to the active terminal width to prevent line wrapping.
 - [ ] Subcommand group help screens display their complete command subtree with aligned descriptions.
 - [ ] `AGENT=1` detection is implemented across all output pathways.
 - [ ] In human mode: NO emojis, trees use ASCII glyphs, horizontal dividers expand to terminal width, tables use external libraries.

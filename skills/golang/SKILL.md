@@ -9,7 +9,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-08-25 14:35
+  last_modified: 2026-09-03 15:52
   status: current
 ---
 
@@ -26,7 +26,7 @@ This skill defines the non-negotiable idioms and design principles for writing G
 
 ## 0. Toolchain, Build & Automation Rules
 
-- **Project Setup & Environment Reference**: For new Go project setup, `justfile` task automation templates, Cobra initialization, XDG directory helpers, and `.gitignore` baseline, see [references/setup.md](references/setup.md).
+- **Project Scaffolding & Setup (`go-scaffold`)**: To provision a new Go CLI or library, use `go-scaffold` (available in `$PATH`). For manual setup reference, `justfile` task automation templates, Cobra initialization, XDG directory helpers, and `.gitignore` baseline, see [references/setup.md](references/setup.md).
 - **Latest Go Version**: Always use the latest version of Go (currently at least Go 1.26+). Declare `go 1.26` or higher in `go.mod`.
 - **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory using the project's actual application name (e.g., `go build -o bin/<app-name> ./cmd/<app-name>`). Never output binaries into root or source directories, and never output literally as `bin/app` (replace `<app-name>` with the project binary name). Always git-ignore `bin/`.
 - **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
@@ -531,6 +531,7 @@ Add a dependency only when it provides clear, substantial value that the stdlib 
 
 Before producing any Go code, verify:
 
+- [ ] New Go CLI or library project is provisioned using `go-scaffold` (available in `$PATH`)
 - [ ] Go version is latest (at least Go 1.26+) declared in `go.mod`
 - [ ] Binaries are built strictly into the `bin/` folder
 - [ ] Task automation uses `just` with a `justfile` (`just build`, `just test`, etc.)

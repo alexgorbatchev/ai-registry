@@ -15,7 +15,9 @@ This reference provides setup instructions, boilerplate templates, and configura
 
 ## 1. Initializing a New Go Project
 
-Always target the latest stable Go toolchain (Go 1.26+).
+To provision a new Go CLI or library project, use `go-scaffold` (available in `$PATH`).
+
+For manual setup or customization, always target the latest stable Go toolchain (Go 1.26+).
 
 ```bash
 # Create project directory

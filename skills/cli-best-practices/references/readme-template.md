@@ -27,25 +27,15 @@ A fast, lightweight CLI tool to process and synchronize local datasets with remo
 
 # Prerequisites
 
-- [GitHub CLI (`gh`)](https://cli.github.com/) - Required for automated binary downloads.
 - [Access Token](https://example.com/tokens) - If accessing authenticated remote storage.
 
 # Installation
 
-Download the latest prebuilt binary from GitHub Releases:
+Download the prebuilt binary for your platform from the [latest release](https://github.com/username/mytool/releases/latest).
 
 ```bash
-# Using GitHub CLI
-gh release download --repo username/mytool --pattern 'mytool-linux-amd64' --output mytool
-chmod +x mytool
-mv mytool ~/.local/bin/
-```
-
-Or via direct download:
-
-```bash
-curl -sSL https://github.com/username/mytool/releases/latest/download/mytool-darwin-arm64 -o ~/.local/bin/mytool
-chmod +x ~/.local/bin/mytool
+# macOS (Apple Silicon)
+curl -sSL https://github.com/username/mytool/releases/latest/download/mytool_X.X.X_darwin_arm64.tar.gz | tar -xz -C ~/.local/bin
 ```
 
 # Quick Start

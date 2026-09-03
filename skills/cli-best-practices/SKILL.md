@@ -10,7 +10,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-08-25 23:45
+  last_modified: 2026-09-03 15:52
   status: current
 ---
 
@@ -21,7 +21,7 @@ metadata:
 3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it. Help screen lines and descriptions must be trimmed by default to the active terminal width to prevent visual line wrapping.
 4. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
 5. **Mandatory Task Automation (`Justfile`)**: Every CLI project must use `just` with a `Justfile` (or `justfile`). It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`.
-6. **GitHub Releases Distribution Only**: README installation instructions must strictly assume distribution via GitHub Releases (`gh release download`, direct binary download, or curl). Never instruct users to build from source.
+6. **GitHub Releases Distribution Only**: README installation instructions must strictly direct users to download prebuilt binaries from GitHub Releases without using `gh` CLI. Include a sentence directing users to the latest release to download the binary for their platform, along with a single macOS `curl` / `tar` example (binary release archives must always include the version, e.g. `mytool_X.X.X_darwin_arm64.tar.gz`). Never instruct users to build from source or use `gh` CLI for installation.
 7. **Strict README Section Order & Bullet Lists**: CLI `README.md` files must follow the mandatory sequential section layout. `# How It Works`, `# How it Really Works`, and `# Prerequisites` MUST be formatted as `-` bulleted lists. The document must end with `# License`.
 8. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
 
@@ -164,7 +164,7 @@ Never roll custom argument parsers. Always select the ecosystem standard for the
 - **Human Mode**: Commands, arguments, options, and descriptions must be self-explanatory to non-technical users. Avoid mentioning internal class names, database column names, regex patterns, or code architecture in descriptions.
 - **Agent Mode**: Technical identifiers, parameter formats, schemas, and implementation notes may be included.
 
-For setup templates and code snippets per framework, see [references/framework-setups.md](references/framework-setups.md).
+For setup templates and code snippets per framework, see [references/framework-setups.md](references/framework-setups.md) (to provision a new Go CLI or library, use `go-scaffold` available in `$PATH`).
 
 ---
 
@@ -204,7 +204,8 @@ CLI `README.md` files must follow a strict, mandatory section layout and distrib
 
 ### Distribution Rule
 
-- **GitHub Releases Only**: All installation sections must document downloading prebuilt binaries from GitHub Releases (using `gh release download`, direct download links, or curl installers).
+- **GitHub Releases Only**: All installation sections must document downloading prebuilt binaries from GitHub Releases.
+- **No `gh` CLI in Installation**: Never use `gh release download` or `gh` CLI for end-user installation instructions. Instead, provide a sentence directing users to the latest release to download the binary for their platform, along with a single macOS `curl` / `tar` installation example (release archives must always include the version, e.g. `mytool_X.X.X_darwin_arm64.tar.gz`).
 - **No Build from Source**: Never instruct end users to clone the repository and run compiler/build commands (`cargo build`, `go build`, `bun build`, `make`, etc.) in the README installation section.
 
 ### Mandatory Section Sequence
@@ -213,8 +214,8 @@ CLI `README.md` files must follow a strict, mandatory section layout and distrib
 2. `# What It Does`: High-level feature highlights and primary capabilities.
 3. `# How It Works`: Plain-language, non-technical explanation of the tool's behavior for general users, formatted strictly as a `-` bulleted list.
 4. `# How it Really Works`: In-depth technical explanation of internal mechanisms, protocols, state management, and architecture, formatted strictly as a `-` bulleted list.
-5. `# Prerequisites`: Bulleted list (`-`) of external runtime requirements (e.g. tools, system dependencies, API tokens) with links.
-6. `# Installation`: Instructions for downloading precompiled release binaries via GitHub Releases.
+5. `# Prerequisites`: Bulleted list (`-`) of external runtime requirements (e.g. tools, system dependencies, API tokens) with links. Do NOT list `gh` CLI as an installation prerequisite.
+6. `# Installation`: A sentence directing users to the latest release to download precompiled binaries, plus a single macOS `curl` / `tar` installation example.
 7. `# Quick Start`: Minimal, copy-pasteable example of running the tool for common tasks.
 8. `# Options & Flags`: Structured markdown table matching the exact column format:
    ```markdown
@@ -252,7 +253,7 @@ Before publishing or finalizing any CLI tool, verify:
 - [ ] Argument parsing is handled by an approved standard library (Commander, Cobra, Click/Typer, Clap, etc.). No custom argv slicing.
 - [ ] `Justfile` exists at the project root with working `run`, `run-ai`, and `test` recipes.
 - [ ] When compiled to binary, output goes to `bin/` and is excluded by `.gitignore`.
-- [ ] `README.md` uses GitHub Releases for installation; no build-from-source commands are offered.
+- [ ] `README.md` uses GitHub Releases for installation without `gh` CLI (sentence directing to latest release + single macOS `curl` / `tar` example); no build-from-source commands are offered.
 - [ ] `README.md` strictly follows the ordered section layout from Intro to `# License`.
 - [ ] `README.md` formats `# How It Works` as a `-` bulleted list (non-technical).
 - [ ] `README.md` formats `# How it Really Works` as a `-` bulleted list (technical).

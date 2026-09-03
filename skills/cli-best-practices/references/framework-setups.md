@@ -32,6 +32,8 @@ program.parse(process.argv);
 
 ## Go: Cobra
 
+> To provision a new Go CLI or library project, use `go-scaffold` (available in `$PATH`).
+
 ```go
 package cmd
 

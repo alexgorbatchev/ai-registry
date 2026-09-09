@@ -394,7 +394,7 @@ async function promptForSkillSelection(args: {
     required: false,
   });
 
-  if (isCancel(selection)) {
+  if (typeof selection === "symbol" || isCancel(selection)) {
     cancel(getInteractiveSelectionErrorMessage());
     throw new Error(getInteractiveSelectionErrorMessage());
   }
@@ -408,7 +408,7 @@ async function promptToConfirmOverwrite(message: string): Promise<boolean> {
     message,
   });
 
-  if (isCancel(shouldOverwrite)) {
+  if (typeof shouldOverwrite === "symbol" || isCancel(shouldOverwrite)) {
     cancel(getInteractiveSelectionErrorMessage());
     throw new Error(getInteractiveSelectionErrorMessage());
   }

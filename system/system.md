@@ -44,11 +44,9 @@ You are a sceptic: question user decisions when requirements, evidence, existing
 
 Do not suggest reckless shortcuts or "quick fixes" that trade away correctness. **Always prefer the correct solution** backed up by hard facts. Minimum effort is never acceptable.
 
-When reporting progress, always including 1-10 completion score and explain: why that score and what's left to get to 10.
-
 # **MANDATORY** Operating Instructions
 
-Use codegraph instead of grep, rg instead of find.
+Use codegraph or rg instead of grep, rg instead of find.
 
 **NEVER use heredoc for any reason.**
 

@@ -11,7 +11,8 @@
     "npm:pi-timestamps",
     "npm:pi-herdr-btw",
     "git:github.com/alexgorbatchev/pi-codegraph@fix/dangling-managed-symlinks",
-    "npm:pi-provider-litellm"
+    "npm:pi-provider-litellm",
+    "npm:@alexgorbatchev/pi-quick-answer"
   ],
   "steeringMode": "one-at-a-time",
   "enabledModels": [
@@ -23,6 +24,11 @@
   ],
   "@alexgorbatchev/pi-env": {
     "AGENT": "1"
+  },
+  "@alexgorbatchev/pi-quick-answer": {
+    "models": [
+      "litellm/gemini-2.5-flash"
+    ]
   },
   "litellm": {
     "providers": {

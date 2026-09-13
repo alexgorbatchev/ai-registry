@@ -10,7 +10,7 @@
     "npm:@alexgorbatchev/pi-env",
     "npm:pi-timestamps",
     "npm:pi-herdr-btw",
-    "npm:@isac322/pi-codegraph",
+    "git:github.com/alexgorbatchev/pi-codegraph@fix/dangling-managed-symlinks",
     "npm:pi-provider-litellm"
   ],
   "steeringMode": "one-at-a-time",
@@ -36,9 +36,10 @@
     "mcp": { "enabled": false }
   },
   "enableSkillCommands": true,
-  "lastChangelogVersion": "0.84.2",
+  "lastChangelogVersion": "0.85.1",
   "theme": "dark",
   "hideThinkingBlock": false,
   "defaultProvider": "litellm",
-  "defaultModel": "gemini-3.7-flash"
+  "defaultModel": "gemini-3.7-flash",
+  "defaultThinkingLevel": "medium"
 }

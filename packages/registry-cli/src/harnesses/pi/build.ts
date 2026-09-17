@@ -32,9 +32,10 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsOutputDir
     if (existsSync(outputPath)) {
       continue;
     }
-    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
       join(context.templateContext.skills_dir, matchedSkill),
       outputPath,
+      context.templateContext,
     );
   }
 
@@ -45,9 +46,10 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsOutputDir
         `Cannot stage profile-local skill ${profileLocalSkill} for profile ${context.profileName} because the output path already exists: ${outputPath}`,
       );
     }
-    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
       join(context.profileDir, "skills", profileLocalSkill),
       outputPath,
+      context.templateContext,
     );
   }
 }
@@ -169,9 +171,10 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
         const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
         for (const entry of harnessSkillEntries) {
           if (!entry.isDirectory()) continue;
-          await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+          await context.buildSupport.copyDirectoryWithTemplateVariables(
             join(harnessSkillsDir, entry.name),
             join(visibleProfileDir, "skills", entry.name),
+            context.templateContext,
           );
         }
       }

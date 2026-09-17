@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "bun:test";
-import { lstat, mkdir, mkdtemp, readlink, rm, writeFile } from "fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { existsSync } from "fs";
@@ -7,7 +7,6 @@ import {
   applyTemplateVariablesToGeneratedOutput,
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
-  symlinkDirectoryWithOriginalFiles,
   type ITemplateContext,
 } from "../harnessBuild";
 
@@ -114,23 +113,61 @@ describe("harnessBuild template rendering", () => {
     expect(existsSync(join(targetDir, ".tmp/some-source/file.txt"))).toBe(false);
   });
 
-  it("creates symbolic links to original files when symlinking a skill directory", async () => {
+  it("renders a copied skill exactly once so escape sequences survive", async () => {
+    const repositoryRoot = await createTestDirectory();
+
+    const sourceDir = join(repositoryRoot, "skills", "escaped-skill");
+    const targetDir = join(repositoryRoot, "output", "skills", "escaped-skill");
+
+    // A justfile recipe documented inside a skill: the tag must reach the agent
+    // literally, which only works if the build renders the file a single time.
+    await writeTestFile(sourceDir, "SKILL.md", "run *args:\n    mytool \\{{args}}\n\nRoot is {{repo_root}}.");
+
+    const templateContext: ITemplateContext = {
+      repo_root: repositoryRoot,
+      skills_dir: join(repositoryRoot, "skills"),
+      commands_dir: join(repositoryRoot, "commands"),
+      profiles_dir: join(repositoryRoot, "profiles"),
+      output_dir: join(repositoryRoot, "output"),
+    };
+
+    await copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext);
+    await applyTemplateVariablesToGeneratedOutput(targetDir, templateContext);
+
+    expect(await readFile(join(targetDir, "SKILL.md"), "utf-8")).toBe(
+      `run *args:\n    mytool {{args}}\n\nRoot is ${repositoryRoot}.`,
+    );
+  });
+
+  it("copies a skill directory as real files with template tags resolved", async () => {
     const repositoryRoot = await createTestDirectory();
 
     const sourceDir = join(repositoryRoot, "skills", "my-skill");
     const targetDir = join(repositoryRoot, "output", "skills", "my-skill");
 
-    await writeTestFile(sourceDir, "SKILL.md", "# Skill Title");
-    await writeTestFile(sourceDir, "references/ref.md", "# Reference");
+    await writeTestFile(sourceDir, "SKILL.md", "# Skill Title\n\nRoot is {{repo_root}}.");
+    await writeTestFile(sourceDir, "references/ref.md", "# Reference\n\nSkills live in {{skills_dir}}.");
 
-    await symlinkDirectoryWithOriginalFiles(sourceDir, targetDir);
+    const templateContext: ITemplateContext = {
+      repo_root: repositoryRoot,
+      skills_dir: join(repositoryRoot, "skills"),
+      commands_dir: join(repositoryRoot, "commands"),
+      profiles_dir: join(repositoryRoot, "profiles"),
+      output_dir: join(repositoryRoot, "output"),
+    };
 
-    const skillStat = await lstat(join(targetDir, "SKILL.md"));
-    expect(skillStat.isSymbolicLink()).toBe(true);
-    expect(await readlink(join(targetDir, "SKILL.md"))).toBe(join(sourceDir, "SKILL.md"));
+    await copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext);
+    await applyTemplateVariablesToGeneratedOutput(targetDir, templateContext);
 
-    const refStat = await lstat(join(targetDir, "references", "ref.md"));
-    expect(refStat.isSymbolicLink()).toBe(true);
-    expect(await readlink(join(targetDir, "references", "ref.md"))).toBe(join(sourceDir, "references", "ref.md"));
+    // Real files, not symlinks, so the generated copy can carry resolved tags.
+    expect((await lstat(join(targetDir, "SKILL.md"))).isSymbolicLink()).toBe(false);
+    expect((await lstat(join(targetDir, "references", "ref.md"))).isSymbolicLink()).toBe(false);
+
+    expect(await readFile(join(targetDir, "SKILL.md"), "utf-8")).toBe(
+      `# Skill Title\n\nRoot is ${repositoryRoot}.`,
+    );
+    expect(await readFile(join(targetDir, "references", "ref.md"), "utf-8")).toBe(
+      `# Reference\n\nSkills live in ${join(repositoryRoot, "skills")}.`,
+    );
   });
 });

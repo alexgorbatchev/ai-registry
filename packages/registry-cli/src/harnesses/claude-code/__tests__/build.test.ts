@@ -11,7 +11,6 @@ import {
   copyPathWithTemplateVariables,
   mergeDirectory,
   stageProfileAssets,
-  symlinkDirectoryWithOriginalFiles,
   writeBinScript,
   type IBuildSupport,
   type IProfileBuildContext,
@@ -62,8 +61,7 @@ function createBuildSupport(
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
-    symlinkDirectoryWithOriginalFiles,
-    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
+      ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
   };
 }
 
@@ -184,7 +182,7 @@ describe("Claude Code harness build", () => {
     expect(await readFile(join(defaultDir, "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe("# Harness skill\n");
 
     for (const skillName of ["shared-skill", "local-skill", "harness-skill"]) {
-      expect((await lstat(join(defaultDir, "skills", skillName, "SKILL.md"))).isSymbolicLink()).toBe(true);
+      expect((await lstat(join(defaultDir, "skills", skillName, "SKILL.md"))).isSymbolicLink()).toBe(false);
     }
   });
 
@@ -243,7 +241,7 @@ describe("Claude Code harness build", () => {
     expect(existsSync(join(defaultDir, "fetch-source.sh"))).toBe(false);
     expect(existsSync(join(defaultDir, ".registry-ignore"))).toBe(false);
     // `skills/` is ignored by the raw harness copy so the skill bundles stay symlinks.
-    expect((await lstat(join(defaultDir, "skills", "harness-skill", "SKILL.md"))).isSymbolicLink()).toBe(true);
+    expect((await lstat(join(defaultDir, "skills", "harness-skill", "SKILL.md"))).isSymbolicLink()).toBe(false);
   });
 
   it("materializes shared runtime directories in the default profile only", async () => {

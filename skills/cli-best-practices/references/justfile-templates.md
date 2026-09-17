@@ -11,11 +11,11 @@ set dotenv-load := false
 
 # Run CLI in human mode (default)
 run *args:
-    bun run src/cli.ts {{args}}
+    bun run src/cli.ts \{{args}}
 
 # Run CLI in agent-facing token-conservative mode
 run-ai *args:
-    AGENT=1 bun run src/cli.ts {{args}}
+    AGENT=1 bun run src/cli.ts \{{args}}
 
 # Run unit tests
 test:
@@ -42,11 +42,11 @@ binary_name := "mytool"
 
 # Run CLI in human mode
 run *args:
-    go run ./cmd/{{binary_name}} {{args}}
+    go run ./cmd/\{{binary_name}} \{{args}}
 
 # Run CLI in agent-facing mode
 run-ai *args:
-    AGENT=1 go run ./cmd/{{binary_name}} {{args}}
+    AGENT=1 go run ./cmd/\{{binary_name}} \{{args}}
 
 # Run test suite
 test:
@@ -55,7 +55,7 @@ test:
 # Build binary into bin/
 build:
     mkdir -p bin
-    go build -o bin/{{binary_name}} ./cmd/{{binary_name}}
+    go build -o bin/\{{binary_name}} ./cmd/\{{binary_name}}
 
 # Lint and static check
 check:
@@ -72,11 +72,11 @@ set dotenv-load := false
 
 # Run CLI in human mode
 run *args:
-    python -m mytool {{args}}
+    python -m mytool \{{args}}
 
 # Run CLI in agent-facing mode
 run-ai *args:
-    AGENT=1 python -m mytool {{args}}
+    AGENT=1 python -m mytool \{{args}}
 
 # Run pytest suite
 test:
@@ -98,11 +98,11 @@ set dotenv-load := false
 
 # Run CLI in human mode
 run *args:
-    cargo run -- {{args}}
+    cargo run -- \{{args}}
 
 # Run CLI in agent-facing mode
 run-ai *args:
-    AGENT=1 cargo run -- {{args}}
+    AGENT=1 cargo run -- \{{args}}
 
 # Run test suite
 test:

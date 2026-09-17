@@ -177,11 +177,11 @@ Every repository and CLI tool must use `just` for workflow and task orchestratio
 ```justfile
 # Run in human-facing interactive mode
 run *args:
-    <command-to-run-binary> {{args}}
+    <command-to-run-binary> \{{args}}
 
 # Run in agent-facing token-conservative mode
 run-ai *args:
-    AGENT=1 <command-to-run-binary> {{args}}
+    AGENT=1 <command-to-run-binary> \{{args}}
 
 # Run test suite
 test:

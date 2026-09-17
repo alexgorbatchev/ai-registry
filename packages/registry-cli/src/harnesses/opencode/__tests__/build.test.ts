@@ -9,7 +9,6 @@ import {
   copyPathWithTemplateVariables,
   mergeDirectory,
   stageProfileAssets,
-  symlinkDirectoryWithOriginalFiles,
   writeBinScript,
   type IBuildSupport,
   type IProfileBuildContext,
@@ -48,8 +47,7 @@ function createBuildSupport(repositoryRoot: string): IBuildSupport {
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
-    symlinkDirectoryWithOriginalFiles,
-    ensureRuntimeDirectory: createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")).ensureRuntimeDirectory,
+      ensureRuntimeDirectory: createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")).ensureRuntimeDirectory,
   };
 }
 
@@ -120,7 +118,7 @@ describe("OpenCode harness build plugin", () => {
     ].join("\n"));
   });
 
-  it("stages skills as symlinks in finalizeOutput", async () => {
+  it("stages skills as rendered copies in finalizeOutput", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "harnesses/opencode/.registry-ignore", "./skills/\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
@@ -132,12 +130,12 @@ describe("OpenCode harness build plugin", () => {
 
     expect(
       (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "shared-skill", "SKILL.md"))).isSymbolicLink(),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "local-skill", "SKILL.md"))).isSymbolicLink(),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "harness-skill", "SKILL.md"))).isSymbolicLink(),
-    ).toBe(true);
+    ).toBe(false);
   });
 });

@@ -125,9 +125,10 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
       `Claude Code harness skill ${harnessSkillEntry.name}`,
     );
 
-    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
       join(harnessSkillsDir, harnessSkillEntry.name),
       outputPath,
+      context.templateContext,
     );
   }
 }
@@ -139,9 +140,10 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsDir: stri
       continue;
     }
 
-    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
       join(context.templateContext.skills_dir, matchedSkill),
       outputPath,
+      context.templateContext,
     );
   }
 
@@ -152,9 +154,10 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsDir: stri
       `profile-local skill ${profileLocalSkill} for profile ${context.profileName}`,
     );
 
-    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
       join(context.profileDir, SKILLS_DIR_NAME, profileLocalSkill),
       outputPath,
+      context.templateContext,
     );
   }
 }

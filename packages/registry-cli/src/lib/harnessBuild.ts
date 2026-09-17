@@ -46,10 +46,6 @@ export type IBuildSupport = {
     targetPath: string,
     templateContext: ITemplateContext,
   ): Promise<void>;
-  symlinkDirectoryWithOriginalFiles(
-    sourceDir: string,
-    targetDir: string,
-  ): Promise<void>;
   // Creates a directory the harness tool owns at runtime (session stores, todo
   // lists, logs). The build materializes it so every generated profile can share
   // it, but it stays out of the manifest and is recreated, never removed, on sync.
@@ -256,57 +252,12 @@ async function copyFileWithTemplateVariables(
 ): Promise<void> {
   await mkdir(dirname(targetPath), { recursive: true });
 
-  const isSkillDefinition = basename(sourcePath) === "SKILL.md";
-  if (isSkillDefinition) {
-    const sourceContent = await readFile(sourcePath, "utf-8");
-    const renderedContent = await applyTemplateVariables(sourceContent, sourcePath, templateContext);
-    await writeFile(
-      targetPath,
-      renderedContent,
-      "utf-8",
-    );
-    registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
-    return;
-  }
-
+  // Copy verbatim and let the single applyTemplateVariablesToGeneratedOutput pass
+  // render it. Rendering here as well would resolve the file twice, which silently
+  // consumes escape sequences like \{{args}} on the first pass and then resolves
+  // the bare tag on the second.
   await copyFile(sourcePath, targetPath);
   registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
-}
-
-export async function symlinkDirectoryWithOriginalFiles(
-  sourceDir: string,
-  targetDir: string,
-  sourcePathByOutputPath?: ISourcePathByOutputPath,
-): Promise<void> {
-  await mkdir(targetDir, { recursive: true });
-
-  const entries = await getSourceCopyEntries(sourceDir);
-  for (const relativePath of entries) {
-    const sourcePath = join(sourceDir, relativePath);
-    const targetPath = join(targetDir, relativePath);
-    const sourceStats = await lstat(sourcePath);
-
-    if (sourceStats.isSymbolicLink()) {
-      const existingTarget = await readlink(sourcePath);
-      await mkdir(dirname(targetPath), { recursive: true });
-      await symlink(existingTarget, targetPath);
-      registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
-      continue;
-    }
-
-    if (sourceStats.isDirectory()) {
-      await mkdir(targetPath, { recursive: true });
-      continue;
-    }
-
-    if (!sourceStats.isFile()) {
-      continue;
-    }
-
-    await mkdir(dirname(targetPath), { recursive: true });
-    await symlink(sourcePath, targetPath);
-    registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
-  }
 }
 
 export async function copyDirectoryWithTemplateVariables(
@@ -516,18 +467,20 @@ export async function stageProfileAssets(
   for (const matchedSkill of context.globalMatchedSkills) {
     const outputPath = join(skillsDir, matchedSkill);
     if (existsSync(outputPath)) continue;
-    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
       join(context.templateContext.skills_dir, matchedSkill),
       outputPath,
+      context.templateContext,
     );
   }
 
   for (const profileLocalSkill of context.profileLocalSkills) {
     const outputPath = join(skillsDir, profileLocalSkill);
     assertMissingOutputPath(outputPath, `profile-local skill ${profileLocalSkill} for profile ${context.profileName}`);
-    await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
       join(context.profileDir, "skills", profileLocalSkill),
       outputPath,
+      context.templateContext,
     );
   }
 }

@@ -21,7 +21,6 @@ import {
   copyPathWithTemplateVariables,
   mergeDirectory,
   stageProfileAssets,
-  symlinkDirectoryWithOriginalFiles,
   writeBinScript,
   getObjectValue,
 } from "../lib/harnessBuild";
@@ -364,9 +363,6 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
     },
     mergeDirectory: (sourceDir, destinationDir, options) => {
       return mergeDirectory(sourceDir, destinationDir, options, sourcePathByOutputPath);
-    },
-    symlinkDirectoryWithOriginalFiles: (sourceDir, targetDir) => {
-      return symlinkDirectoryWithOriginalFiles(sourceDir, targetDir, sourcePathByOutputPath);
     },
     stageProfileAssets,
     writeBinScript,

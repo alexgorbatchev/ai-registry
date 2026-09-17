@@ -99,9 +99,10 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
       const outputPath = join(getSkillStagingDir(context.outputDir), harnessSkillEntry.name);
       if (existsSync(outputPath)) continue;
 
-      await context.buildSupport.symlinkDirectoryWithOriginalFiles(
+      await context.buildSupport.copyDirectoryWithTemplateVariables(
         join(harnessSkillsDir, harnessSkillEntry.name),
         outputPath,
+        context.templateContext,
       );
     }
   }

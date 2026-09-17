@@ -14,6 +14,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - For string-variable tokens, write the token name with the template resolver's variable syntax in source files. Available path tokens are `repo_root`, `skills_dir`, `commands_dir`, `profiles_dir`, `output_dir`, `file_path`, and `file_dir`.
 - Use the `include` directive for repository-root-relative file inclusion.
 - Use the `env` directive to read environment variables, with an optional default value when the variable may be absent.
+- Escape a tag that must reach the agent literally by prefixing it with a single backslash, such as when a skill documents justfile or Go-template syntax. The backslash is consumed and the tag is emitted as written; double the backslash to emit a literal backslash before the tag.
 - Prefer the most specific path token available. Use `skills_dir`, `commands_dir`, `profiles_dir`, and `output_dir` for those canonical folders. Use `repo_root` for canonical folders that do not have a dedicated token.
 
 ## Core Rules
@@ -121,7 +122,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - The local build entrypoint is `packages/registry-cli/src/bin/build.ts` beneath the repo_root token.
 - Unified harness plugins are located at `packages/registry-cli/src/harnesses/<target>/build.ts` beneath the repo_root token.
 - Generated outputs are written under the output_dir token.
-- All generated files for harness skills (`skills/` entries across OpenCode, Codex, Pi, and Claude Code outputs) are created as symbolic links to original source files instead of copies.
+- Generated harness skills (`skills/` entries across OpenCode, Codex, Pi, and Claude Code outputs) are copies of the source files with template tags resolved, not symbolic links, so tags inside `SKILL.md` and bundled skill files reach the agent resolved.
 - The generated-output manifest tracks only registry-managed entries under the output_dir token, and `bun run build` overwrites only those managed paths instead of replacing the entire output tree.
 - In a harness build plugin, create directories the harness tool owns at runtime (session stores, logs, todo lists) with `context.buildSupport.ensureRuntimeDirectory(...)` instead of `mkdir`. They stay out of the manifest, never count as drift, are never removed by sync, and are recreated when missing.
 - Verify generated files that match the change, especially:

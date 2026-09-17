@@ -64,6 +64,10 @@ export async function smokeBootstrapCommand(): Promise<void> {
   const PI_TARGET = join(SMOKE_HOME, ".pi", "agent");
   const PI_SMOKE_PROFILE = "developer";
   const PI_SOURCE = join(SMOKE_REPO_DIR, ".output", "pi", PI_SMOKE_PROFILE);
+  const CLAUDE_CODE_TARGET = join(SMOKE_HOME, ".claude");
+  const CLAUDE_CODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "claude-code", "default");
+  const CLAUDE_CODE_SMOKE_PROFILE = "developer";
+  const CLAUDE_CODE_PROFILE_SOURCE = join(SMOKE_REPO_DIR, ".output", "claude-code", CLAUDE_CODE_SMOKE_PROFILE);
   const OUTPUT_MANIFEST = join(SMOKE_REPO_DIR, ".output", "manifest.json");
 
   async function seedExistingTargets(): Promise<void> {
@@ -71,6 +75,8 @@ export async function smokeBootstrapCommand(): Promise<void> {
     await writeFile(join(OPENCODE_TARGET, "existing.txt"), "existing opencode data\n");
     await mkdir(PI_TARGET, { recursive: true });
     await writeFile(join(PI_TARGET, "existing.txt"), "existing pi data\n");
+    await mkdir(CLAUDE_CODE_TARGET, { recursive: true });
+    await writeFile(join(CLAUDE_CODE_TARGET, "existing.txt"), "existing claude code data\n");
   }
 
   async function createSmokeClone(): Promise<void> {
@@ -107,6 +113,17 @@ export async function smokeBootstrapCommand(): Promise<void> {
       });
   }
 
+  async function runBootstrapWithClaudeCodeProfile(): Promise<void> {
+    await $`bun run bootstrap -- --claude-code-profile ${CLAUDE_CODE_SMOKE_PROFILE}`
+      .cwd(SMOKE_REPO_DIR)
+      .env({
+        ...process.env,
+        CLAUDE_CONFIG_DIR: CLAUDE_CODE_TARGET,
+        HOME: SMOKE_HOME,
+        XDG_CONFIG_HOME: CONFIG_HOME,
+      });
+  }
+
   async function verifyBootstrapOutputs(): Promise<void> {
     const opencodeBackupDir = await findSingleBackup(CONFIG_HOME, "opencode.backup-");
     const publicScriptAssertions = PUBLIC_SCRIPT_NAMES.map((scriptName) =>
@@ -116,7 +133,16 @@ export async function smokeBootstrapCommand(): Promise<void> {
       assertPathExists(join(opencodeBackupDir, "existing.txt")),
       assertPathExists(OUTPUT_MANIFEST),
       assertSymlinkTarget(OPENCODE_TARGET, OPENCODE_SOURCE),
+      assertSymlinkTarget(CLAUDE_CODE_TARGET, CLAUDE_CODE_SOURCE),
       ...publicScriptAssertions,
+    ]);
+  }
+
+  async function verifyClaudeCodeBootstrapOutputs(): Promise<void> {
+    const claudeCodeBackupDir = await findSingleBackup(SMOKE_HOME, ".claude.backup-");
+    await Promise.all([
+      assertPathExists(join(claudeCodeBackupDir, "existing.txt")),
+      assertSymlinkTarget(CLAUDE_CODE_TARGET, CLAUDE_CODE_PROFILE_SOURCE),
     ]);
   }
 
@@ -146,6 +172,10 @@ export async function smokeBootstrapCommand(): Promise<void> {
   console.log("Third bootstrap run: verify optional Pi profile linking.");
   await runBootstrapWithPiProfile();
   await verifyPiBootstrapOutputs();
+
+  console.log("Fourth bootstrap run: verify optional Claude Code profile linking.");
+  await runBootstrapWithClaudeCodeProfile();
+  await verifyClaudeCodeBootstrapOutputs();
 
   console.log("\nBootstrap smoke test passed.");
   console.log(`Inspect artifacts at: ${SMOKE_HOME}`);

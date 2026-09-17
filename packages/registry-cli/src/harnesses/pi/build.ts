@@ -112,10 +112,16 @@ async function generatePiHelpers(context: IUnifiedHarnessBuildContext, profiles:
   const updateTemplate = await import("fs/promises").then(m => m.readFile(piUpdatePath, "utf-8"));
 
   for (const profile of profiles) {
-    const helperName = profile === "default" ? "pi" : `pi-${profile}`;
+    // The default profile is reached through the `~/.pi/agent` symlink that bootstrap
+    // creates, so only non-default profiles need a launcher that overrides
+    // PI_CODING_AGENT_DIR. Nothing generated here shadows the real `pi` binary.
+    if (profile === DEFAULT_PROFILE_NAME) {
+      continue;
+    }
+
     const content = createExternalProfileHelper("pi", "PI_CODING_AGENT_DIR", `{{output_dir}}/pi/${profile}`);
 
-    await context.buildSupport.writeBinScript(context.outputDir, helperName, content);
+    await context.buildSupport.writeBinScript(context.outputDir, `pi-${profile}`, content);
   }
 
   await context.buildSupport.writeBinScript(context.outputDir, "pi-install", installTemplate);

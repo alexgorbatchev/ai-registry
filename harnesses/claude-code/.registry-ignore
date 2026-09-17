@@ -1,0 +1,6 @@
+./fetch-source.sh
+./.tmp/
+
+# The build symlinks harness-local skills into every generated profile root
+# instead of copying them, so keep them out of the raw harness file copy.
+./skills/

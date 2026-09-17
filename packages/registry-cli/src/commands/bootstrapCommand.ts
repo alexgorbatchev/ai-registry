@@ -9,6 +9,7 @@ import { syncPublicScripts, type ISyncPublicScriptsResult } from "../lib/syncPub
 import { getRegistryPaths } from "../lib/getRegistryPaths";
 
 // We import the static harness plugins to retrieve their bootstrap targets
+import claudeCodePlugin from "../harnesses/claude-code/build";
 import codexPlugin from "../harnesses/codex/build";
 import opencodePlugin from "../harnesses/opencode/build";
 import piPlugin from "../harnesses/pi/build";
@@ -86,7 +87,7 @@ async function resolveRealPathOrSelf(targetPath: string): Promise<string> {
 
 async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
   const targets: IBootstrapTarget[] = [];
-  const plugins = [codexPlugin, opencodePlugin, piPlugin];
+  const plugins = [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin];
 
   for (const plugin of plugins) {
     if (plugin.getBootstrapTargets) {
@@ -123,6 +124,24 @@ async function preserveExistingRuntimeData(backupPath: string, sourcePath: strin
     "missions",
     "npm",
     "shell_snapshots",
+    // Claude Code runtime state
+    ".claude.json",
+    ".credentials.json",
+    ".last-cleanup",
+    "backups",
+    "cache",
+    "downloads",
+    "file-history",
+    "ide",
+    "plugins",
+    "policy-limits.json",
+    "projects",
+    "remote-settings.json",
+    "session-env",
+    "settings.local.json",
+    "shell-snapshots",
+    "statsig",
+    "todos",
   ];
 
   for (const entryName of runtimeEntries) {
@@ -249,6 +268,6 @@ export async function bootstrapCommand(): Promise<void> {
   for (const target of bootstrapTargets) {
     console.log(`${target.description} now reads from: ${target.targetPath}`);
   }
-  console.log(`Repo-local air-*, codex, codex-*, pi, and pi-* commands are linked into: ${PUBLIC_BIN_DIR}`);
-  console.log("Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, and PI_CODING_AGENT_DIR if needed.");
+  console.log(`Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: ${PUBLIC_BIN_DIR}`);
+  console.log("Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, and CLAUDE_CONFIG_DIR if needed.");
 }

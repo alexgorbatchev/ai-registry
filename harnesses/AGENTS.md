@@ -14,6 +14,19 @@ This directory contains source-of-truth harness overrides and maintenance notes 
 
 Harnesses are only built into `.output/` when they provide `packages/registry-cli/src/harnesses/<name>/build.ts`.
 
+## Claude Code
+
+- Keep shipped Claude Code config under `harnesses/claude-code/`, using Claude Code's native config-directory layout (`settings.json`, `commands/`, `agents/`, `output-styles/`, and so on).
+- Keep the Claude Code unified-output plugin in `packages/registry-cli/src/harnesses/claude-code/build.ts`.
+- Every file under `harnesses/claude-code/` except `skills/` is copied verbatim into the generated `default` profile root, so new native config surfaces need no build changes. `skills/` is excluded through `.registry-ignore` because the build symlinks those bundles into every generated profile root instead of copying them.
+- Put Claude Code-only shipped skills under `harnesses/claude-code/skills/`; the build merges them into each generated `.output/claude-code/<profile>/skills/` root.
+- The Claude Code harness treats `.output/claude-code/default/` as the shared Claude Code base. Every non-default generated profile root under `.output/claude-code/<profile>/` symlinks all top-level entries from `default/` except `CLAUDE.md` and `skills/`.
+- Map reusable commands to `commands/` only from the `default` profile. Render `CLAUDE.md` separately for each profile from that profile's `system_prompt`, and generate selected skills into each profile's own `skills/` directory.
+- Materialize the runtime directories Claude Code writes into (`sessions/`, `projects/`, `todos/`, `shell-snapshots/`, `file-history/`, `session-env/`, `statsig/`, `plugins/`) as static directories in the default root so every profile shares one history and plugin install. Treat everything Claude Code writes there as tool-owned, unmanaged output.
+- Plain `bun run bootstrap` links the generated `default` Claude Code profile root into `${CLAUDE_CONFIG_DIR:-~/.claude}`. Use `bun run bootstrap -- --claude-code-profile <profile>` to override that link with another generated Claude Code profile root.
+- Generate `claude-<profile>` launchers under `.output/bin/` for non-default generated Claude Code profiles only. Do not generate a `claude` wrapper: unlike Codex and Pi, the default profile is already reached through the `~/.claude` symlink, so nothing needs to shadow the real `claude` binary.
+- Do not silently ignore profile `tools` or `permission`; the Claude Code build must fail until an exact Claude Code-native mapping exists.
+
 ## Codex
 
 - Keep the checked-in Codex reference docs under `harnesses/codex/docs/`.
@@ -25,7 +38,7 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 - Map reusable commands only from the `default` profile. Render `AGENTS.md` separately for each profile from that profile's `system_prompt`, and generate selected skills into each profile's own Codex `skills/` directory.
 - Treat `harnesses/codex/config.toml` as the seed configuration for Codex. The generated `default` Codex root symlinks only `config.toml` to `{{repo_root}}/.tmp/codex/`, and non-default generated Codex roots inherit that shared entry by symlinking back to `default/`. Runtime files such as `auth.json` remain Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
 - Plain `bun run bootstrap` links the generated `default` Codex profile root into `${CODEX_HOME:-~/.codex}`. Use `bun run bootstrap -- --codex-profile <profile>` to override that link with another generated Codex profile root.
-- Generate `codex` for the `default` profile and `codex-<profile>` for other generated Codex profiles under `.output/bin/`.
+- Generate `codex-<profile>` launchers under `.output/bin/` for non-default generated Codex profiles only. Do not generate a bare `codex` wrapper: the default profile is already reached through the `${CODEX_HOME:-~/.codex}` symlink, so nothing needs to shadow the real `codex` binary.
 
 ## OpenCode
 
@@ -46,7 +59,7 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 - The Pi harness treats `.output/pi/default/` as the shared Pi base. Every non-default generated profile root under `.output/pi/<profile>/` symlinks all top-level entries from `default/` except `APPEND_SYSTEM.md` and `skills/`.
 - Map reusable commands, the shared `settings.json`, and the static shared `sessions/` directory only from the `default` profile. Render `APPEND_SYSTEM.md` separately for each profile from that profile's `system_prompt`, and generate selected skills into each profile's own Pi `skills/` directory.
 - Plain `bun run bootstrap` links the generated `default` Pi profile root into `${PI_CODING_AGENT_DIR:-~/.pi/agent}`. Use `bun run bootstrap -- --pi-profile <profile>` to override that link with another generated Pi profile root.
-- Generate `pi` for the `default` profile and `pi-<profile>` for other generated Pi profiles under `.output/bin/`.
+- Generate `pi-<profile>` launchers under `.output/bin/` for non-default generated Pi profiles only, plus the `pi-install`, `pi-update`, and `pi-uninstall` helpers. Do not generate a bare `pi` wrapper: the default profile is already reached through the `${PI_CODING_AGENT_DIR:-~/.pi/agent}` symlink, so nothing needs to shadow the real `pi` binary.
 - Do not silently ignore profile `tools` or `permission`; the Pi build must fail until an exact Pi-native mapping exists.
 
 ## Local Source Code References
@@ -59,6 +72,7 @@ For each harness, we maintain its upstream source code locally in a `.tmp/` scra
   ./harnesses/opencode/fetch-source.sh
   ./harnesses/codex/fetch-source.sh
   ./harnesses/pi/fetch-source.sh
+  ./harnesses/claude-code/fetch-source.sh
   ```
 - The cloned sources are saved to `harnesses/<harness>/.tmp/<harness>-source/`.
 - These checkouts and fetch scripts are ignored by Git (via root `.gitignore`) and are never bundled into the generated config outputs (via `.registry-ignore`).

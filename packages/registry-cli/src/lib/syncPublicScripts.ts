@@ -1,7 +1,7 @@
 import { lstat, mkdir, readdir, readlink, realpath, rename, rm, symlink } from "fs/promises";
 import { dirname, resolve, join } from "path";
 
-const PUBLIC_SCRIPT_PREFIXES = ["air-", "codex-", "pi-"];
+const PUBLIC_SCRIPT_PREFIXES = ["air-", "claude-", "codex-", "pi-"];
 const PUBLIC_SCRIPT_NAMES = new Set(["codex", "pi"]);
 
 export type IPublicScriptLinkResult =

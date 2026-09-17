@@ -42,11 +42,12 @@ import { promptForYesNo, promptForOverwriteDecision } from "../lib/promptForYesN
 import { reverseTemplateContent } from "../lib/reverseTemplateContent";
 
 // Statically import harness plugins
+import claudeCodePlugin from "../harnesses/claude-code/build";
 import codexPlugin from "../harnesses/codex/build";
 import opencodePlugin from "../harnesses/opencode/build";
 import piPlugin from "../harnesses/pi/build";
 
-const unifiedHarnessPlugins: IUnifiedHarnessPlugin[] = [codexPlugin, opencodePlugin, piPlugin];
+const unifiedHarnessPlugins: IUnifiedHarnessPlugin[] = [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin];
 
 function isProfileManifest(value: unknown): value is IProfileManifest {
   return typeof value === "object" && value !== null && !Array.isArray(value);

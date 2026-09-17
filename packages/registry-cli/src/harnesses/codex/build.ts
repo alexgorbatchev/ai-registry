@@ -228,13 +228,19 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       }
     }
 
-    const helperName = profileEntry.name === "default" ? "codex" : `codex-${profileEntry.name}`;
+    // The default profile is reached through the `${CODEX_HOME:-~/.codex}` symlink that
+    // bootstrap creates, so only non-default profiles need a launcher that overrides
+    // CODEX_HOME. Nothing generated here shadows the real `codex` binary.
+    if (profileEntry.name === DEFAULT_PROFILE_NAME) {
+      continue;
+    }
+
     const content = createExternalProfileHelper(
       "codex",
       "CODEX_HOME",
       `{{output_dir}}/${CODEX_OUTPUT_DIR_NAME}/${profileEntry.name}`,
     );
-    await context.buildSupport.writeBinScript(context.outputDir, helperName, content);
+    await context.buildSupport.writeBinScript(context.outputDir, `codex-${profileEntry.name}`, content);
   }
 }
 

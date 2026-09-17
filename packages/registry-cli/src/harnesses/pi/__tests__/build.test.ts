@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { lstat, mkdir, mkdtemp, readFile, readlink, rm, writeFile } from "fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, readdir, readlink, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
 import { dirname, join } from "path";
 
@@ -324,7 +324,7 @@ describe("Pi harness bootstrap targets", () => {
     );
   });
 
-  it("generates default and named Pi launcher helpers", async () => {
+  it("generates named Pi launcher helpers without a bare pi wrapper", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
     await writeTestFile(repositoryRoot, ".output/.pi-profiles/default/APPEND_SYSTEM.md", "default\n");
@@ -335,61 +335,16 @@ describe("Pi harness bootstrap targets", () => {
 
     await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
 
-    expect(await readFile(join(repositoryRoot, ".output", "bin", "pi"), "utf-8")).toMatchInlineSnapshot(`
-"#!/usr/bin/env bash
-set -euo pipefail
+    // No bare `pi` wrapper is generated: the default profile is reached through the
+    // `~/.pi/agent` symlink, so nothing shadows the real `pi` binary.
+    expect((await readdir(join(repositoryRoot, ".output", "bin"))).sort()).toEqual([
+      "pi-developer",
+      "pi-install",
+      "pi-uninstall",
+      "pi-update",
+    ]);
 
-script_dir="$(cd "$(dirname "$0")" && pwd -P)"
-generated_bin_dir="{{output_dir}}/bin"
-filtered_path=""
-
-IFS=':' read -r -a path_entries <<< "\${PATH:-}"
-for path_entry in "\${path_entries[@]}"; do
-  normalized_path="\${path_entry:-.}"
-  if [ "$normalized_path" = "$script_dir" ] || [ "$normalized_path" = "$generated_bin_dir" ]; then
-    continue
-  fi
-
-  if [ -n "$filtered_path" ]; then
-    filtered_path="\${filtered_path}:$normalized_path"
-  else
-    filtered_path="$normalized_path"
-  fi
-done
-
-PATH="$filtered_path"
-export PATH
-
-real_binary=""
-if command -v pi >/dev/null 2>&1; then
-  real_binary="pi"
-else
-  # Fallback to looking for backed-up shims in script_dir and generated_bin_dir
-  latest_backup=""
-  for backup_dir in "$script_dir" "$generated_bin_dir"; do
-    for backup_file in "$backup_dir"/pi.backup-*; do
-      if [ -x "$backup_file" ]; then
-        if [ -z "$latest_backup" ] || [ "$backup_file" -nt "$latest_backup" ]; then
-          latest_backup="$backup_file"
-        fi
-      fi
-    done
-  done
-
-  if [ -n "$latest_backup" ]; then
-    real_binary="$latest_backup"
-  fi
-fi
-
-if [ -z "$real_binary" ]; then
-  printf 'Could not find the real pi binary outside ai-registry wrapper paths.\\n' >&2
-  exit 1
-fi
-
-PI_CODING_AGENT_DIR="{{output_dir}}/pi/default" exec "$real_binary" "$@"
-"
-`);
-    expect(await readFile(join(repositoryRoot, ".output", "bin", "pi-developer"), "utf-8")).toMatchInlineSnapshot(`
+        expect(await readFile(join(repositoryRoot, ".output", "bin", "pi-developer"), "utf-8")).toMatchInlineSnapshot(`
 "#!/usr/bin/env bash
 set -euo pipefail
 

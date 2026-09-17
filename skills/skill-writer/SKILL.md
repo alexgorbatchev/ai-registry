@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-07-22 08:47
+  last_modified: 2026-09-17 10:35
   status: current
 ---
 
@@ -78,7 +78,7 @@ skill-name/
 ├── SKILL.md (required)
 │   ├── YAML frontmatter metadata (required)
 │   │   ├── name: (required)
-│   │   ├── description: (required)
+│   │   ├── description: (required; legacy key name, semantically this is the TRIGGER)
 │   │   └── author: alexgorbatchev (repo convention)
 │   └── Markdown instructions (required)
 └── Bundled Resources (optional)
@@ -91,7 +91,7 @@ skill-name/
 
 Every SKILL.md consists of:
 
-- **Frontmatter** (YAML): `name`, `description`, and `author` (e.g., `author: alexgorbatchev`) are required triggering and attribution fields. Additionally, in this repository, you **MUST** include a `metadata` dictionary containing `created_on` and `last_modified` (using strict `YYYY-MM-DD HH:MM` format) plus `status: current` to keep track of the skill's history and metadata lifecycle. Keep frontmatter minimal, and place these historical attributes exclusively within the nested `metadata` block.
+- **Frontmatter** (YAML): `name`, `description`, and `author` (e.g., `author: alexgorbatchev`) are required triggering and attribution fields. Treat the key name `description` as an obsolete standard name that harnesses still require; its real role is `trigger` (see the `description` rule under Frontmatter below). Additionally, in this repository, you **MUST** include a `metadata` dictionary containing `created_on` and `last_modified` (using strict `YYYY-MM-DD HH:MM` format) plus `status: current` to keep track of the skill's history and metadata lifecycle. Keep frontmatter minimal, and place these historical attributes exclusively within the nested `metadata` block.
 - **Body** (Markdown): Instructions and guidance for using the skill. Only loaded AFTER the skill triggers (if at all).
 
 #### Bundled Resources (optional)
@@ -336,7 +336,9 @@ Review rubric:
 Write the YAML frontmatter with `name`, `description`, and `author`:
 
 - `name`: The skill name
-- `description`: The `description` is the ONLY stable routing mechanism. To achieve near-100% mathematical certainty that an agent will trigger the skill, you must override its pre-trained complacency. If the model thinks it already knows how to do a task, it will skip the skill unless the description hacks its attention mechanism.
+- `description`: **VERY IMPORTANT: `description` is an obsolete standard name. Treat this field as `trigger`.** The key is spelled `description` only because harnesses and the Agent Skills specification require that spelling; never rename the key. Semantically it is NOT a description of the skill. It is the trigger condition that decides whether the LLM loads the skill body at all. Construct its value with one goal: maximize the probability that an LLM reading only `name` + this field decides to read the skill. Do not write it as a summary, a blurb, or an explanation of what the skill contains. Write it as the exact conditions, tokens, verbs, and artifacts that must fire the skill, plus the boundaries that stop it from firing for neighbors. Every review of a `description` value asks one question: "Would an LLM seeing this line alongside dozens of other skill lines reliably choose to read this skill for the intended requests?" If the answer is not a confident yes, the value is wrong regardless of how accurately it describes the skill.
+
+  The `description` is the ONLY stable routing mechanism. To achieve near-100% mathematical certainty that an agent will trigger the skill, you must override its pre-trained complacency. If the model thinks it already knows how to do a task, it will skip the skill unless the description hacks its attention mechanism.
   
   **The "Near-100% Certainty" Trigger Formula:**
   Descriptions must act as security tripwires using these 5 watertight elements:

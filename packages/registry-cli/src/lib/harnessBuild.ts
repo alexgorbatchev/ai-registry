@@ -50,6 +50,10 @@ export type IBuildSupport = {
     sourceDir: string,
     targetDir: string,
   ): Promise<void>;
+  // Creates a directory the harness tool owns at runtime (session stores, todo
+  // lists, logs). The build materializes it so every generated profile can share
+  // it, but it stays out of the manifest and is recreated, never removed, on sync.
+  ensureRuntimeDirectory(dirPath: string): Promise<void>;
 };
 
 export type IProfileBuildContext = {

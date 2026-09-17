@@ -210,7 +210,9 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
         await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
         await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
 
-        await mkdir(join(visibleProfileDir, "sessions"), { recursive: true });
+        // Pi-owned runtime state, shared by every generated profile through the
+        // default root: created here, never tracked by the manifest.
+        await context.buildSupport.ensureRuntimeDirectory(join(visibleProfileDir, "sessions"));
         continue;
       }
 

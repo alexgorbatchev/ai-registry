@@ -17,6 +17,7 @@ import {
   type ITemplateContext,
   type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
+import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "pi-build-tests");
 const originalArgv: string[] = [...process.argv];
@@ -53,7 +54,10 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
   };
 }
 
-function createBuildSupport(): IBuildSupport {
+function createBuildSupport(
+  repositoryRoot: string,
+  runtimeDirectoryRegistry: IRuntimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")),
+): IBuildSupport {
   return {
     mergeDirectory,
     stageProfileAssets,
@@ -61,15 +65,19 @@ function createBuildSupport(): IBuildSupport {
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
     symlinkDirectoryWithOriginalFiles,
+    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
   };
 }
 
-function createUnifiedContext(repositoryRoot: string): IUnifiedHarnessBuildContext {
+function createUnifiedContext(
+  repositoryRoot: string,
+  runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry,
+): IUnifiedHarnessBuildContext {
   return {
     harnessDir: join(repositoryRoot, "harnesses", "pi"),
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(),
+    buildSupport: createBuildSupport(repositoryRoot, runtimeDirectoryRegistry),
   };
 }
 
@@ -102,7 +110,7 @@ function createProfileContext(
     profileLocalCommands: overrides.profileLocalCommands ?? ["local.md"],
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(),
+    buildSupport: createBuildSupport(repositoryRoot),
   };
 }
 
@@ -261,6 +269,27 @@ describe("Pi harness bootstrap targets", () => {
     ).toBe(true);
     expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isDirectory()).toBe(true);
     expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isSymbolicLink()).toBe(false);
+  });
+
+  it("registers the shared Pi sessions directory as a runtime directory", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/prompts/harness.md", "Harness prompt.\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/skills/harness-skill/SKILL.md", "# Harness skill\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+
+    const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output"));
+    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot, runtimeDirectoryRegistry));
+
+    expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isDirectory()).toBe(true);
+    expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).toEqual(["pi/default/sessions"]);
   });
 
   it("builds per-profile APPEND_SYSTEM.md and symlinks other shared Pi files", async () => {

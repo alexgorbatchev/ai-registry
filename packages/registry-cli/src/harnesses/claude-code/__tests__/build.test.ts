@@ -18,6 +18,7 @@ import {
   type ITemplateContext,
   type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
+import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "claude-code-build-tests");
 const originalArgv: string[] = [...process.argv];
@@ -51,7 +52,10 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
   };
 }
 
-function createBuildSupport(): IBuildSupport {
+function createBuildSupport(
+  repositoryRoot: string,
+  runtimeDirectoryRegistry: IRuntimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")),
+): IBuildSupport {
   return {
     mergeDirectory,
     stageProfileAssets,
@@ -59,6 +63,7 @@ function createBuildSupport(): IBuildSupport {
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
     symlinkDirectoryWithOriginalFiles,
+    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
   };
 }
 
@@ -67,7 +72,7 @@ function createUnifiedContext(repositoryRoot: string): IUnifiedHarnessBuildConte
     harnessDir: join(repositoryRoot, "harnesses", "claude-code"),
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(),
+    buildSupport: createBuildSupport(repositoryRoot),
   };
 }
 
@@ -77,6 +82,7 @@ type IProfileContextOverrides = {
   permission?: Record<string, string | Record<string, string>>;
   profileLocalCommands?: string[];
   profileLocalSkills?: string[];
+  runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry;
   systemPrompt?: string;
   tools?: Record<string, boolean>;
 };
@@ -104,7 +110,7 @@ function createProfileContext(
     profileLocalCommands: overrides.profileLocalCommands ?? ["local.md"],
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(),
+    buildSupport: createBuildSupport(repositoryRoot, overrides.runtimeDirectoryRegistry),
   };
 }
 
@@ -248,7 +254,8 @@ describe("Claude Code harness build", () => {
     await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
 
-    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
+    const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output"));
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", { runtimeDirectoryRegistry }));
 
     const defaultDir = join(repositoryRoot, ".output", "claude-code", "default");
     for (const runtimeDirName of ["projects", "sessions", "todos", "shell-snapshots", "plugins", "statsig", "file-history", "session-env"]) {
@@ -256,6 +263,31 @@ describe("Claude Code harness build", () => {
       expect(runtimeDirStats.isDirectory()).toBe(true);
       expect(runtimeDirStats.isSymbolicLink()).toBe(false);
     }
+
+    // Claude Code owns these afterwards, so they must be registered as runtime
+    // directories rather than becoming manifest-managed entries.
+    expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).toEqual([
+      "claude-code/default/file-history",
+      "claude-code/default/plugins",
+      "claude-code/default/projects",
+      "claude-code/default/session-env",
+      "claude-code/default/sessions",
+      "claude-code/default/shell-snapshots",
+      "claude-code/default/statsig",
+      "claude-code/default/todos",
+    ]);
+  });
+
+  it("does not register runtime directories for non-default profiles", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
+
+    const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output"));
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", { runtimeDirectoryRegistry }));
+
+    expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).toEqual([]);
   });
 
   it("builds per-profile CLAUDE.md and symlinks the other shared entries", async () => {

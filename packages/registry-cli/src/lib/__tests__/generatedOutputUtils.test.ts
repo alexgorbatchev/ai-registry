@@ -1,11 +1,13 @@
 import assert from "node:assert";
 import { afterAll, describe, expect, it } from "bun:test";
+import { existsSync } from "fs";
 import { mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import {
   collectGeneratedOutputEntries,
   createGeneratedOutputManifest,
+  createRuntimeDirectoryRegistry,
   getGeneratedOutputDrift,
   syncManagedGeneratedOutputs,
 } from "../generatedOutputUtils";
@@ -113,5 +115,142 @@ describe("generatedOutputUtils", () => {
     expect(await readlink(join(outputDir, "pi", "developer", "sessions"))).toBe(
       join(outputDir, "pi", "default", "sessions"),
     );
+  });
+
+  describe("runtime directories", () => {
+    it("creates runtime directories under the staging root and records them relative to it", async () => {
+      const repositoryRoot = await createTestDirectory();
+      const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
+      const registry = createRuntimeDirectoryRegistry(stagingDir);
+
+      await registry.ensureRuntimeDirectory(join(stagingDir, "claude-code", "default", "todos"));
+      await registry.ensureRuntimeDirectory(join(stagingDir, "claude-code", "default", "sessions"));
+      await registry.ensureRuntimeDirectory(join(stagingDir, "claude-code", "default", "todos"));
+
+      expect(existsSync(join(stagingDir, "claude-code", "default", "todos"))).toBe(true);
+      expect(existsSync(join(stagingDir, "claude-code", "default", "sessions"))).toBe(true);
+      expect(registry.getRuntimeDirectoryPaths()).toEqual([
+        "claude-code/default/sessions",
+        "claude-code/default/todos",
+      ]);
+    });
+
+    it("rejects runtime directories outside the staging root", async () => {
+      const repositoryRoot = await createTestDirectory();
+      const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
+      const registry = createRuntimeDirectoryRegistry(stagingDir);
+
+      await expect(registry.ensureRuntimeDirectory(join(repositoryRoot, "elsewhere"))).rejects.toThrow(
+        `Runtime directory must be inside the generated output root ${stagingDir}: ${join(repositoryRoot, "elsewhere")}`,
+      );
+    });
+
+    it("leaves runtime directories and their contents out of the collected entries", async () => {
+      const repositoryRoot = await createTestDirectory();
+      const outputDir = join(repositoryRoot, ".output");
+
+      await writeTestFile(repositoryRoot, ".output/claude-code/default/settings.json", "{}\n");
+      await writeTestFile(repositoryRoot, ".output/claude-code/default/todos/task.json", "[]\n");
+      await mkdir(join(outputDir, "claude-code", "default", "statsig"), { recursive: true });
+
+      const entries = await collectGeneratedOutputEntries(outputDir, {
+        runtimeDirectoryPaths: ["claude-code/default/statsig", "claude-code/default/todos"],
+      });
+      const settingsEntry = entries["claude-code/default/settings.json"];
+      assert(settingsEntry?.kind === "file");
+
+      expect(entries).toEqual({
+        "claude-code": { kind: "directory" },
+        "claude-code/default": { kind: "directory" },
+        "claude-code/default/settings.json": { kind: "file", checksum: settingsEntry.checksum },
+      });
+    });
+
+    it("does not report drift when a runtime directory disappears between builds", async () => {
+      const repositoryRoot = await createTestDirectory();
+      const outputDir = join(repositoryRoot, ".output");
+      const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
+      const runtimeDirectoryPaths = ["claude-code/default/todos"];
+
+      await writeTestFile(repositoryRoot, ".tmp/generated-output-staging/claude-code/default/settings.json", "{}\n");
+      await mkdir(join(stagingDir, "claude-code", "default", "todos"), { recursive: true });
+
+      const nextEntries = await collectGeneratedOutputEntries(stagingDir, { runtimeDirectoryPaths });
+      await syncManagedGeneratedOutputs({
+        nextEntries,
+        nextOutputDir: stagingDir,
+        outputDir,
+        previousManifest: null,
+        runtimeDirectoryPaths,
+      });
+      const manifest = createGeneratedOutputManifest(nextEntries);
+      expect(existsSync(join(outputDir, "claude-code", "default", "todos"))).toBe(true);
+
+      await rm(join(outputDir, "claude-code", "default", "todos"), { recursive: true, force: true });
+
+      const currentEntries = await collectGeneratedOutputEntries(outputDir, { runtimeDirectoryPaths });
+      expect(getGeneratedOutputDrift(manifest, currentEntries)).toEqual([]);
+    });
+
+    it("ignores runtime directories that an older manifest still tracks when computing drift", () => {
+      const manifest = createGeneratedOutputManifest({
+        "claude-code/default/settings.json": { kind: "file", checksum: "managed" },
+        "claude-code/default/todos": { kind: "directory" },
+      });
+
+      const drift = getGeneratedOutputDrift(
+        manifest,
+        { "claude-code/default/settings.json": { kind: "file", checksum: "managed" } },
+        { runtimeDirectoryPaths: ["claude-code/default/todos"] },
+      );
+
+      expect(drift).toEqual([]);
+    });
+
+    it("recreates missing runtime directories during sync without touching their contents", async () => {
+      const repositoryRoot = await createTestDirectory();
+      const outputDir = join(repositoryRoot, ".output");
+      const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
+      const runtimeDirectoryPaths = ["claude-code/default/sessions", "claude-code/default/todos"];
+
+      await writeTestFile(repositoryRoot, ".output/claude-code/default/sessions/history.jsonl", "keep\n");
+      await mkdir(join(stagingDir, "claude-code", "default", "sessions"), { recursive: true });
+      await mkdir(join(stagingDir, "claude-code", "default", "todos"), { recursive: true });
+
+      await syncManagedGeneratedOutputs({
+        nextEntries: await collectGeneratedOutputEntries(stagingDir, { runtimeDirectoryPaths }),
+        nextOutputDir: stagingDir,
+        outputDir,
+        previousManifest: null,
+        runtimeDirectoryPaths,
+      });
+
+      expect(await readFile(join(outputDir, "claude-code", "default", "sessions", "history.jsonl"), "utf-8")).toBe("keep\n");
+      expect(existsSync(join(outputDir, "claude-code", "default", "todos"))).toBe(true);
+    });
+
+    it("keeps a runtime directory that an older manifest still tracked as managed", async () => {
+      const repositoryRoot = await createTestDirectory();
+      const outputDir = join(repositoryRoot, ".output");
+      const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
+      const runtimeDirectoryPaths = ["claude-code/default/todos"];
+
+      await mkdir(join(outputDir, "claude-code", "default", "todos"), { recursive: true });
+      await mkdir(join(stagingDir, "claude-code", "default", "todos"), { recursive: true });
+
+      await syncManagedGeneratedOutputs({
+        nextEntries: await collectGeneratedOutputEntries(stagingDir, { runtimeDirectoryPaths }),
+        nextOutputDir: stagingDir,
+        outputDir,
+        previousManifest: createGeneratedOutputManifest({
+          "claude-code": { kind: "directory" },
+          "claude-code/default": { kind: "directory" },
+          "claude-code/default/todos": { kind: "directory" },
+        }),
+        runtimeDirectoryPaths,
+      });
+
+      expect(existsSync(join(outputDir, "claude-code", "default", "todos"))).toBe(true);
+    });
   });
 });

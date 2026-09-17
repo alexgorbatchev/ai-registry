@@ -31,9 +31,11 @@ const DEFAULT_PROFILE_NAME = "default";
 const AGENTS_MD_VFS_FILE_NAME = "agents-md-vfs.js";
 const AGENTS_MD_VFS_VENDOR_PATH = join("vendor", "claude-agents-md", AGENTS_MD_VFS_FILE_NAME);
 
-// Directories Claude Code writes runtime state into. They are materialized as static
-// directories in the default profile root so every generated profile shares one
-// history, plugin install, and session store instead of diverging per profile.
+// Directories Claude Code writes runtime state into. They are materialized in the
+// default profile root so every generated profile shares one history, plugin
+// install, and session store instead of diverging per profile. Claude Code creates,
+// fills, and prunes them afterwards, so they are registered as runtime directories:
+// recreated when missing but never tracked by the manifest or reported as drift.
 const SHARED_RUNTIME_DIR_NAMES = [
   "file-history",
   "plugins",
@@ -88,9 +90,9 @@ async function stageHarnessFiles(context: IProfileBuildContext, profileOutputDir
   );
 }
 
-async function stageSharedRuntimeDirectories(profileOutputDir: string): Promise<void> {
+async function stageSharedRuntimeDirectories(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
   for (const runtimeDirName of SHARED_RUNTIME_DIR_NAMES) {
-    await mkdir(join(profileOutputDir, runtimeDirName), { recursive: true });
+    await context.buildSupport.ensureRuntimeDirectory(join(profileOutputDir, runtimeDirName));
   }
 }
 
@@ -169,7 +171,7 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
 
   if (isDefaultProfile) {
     await stageHarnessFiles(context, profileOutputDir);
-    await stageSharedRuntimeDirectories(profileOutputDir);
+    await stageSharedRuntimeDirectories(context, profileOutputDir);
     await stageAgentsMdVfs(context, profileOutputDir);
     await mkdir(join(profileOutputDir, "commands"), { recursive: true });
 

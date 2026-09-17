@@ -29,6 +29,7 @@ import { discoverProfileLocalAssets } from "../lib/discoverProfileLocalAssets";
 import {
   collectGeneratedOutputEntries,
   createGeneratedOutputManifest,
+  createRuntimeDirectoryRegistry,
   GENERATED_OUTPUT_MANIFEST_NAME,
   GENERATED_OUTPUT_MANIFEST_VERSION,
   getGeneratedOutputDrift,
@@ -289,13 +290,14 @@ async function assertGeneratedOutputsAreSafeToReplace(
   hasAutoConfirm: boolean,
   sourcePathByOutputPath: Map<string, string>,
   templateContext: Record<string, string>,
+  runtimeDirectoryPaths: readonly string[],
 ): Promise<void> {
   if (!manifest) {
     return;
   }
 
-  const currentEntries = await collectGeneratedOutputEntries(outputDir);
-  const drift = getGeneratedOutputDrift(manifest, currentEntries);
+  const currentEntries = await collectGeneratedOutputEntries(outputDir, { runtimeDirectoryPaths });
+  const drift = getGeneratedOutputDrift(manifest, currentEntries, { runtimeDirectoryPaths });
   await confirmGeneratedOutputOverwrite(
     drift,
     outputDir,
@@ -344,15 +346,6 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
     output_dir: output,
   } as const;
 
-  const buildSupport: IBuildSupport = {
-    copyDirectoryWithTemplateVariables,
-    copyPathWithTemplateVariables,
-    mergeDirectory,
-    stageProfileAssets,
-    symlinkDirectoryWithOriginalFiles,
-    writeBinScript,
-  };
-
   console.log();
 
   const existingManifest = await readGeneratedOutputManifest(output);
@@ -360,6 +353,7 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
   await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
   await mkdir(GENERATED_OUTPUT_STAGING_DIR, { recursive: true });
   const sourcePathByOutputPath = new Map<string, string>();
+  const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(GENERATED_OUTPUT_STAGING_DIR);
 
   const wrappedBuildSupport: IBuildSupport = {
     copyDirectoryWithTemplateVariables: (sourceDir, targetDir, templateContext) => {
@@ -376,6 +370,7 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
     },
     stageProfileAssets,
     writeBinScript,
+    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
   };
 
   const profileDirents = await readdir(profiles, { withFileTypes: true });
@@ -456,6 +451,8 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
   await applyTemplateVariablesToGeneratedOutput(GENERATED_OUTPUT_STAGING_DIR, TEMPLATE_CONTEXT, sourcePathByOutputPath);
   console.log("   ✅ Successfully compiled unified outputs!");
 
+  const runtimeDirectoryPaths = runtimeDirectoryRegistry.getRuntimeDirectoryPaths();
+
   await assertGeneratedOutputsAreSafeToReplace(
     existingManifest,
     output,
@@ -463,15 +460,17 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
     options.hasAutoConfirm,
     sourcePathByOutputPath,
     TEMPLATE_CONTEXT,
+    runtimeDirectoryPaths,
   );
 
-  const nextManagedEntries = await collectGeneratedOutputEntries(GENERATED_OUTPUT_STAGING_DIR);
+  const nextManagedEntries = await collectGeneratedOutputEntries(GENERATED_OUTPUT_STAGING_DIR, { runtimeDirectoryPaths });
 
   await syncManagedGeneratedOutputs({
     nextEntries: nextManagedEntries,
     nextOutputDir: GENERATED_OUTPUT_STAGING_DIR,
     outputDir: output,
     previousManifest: existingManifest,
+    runtimeDirectoryPaths,
   });
   await writeGeneratedOutputManifest(output, nextManagedEntries);
   await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });

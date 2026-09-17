@@ -12,7 +12,7 @@ import {
   symlink,
   writeFile,
 } from "fs/promises";
-import { dirname, join, relative } from "path";
+import { dirname, isAbsolute, join, relative } from "path";
 
 export const GENERATED_OUTPUT_MANIFEST_VERSION = 2;
 export const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
@@ -42,11 +42,30 @@ export interface IGeneratedOutputDrift {
   reason: "missing" | "modified";
 }
 
+export interface ICollectGeneratedOutputEntriesOptions {
+  // Output-relative directory paths that a harness tool owns at runtime. They and
+  // everything under them are left out of the collected entries, so the manifest
+  // never tracks them and their disappearance is never reported as drift.
+  runtimeDirectoryPaths?: readonly string[];
+}
+
 export interface ISyncManagedGeneratedOutputsOptions {
   nextEntries: Record<string, IGeneratedOutputManifestEntry>;
   nextOutputDir: string;
   outputDir: string;
   previousManifest: IGeneratedOutputManifest | null;
+  // Runtime directories are ensured to exist after sync but are never removed,
+  // even when an older manifest still lists them as managed entries.
+  runtimeDirectoryPaths?: readonly string[];
+}
+
+// Registers the directories a harness build materializes only so that every
+// generated profile shares them (session stores, todo lists, logs). The tool
+// creates, fills, and prunes them afterwards, so they are "ensure-present,
+// unmanaged": created in staging, recreated on sync, excluded from the manifest.
+export interface IRuntimeDirectoryRegistry {
+  ensureRuntimeDirectory(dirPath: string): Promise<void>;
+  getRuntimeDirectoryPaths(): string[];
 }
 
 function createFileChecksum(fileBuffer: Buffer): string {
@@ -65,6 +84,31 @@ function shouldIgnoreGeneratedOutputPath(relativePath: string): boolean {
     GENERATED_OUTPUT_IGNORED_BASENAMES.has(basename) ||
     pathParts.some((part) => GENERATED_OUTPUT_IGNORED_PATH_PARTS.has(part))
   );
+}
+
+function isRuntimeDirectoryPath(relativePath: string, runtimeDirectoryPaths: readonly string[]): boolean {
+  return runtimeDirectoryPaths.some(
+    (runtimeDirectoryPath) => relativePath === runtimeDirectoryPath || relativePath.startsWith(`${runtimeDirectoryPath}/`),
+  );
+}
+
+export function createRuntimeDirectoryRegistry(rootDir: string): IRuntimeDirectoryRegistry {
+  const runtimeDirectoryPaths = new Set<string>();
+
+  return {
+    async ensureRuntimeDirectory(dirPath: string): Promise<void> {
+      const relativePath = normalizeRelativePath(relative(rootDir, dirPath));
+      if (relativePath.length === 0 || relativePath.startsWith("..") || isAbsolute(relativePath)) {
+        throw new Error(`Runtime directory must be inside the generated output root ${rootDir}: ${dirPath}`);
+      }
+
+      await mkdir(dirPath, { recursive: true });
+      runtimeDirectoryPaths.add(relativePath);
+    },
+    getRuntimeDirectoryPaths(): string[] {
+      return [...runtimeDirectoryPaths].sort((leftPath, rightPath) => leftPath.localeCompare(rightPath));
+    },
+  };
 }
 
 function sortManifestEntries(
@@ -187,12 +231,14 @@ export function createGeneratedOutputManifest(
 
 export async function collectGeneratedOutputEntries(
   rootDir: string,
+  options: ICollectGeneratedOutputEntriesOptions = {},
   currentDir: string = rootDir,
 ): Promise<Record<string, IGeneratedOutputManifestEntry>> {
   if (!existsSync(currentDir)) {
     return {};
   }
 
+  const runtimeDirectoryPaths = options.runtimeDirectoryPaths ?? [];
   const collectedEntries: Record<string, IGeneratedOutputManifestEntry> = {};
   const directoryEntries = await readdir(currentDir, { withFileTypes: true });
   for (const directoryEntry of directoryEntries) {
@@ -202,7 +248,8 @@ export async function collectGeneratedOutputEntries(
     if (
       relativePath === GENERATED_OUTPUT_MANIFEST_NAME ||
       relativePath === LEGACY_GENERATED_OUTPUT_MANIFEST_NAME ||
-      shouldIgnoreGeneratedOutputPath(relativePath)
+      shouldIgnoreGeneratedOutputPath(relativePath) ||
+      isRuntimeDirectoryPath(relativePath, runtimeDirectoryPaths)
     ) {
       continue;
     }
@@ -219,7 +266,7 @@ export async function collectGeneratedOutputEntries(
       collectedEntries[relativePath] = { kind: "directory" };
       Object.assign(
         collectedEntries,
-        await collectGeneratedOutputEntries(rootDir, entryPath),
+        await collectGeneratedOutputEntries(rootDir, options, entryPath),
       );
       continue;
     }
@@ -255,13 +302,25 @@ function areManifestEntriesEqual(
   }
 }
 
+export interface IGetGeneratedOutputDriftOptions {
+  // Manifest entries under these paths are skipped: a manifest written before a
+  // directory became a runtime directory still lists it, and its absence is not drift.
+  runtimeDirectoryPaths?: readonly string[];
+}
+
 export function getGeneratedOutputDrift(
   manifest: IGeneratedOutputManifest,
   currentEntries: Record<string, IGeneratedOutputManifestEntry>,
+  options: IGetGeneratedOutputDriftOptions = {},
 ): IGeneratedOutputDrift[] {
+  const runtimeDirectoryPaths = options.runtimeDirectoryPaths ?? [];
   const drift: IGeneratedOutputDrift[] = [];
 
   for (const [relativePath, expectedEntry] of Object.entries(manifest.entries)) {
+    if (isRuntimeDirectoryPath(relativePath, runtimeDirectoryPaths)) {
+      continue;
+    }
+
     const currentEntry = currentEntries[relativePath];
     if (!currentEntry) {
       drift.push({ path: relativePath, reason: "missing" });
@@ -279,6 +338,7 @@ export function getGeneratedOutputDrift(
 export async function syncManagedGeneratedOutputs(
   options: ISyncManagedGeneratedOutputsOptions,
 ): Promise<void> {
+  const runtimeDirectoryPaths = options.runtimeDirectoryPaths ?? [];
   await mkdir(options.outputDir, { recursive: true });
 
   if (options.previousManifest) {
@@ -287,7 +347,7 @@ export async function syncManagedGeneratedOutputs(
     );
 
     for (const previousPath of previousPaths) {
-      if (previousPath in options.nextEntries) {
+      if (previousPath in options.nextEntries || isRuntimeDirectoryPath(previousPath, runtimeDirectoryPaths)) {
         continue;
       }
 
@@ -302,5 +362,9 @@ export async function syncManagedGeneratedOutputs(
   for (const nextPath of nextPaths) {
     const nextEntry = options.nextEntries[nextPath];
     await writeManagedEntry(options.nextOutputDir, options.outputDir, nextPath, nextEntry);
+  }
+
+  for (const runtimeDirectoryPath of runtimeDirectoryPaths) {
+    await mkdir(resolveManifestPath(options.outputDir, runtimeDirectoryPath), { recursive: true });
   }
 }

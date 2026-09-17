@@ -15,6 +15,7 @@ import {
   type IProfileBuildContext,
   type ITemplateContext,
 } from "../../../lib/harnessBuild";
+import { createRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "opencode-build-tests");
 
@@ -40,7 +41,7 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
   };
 }
 
-function createBuildSupport(): IBuildSupport {
+function createBuildSupport(repositoryRoot: string): IBuildSupport {
   return {
     mergeDirectory,
     stageProfileAssets,
@@ -48,6 +49,7 @@ function createBuildSupport(): IBuildSupport {
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
     symlinkDirectoryWithOriginalFiles,
+    ensureRuntimeDirectory: createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")).ensureRuntimeDirectory,
   };
 }
 
@@ -68,7 +70,7 @@ function createProfileContext(repositoryRoot: string): IProfileBuildContext {
     profileLocalCommands: [],
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(),
+    buildSupport: createBuildSupport(repositoryRoot),
   };
 }
 
@@ -82,7 +84,7 @@ function createUnifiedContext(repositoryRoot: string): import("../../../lib/harn
     harnessDir: join(repositoryRoot, "harnesses", "opencode"),
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(),
+    buildSupport: createBuildSupport(repositoryRoot),
   };
 }
 

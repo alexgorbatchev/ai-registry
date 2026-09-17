@@ -123,6 +123,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Generated outputs are written under the output_dir token.
 - All generated files for harness skills (`skills/` entries across OpenCode, Codex, Pi, and Claude Code outputs) are created as symbolic links to original source files instead of copies.
 - The generated-output manifest tracks only registry-managed entries under the output_dir token, and `bun run build` overwrites only those managed paths instead of replacing the entire output tree.
+- In a harness build plugin, create directories the harness tool owns at runtime (session stores, logs, todo lists) with `context.buildSupport.ensureRuntimeDirectory(...)` instead of `mkdir`. They stay out of the manifest, never count as drift, are never removed by sync, and are recreated when missing.
 - Verify generated files that match the change, especially:
   - `opencode/` beneath the output_dir token
   - `codex/` beneath the output_dir token

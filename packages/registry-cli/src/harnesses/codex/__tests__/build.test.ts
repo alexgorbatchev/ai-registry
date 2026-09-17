@@ -17,6 +17,7 @@ import {
   type ITemplateContext,
   type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
+import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "codex-build-tests");
 const originalArgv: string[] = [...process.argv];
@@ -27,6 +28,7 @@ type IProfileContextOverrides = {
   globalMatchedCommands?: string[];
   profileLocalSkills?: string[];
   profileLocalCommands?: string[];
+  runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry;
   systemPrompt?: string;
 };
 
@@ -52,7 +54,10 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
   };
 }
 
-function createBuildSupport(): IBuildSupport {
+function createBuildSupport(
+  repositoryRoot: string,
+  runtimeDirectoryRegistry: IRuntimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")),
+): IBuildSupport {
   return {
     mergeDirectory,
     stageProfileAssets,
@@ -60,6 +65,7 @@ function createBuildSupport(): IBuildSupport {
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
     symlinkDirectoryWithOriginalFiles,
+    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
   };
 }
 
@@ -84,7 +90,7 @@ function createProfileContext(
     profileLocalCommands: overrides.profileLocalCommands ?? ["local.md"],
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(),
+    buildSupport: createBuildSupport(repositoryRoot, overrides.runtimeDirectoryRegistry),
   };
 }
 
@@ -93,7 +99,7 @@ function createUnifiedContext(repositoryRoot: string): IUnifiedHarnessBuildConte
     harnessDir: join(repositoryRoot, "harnesses", "codex"),
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(),
+    buildSupport: createBuildSupport(repositoryRoot),
   };
 }
 
@@ -134,11 +140,21 @@ describe("Codex harness build plugin", () => {
     await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
     await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
 
-    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
+    const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output"));
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", { runtimeDirectoryRegistry }));
 
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "AGENTS.md"), "utf-8")).toBe(
       "Follow the repo guidance.\nEscalate risky changes.\n",
     );
+    // Codex owns these afterwards, so they are runtime directories, not manifest entries.
+    for (const runtimeDirName of [".tmp", "log", "sessions"]) {
+      expect((await lstat(join(repositoryRoot, ".output", "codex", "default", runtimeDirName))).isDirectory()).toBe(true);
+    }
+    expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).toEqual([
+      "codex/default/.tmp",
+      "codex/default/log",
+      "codex/default/sessions",
+    ]);
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "prompts", "review.md"), "utf-8")).toBe(
       "Review the changes.\n",
     );

@@ -18,6 +18,10 @@ const CODEX_OUTPUT_DIR_NAME = "codex";
 const CODEX_MUTABLE_STATE_DIR_NAME = "codex";
 const DEFAULT_PROFILE_NAME = "default";
 
+// Directories Codex writes runtime state into. They are materialized in the default
+// profile root so every generated profile shares them, then owned by Codex.
+const CODEX_RUNTIME_DIR_NAMES = [".tmp", "log", "sessions"];
+
 function getProfileOutputDir(outputDir: string, profileName: string): string {
   return join(outputDir, CODEX_OUTPUT_DIR_NAME, profileName);
 }
@@ -172,9 +176,11 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
 
   if (isDefaultProfile) {
     await mkdir(promptsDir, { recursive: true });
-    await mkdir(join(profileOutputDir, "sessions"), { recursive: true });
-    await mkdir(join(profileOutputDir, "log"), { recursive: true });
-    await mkdir(join(profileOutputDir, ".tmp"), { recursive: true });
+    // Codex-owned runtime state, shared by every generated profile through the
+    // default root: created here, never tracked by the manifest.
+    for (const runtimeDirName of CODEX_RUNTIME_DIR_NAMES) {
+      await context.buildSupport.ensureRuntimeDirectory(join(profileOutputDir, runtimeDirName));
+    }
     await stageMutableCodexState(context, profileOutputDir);
     await stageHarnessRules(context, profileOutputDir);
 

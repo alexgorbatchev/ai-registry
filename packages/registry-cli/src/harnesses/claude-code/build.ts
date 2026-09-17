@@ -23,6 +23,14 @@ const MEMORY_FILE_NAME = "CLAUDE.md";
 const SKILLS_DIR_NAME = "skills";
 const DEFAULT_PROFILE_NAME = "default";
 
+// Claude Code reads CLAUDE.md, not AGENTS.md. The vendored claude-agents-md preload
+// (see vendor/claude-agents-md/README.md for the pinned fork) patches node:fs inside
+// the claude process so CLAUDE.md lookups are served from a sibling AGENTS.md. It is linked into the default profile root under the
+// same name upstream installs it as (~/.claude/agents-md-vfs.js), so every generated
+// profile exposes it at $CLAUDE_CONFIG_DIR/agents-md-vfs.js for BUN_OPTIONS.
+const AGENTS_MD_VFS_FILE_NAME = "agents-md-vfs.js";
+const AGENTS_MD_VFS_VENDOR_PATH = join("vendor", "claude-agents-md", AGENTS_MD_VFS_FILE_NAME);
+
 // Directories Claude Code writes runtime state into. They are materialized as static
 // directories in the default profile root so every generated profile shares one
 // history, plugin install, and session store instead of diverging per profile.
@@ -84,6 +92,15 @@ async function stageSharedRuntimeDirectories(profileOutputDir: string): Promise<
   for (const runtimeDirName of SHARED_RUNTIME_DIR_NAMES) {
     await mkdir(join(profileOutputDir, runtimeDirName), { recursive: true });
   }
+}
+
+async function stageAgentsMdVfs(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
+  const vendoredVfsPath = join(context.templateContext.repo_root, AGENTS_MD_VFS_VENDOR_PATH);
+  if (!existsSync(vendoredVfsPath)) {
+    throw new Error(`Vendored AGENTS.md VFS does not exist: ${vendoredVfsPath}`);
+  }
+
+  await symlink(vendoredVfsPath, join(profileOutputDir, AGENTS_MD_VFS_FILE_NAME));
 }
 
 async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir: string): Promise<void> {
@@ -153,6 +170,7 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   if (isDefaultProfile) {
     await stageHarnessFiles(context, profileOutputDir);
     await stageSharedRuntimeDirectories(profileOutputDir);
+    await stageAgentsMdVfs(context, profileOutputDir);
     await mkdir(join(profileOutputDir, "commands"), { recursive: true });
 
     await context.buildSupport.stageProfileAssets(context, {
@@ -207,14 +225,15 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     // The default profile is reached through the `~/.claude` symlink that bootstrap
     // creates, so only non-default profiles need a launcher that overrides
     // CLAUDE_CONFIG_DIR. Nothing generated here shadows the real `claude` binary.
+    // The launcher also preloads the AGENTS.md VFS from the profile root it selects,
+    // matching the `claude()` shell function that covers the bare `claude` command.
+    const profileConfigDir = `{{output_dir}}/${CLAUDE_CODE_OUTPUT_DIR_NAME}/${profileEntry.name}`;
     await context.buildSupport.writeBinScript(
       context.outputDir,
       `claude-${profileEntry.name}`,
-      createExternalProfileHelper(
-        "claude",
-        "CLAUDE_CONFIG_DIR",
-        `{{output_dir}}/${CLAUDE_CODE_OUTPUT_DIR_NAME}/${profileEntry.name}`,
-      ),
+      createExternalProfileHelper("claude", "CLAUDE_CONFIG_DIR", profileConfigDir, {
+        bunPreloadScriptPath: `${profileConfigDir}/${AGENTS_MD_VFS_FILE_NAME}`,
+      }),
     );
   }
 }

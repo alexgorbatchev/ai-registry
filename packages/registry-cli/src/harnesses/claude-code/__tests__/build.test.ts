@@ -108,11 +108,14 @@ function createProfileContext(
   };
 }
 
+const AGENTS_MD_VFS_RELATIVE_PATH = join("vendor", "claude-agents-md", "agents-md-vfs.js");
+
 async function writeHarnessFixture(repositoryRoot: string): Promise<void> {
   await writeTestFile(repositoryRoot, "harnesses/claude-code/settings.json", '{\n  "theme": "dark"\n}\n');
   await writeTestFile(repositoryRoot, "harnesses/claude-code/.registry-ignore", "./fetch-source.sh\n./skills/\n");
   await writeTestFile(repositoryRoot, "harnesses/claude-code/fetch-source.sh", "#!/bin/bash\n");
   await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/harness-skill/SKILL.md", "# Harness skill\n");
+  await writeTestFile(repositoryRoot, AGENTS_MD_VFS_RELATIVE_PATH, "// vendored agents-md vfs\n");
 }
 
 function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
@@ -177,6 +180,47 @@ describe("Claude Code harness build", () => {
     for (const skillName of ["shared-skill", "local-skill", "harness-skill"]) {
       expect((await lstat(join(defaultDir, "skills", skillName, "SKILL.md"))).isSymbolicLink()).toBe(true);
     }
+  });
+
+  it("links the vendored AGENTS.md VFS into the default profile root", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
+
+    const vfsOutputPath = join(repositoryRoot, ".output", "claude-code", "default", "agents-md-vfs.js");
+    expect((await lstat(vfsOutputPath)).isSymbolicLink()).toBe(true);
+    expect(await readlink(vfsOutputPath)).toBe(join(repositoryRoot, AGENTS_MD_VFS_RELATIVE_PATH));
+    expect(await readFile(vfsOutputPath, "utf-8")).toBe("// vendored agents-md vfs\n");
+  });
+
+  it("does not link the vendored AGENTS.md VFS into non-default profiles during staging", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer"));
+
+    expect(existsSync(join(repositoryRoot, ".output", "claude-code", "developer", "agents-md-vfs.js"))).toBe(false);
+  });
+
+  it("fails when the vendored AGENTS.md VFS is missing", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await rm(join(repositoryRoot, AGENTS_MD_VFS_RELATIVE_PATH));
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+
+    await expect(getStageProfile()(createProfileContext(repositoryRoot, "default"))).rejects.toThrow(
+      `Vendored AGENTS.md VFS does not exist: ${join(repositoryRoot, AGENTS_MD_VFS_RELATIVE_PATH)}`,
+    );
   });
 
   it("keeps repo-only harness files out of the generated profile root", async () => {
@@ -247,6 +291,8 @@ describe("Claude Code harness build", () => {
     expect(await readlink(join(developerDir, "commands"))).toBe(join(outputRoot, "default", "commands"));
     expect(await readlink(join(developerDir, "sessions"))).toBe(join(outputRoot, "default", "sessions"));
     expect(await readlink(join(developerDir, "plugins"))).toBe(join(outputRoot, "default", "plugins"));
+    expect(await readlink(join(developerDir, "agents-md-vfs.js"))).toBe(join(outputRoot, "default", "agents-md-vfs.js"));
+    expect(await readFile(join(developerDir, "agents-md-vfs.js"), "utf-8")).toBe("// vendored agents-md vfs\n");
 
     // Shared commands resolve through the symlink; skills stay per-profile.
     expect(await readFile(join(developerDir, "commands", "review.md"), "utf-8")).toBe(
@@ -301,6 +347,27 @@ describe("Claude Code harness build", () => {
     const helper = await readFile(join(binDir, "claude-designer"), "utf-8");
     expect(helper).toContain('CLAUDE_CONFIG_DIR="{{output_dir}}/claude-code/designer" exec "$real_binary" "$@"');
     expect(helper).toContain("if command -v claude >/dev/null 2>&1; then");
+  });
+
+  it("preloads the AGENTS.md VFS from the profile root in launcher helpers", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, ".output/claude-code/default/settings.json", "{}\n");
+    await writeTestFile(repositoryRoot, ".output/claude-code/designer/CLAUDE.md", "designer\n");
+
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    const helper = await readFile(join(repositoryRoot, ".output", "bin", "claude-designer"), "utf-8");
+    const preloadBlock = [
+      'bun_preload_script="{{output_dir}}/claude-code/designer/agents-md-vfs.js"',
+      'case " ${BUN_OPTIONS:-} " in',
+      '  *" --require $bun_preload_script "*) ;;',
+      '  *) BUN_OPTIONS="${BUN_OPTIONS:+$BUN_OPTIONS }--require $bun_preload_script" ;;',
+      "esac",
+      "export BUN_OPTIONS",
+    ].join("\n");
+    expect(helper).toContain(preloadBlock);
+    expect(helper.indexOf(preloadBlock)).toBeLessThan(helper.indexOf('exec "$real_binary" "$@"'));
   });
 
   it("links the default Claude Code profile when bootstrap did not request an override", async () => {

@@ -1,0 +1,9 @@
+{
+  "name": "claude-agents-md",
+  "private": true,
+  "description": "Vendored alexgorbatchev/claude-agents-md (fork of hexsprite/claude-agents-md) Bun preload that serves AGENTS.md wherever Claude Code reads CLAUDE.md",
+  "license": "MIT",
+  "files": [
+    "agents-md-vfs.js"
+  ]
+}

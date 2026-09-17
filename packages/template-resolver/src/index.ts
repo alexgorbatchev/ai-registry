@@ -1,7 +1,11 @@
 import { readFile } from "fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "path";
 
-const TEMPLATE_TAG_PATTERN = /(?<!\$){{\s*([^{}]+?)\s*}}/g;
+// A single backslash immediately before `{{` escapes the tag: the backslash is
+// consumed and the tag is emitted literally. Any backslashes before that one pass
+// through untouched, so `\{{x}}` renders `{{x}}` and `\\{{x}}` renders `\{{x}}`.
+const TEMPLATE_TAG_PATTERN = /(?<!\$)(\\?){{\s*([^{}]+?)\s*}}/g;
+const ESCAPE_CHARACTER = "\\";
 const VARIABLE_NAME_PATTERN = /^[a-z0-9_]+$/;
 const ENV_NAME_PATTERN = /^[A-Z0-9_]+$/;
 const INCLUDE_PATTERN = /^include\s+"((?:[^"\\]|\\.)*)"$/;
@@ -150,10 +154,18 @@ async function renderTemplateInternal(
 
   for (const match of options.content.matchAll(TEMPLATE_TAG_PATTERN)) {
     const fullMatch = match[0];
-    const expression = match[1]?.trim() ?? "";
+    const escapeSequence = match[1] ?? "";
+    const expression = match[2]?.trim() ?? "";
     const matchIndex = match.index ?? 0;
 
     renderedContent += options.content.slice(lastIndex, matchIndex);
+
+    if (escapeSequence === ESCAPE_CHARACTER) {
+      // Drop the escaping backslash and keep the tag exactly as written.
+      renderedContent += fullMatch.slice(ESCAPE_CHARACTER.length);
+      lastIndex = matchIndex + fullMatch.length;
+      continue;
+    }
 
     if (!isOwnedTemplateExpression(expression)) {
       renderedContent += fullMatch;

@@ -12,6 +12,9 @@ This package implements the repository's build-time template resolver.
   - `{{include "path/from/repo/root.md"}}`
   - `{{env "VAR_NAME"}}`
   - `{{env "VAR_NAME" default "fallback"}}`
+  - a single leading backslash escapes any of the above, so `\{{args}}` renders `{{args}}` and `\\{{args}}` renders `\{{args}}`
+- Escaping consumes exactly one backslash, the one directly before `{{`. Earlier backslashes pass through untouched.
+- Callers must render a given file only once. Rendering twice consumes the escape on the first pass and then resolves the bare tag on the second.
 - Includes are always repository-root-relative.
 - Includes must support recursive expansion.
 - Circular includes, missing include files, unknown variables, invalid env names, and missing env vars without defaults must fail clearly.

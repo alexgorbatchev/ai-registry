@@ -237,3 +237,59 @@ test("ignores Go template expressions", async (): Promise<void> => {
 
   expect(rendered).toBe("ldflags: -X main.version={{.Version}}");
 });
+
+test("escapes a template tag with a single backslash", async (): Promise<void> => {
+  const rendered = await renderTemplate({
+    content: 'run *args:\n    mytool \\{{args}}\n',
+    sourcePath: "/repo/skill.md",
+    repositoryRoot: "/repo",
+    variables: { repo_root: "/repo" },
+  });
+
+  expect(rendered).toBe('run *args:\n    mytool {{args}}\n');
+});
+
+test("keeps preceding backslashes when escaping a template tag", async (): Promise<void> => {
+  const rendered = await renderTemplate({
+    content: "\\\\{{args}}",
+    sourcePath: "/repo/skill.md",
+    repositoryRoot: "/repo",
+    variables: { repo_root: "/repo" },
+  });
+
+  expect(rendered).toBe("\\{{args}}");
+});
+
+test("escapes owned variables so they are not resolved", async (): Promise<void> => {
+  const rendered = await renderTemplate({
+    content: "literal \\{{repo_root}} vs resolved {{repo_root}}",
+    sourcePath: "/repo/skill.md",
+    repositoryRoot: "/repo",
+    variables: { repo_root: "/repo" },
+  });
+
+  expect(rendered).toBe("literal {{repo_root}} vs resolved /repo");
+});
+
+test("escapes include and env tags", async (): Promise<void> => {
+  const rendered = await renderTemplate({
+    content: '\\{{ include "missing.md" }} and \\{{ env "NOPE" }}',
+    sourcePath: "/repo/skill.md",
+    repositoryRoot: "/repo",
+    variables: {},
+    environment: {},
+  });
+
+  expect(rendered).toBe('{{ include "missing.md" }} and {{ env "NOPE" }}');
+});
+
+test("leaves GitHub Actions expressions untouched alongside escapes", async (): Promise<void> => {
+  const rendered = await renderTemplate({
+    content: "${{ secrets.TOKEN }} and \\{{args}}",
+    sourcePath: "/repo/skill.md",
+    repositoryRoot: "/repo",
+    variables: {},
+  });
+
+  expect(rendered).toBe("${{ secrets.TOKEN }} and {{args}}");
+});

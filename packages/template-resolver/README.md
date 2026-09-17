@@ -11,6 +11,16 @@ Supported tags:
 - `{{ env "VAR_NAME" }}`
 - `{{ env "VAR_NAME" default "fallback" }}`
 
+Escaping:
+
+- a single backslash directly before a tag emits it literally and is consumed:
+  `\{{args}}` renders `{{args}}`
+- earlier backslashes pass through, so `\\{{args}}` renders `\{{args}}`
+- use this when text must document foreign templating syntax, such as justfile
+  interpolation or Go templates, that would otherwise look like a supported tag
+- render each file only once; a second pass resolves a tag whose escape the first
+  pass already consumed
+
 Design constraints:
 
 - repo-root-relative includes only

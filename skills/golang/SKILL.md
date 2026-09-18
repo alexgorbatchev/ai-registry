@@ -9,7 +9,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-09-03 15:52
+  last_modified: 2026-09-18 10:43
   status: current
 ---
 
@@ -19,20 +19,11 @@ This skill defines the non-negotiable idioms and design principles for writing G
 
 ## References
 
-- `references/setup.md` — Complete guide for initializing new Go projects, `justfile` templates, Cobra CLI setup, and XDG directory integration.
-- `references/github-ci-cd-releases.md` — GitHub Actions CI, tagged releases, GoReleaser config, or binary version metadata. 
+Read the matching file when the task goes beyond writing code:
 
----
-
-## 0. Toolchain, Build & Automation Rules
-
-- **Project Scaffolding & Setup (`go-scaffold`)**: To provision a new Go CLI or library, use `go-scaffold` (available in `$PATH`). For manual setup reference, `justfile` task automation templates, Cobra initialization, XDG directory helpers, and `.gitignore` baseline, see [references/setup.md](references/setup.md).
-- **Latest Go Version**: Always use the latest version of Go (currently at least Go 1.26+). Declare `go 1.26` or higher in `go.mod`.
-- **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory using the project's actual application name (e.g., `go build -o bin/<app-name> ./cmd/<app-name>`). Never output binaries into root or source directories, and never output literally as `bin/app` (replace `<app-name>` with the project binary name). Always git-ignore `bin/`.
-- **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
-- **CLI Framework & Argument Parsing (Cobra & cobra-help-tree)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) for CLI command structure, flags, and argument parsing. Do not use the standard library `flag` package or write custom argument parsers. For help screen output, always use `github.com/alexgorbatchev/cobra-help-tree` (`cobrahelptree.Setup(rootCmd)`) to display aligned hierarchical tree-view help screens across all command levels.
-- **Version Flag Output (`--version`)**: `--version` must return ONLY the raw version string (e.g., `1.2.3` or `v1.2.3`), followed by a newline. Do not include application names, banners, labels, or extra formatting (e.g., NOT `app version 1.2.3` or `Version: 1.2.3`). Clean version output is strictly required for automated scripting, tooling, and CI/CD validation.
-- **XDG Base Directory Specification**: Applications must strictly follow XDG Base Directory conventions (`$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_CACHE_HOME`, `$XDG_STATE_HOME`) for user configuration, data, cache, and state directories unless otherwise explicitly specified by requirements or CLI flags. Leverage standard APIs like `os.UserCacheDir()` or `os.UserConfigDir()` with appropriate fallbacks.
+- [references/setup.md](references/setup.md) — **Binding project rules** (Go version, `go-scaffold`, `bin/` output, `just`, Cobra + `cobra-help-tree`, `--version` contract, XDG paths, module `tool` directives) plus setup, `justfile`, Cobra, and `.gitignore` templates. Read before starting, restructuring, building, or releasing a project.
+- [references/github-ci-cd-releases.md](references/github-ci-cd-releases.md) — GitHub Actions CI, tagged releases, GoReleaser config, and binary version metadata.
+- [references/go-release-notes.md](references/go-release-notes.md) — Language and tooling changes in Go 1.23+, released after the model training cutoff. Read when choosing between a newer and an older idiom, raising the `go` line, or relying on a recent `go` subcommand or analyzer.
 
 ---
 
@@ -317,29 +308,7 @@ Define sentinel errors (`var ErrNotFound = errors.New(...)`) when callers need t
 
 ### 5.1 Organize by Responsibility, Not by Layer
 
-```
-// GOOD — domain-oriented
-project/
-  order/
-    order.go
-    service.go
-    store.go
-  product/
-    product.go
-    service.go
-
-// BAD — layer-oriented
-project/
-  models/
-    order.go
-    product.go
-  services/
-    order.go
-    product.go
-  repositories/
-    order.go
-    product.go
-```
+Group code by the domain concept it owns (`order/`, `product/`), never by technical layer (`models/`, `services/`, `repositories/`). A layer-oriented tree forces every feature change to touch every directory. See [references/setup.md](references/setup.md) for the full project layout.
 
 ### 5.2 Avoid Package `util`, `common`, `helpers`
 
@@ -352,10 +321,6 @@ Use `internal/` to prevent external import of implementation details. Anything n
 ### 5.4 Minimal Package API Surface
 
 A package should export the minimum needed. Start every type, function, and constant as unexported. Promote to exported only when an external package has a demonstrated need.
-
-### 5.5 Never Commit Compiled Binaries
-
-Compiled Go binaries (executables, `.exe` files, shared libraries, etc.) are platform-specific, huge, and must never be committed to git repositories. Always output binaries strictly into `bin/`, exclude `bin/` from git using `.gitignore`, and distribute compiled assets solely through CI/CD pipelines, package registries, or release platforms.
 
 ---
 
@@ -516,28 +481,15 @@ Reach for the standard library before any third-party dependency. Go's stdlib is
 
 *Exception for CLI applications*: Use Cobra (`github.com/spf13/cobra`) with `github.com/alexgorbatchev/cobra-help-tree` for CLI commands, argument handling, and tree-structured help screens instead of stdlib `flag`.
 
-### 8.1 Manage Build/Dev Tools as Module Tools
-
-For CLI tooling used by the repo (linters, generators, etc.), prefer `tool` directives in `go.mod` (Go 1.24+) over `tools.go` blank-import stubs.
-
-This keeps tool dependencies explicit and lets you use native workflows like `go get -tool`, `go install tool`, and `go tool`.
-
-Add a dependency only when it provides clear, substantial value that the stdlib cannot match with reasonable effort.
+Add a dependency only when it provides clear, substantial value that the stdlib cannot match with reasonable effort. Repo build and dev tooling is declared with `tool` directives in `go.mod`, not added as a code dependency — see [references/setup.md](references/setup.md).
 
 
 ---
 
 ## 9. Quick Reference Checklist
 
-Before producing any Go code, verify:
+Before producing any Go code, verify the following. Project provisioning, toolchain, build, and release rules have their own checklist in [references/setup.md](references/setup.md).
 
-- [ ] New Go CLI or library project is provisioned using `go-scaffold` (available in `$PATH`)
-- [ ] Go version is latest (at least Go 1.26+) declared in `go.mod`
-- [ ] Binaries are built strictly into the `bin/` folder
-- [ ] Task automation uses `just` with a `justfile` (`just build`, `just test`, etc.)
-- [ ] CLI tools use Cobra (`github.com/spf13/cobra`) with `github.com/alexgorbatchev/cobra-help-tree` for flags, subcommands, argument parsing, and tree help screens
-- [ ] `--version` returns ONLY the version string (no app name, prefix, or extra text)
-- [ ] Follows XDG Base Directory conventions (`$XDG_CONFIG_HOME`, `$XDG_CACHE_HOME`, etc.) for user paths unless explicitly specified otherwise
 - [ ] Variable names match scope distance — short for tight, descriptive for wide
 - [ ] No duplicated logic blocks — extract on second occurrence
 - [ ] Every interface has 2+ production implementations or genuine decoupling need
@@ -547,72 +499,9 @@ Before producing any Go code, verify:
 - [ ] Packages named for responsibility, not layer
 - [ ] Exported API is minimal — only what external consumers need
 - [ ] Standard library used unless a dependency provides substantial value
-- [ ] No compiled Go binaries committed to git repositories (enforced via `.gitignore` on `bin/`)
-- [ ] Module tool dependencies use `tool` directives (not `tools.go` blank imports)
 - [ ] Comments explain why, code explains what
 - [ ] Zero values are useful
 - [ ] Tests are table-driven where applicable
 - [ ] `go mod tidy -diff` is clean for module hygiene checks
 - [ ] `go vet` is clean (including modern analyzers such as `stdversion`, `tests`, `waitgroup`, and `hostport`)
 - [ ] `go fix` has been considered when upgrading/migrating older idioms
-
----
-
-## 10. Post-Cutoff Go Release Updates (Go 1.23+)
-
-Only include these when relevant. This section intentionally tracks features released after the model training cutoff.
-
-### Go 1.23 (Aug 2024)
-
-- **Language**
-  - `for range` now supports iterator functions (`func(func() bool)`, `func(func(K) bool)`, `func(func(K, V) bool)`) as range expressions.
-  - Generic type aliases were introduced as a preview behind `GOEXPERIMENT=aliastypeparams`.
-- **Tooling**
-  - Added opt-in Go telemetry (`go telemetry on|off|local`).
-  - Added `go env -changed` to print only non-default effective environment settings.
-  - Added `go mod tidy -diff` for non-mutating module tidy checks in CI.
-  - Added `godebug` directive support in `go.mod` / `go.work`.
-  - `go vet` gained the `stdversion` analyzer for version-incompatible symbol usage.
-  - `cmd/cgo` added `-ldflags` support to avoid large `CGO_LDFLAGS` argument overflow issues.
-  - `trace` became more resilient to partially broken trace data.
-
-### Go 1.24 (Feb 2025)
-
-- **Language**
-  - Generic type aliases became fully supported.
-- **Tooling**
-  - Added first-class module tool dependencies via `tool` directives in `go.mod`.
-  - Added `go get -tool` and the `tool` meta-pattern (`go get tool`, `go install tool`).
-  - `go run` and `go tool` executable outputs are now cached in the build cache.
-  - Added structured JSON build output via `go build -json` / `go install -json`; expanded `go test -json` build event reporting.
-  - Added `GOAUTH` for private module fetch authentication.
-  - `go build` now embeds main module VCS version info (including `+dirty` when applicable).
-  - Added `GODEBUG=toolchaintrace=1` for toolchain selection debugging.
-  - Cgo added `#cgo noescape` and `#cgo nocallback` performance annotations.
-  - `go vet` added `tests` analyzer and improved checks in `printf`, `buildtag`, and `copylock`.
-  - `GOCACHEPROG` cache protocol support graduated from experiment.
-
-### Go 1.25 (Aug 2025)
-
-- **Language**
-  - No language changes affecting Go programs (spec cleanup removed “core types” terminology).
-- **Tooling**
-  - `go build -asan` now enables leak detection by default at process exit.
-  - Go distributions ship fewer prebuilt auxiliary tools; non-core tools are built on demand by `go tool`.
-  - Added `ignore` directive in `go.mod` for directories excluded from package pattern matching.
-  - Added `go doc -http` to launch docs in a local web server/browser.
-  - Added `go version -m -json` for machine-readable embedded build info.
-  - Added `work` package pattern to target all workspace/main-module packages.
-  - `go` no longer auto-adds a `toolchain` line when updating `go` lines in `go.mod` / `go.work`.
-  - `go vet` added `waitgroup` and `hostport` analyzers.
-
-### Go 1.26 (Feb 2026)
-
-- **Language**
-  - Built-in `new` now accepts expressions, allowing inline initialization (for example `new(yearsSince(born))`).
-  - Generic types may now self-reference in type parameter constraints (for example `type Adder[A Adder[A]] interface { ... }`).
-- **Tooling**
-  - `go fix` was rewritten as the modernizer hub (analyzer-based fixers + `//go:fix inline` support).
-  - `go mod init` now defaults new modules to an older, broadly compatible `go` version line.
-  - `cmd/doc` and `go tool doc` were removed; `go doc` is the replacement.
-  - `pprof -http` now defaults to flame graph view.

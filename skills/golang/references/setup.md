@@ -1,15 +1,43 @@
 # Go Project Setup & Environment Reference
 
-This reference provides setup instructions, boilerplate templates, and configuration guidance for initializing new Go projects according to repository baseline standards.
+This reference provides the binding project-level rules plus setup instructions, boilerplate templates, and configuration guidance for initializing new Go projects according to repository baseline standards. Read it when starting, restructuring, building, or releasing a project. Day-to-day coding rules live in `SKILL.md`.
 
 ## Table of Contents
 
+- [0. Binding Project Rules](#0-binding-project-rules)
 - [1. Initializing a New Go Project](#1-initializing-a-new-go-project)
 - [2. Recommended Directory Structure](#2-recommended-directory-structure)
 - [3. Justfile Automation Template](#3-justfile-automation-template)
 - [4. Cobra CLI Setup, Tree Help & Version Flag](#4-cobra-cli-setup-tree-help--version-flag)
 - [5. XDG Base Directory Compliance](#5-xdg-base-directory-compliance)
 - [6. GitIgnore Baseline](#6-gitignore-baseline)
+
+---
+
+## 0. Binding Project Rules
+
+These are non-negotiable and apply to every Go project. The rest of this file shows how to satisfy them.
+
+- **Project Scaffolding & Setup (`go-scaffold`)**: To provision a new Go CLI or library, use `go-scaffold` (available in `$PATH`). The sections below cover manual setup, `justfile` task automation templates, Cobra initialization, XDG directory helpers, and the `.gitignore` baseline.
+- **Latest Go Version**: Always use the latest version of Go (currently at least Go 1.26+). Declare `go 1.26` or higher in `go.mod`.
+- **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory using the project's actual application name (e.g., `go build -o bin/<app-name> ./cmd/<app-name>`). Never output binaries into root or source directories, and never output literally as `bin/app` (replace `<app-name>` with the project binary name). Always git-ignore `bin/`.
+- **Never Commit Compiled Binaries**: Compiled Go binaries (executables, `.exe` files, shared libraries, etc.) are platform-specific, huge, and must never be committed to git repositories. Distribute compiled assets solely through CI/CD pipelines, package registries, or release platforms.
+- **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
+- **CLI Framework & Argument Parsing (Cobra & cobra-help-tree)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) for CLI command structure, flags, and argument parsing. Do not use the standard library `flag` package or write custom argument parsers. For help screen output, always use `github.com/alexgorbatchev/cobra-help-tree` (`cobrahelptree.Setup(rootCmd)`) to display aligned hierarchical tree-view help screens across all command levels.
+- **Version Flag Output (`--version`)**: `--version` must return ONLY the raw version string (e.g., `1.2.3` or `v1.2.3`), followed by a newline. Do not include application names, banners, labels, or extra formatting (e.g., NOT `app version 1.2.3` or `Version: 1.2.3`). Clean version output is strictly required for automated scripting, tooling, and CI/CD validation.
+- **XDG Base Directory Specification**: Applications must strictly follow XDG Base Directory conventions (`$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_CACHE_HOME`, `$XDG_STATE_HOME`) for user configuration, data, cache, and state directories unless otherwise explicitly specified by requirements or CLI flags. Leverage standard APIs like `os.UserCacheDir()` or `os.UserConfigDir()` with appropriate fallbacks.
+- **Build/Dev Tools as Module Tools**: For CLI tooling used by the repo (linters, generators, etc.), use `tool` directives in `go.mod` (Go 1.24+) rather than `tools.go` blank-import stubs. This keeps tool dependencies explicit and enables `go get -tool`, `go install tool`, and `go tool`.
+
+Verify before shipping a project change:
+
+- [ ] New Go CLI or library project is provisioned using `go-scaffold`
+- [ ] Go version is latest (at least Go 1.26+) declared in `go.mod`
+- [ ] Binaries are built strictly into `bin/`, and `bin/` is git-ignored with no compiled binaries committed
+- [ ] Task automation uses `just` with a `justfile` (`just build`, `just test`, etc.)
+- [ ] CLI tools use Cobra with `github.com/alexgorbatchev/cobra-help-tree` for flags, subcommands, argument parsing, and tree help screens
+- [ ] `--version` returns ONLY the version string (no app name, prefix, or extra text)
+- [ ] User paths follow XDG Base Directory conventions unless explicitly specified otherwise
+- [ ] Module tool dependencies use `tool` directives (not `tools.go` blank imports)
 
 ---
 
@@ -55,6 +83,32 @@ Organize projects by domain responsibility, keeping binaries in `bin/` and main 
 ├── go.mod
 ├── go.sum
 └── justfile               # Task runner automation recipes
+```
+
+Inside `internal/`, group packages by the domain concept they own, never by technical layer:
+
+```
+// GOOD — domain-oriented
+project/
+  order/
+    order.go
+    service.go
+    store.go
+  product/
+    product.go
+    service.go
+
+// BAD — layer-oriented
+project/
+  models/
+    order.go
+    product.go
+  services/
+    order.go
+    product.go
+  repositories/
+    order.go
+    product.go
 ```
 
 ---

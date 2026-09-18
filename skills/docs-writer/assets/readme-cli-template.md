@@ -1,6 +1,6 @@
-# Standard CLI README Template
+# CLI README Template
 
-Use the following template for all CLI repositories. Every section must appear in this order.
+Use this template for CLI repositories. The rules it embodies are in `../references/readme.md` (shared) and `../references/readme-cli.md` (CLI-specific). Replace every placeholder with verified project evidence; never ship placeholder text.
 
 ---
 
@@ -21,17 +21,18 @@ A fast, lightweight CLI tool to process and synchronize local datasets with remo
 
 # How it Really Works
 
-- Traverses the filesystem using non-blocking directory iterators and computes blake3 hashes in worker threads.
-- Queries the remote bucket metadata via HTTP/2 concurrent HEAD requests to compute a differential DAG.
-- Streams chunked multipart payloads with backpressure-aware buffers and atomic commit manifests.
+- Files are matched by their contents rather than their timestamps, so renaming or re-saving a file never causes a second upload.
+- Only the parts of a file that differ from the remote copy are sent, and an interrupted run resumes from the last committed chunk instead of starting over.
+- Each run writes its audit report to `$XDG_DATA_HOME/mytool/reports/<timestamp>.json` and leaves earlier reports in place, so nothing is overwritten between runs.
+- The report path is printed to stdout and all progress goes to stderr, so redirecting stdout captures the path alone.
 
 # Prerequisites
 
-- [Access Token](https://example.com/tokens) - If accessing authenticated remote storage.
+- [Access Token](https://example.com/tokens) - Required for authenticated remote storage. Set `MYTOOL_TOKEN` or pass `--token`.
 
 # Installation
 
-Download the prebuilt binary for your platform from the [latest release](https://github.com/username/mytool/releases/latest).
+Download the prebuilt binary for your platform from the [latest release](https://github.com/username/mytool/releases/latest), replacing `X.X.X` with the version shown on that page.
 
 ```bash
 # macOS (Apple Silicon)
@@ -46,6 +47,13 @@ mytool sync ./data
 
 # Force overwrite with verbose logging
 mytool sync ./data --force --verbose
+```
+
+Sample Output:
+```
+scanning ./data ... 128 files
+uploading 12 changed files ... done
+report: ~/.local/share/mytool/reports/2026-09-18T10-43-00.json
 ```
 
 # Options & Flags

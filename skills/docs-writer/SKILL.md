@@ -1,16 +1,16 @@
 ---
 name: docs-writer
-description: Read, write, rewrite, reorganize, and archive internal and project documentation including README.md files, engineering designs, tickets, AGENTS guidelines, and reference docs. Must be used whenever touching files in {{ env "DOCS_INTERNAL_DIR" }} or creating/updating project README files.
+description: Read, write, rewrite, reorganize, and archive project and internal documentation including README.md files for CLI tools and libraries, engineering designs, tickets, AGENTS guidelines, runbooks, and reference docs. Must be used whenever creating or updating a project README.md, or touching files in {{ env "DOCS_INTERNAL_DIR" }}.
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-04 11:44
-  last_modified: 2026-08-24 14:55
+  last_modified: 2026-09-18 11:12
   status: current
 ---
 
 # Docs Writer
 
-Write and manage high-quality technical documentation for people who work inside the repository or organization (runbooks, designs, tickets, AGENTS guidelines, and READMEs).
+Write and manage high-quality technical documentation: public-facing project `README.md` files for CLI tools and libraries, plus the internal runbooks, engineering designs, tickets, and AGENTS guidelines that people working inside the repository or organization rely on.
 
 Keep all content strictly grounded in actual source materials, write in a factual current-state tone, and enforce appropriate metadata lifecycles on all documents.
 
@@ -71,9 +71,12 @@ For maintaining, generating, auditing, or topology splits of canonical root or n
 -   **Templates:** Use `assets/agents-templates.md`
 
 ### 4. Repository READMEs (README.md)
-For writing, structuring, or updating public-facing or internal project READMEs:
--   **Guidelines:** Read `references/readme.md`
--   **Template:** Use `assets/readme-template.md`
+This skill owns README structure, tone, and content for every project, CLI or not. Read the shared contract first, then exactly one variant:
+-   **Shared contract (always):** Read `references/readme.md`
+-   **CLI tools and terminal programs:** Read `references/readme-cli.md`, use `assets/readme-cli-template.md`
+-   **Libraries, packages, services, applications:** Read `references/readme-library.md`, use `assets/readme-library-template.md`
+
+Shared rules live only in `references/readme.md`. Never copy them into a variant file, another skill, or a project.
 
 ---
 

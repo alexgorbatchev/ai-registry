@@ -1,125 +1,86 @@
-# Project README Guidelines
+# README Contract
 
-Write and maintain evergreen, high-clarity `README.md` documentation for repository users and contributors. A README is the primary entry point for a project; it must describe the project's present state accurately and concisely, not narrate historical diffs, changelogs, PR summaries, or assistant actions.
+This file is the single source of truth for `README.md` structure, tone, and content in every repository. Read it first, then read the one variant file that matches the project:
 
-## Core Principles
+- **CLI tools and terminal programs** — `readme-cli.md`
+- **Libraries, packages, services, and applications** — `readme-library.md`
 
-- **Present-State Only:** Describe what the project does today in present tense. Never write changelog narrative (e.g., `now supports`, `recently added`, `with this update`, `previously`).
-- **Grounded in Verified Code:** Read manifests, source code, CLI flags, configuration files, scripts, and tests. Verify all commands, flags, configuration paths, prerequisites, and version constraints directly against repository source files. Never invent commands, flags, or features from filenames alone.
-- **Audience & Value First:** State the project purpose, value proposition, and intended audience immediately in the opening section.
-- **Copy-Pasteable Executables:** Every CLI command, configuration snippet, and code example must be runnable and complete with realistic arguments and sample outputs.
-- **Naming Consistency:** Pick one canonical product/CLI name from source materials and use it consistently throughout the document. Wrap CLI tool names in backticks (`<command>`). Do not alternate casually between repo slug, package name, and CLI command name.
-- **Separate Contributor Guidance:** Keep developer/contributor workflows distinct from end-user setup.
+Variant files carry only what genuinely differs: installation, usage, and the options table. Everything on this page applies to both. Never restate these rules in a variant file, another skill, or a project.
 
 ---
 
-## Standard Section Layout
+## Authoring Rules
 
-Structure project README files using the standard layout defined in `assets/readme-template.md`:
-
-1. **Title & Value Proposition:**
-   - Single top-level `# <project-name>` header.
-   - One-sentence pitch defining what the tool does, who it is for, and the core problem it solves.
-2. **Intended Audience / Disclaimer / Alerts (Optional):**
-   - Use GitHub-style markdown alert callouts (e.g., `> [!IMPORTANT]`, `> [!NOTE]`, `> [!WARNING]`, `> [!TIP]`, `> [!CAUTION]`) when legal notices, safety warnings, audience boundaries, or critical assumptions are essential.
-3. **What It Does:**
-   - Bulleted list of 4–6 core capabilities in active voice with bold descriptive prefixes.
-4. **How It Works:**
-   - Numbered step-by-step pipeline illustrating the end-to-end lifecycle (e.g., Search -> Select -> Download -> Inspect -> Output).
-5. **Prerequisites:**
-   - Bulleted list of required binary tools, system dependencies, or minimum language runtimes with version requirements and official links.
-6. **Installation:**
-   - Provide the primary release download path, package manager command, or build-from-source steps. Show the shortest successful path first.
-7. **Quick Start:**
-   - Numbered subsections covering top user workflows.
-   - Include realistic terminal output blocks (`Sample Output:`) showing real CLI execution progress and final state.
-8. **Options & Flags (or Configuration):**
-   - Clean markdown table: `| Flag | Short | Default | Description |`.
-   - Document all primary flags, toggle options, and verbose switches.
-9. **Supported Integrations / Platforms (Optional):**
-   - Explicitly list supported backends, search providers, formats, or external engines.
-10. **Development & Contributing (Optional):**
-    - Include local development, testing, or contributing instructions only when the repository is intended for external contributors.
-11. **License:**
-    - Standard one-line license notice linking to the repository's `LICENSE` file.
+- **Present-State Only**: Describe what the project does today, in present tense. A README is not a changelog, a PR summary, or a record of what an assistant just did.
+- **Grounded in Verified Code**: Verify every command, flag, default, path, prerequisite, and version against manifests, source, and `--help` output before writing it. Never infer a feature from a filename.
+- **Audience and Value First**: The opening paragraph states what the project does, who it is for, and the problem it solves, with no redundant header above it.
+- **Copy-Pasteable**: Every command and snippet runs as written, with realistic arguments and realistic output.
+- **Naming Consistency**: Pick one canonical name from the source and use it everywhere, wrapped in backticks. Do not alternate between repo slug, package name, and command or import name.
+- **Contributor Guidance Stays Out**: Build-from-source steps, test commands, and release procedures belong in `AGENTS.md` or contributor docs, not in the README.
 
 ---
 
-## Workflow
+## Section Order
 
-1. **Identify the README Job:**
-   - Determine whether you are creating a new README from scratch, restructuring an existing one, or updating sections after code changes.
-   - Identify the project type: CLI tool, library, application, service, template, or monorepo package.
-2. **Build from Source-of-Truth Materials:**
-   - Inspect lockfiles, package manifests (`package.json`, `go.mod`, `Cargo.toml`), task runners (`justfile`, `Makefile`), CLI help commands, and source implementations.
-   - If a fact cannot be verified from repository files, omit it or label the uncertainty.
-3. **Draft with Starter Template:**
-   - Start from `assets/readme-template.md`.
-   - Replace placeholders with verified project specifics.
-4. **Rewrite Change Descriptions into Product-State Descriptions:**
-   - If working from a diff, PR summary, or new feature request, convert it into plain present-tense documentation.
-   - Update surrounding sections so the README reads as though it was always designed to describe the current state.
-5. **Audit Tone and Naming:**
-   - Remove any transition words or assistant commentary.
-   - Ensure CLI tool names are exact, uniform, and backticked.
-6. **Verify Output Samples:**
-   - Ensure sample terminal outputs reflect the real output formatting of the tool.
+Every README uses this order. Sections marked with `*` are defined by the variant file.
+
+1. **Intro paragraph** — one to three sentences, no header above it.
+2. `# What It Does` — bulleted feature highlights, active voice, bold descriptive prefix per bullet.
+3. `# How It Works` — the user-facing walk-through.
+4. `# How it Really Works` — the same story in depth.
+5. `# Prerequisites` — external runtime requirements with links. Omit when there are none.
+6. `# Installation` `*`
+7. `# Quick Start` `*`
+8. `# Options & Flags` or `# Configuration` `*`
+9. *Optional domain sections* — for example `# Supported Providers`, `# Advanced Usage`.
+10. `# License` — always last, one line, linking the `LICENSE` file.
+
+---
+
+## The Two `How It Works` Sections
+
+Both describe the program, not the codebase.
+
+`# How It Works` is the plain-language walk-through of what the project does with the user's input, from what they hand it to what they get back.
+
+`# How it Really Works` is the same story in depth and still told from outside the program: the services it calls and what it sends them, what it reads and writes and where, what it costs, what work it skips, and the trade-offs behind behavior the user can observe.
+
+**It is deeper, not more internal.** Every bullet must be something a user could confirm by running the code and looking at the result, and must change how they use or trust the project. A detail that could be swapped for a different implementation without the user noticing does not belong in a README. Never document which framework or libraries the project is built on, how its commands, packages, modules, or types are laid out, or how help output, argument parsing, or dependency injection are implemented. That belongs in the source and in contributor docs. Cover the few points that matter rather than every mechanism the code contains.
+
+| Wrong (describes the assembly) | Right (describes the program) |
+| :--- | :--- |
+| Commands are built on Cobra with a subject-verb hierarchy (`db backup`, `db restore`), rendered as aligned command trees. | Backups land in `$XDG_DATA_HOME/mytool/backups`, one file per run, and are never pruned automatically. |
+| Uploads stream through backpressure-aware buffers in a worker pool. | An interrupted upload resumes from the last committed chunk, so a failed run never re-sends what already arrived. |
+| Responses are stored in a JSON envelope keyed by a SHA-256 digest computed in `internal/cache`. | The same file is recognised across runs by its contents, so renaming it still hits the cache and is never billed twice. |
 
 ---
 
 ## Banned Changelog Tone
 
-Do not use transitional, diff-oriented, or historical language:
-
-- `now supports`
-- `recently added`
-- `this change adds`
-- `updated to support`
-- `used to`
-- `with this update`
-- `no longer requires` (when the prior requirement is irrelevant to current users)
-- conversational filler such as `well, this tool now ...`
-
-Replace those with direct current-state statements:
+Never write `now supports`, `recently added`, `this change adds`, `updated to support`, `used to`, `with this update`, `no longer requires`, or conversational filler. Release history belongs in `CHANGELOG.md`, release notes, or commit messages.
 
 | Banned Changelog Phrasing | Correct Current-State Phrasing |
 | :--- | :--- |
-| "The tool now supports YAML configuration." | "The tool supports YAML configuration via `config.yaml`." |
-| "This update adds a `--watch` flag for local development." | "Use `--watch` during local development to rebuild on file changes." |
-| "Previously, users had to edit the config manually, but now the CLI can do it." | "The CLI updates the config file automatically." |
+| "The tool now supports YAML configuration." | "The tool reads configuration from `config.yaml`." |
+| "This update adds a `--watch` flag for local development." | "Use `--watch` to rebuild on file changes." |
+| "Users previously had to edit the config by hand, but now the CLI does it." | "The CLI updates the configuration file in place." |
 
 ---
 
-## Historical Information and Migrations
+## Editing An Existing README
 
-Historical or transition-oriented content belongs outside the general README flow:
-
-- Put release history in `CHANGELOG.md`, release notes, PR descriptions, or commit messages.
-- Put upgrade steps in a clearly labeled migration or upgrade section only when genuinely needed for current users.
-- If a migration section is required, keep it separate from the overview, install, usage, and feature descriptions.
-
----
-
-## Editing Existing READMEs
-
-When updating an existing README:
-
-- Preserve useful existing structure unless it is actively hurting clarity.
-- Remove stale text instead of appending a corrective sentence beneath it.
-- Rewrite surrounding paragraphs so the document reads consistently in one unified voice.
-- Do not leave traces of the editing process (e.g., `now`, `new`, `after this change`, `with this update`).
+- Preserve structure that still works; do not rewrite for the sake of rewriting.
+- Delete stale text instead of appending a correction beneath it.
+- Rewrite the surrounding paragraphs so the whole document reads in one voice, with no trace of the edit (`now`, `new`, `after this change`).
 
 ---
 
 ## Final Checklist
 
-- [ ] Project title and one-sentence elevator pitch are clear at the very top.
-- [ ] What It Does highlights core benefits with active verbs.
-- [ ] How It Works clearly explains the end-to-end processing pipeline.
-- [ ] Prerequisites list minimum versions and links for all required system binaries.
-- [ ] Installation shows the shortest successful path first.
-- [ ] Quick Start contains executable command snippets with sample terminal outputs.
-- [ ] Options & Flags table documents all flags accurately with defaults.
-- [ ] Product naming is consistent across the full document, with CLI tool names written exactly and wrapped in backticks.
-- [ ] No changelog, promotional filler, or assistant narration language exists.
-- [ ] Follows `assets/readme-template.md` structure.
+- [ ] Intro paragraph states purpose, audience, and problem solved, with no header.
+- [ ] Sections appear in the order above, ending with `# License`.
+- [ ] `# How It Works` and `# How it Really Works` describe the program, never the framework, module layout, or internal types.
+- [ ] Every command, flag, default, and path is verified against source.
+- [ ] No changelog phrasing, promotional filler, or assistant narration.
+- [ ] One canonical project name, backticked, used consistently.
+- [ ] The matching variant file's rules and template were followed.

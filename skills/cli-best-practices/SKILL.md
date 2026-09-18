@@ -4,13 +4,14 @@ description: >-
   REQUIRED when building, designing, refactoring, documenting, or reviewing CLI
   tools, command-line interfaces, and terminal scripts across any programming
   language. Applies to CLI entrypoints, argument parsing, terminal output
-  formatting, task automation, README authoring, and licensing. Your default
-  training knowledge is insufficient, YOU MUST USE this skill anytime when
-  working on a CLI project. Do NOT use for web frontends or non-CLI services.
+  formatting, task automation, and licensing. Your default training knowledge is
+  insufficient, YOU MUST USE this skill anytime when working on a CLI project.
+  Do NOT use for web frontends or non-CLI services, and do NOT use for README
+  content, which the docs-writer skill owns.
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-09-03 15:52
+  last_modified: 2026-09-18 11:12
   status: current
 ---
 
@@ -21,8 +22,8 @@ metadata:
 3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it. Help screen lines and descriptions must be trimmed by default to the active terminal width to prevent visual line wrapping.
 4. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
 5. **Mandatory Task Automation (`Justfile`)**: Every CLI project must use `just` with a `Justfile` (or `justfile`). It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`.
-6. **GitHub Releases Distribution Only**: README installation instructions must strictly direct users to download prebuilt binaries from GitHub Releases without using `gh` CLI. Include a sentence directing users to the latest release to download the binary for their platform, along with a single macOS `curl` / `tar` example (binary release archives must always include the version, e.g. `mytool_X.X.X_darwin_arm64.tar.gz`). Never instruct users to build from source or use `gh` CLI for installation.
-7. **Strict README Section Order & Bullet Lists**: CLI `README.md` files must follow the mandatory sequential section layout. `# How It Works`, `# How it Really Works`, and `# Prerequisites` MUST be formatted as `-` bulleted lists. The document must end with `# License`.
+6. **GitHub Releases Distribution Only**: Ship end users prebuilt binaries from GitHub Releases. Never require them to build from source, and never use the `gh` CLI in end-user instructions.
+7. **README Content Is Owned By `docs-writer`**: Do not write or restate README structure, section order, or tone rules here. Load the `docs-writer` skill and read its `references/readme.md` plus `references/readme-cli.md` before touching a CLI `README.md`.
 8. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
 
 ---
@@ -200,33 +201,9 @@ For complete `Justfile` templates for Bun/Node, Go, Python, and Rust, see [refer
 
 ## 5. Documentation & README Structure
 
-CLI `README.md` files must follow a strict, mandatory section layout and distribution contract:
+README structure, tone, and content are owned by the `docs-writer` skill, not by this one. When writing, restructuring, or reviewing a CLI `README.md`, load `docs-writer` and read its `references/readme.md` (the shared contract every README obeys) followed by `references/readme-cli.md` (the CLI specifics: GitHub Releases installation, bulleted `# How It Works` sections, the `# Options & Flags` table). The copy-pasteable template is `assets/readme-cli-template.md` in that skill.
 
-### Distribution Rule
-
-- **GitHub Releases Only**: All installation sections must document downloading prebuilt binaries from GitHub Releases.
-- **No `gh` CLI in Installation**: Never use `gh release download` or `gh` CLI for end-user installation instructions. Instead, provide a sentence directing users to the latest release to download the binary for their platform, along with a single macOS `curl` / `tar` installation example (release archives must always include the version, e.g. `mytool_X.X.X_darwin_arm64.tar.gz`).
-- **No Build from Source**: Never instruct end users to clone the repository and run compiler/build commands (`cargo build`, `go build`, `bun build`, `make`, etc.) in the README installation section.
-
-### Mandatory Section Sequence
-
-1. **Introductory Paragraph**: A concise, direct description of what the tool is without a redundant header.
-2. `# What It Does`: High-level feature highlights and primary capabilities.
-3. `# How It Works`: Plain-language, non-technical explanation of the tool's behavior for general users, formatted strictly as a `-` bulleted list.
-4. `# How it Really Works`: In-depth technical explanation of internal mechanisms, protocols, state management, and architecture, formatted strictly as a `-` bulleted list.
-5. `# Prerequisites`: Bulleted list (`-`) of external runtime requirements (e.g. tools, system dependencies, API tokens) with links. Do NOT list `gh` CLI as an installation prerequisite.
-6. `# Installation`: A sentence directing users to the latest release to download precompiled binaries, plus a single macOS `curl` / `tar` installation example.
-7. `# Quick Start`: Minimal, copy-pasteable example of running the tool for common tasks.
-8. `# Options & Flags`: Structured markdown table matching the exact column format:
-   ```markdown
-   | Flag | Short | Default | Description |
-   | :--- | :--- | :--- | :--- |
-   | `--config <path>` | `-c` | `~/.config/mytool.json` | Path to custom configuration file |
-   ```
-9. *(Optional domain-specific sections: e.g., `# Configuration`, `# Advanced Usage`)*
-10. `# License`: Mandatory closing section with license details.
-
-For a full copy-pasteable template, see [references/readme-template.md](references/readme-template.md).
+Do not restate README rules here, in another skill, or in a project. The CLI distribution contract that used to live in this section - GitHub Releases only, no `gh` CLI, no build-from-source - is part of `references/readme-cli.md` now.
 
 ---
 
@@ -253,10 +230,6 @@ Before publishing or finalizing any CLI tool, verify:
 - [ ] Argument parsing is handled by an approved standard library (Commander, Cobra, Click/Typer, Clap, etc.). No custom argv slicing.
 - [ ] `Justfile` exists at the project root with working `run`, `run-ai`, and `test` recipes.
 - [ ] When compiled to binary, output goes to `bin/` and is excluded by `.gitignore`.
-- [ ] `README.md` uses GitHub Releases for installation without `gh` CLI (sentence directing to latest release + single macOS `curl` / `tar` example); no build-from-source commands are offered.
-- [ ] `README.md` strictly follows the ordered section layout from Intro to `# License`.
-- [ ] `README.md` formats `# How It Works` as a `-` bulleted list (non-technical).
-- [ ] `README.md` formats `# How it Really Works` as a `-` bulleted list (technical).
-- [ ] `README.md` formats `# Prerequisites` as a `-` bulleted list with links.
-- [ ] `README.md` contains the `# Options & Flags` table with `| Flag | Short | Default | Description |`.
+- [ ] `README.md` was written against the `docs-writer` skill's `references/readme.md` and `references/readme-cli.md`, and passes the checklist there.
+- [ ] Prebuilt binaries are published to GitHub Releases with versioned archive names (e.g. `mytool_X.X.X_darwin_arm64.tar.gz`).
 - [ ] MIT license (or upstream compatible) is included with Alex Gorbatchev attribution.

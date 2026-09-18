@@ -19,6 +19,7 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 
 - Keep shipped Claude Code config under `harnesses/claude-code/`, using Claude Code's native config-directory layout (`settings.json`, `commands/`, `agents/`, `output-styles/`, and so on).
 - Keep the Claude Code unified-output plugin in `packages/registry-cli/src/harnesses/claude-code/build.ts`.
+- Keep `harnesses/claude-code/settings.json` keys sorted alphabetically, nested objects included. Claude Code rewrites that file with sorted keys whenever a setting changes in the app (theme, permissions, and so on). If the checked-in source uses any other order, the app's rewrite reads as external drift and the next `bun run build` refuses to run until it is confirmed with `-y`.
 - Every file under `harnesses/claude-code/` except `skills/` is copied verbatim into the generated `default` profile root, so new native config surfaces need no build changes. `skills/` is excluded through `.registry-ignore` because the build symlinks those bundles into every generated profile root instead of copying them.
 - Put Claude Code-only shipped skills under `harnesses/claude-code/skills/`; the build merges them into each generated `.output/claude-code/<profile>/skills/` root.
 - The Claude Code harness treats `.output/claude-code/default/` as the shared Claude Code base. Every non-default generated profile root under `.output/claude-code/<profile>/` symlinks all top-level entries from `default/` except `CLAUDE.md` and `skills/`.

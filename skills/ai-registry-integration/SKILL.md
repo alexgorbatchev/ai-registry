@@ -2,6 +2,10 @@
 name: ai-registry-integration
 description: Add or update content in the AI registry. Use when a user needs to create or modify skills, commands, profiles, harness overrides, vendored skills, or related registry documentation in this repository.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-04-17 21:08
+  last_modified: 2026-09-18 10:43
+  status: current
 ---
 
 # AI Registry Integration
@@ -45,18 +49,18 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 - Create a folder under the skills_dir token for the new skill.
 - Put the main instructions in `SKILL.md` within that skill folder.
-- Start `SKILL.md` with YAML frontmatter containing `name`, `description`, and `author: alexgorbatchev`.
+- Start `SKILL.md` with YAML frontmatter containing `name`, `description`, `author: alexgorbatchev`, and a `metadata` block with `created_on`, `last_modified`, and `status`.
 - Keep base skills self-contained. Project-local `<base-skill>-addendum` skills are the narrow exception and may depend on the matching base skill.
 - For project-specific overrides to an existing skill, use a project-local addendum skill named `<base-skill>-addendum` instead of copying the full global skill into the project.
 - Write the addendum description so routing can discover the dependency through `name` and `description` alone: `If <base-skill> skill is used, this skill must be used as well.`
 - Put only the project-specific delta in the addendum body. When project-specific guidance conflicts with the base skill, the addendum supersedes the base skill for that project.
 - Do not make a global skill refer to project-local addenda, and do not create multiple addenda for the same base skill in one project.
 - Add bundled resources only when needed, inside the same skill folder:
-  - `packages/registry-cli/src/bin/` beneath the skill folder
+  - `scripts/` beneath the skill folder
   - `references/` beneath the skill folder
   - `assets/` beneath the skill folder
 - Keep the body procedural and specific for another AI agent.
-- Validate the skill with the quick_validate script under the skill-writer skill inside the skills_dir token.
+- Validate every changed skill folder with `bun {{skills_dir}}/skill-writer/scripts/quick-validate.ts <skill-dir>` and fix every reported error before building.
 - Run `bun run build` from the repo_root token after the skill change.
 
 ## Add A Command

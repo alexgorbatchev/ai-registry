@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-09-17 10:35
+  last_modified: 2026-09-18 10:43
   status: current
 ---
 
@@ -384,7 +384,7 @@ metadata:
 ```
 
 Default to `name`, `description`, `author`, and `metadata`.
-The allowed extra keys beyond those in this toolchain are `license` and `allowed-tools`.
+The allowed extra keys beyond those in this toolchain are `license`, `allowed-tools`, and `disable-model-invocation` (set it to `true` to keep a skill out of automatic routing so it runs only when invoked by name).
 
 ##### Body
 
@@ -394,12 +394,15 @@ For a project-local `<base-skill>-addendum`, keep the body focused on the projec
 
 ### Step 5: Validating a Skill
 
-Once development of the skill is complete, self-validate its structure and frontmatter:
+Once development of the skill is complete, run the validator against every skill folder that changed:
 
-- **Format**: Ensure valid YAML frontmatter with `name`, `description`, `author`, and `metadata` keys.
-- **Metadata**: Verify `created_on` and `last_modified` are present and in strict `YYYY-MM-DD HH:MM` format, and `status` is set correctly.
-- **Constraints**: Verify that descriptions contain no `<` or `>` tags, are strings, and stay below the 1024-character maximum.
-- **Rules**: Check that all principles and critical rules are clear, imperative, and actionable.
+```bash
+bun scripts/quick-validate.ts <skill-dir-or-SKILL.md> [...more]
+```
+
+It checks frontmatter keys, kebab-case `name` matching the folder, description constraints, the `metadata` timestamp and status contract, body length, and links to bundled files. It exits non-zero on any error, so it is safe to gate a change on. Fix every reported error; warnings are judgement calls.
+
+The validator cannot judge content. Read the skill once more and confirm that its principles and critical rules are clear, imperative, and actionable.
 
 ### Step 6: Iterate
 

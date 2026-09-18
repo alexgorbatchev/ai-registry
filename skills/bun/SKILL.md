@@ -2,6 +2,10 @@
 name: bun
 description: Must use whenever Bun is used.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-04-15 21:48
+  last_modified: 2026-06-17 09:49
+  status: current
 ---
 
 # Bun

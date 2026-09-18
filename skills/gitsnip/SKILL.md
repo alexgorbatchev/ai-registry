@@ -5,6 +5,11 @@ description: >-
   GitHub without cloning entire repos. Trigger whenever there is a need to
   explore full or partial GitHub repository content, inspect remote code
   quickly, or pull only selected folders for analysis.
+author: alexgorbatchev
+metadata:
+  created_on: 2026-04-15 21:48
+  last_modified: 2026-05-06 18:53
+  status: current
 ---
 
 # gitsnip

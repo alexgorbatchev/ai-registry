@@ -2,6 +2,10 @@
 name: gitea
 description: Create and manage Gitea repositories and inspect Gitea Actions using Tea CLI and direct Gitea credential or API workflows. Use when asked to create a repo, make a "tea repo", inspect Tea logins, check whether a repo exists, configure or update a Git remote, push local branches, verify remote repository state, or diagnose CI or workflow failures on a Gitea host.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-05-06 11:40
+  last_modified: 2026-05-06 18:53
+  status: current
 ---
 # gitea
 

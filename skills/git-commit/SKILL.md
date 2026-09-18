@@ -2,6 +2,10 @@
 name: git-commit
 description: User when asked to commit changes in a Git repository.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-06-10 06:25
+  last_modified: 2026-06-10 06:25
+  status: current
 ---
 
 When requested to commit, analyze the user's intent to select the correct strategy:

@@ -1,6 +1,11 @@
 ---
 name: ast-grep
 description: Guide for writing ast-grep rules for structural code search and analysis. Use when a task requires matching syntax trees, language constructs, or code patterns that depend on structure rather than plain text, such as finding specific call shapes, declarations, or AST-level relationships. Do not use for simple text searches that `rg` or filename globbing can answer without structural matching.
+author: alexgorbatchev
+metadata:
+  created_on: 2026-04-15 21:48
+  last_modified: 2026-05-06 18:53
+  status: current
 ---
 
 # ast-grep Code Search

@@ -2,6 +2,10 @@
 name: agent-browser
 description: Use agent-browser for browser automation against real rendered web pages or web apps. Trigger when tasks require navigation, element interaction, extracting rendered data, or taking screenshots. Do not use for static fetches, direct API calls, or non-browser work.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-04-15 21:48
+  last_modified: 2026-07-01 12:50
+  status: current
 allowed-tools: Bash(agent-browser:*), Bash(npx agent-browser:*)
 ---
 

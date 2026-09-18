@@ -2,6 +2,10 @@
 name: firecrawl-cli
 description: Use to scrape or crawl websites, map URLs, search the web, extract structured data from web pages, or run AI web agents.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-06-24 17:03
+  last_modified: 2026-08-03 12:56
+  status: current
 ---
 
 The `firecrawl` CLI provides four main commands:

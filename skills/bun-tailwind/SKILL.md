@@ -4,6 +4,11 @@ description: >-
   Use when adding Tailwind to a Bun app, fixing missing utilities in Bun-built
   assets, defining Tailwind v4 theme tokens with @theme, or documenting how
   consumers must import and scan a Bun component library.
+author: alexgorbatchev
+metadata:
+  created_on: 2026-04-15 21:48
+  last_modified: 2026-05-06 18:53
+  status: current
 ---
 
 # Bun Tailwind

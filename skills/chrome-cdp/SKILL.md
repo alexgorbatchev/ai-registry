@@ -1,6 +1,11 @@
 ---
 name: chrome-cdp
 description: Interact with a local Chrome-family browser session through CDP. Use only after the user explicitly approves inspecting, debugging, or interacting with a page already open in Chrome or Chromium.
+author: alexgorbatchev
+metadata:
+  created_on: 2026-04-15 21:48
+  last_modified: 2026-05-07 12:47
+  status: current
 ---
 
 # Chrome CDP

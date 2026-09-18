@@ -2,6 +2,10 @@
 name: prompt-writer
 description: Compose, rewrite, refactor, and adapt prompts for LLM applications. Use when drafting system, developer, or user prompts; turning vague requirements into reusable prompt templates; improving prompt reliability or output format; or deciding prompt structure for grounded, long-context, tool-using, or structured-output workflows.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-07-22 08:45
+  last_modified: 2026-07-22 08:45
+  status: current
 ---
 
 # Prompt Writer

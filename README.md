@@ -83,7 +83,7 @@ For the normal machine setup flow after cloning, run:
 bun run bootstrap
 ```
 
-Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, relink the generated `default` Codex profile into `~/.codex`, relink the generated `default` Pi profile into `~/.pi/agent`, relink the generated `default` Claude Code profile into `~/.claude`, and resync the repo-local `air-*`, `claude-*`, `codex-*`, and `pi-*` wrappers into `~/.local/bin`. Add `-- --codex-profile <profile>`, `-- --pi-profile <profile>`, and/or `-- --claude-code-profile <profile>` when you want to override those linked non-native profile targets.
+Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, relink the generated `default` Codex profile into `~/.codex`, relink the generated `default` Pi profile into `~/.pi/agent`, relink the generated `default` Claude Code profile into `~/.claude`, and resync the repo-local `air-*`, `claude-*`, `codex-*`, `pi-*`, and `cll` wrappers into `~/.local/bin`. Add `-- --codex-profile <profile>`, `-- --pi-profile <profile>`, and/or `-- --claude-code-profile <profile>` when you want to override those linked non-native profile targets.
 
 To smoke test that flow without touching your real XDG config paths, run:
 
@@ -103,7 +103,7 @@ That command:
 - links `.output/codex/default` into `${CODEX_HOME:-~/.codex}` by default, or links `.output/codex/<profile>` when you pass `-- --codex-profile <profile>`
 - links `.output/pi/default` into `${PI_CODING_AGENT_DIR:-~/.pi/agent}` by default, or links `.output/pi/<profile>` when you pass `-- --pi-profile <profile>`
 - links `.output/claude-code/default` into `${CLAUDE_CONFIG_DIR:-~/.claude}` by default, or links `.output/claude-code/<profile>` when you pass `-- --claude-code-profile <profile>`
-- symlinks every `air-*`, `claude-*`, `codex-*`, and `pi-*` helper from `.output/bin` into `~/.local/bin`
+- symlinks every `air-*`, `claude-*`, `codex-*`, `pi-*`, and `cll` helper from `.output/bin` into `~/.local/bin`
 - removes broken public-wrapper symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
 
@@ -273,6 +273,7 @@ Claude Code uses one active config directory at a time. This repository links th
 Bootstrap also links generated Claude Code launchers into `~/.local/bin`:
 
 - `claude-<profile>` launches any non-default generated Claude Code profile by setting `CLAUDE_CONFIG_DIR` and preloading that profile's `agents-md-vfs.js` through `BUN_OPTIONS`
+- `cll` launches Claude Code routed through LiteLLM (reading `ANTHROPIC_BASE_URL` or `LITELLM_BASE_URL`, and `ANTHROPIC_AUTH_TOKEN` or `LITELLM_API_KEY`), defaulting to `gemini-3.7-flash` (or a custom model name passed as the first argument)
 - no `claude` wrapper is generated, so the real `claude` binary stays on `PATH` untouched and reads the generated `default` profile through the `~/.claude` symlink
 
 #### AGENTS.md Support

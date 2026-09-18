@@ -445,7 +445,7 @@ describe("Claude Code harness build", () => {
     );
   });
 
-  it("generates launcher helpers for non-default profiles only", async () => {
+  it("generates launcher helpers for non-default profiles and cll for litellm", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, ".output/claude-code/default/settings.json", "{}\n");
@@ -454,11 +454,16 @@ describe("Claude Code harness build", () => {
     await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
 
     const binDir = join(repositoryRoot, ".output", "bin");
-    expect(await readdir(binDir)).toEqual(["claude-designer"]);
+    expect((await readdir(binDir)).sort()).toEqual(["claude-designer", "cll"]);
 
     const helper = await readFile(join(binDir, "claude-designer"), "utf-8");
     expect(helper).toContain('CLAUDE_CONFIG_DIR="{{output_dir}}/claude-code/designer" exec "$real_binary" "$@"');
     expect(helper).toContain("if command -v claude >/dev/null 2>&1; then");
+
+    const cllHelper = await readFile(join(binDir, "cll"), "utf-8");
+    expect(cllHelper).toContain('MODEL="${CLAUDE_MODEL:-gemini-3.7-flash}"');
+    expect(cllHelper).toContain('ANTHROPIC_CUSTOM_MODEL_OPTION="$MODEL"');
+    expect(cllHelper).toContain('exec "$real_binary" --dangerously-skip-permissions --model "$MODEL" "$@"');
   });
 
   it("preloads the AGENTS.md VFS from the profile root in launcher helpers", async () => {

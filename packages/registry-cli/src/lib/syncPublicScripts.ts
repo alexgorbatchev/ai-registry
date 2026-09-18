@@ -2,7 +2,7 @@ import { lstat, mkdir, readdir, readlink, realpath, rename, rm, symlink } from "
 import { dirname, resolve, join } from "path";
 
 const PUBLIC_SCRIPT_PREFIXES = ["air-", "claude-", "codex-", "pi-"];
-const PUBLIC_SCRIPT_NAMES = new Set(["codex", "pi"]);
+const PUBLIC_SCRIPT_NAMES = new Set(["cll", "codex", "pi"]);
 
 export type IPublicScriptLinkResult =
   | { action: "linked"; scriptName: string }

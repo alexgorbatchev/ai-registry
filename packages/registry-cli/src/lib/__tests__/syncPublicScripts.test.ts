@@ -39,6 +39,7 @@ describe("syncPublicScripts", () => {
     const codexProfileScriptPath = await writeScriptFile(outputBinDir, "codex-developer");
     const piScriptPath = await writeScriptFile(outputBinDir, "pi");
     const piProfileScriptPath = await writeScriptFile(outputBinDir, "pi-designer");
+    const cllScriptPath = await writeScriptFile(outputBinDir, "cll");
     await writeScriptFile(outputBinDir, "not-public");
 
     const result = await syncPublicScripts({ binDir, repositoryRoot, getTimestamp: () => "20260425T000000Z" });
@@ -48,6 +49,7 @@ describe("syncPublicScripts", () => {
       linkedScripts: [
         { action: "linked", scriptName: "air-first" },
         { action: "linked", scriptName: "air-second" },
+        { action: "linked", scriptName: "cll" },
         { action: "linked", scriptName: "codex" },
         { action: "linked", scriptName: "codex-developer" },
         { action: "linked", scriptName: "pi" },
@@ -56,6 +58,7 @@ describe("syncPublicScripts", () => {
     });
     expect(await readlink(join(binDir, "air-first"))).toBe(firstPublicScriptPath);
     expect(await readlink(join(binDir, "air-second"))).toBe(secondPublicScriptPath);
+    expect(await readlink(join(binDir, "cll"))).toBe(cllScriptPath);
     expect(await readlink(join(binDir, "codex"))).toBe(codexScriptPath);
     expect(await readlink(join(binDir, "codex-developer"))).toBe(codexProfileScriptPath);
     expect(await readlink(join(binDir, "pi"))).toBe(piScriptPath);
@@ -63,6 +66,7 @@ describe("syncPublicScripts", () => {
     expect((await readdir(binDir)).sort()).toEqual([
       "air-first",
       "air-second",
+      "cll",
       "codex",
       "codex-developer",
       "pi",

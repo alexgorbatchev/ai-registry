@@ -1,7 +1,7 @@
-import { mkdir, readdir, symlink, writeFile } from "fs/promises";
+import { lstat, mkdir, readdir, rename, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
-import { join } from "path";
+import { dirname, join } from "path";
 import { parseArgs } from "node:util";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
@@ -12,6 +12,7 @@ import type {
   IUnifiedHarnessPlugin,
 } from "../../lib/harnessBuild";
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
+import { getErrorMessage } from "../../lib/getErrorMessage";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
 import {
   assertMissingClaudeCodeOutputPath,
@@ -38,14 +39,20 @@ const AGENTS_MD_VFS_VENDOR_PATH = join("vendor", "claude-agents-md", AGENTS_MD_V
 // recreated when missing but never tracked by the manifest or reported as drift.
 const SHARED_RUNTIME_DIR_NAMES = [
   "file-history",
-  "plugins",
-  "projects",
   "session-env",
-  "sessions",
-  "shell-snapshots",
   "statsig",
-  "todos",
 ];
+
+// Work a rebuild must not destroy: per-project memory files and transcripts
+// (`projects/`), the session history `claude --resume` reads (`sessions/`), the
+// per-session todo lists (`todos/`), the shell snapshots those sessions restore from
+// (`shell-snapshots/`), and the installed plugins a user would otherwise have to add
+// back by hand (`plugins/`). `.output/` is generated and may be deleted at any time,
+// so these stores live in the user's XDG data directory and are symlinked into the
+// generated default profile root. Non-default profiles reach them through the symlink
+// chain finalizeOutput() already builds from the default profile.
+const PERSISTENT_STORE_DIR_NAMES = ["plugins", "projects", "sessions", "shell-snapshots", "todos"];
+const PERSISTENT_STORE_ROOT_SEGMENTS = ["ai-registry", "claude-code"];
 
 function getProfileOutputDir(outputDir: string, profileName: string): string {
   return join(outputDir, CLAUDE_CODE_OUTPUT_DIR_NAME, profileName);
@@ -93,6 +100,56 @@ async function stageHarnessFiles(context: IProfileBuildContext, profileOutputDir
 async function stageSharedRuntimeDirectories(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
   for (const runtimeDirName of SHARED_RUNTIME_DIR_NAMES) {
     await context.buildSupport.ensureRuntimeDirectory(join(profileOutputDir, runtimeDirName));
+  }
+}
+
+function getPersistentStoreRoot(): string {
+  const dataHome = process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
+  return join(dataHome, ...PERSISTENT_STORE_ROOT_SEGMENTS);
+}
+
+// Builds that predate a persistent store left a real directory in the generated
+// output. Move it once, so existing history survives the switch instead of being
+// shadowed by an empty store.
+async function migrateLegacyStore(storeDirName: string, legacyStorePath: string, storePath: string): Promise<void> {
+  const legacyStoreStats = await lstat(legacyStorePath).catch(() => null);
+  if (legacyStoreStats === null || legacyStoreStats.isSymbolicLink() || !legacyStoreStats.isDirectory()) {
+    return;
+  }
+
+  if (existsSync(storePath)) {
+    throw new Error(
+      `Cannot move the Claude Code ${storeDirName} store: ${legacyStorePath} and ${storePath} both exist. Merge them by hand, then rerun the build.`,
+    );
+  }
+
+  await mkdir(dirname(storePath), { recursive: true });
+
+  try {
+    await rename(legacyStorePath, storePath);
+  } catch (error) {
+    throw new Error(
+      `Failed to move the Claude Code ${storeDirName} store from ${legacyStorePath} to ${storePath}: ${getErrorMessage(error)}. Move it by hand, then rerun the build.`,
+    );
+  }
+
+  console.log(`   📦 Moved the Claude Code ${storeDirName} store to ${storePath}`);
+}
+
+async function stagePersistentStores(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
+  const storeRoot = getPersistentStoreRoot();
+  const finalDefaultProfileDir = join(
+    context.templateContext.output_dir,
+    CLAUDE_CODE_OUTPUT_DIR_NAME,
+    DEFAULT_PROFILE_NAME,
+  );
+
+  for (const storeDirName of PERSISTENT_STORE_DIR_NAMES) {
+    const storePath = join(storeRoot, storeDirName);
+
+    await migrateLegacyStore(storeDirName, join(finalDefaultProfileDir, storeDirName), storePath);
+    await mkdir(storePath, { recursive: true });
+    await symlink(storePath, join(profileOutputDir, storeDirName));
   }
 }
 
@@ -175,6 +232,7 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   if (isDefaultProfile) {
     await stageHarnessFiles(context, profileOutputDir);
     await stageSharedRuntimeDirectories(context, profileOutputDir);
+    await stagePersistentStores(context, profileOutputDir);
     await stageAgentsMdVfs(context, profileOutputDir);
     await mkdir(join(profileOutputDir, "commands"), { recursive: true });
 

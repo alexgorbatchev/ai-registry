@@ -22,6 +22,9 @@ import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "claude-code-build-tests");
 const originalArgv: string[] = [...process.argv];
 const originalClaudeConfigDir: string | undefined = process.env.CLAUDE_CONFIG_DIR;
+const originalXdgDataHome: string | undefined = process.env.XDG_DATA_HOME;
+const TEST_XDG_DATA_HOME = join(TEST_ROOT, "xdg-data-home");
+const STORE_ROOT_RELATIVE_PATH = join("ai-registry", "claude-code");
 
 async function createOutputDirectory(): Promise<string> {
   await mkdir(TEST_ROOT, { recursive: true });
@@ -141,6 +144,9 @@ describe("Claude Code harness build", () => {
   beforeEach(() => {
     process.argv = ["bun", "scripts/bootstrap.ts"];
     delete process.env.CLAUDE_CONFIG_DIR;
+    // The project store lives outside the generated output, so every test points
+    // XDG_DATA_HOME at the scratch tree instead of the developer's real store.
+    process.env.XDG_DATA_HOME = TEST_XDG_DATA_HOME;
   });
 
   afterEach(async () => {
@@ -149,6 +155,12 @@ describe("Claude Code harness build", () => {
       delete process.env.CLAUDE_CONFIG_DIR;
     } else {
       process.env.CLAUDE_CONFIG_DIR = originalClaudeConfigDir;
+    }
+
+    if (originalXdgDataHome === undefined) {
+      delete process.env.XDG_DATA_HOME;
+    } else {
+      process.env.XDG_DATA_HOME = originalXdgDataHome;
     }
 
     await rm(TEST_ROOT, { force: true, recursive: true });
@@ -256,24 +268,94 @@ describe("Claude Code harness build", () => {
     await getStageProfile()(createProfileContext(repositoryRoot, "default", { runtimeDirectoryRegistry }));
 
     const defaultDir = join(repositoryRoot, ".output", "claude-code", "default");
-    for (const runtimeDirName of ["projects", "sessions", "todos", "shell-snapshots", "plugins", "statsig", "file-history", "session-env"]) {
+    for (const runtimeDirName of ["statsig", "file-history", "session-env"]) {
       const runtimeDirStats = await lstat(join(defaultDir, runtimeDirName));
       expect(runtimeDirStats.isDirectory()).toBe(true);
       expect(runtimeDirStats.isSymbolicLink()).toBe(false);
     }
 
     // Claude Code owns these afterwards, so they must be registered as runtime
-    // directories rather than becoming manifest-managed entries.
+    // directories rather than becoming manifest-managed entries. The persistent
+    // stores are deliberately absent: they are not runtime state.
     expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).toEqual([
       "claude-code/default/file-history",
-      "claude-code/default/plugins",
-      "claude-code/default/projects",
       "claude-code/default/session-env",
-      "claude-code/default/sessions",
-      "claude-code/default/shell-snapshots",
       "claude-code/default/statsig",
-      "claude-code/default/todos",
     ]);
+  });
+
+  it("links every persistent store from the XDG data directory into the default profile", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+
+    const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output"));
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", { runtimeDirectoryRegistry }));
+
+    const defaultDir = join(repositoryRoot, ".output", "claude-code", "default");
+    for (const storeDirName of ["plugins", "projects", "sessions", "shell-snapshots", "todos"]) {
+      const storePath = join(TEST_XDG_DATA_HOME, STORE_ROOT_RELATIVE_PATH, storeDirName);
+      const generatedStorePath = join(defaultDir, storeDirName);
+
+      expect((await lstat(generatedStorePath)).isSymbolicLink()).toBe(true);
+      expect(await readlink(generatedStorePath)).toBe(storePath);
+      expect((await lstat(storePath)).isDirectory()).toBe(true);
+      // A persistent store is a manifest-managed symlink, never an ensure-present
+      // runtime directory, so deleting `.output/` cannot take its contents with it.
+      expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).not.toContain(`claude-code/default/${storeDirName}`);
+    }
+  });
+
+  it("moves existing stores out of the generated output", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(
+      repositoryRoot,
+      join(".output", "claude-code", "default", "projects", "-some-project", "memory", "lesson.md"),
+      "# Remembered lesson\n",
+    );
+    await writeTestFile(
+      repositoryRoot,
+      join(".output", "claude-code", "default", "sessions", "session-1.jsonl"),
+      '{"resumable":true}\n',
+    );
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
+
+    const defaultDir = join(repositoryRoot, ".output", "claude-code", "default");
+    const storeRoot = join(TEST_XDG_DATA_HOME, STORE_ROOT_RELATIVE_PATH);
+
+    expect(await readFile(join(storeRoot, "projects", "-some-project", "memory", "lesson.md"), "utf-8")).toBe("# Remembered lesson\n");
+    expect(await readFile(join(storeRoot, "sessions", "session-1.jsonl"), "utf-8")).toBe('{"resumable":true}\n');
+
+    // Both paths keep resolving through the symlink the build leaves behind.
+    expect((await lstat(join(defaultDir, "projects"))).isSymbolicLink()).toBe(true);
+    expect((await lstat(join(defaultDir, "sessions"))).isSymbolicLink()).toBe(true);
+    expect(await readFile(join(defaultDir, "projects", "-some-project", "memory", "lesson.md"), "utf-8")).toBe("# Remembered lesson\n");
+    expect(await readFile(join(defaultDir, "sessions", "session-1.jsonl"), "utf-8")).toBe('{"resumable":true}\n');
+  });
+
+  it("refuses to move the project store when both locations already hold one", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(
+      repositoryRoot,
+      join(".output", "claude-code", "default", "projects", "-some-project", "memory", "generated.md"),
+      "# Generated copy\n",
+    );
+    await mkdir(join(TEST_XDG_DATA_HOME, STORE_ROOT_RELATIVE_PATH, "projects"), { recursive: true });
+
+    await expect(getStageProfile()(createProfileContext(repositoryRoot, "default"))).rejects.toThrow(
+      /both exist\. Merge them by hand/,
+    );
   });
 
   it("does not register runtime directories for non-default profiles", async () => {

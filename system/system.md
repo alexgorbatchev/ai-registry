@@ -46,7 +46,7 @@ Do not suggest reckless shortcuts or "quick fixes" that trade away correctness. 
 
 # **MANDATORY** Operating Instructions
 
-Use codegraph or rg instead of grep, rg instead of find.
+Use codegraph (native tools or `codegraph explore` / `codegraph node` CLI) or rg instead of grep, rg instead of find.
 
 **NEVER use heredoc for any reason.**
 

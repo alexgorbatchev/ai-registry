@@ -95,7 +95,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - For Claude Code-only shipped skills, place them under `harnesses/claude-code/skills/`; the Claude Code build merges that directory into each generated `skills/` root inside `.output/claude-code/<profile>/`. Everything else under `harnesses/claude-code/` is copied verbatim into the generated `default` profile root.
 - If a local file-based harness dependency needs installed runtime imports, vendor it under `vendor/<name>/` beneath the repo_root token, add it to the root Bun workspaces, and reference it from the harness config using the repo_root token.
 - When vendoring third-party code under `vendor/<name>/`, copy only the files the harness loads plus the upstream `LICENSE`, and record the upstream repository, pinned commit, and file checksum in that package's `README.md`. Fetch from the pinned commit URL, never from a moving branch.
-- When a harness needs a single vendored file inside its generated root, symlink it from the harness build plugin and fail the build when the source file is missing, as the Claude Code plugin does for `vendor/claude-agents-md/agents-md-vfs.js`.
+- When a harness needs a single vendored file inside its generated root, symlink it from the harness build plugin and fail the build when the source file is missing.
 - Run `bun run build` from the repo_root token and verify the corresponding files under the output_dir token.
 - Existing harnesses:
   - OpenCode under `harnesses/opencode`.

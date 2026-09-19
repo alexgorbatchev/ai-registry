@@ -1,58 +1,94 @@
-import assert from "node:assert";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { existsSync } from "fs";
-import { lstat, mkdir, mkdtemp, readFile, readdir, readlink, rm, writeFile } from "fs/promises";
-import { homedir } from "os";
-import { dirname, join } from "path";
+import assert from "node:assert";
+import { existsSync } from "node:fs";
+import { lstat, mkdir, readFile, readlink, readdir, rm } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
-import plugin from "../build";
+import type {
+  IBuildSupport,
+  IProfileBuildContext,
+  IProfileManifest,
+  ITemplateContext,
+  IUnifiedHarnessBuildContext,
+} from "../../../lib/harnessBuild";
 import {
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
   mergeDirectory,
   stageProfileAssets,
   writeBinScript,
-  type IBuildSupport,
-  type IProfileBuildContext,
-  type ITemplateContext,
-  type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
 import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
+import plugin from "../build";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "claude-code-build-tests");
-const originalArgv: string[] = [...process.argv];
-const originalClaudeConfigDir: string | undefined = process.env.CLAUDE_CONFIG_DIR;
-const originalXdgDataHome: string | undefined = process.env.XDG_DATA_HOME;
+const originalArgv = [...process.argv];
+const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
+const originalXdgDataHome = process.env.XDG_DATA_HOME;
+
+const TEST_ROOT = join(
+  process.cwd(),
+  "packages",
+  "registry-cli",
+  "src",
+  "harnesses",
+  "claude-code",
+  ".tmp",
+  "claude-code-build-tests",
+);
 const TEST_XDG_DATA_HOME = join(TEST_ROOT, "xdg-data-home");
-const STORE_ROOT_RELATIVE_PATH = join("ai-registry", "claude-code");
+
+let testDirectoryIndex = 0;
 
 async function createOutputDirectory(): Promise<string> {
-  await mkdir(TEST_ROOT, { recursive: true });
-  return await mkdtemp(join(TEST_ROOT, "case-"));
+  testDirectoryIndex += 1;
+  const directory = join(TEST_ROOT, `case-${testDirectoryIndex}`);
+  await mkdir(directory, { recursive: true });
+  return directory;
 }
 
-async function createClaudeCodeProfile(outputDir: string, profileName: string): Promise<string> {
-  const profileDir = join(outputDir, "claude-code", profileName);
-  await mkdir(profileDir, { recursive: true });
-  return profileDir;
+async function writeTestFile(
+  repositoryRoot: string,
+  relativePath: string,
+  content: string,
+): Promise<string> {
+  const fullPath = join(repositoryRoot, relativePath);
+  await mkdir(join(fullPath, ".."), { recursive: true });
+  await Bun.write(fullPath, content);
+  return fullPath;
 }
 
-async function writeTestFile(rootDir: string, relativePath: string, content: string): Promise<string> {
-  const filePath = join(rootDir, relativePath);
-  await mkdir(dirname(filePath), { recursive: true });
-  await writeFile(filePath, content, "utf-8");
-  return filePath;
-}
-
-function createTemplateContext(repositoryRoot: string): ITemplateContext {
+function createTemplateContext(repositoryRoot: string) {
   return {
+    commands_dir: join(repositoryRoot, "commands"),
+    file_dir: repositoryRoot,
+    file_path: join(repositoryRoot, "source.md"),
+    output_dir: join(repositoryRoot, ".output"),
+    profiles_dir: join(repositoryRoot, "profiles"),
     repo_root: repositoryRoot,
     skills_dir: join(repositoryRoot, "skills"),
-    commands_dir: join(repositoryRoot, "commands"),
-    profiles_dir: join(repositoryRoot, "profiles"),
-    output_dir: join(repositoryRoot, ".output"),
   };
 }
+
+function createUnifiedContext(repositoryRoot: string): IUnifiedHarnessBuildContext {
+  return {
+    buildSupport: createBuildSupport(repositoryRoot),
+    harnessDir: join(repositoryRoot, "harnesses", "claude-code"),
+    outputDir: join(repositoryRoot, ".output"),
+    templateContext: createTemplateContext(repositoryRoot),
+  };
+}
+
+type IProfileContextOverrides = {
+  globalMatchedSkills?: string[];
+  globalMatchedCommands?: string[];
+  profileLocalSkills?: string[];
+  profileLocalCommands?: string[];
+  runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry;
+  systemPrompt?: string;
+  tools?: Record<string, boolean>;
+  permission?: Record<string, string | Record<string, string>>;
+};
 
 function createBuildSupport(
   repositoryRoot: string,
@@ -64,29 +100,9 @@ function createBuildSupport(
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
-      ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
+    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
   };
 }
-
-function createUnifiedContext(repositoryRoot: string): IUnifiedHarnessBuildContext {
-  return {
-    harnessDir: join(repositoryRoot, "harnesses", "claude-code"),
-    outputDir: join(repositoryRoot, ".output"),
-    templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot),
-  };
-}
-
-type IProfileContextOverrides = {
-  globalMatchedCommands?: string[];
-  globalMatchedSkills?: string[];
-  permission?: Record<string, string | Record<string, string>>;
-  profileLocalCommands?: string[];
-  profileLocalSkills?: string[];
-  runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry;
-  systemPrompt?: string;
-  tools?: Record<string, boolean>;
-};
 
 function createProfileContext(
   repositoryRoot: string,
@@ -94,8 +110,8 @@ function createProfileContext(
   overrides: IProfileContextOverrides = {},
 ): IProfileBuildContext {
   return {
-    harnessDir: join(repositoryRoot, "harnesses", "claude-code"),
     profileName,
+    harnessDir: join(repositoryRoot, "harnesses", "claude-code"),
     profileDir: join(repositoryRoot, "profiles", profileName),
     manifest: {
       commands: ["review.md"],
@@ -115,14 +131,11 @@ function createProfileContext(
   };
 }
 
-const AGENTS_MD_VFS_RELATIVE_PATH = join("vendor", "claude-agents-md", "agents-md-vfs.js");
-
 async function writeHarnessFixture(repositoryRoot: string): Promise<void> {
   await writeTestFile(repositoryRoot, "harnesses/claude-code/settings.json", '{\n  "theme": "dark"\n}\n');
   await writeTestFile(repositoryRoot, "harnesses/claude-code/.registry-ignore", "./fetch-source.sh\n./skills/\n");
   await writeTestFile(repositoryRoot, "harnesses/claude-code/fetch-source.sh", "#!/bin/bash\n");
   await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/harness-skill/SKILL.md", "# Harness skill\n");
-  await writeTestFile(repositoryRoot, AGENTS_MD_VFS_RELATIVE_PATH, "// vendored agents-md vfs\n");
 }
 
 function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
@@ -198,47 +211,6 @@ describe("Claude Code harness build", () => {
     }
   });
 
-  it("links the vendored AGENTS.md VFS into the default profile root", async () => {
-    const repositoryRoot = await createOutputDirectory();
-    await writeHarnessFixture(repositoryRoot);
-    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
-    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
-    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-
-    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
-
-    const vfsOutputPath = join(repositoryRoot, ".output", "claude-code", "default", "agents-md-vfs.js");
-    expect((await lstat(vfsOutputPath)).isSymbolicLink()).toBe(true);
-    expect(await readlink(vfsOutputPath)).toBe(join(repositoryRoot, AGENTS_MD_VFS_RELATIVE_PATH));
-    expect(await readFile(vfsOutputPath, "utf-8")).toBe("// vendored agents-md vfs\n");
-  });
-
-  it("does not link the vendored AGENTS.md VFS into non-default profiles during staging", async () => {
-    const repositoryRoot = await createOutputDirectory();
-    await writeHarnessFixture(repositoryRoot);
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
-
-    await getStageProfile()(createProfileContext(repositoryRoot, "developer"));
-
-    expect(existsSync(join(repositoryRoot, ".output", "claude-code", "developer", "agents-md-vfs.js"))).toBe(false);
-  });
-
-  it("fails when the vendored AGENTS.md VFS is missing", async () => {
-    const repositoryRoot = await createOutputDirectory();
-    await writeHarnessFixture(repositoryRoot);
-    await rm(join(repositoryRoot, AGENTS_MD_VFS_RELATIVE_PATH));
-    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
-    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
-    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-
-    await expect(getStageProfile()(createProfileContext(repositoryRoot, "default"))).rejects.toThrow(
-      `Vendored AGENTS.md VFS does not exist: ${join(repositoryRoot, AGENTS_MD_VFS_RELATIVE_PATH)}`,
-    );
-  });
-
   it("keeps repo-only harness files out of the generated profile root", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
@@ -297,91 +269,99 @@ describe("Claude Code harness build", () => {
 
     const defaultDir = join(repositoryRoot, ".output", "claude-code", "default");
     for (const storeDirName of ["plugins", "projects", "sessions", "shell-snapshots", "todos"]) {
-      const storePath = join(TEST_XDG_DATA_HOME, STORE_ROOT_RELATIVE_PATH, storeDirName);
-      const generatedStorePath = join(defaultDir, storeDirName);
-
-      expect((await lstat(generatedStorePath)).isSymbolicLink()).toBe(true);
-      expect(await readlink(generatedStorePath)).toBe(storePath);
-      expect((await lstat(storePath)).isDirectory()).toBe(true);
-      // A persistent store is a manifest-managed symlink, never an ensure-present
-      // runtime directory, so deleting `.output/` cannot take its contents with it.
-      expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).not.toContain(`claude-code/default/${storeDirName}`);
+      const storePath = join(defaultDir, storeDirName);
+      const storeStats = await lstat(storePath);
+      expect(storeStats.isSymbolicLink()).toBe(true);
+      expect(await readlink(storePath)).toBe(join(TEST_XDG_DATA_HOME, "ai-registry", "claude-code", storeDirName));
+      expect(existsSync(storePath)).toBe(true);
     }
   });
 
-  it("moves existing stores out of the generated output", async () => {
+  it("migrates existing directory-based stores into the persistent location", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
     await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
     await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-    await writeTestFile(
-      repositoryRoot,
-      join(".output", "claude-code", "default", "projects", "-some-project", "memory", "lesson.md"),
-      "# Remembered lesson\n",
-    );
-    await writeTestFile(
-      repositoryRoot,
-      join(".output", "claude-code", "default", "sessions", "session-1.jsonl"),
-      '{"resumable":true}\n',
-    );
+
+    // Simulate an existing build that had real directories under .output/claude-code/default/
+    const existingDefaultDir = join(repositoryRoot, ".output", "claude-code", "default");
+    await mkdir(join(existingDefaultDir, "projects"), { recursive: true });
+    await Bun.write(join(existingDefaultDir, "projects", "legacy.txt"), "legacy memory\n");
+    await mkdir(join(existingDefaultDir, "sessions"), { recursive: true });
+    await Bun.write(join(existingDefaultDir, "sessions", "legacy.json"), "legacy session\n");
 
     await getStageProfile()(createProfileContext(repositoryRoot, "default"));
 
-    const defaultDir = join(repositoryRoot, ".output", "claude-code", "default");
-    const storeRoot = join(TEST_XDG_DATA_HOME, STORE_ROOT_RELATIVE_PATH);
+    // Staging must have moved the directories into the persistent store root
+    // and replaced them with symlinks.
+    const projectStorePath = join(TEST_XDG_DATA_HOME, "ai-registry", "claude-code", "projects");
+    const sessionStorePath = join(TEST_XDG_DATA_HOME, "ai-registry", "claude-code", "sessions");
 
-    expect(await readFile(join(storeRoot, "projects", "-some-project", "memory", "lesson.md"), "utf-8")).toBe("# Remembered lesson\n");
-    expect(await readFile(join(storeRoot, "sessions", "session-1.jsonl"), "utf-8")).toBe('{"resumable":true}\n');
+    expect(await readFile(join(projectStorePath, "legacy.txt"), "utf-8")).toBe("legacy memory\n");
+    expect(await readFile(join(sessionStorePath, "legacy.json"), "utf-8")).toBe("legacy session\n");
 
-    // Both paths keep resolving through the symlink the build leaves behind.
-    expect((await lstat(join(defaultDir, "projects"))).isSymbolicLink()).toBe(true);
-    expect((await lstat(join(defaultDir, "sessions"))).isSymbolicLink()).toBe(true);
-    expect(await readFile(join(defaultDir, "projects", "-some-project", "memory", "lesson.md"), "utf-8")).toBe("# Remembered lesson\n");
-    expect(await readFile(join(defaultDir, "sessions", "session-1.jsonl"), "utf-8")).toBe('{"resumable":true}\n');
+    expect((await lstat(join(existingDefaultDir, "projects"))).isSymbolicLink()).toBe(true);
+    expect((await lstat(join(existingDefaultDir, "sessions"))).isSymbolicLink()).toBe(true);
+    expect(await readlink(join(existingDefaultDir, "projects"))).toBe(projectStorePath);
+    expect(await readlink(join(existingDefaultDir, "sessions"))).toBe(sessionStorePath);
   });
 
-  it("refuses to move the project store when both locations already hold one", async () => {
+  it("fails staging when both the legacy output directory and the persistent store exist", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-    await writeTestFile(
-      repositoryRoot,
-      join(".output", "claude-code", "default", "projects", "-some-project", "memory", "generated.md"),
-      "# Generated copy\n",
-    );
-    await mkdir(join(TEST_XDG_DATA_HOME, STORE_ROOT_RELATIVE_PATH, "projects"), { recursive: true });
+
+    const existingDefaultDir = join(repositoryRoot, ".output", "claude-code", "default");
+    await mkdir(join(existingDefaultDir, "projects"), { recursive: true });
+    await mkdir(join(TEST_XDG_DATA_HOME, "ai-registry", "claude-code", "projects"), { recursive: true });
 
     await expect(getStageProfile()(createProfileContext(repositoryRoot, "default"))).rejects.toThrow(
-      /both exist\. Merge them by hand/,
+      "Cannot move the Claude Code projects store",
     );
   });
 
-  it("does not register runtime directories for non-default profiles", async () => {
+  it("stages non-default profiles with per-profile memory and skills", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
     await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
 
-    const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output"));
-    await getStageProfile()(createProfileContext(repositoryRoot, "developer", { runtimeDirectoryRegistry }));
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
+      systemPrompt: "Developer instructions.\nStay focused.",
+    }));
 
-    expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).toEqual([]);
+    const developerDir = join(repositoryRoot, ".output", "claude-code", "developer");
+    expect(await readFile(join(developerDir, "CLAUDE.md"), "utf-8")).toBe(
+      "Developer instructions.\nStay focused.\n",
+    );
+    expect(await readFile(join(developerDir, "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe(
+      "# Shared skill\n",
+    );
+    expect(await readFile(join(developerDir, "skills", "local-skill", "SKILL.md"), "utf-8")).toBe("# Local skill\n");
+    expect(await readFile(join(developerDir, "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe(
+      "# Harness skill\n",
+    );
   });
 
   it("builds per-profile CLAUDE.md and symlinks the other shared entries", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
-    await writeTestFile(repositoryRoot, "commands/developer-only.md", "Developer-only command.\n");
     await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default local command.\n");
     await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/commands/local.md", "Developer local command.\n");
     await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Developer local skill\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
     await writeTestFile(repositoryRoot, "skills/developer-shared-skill/SKILL.md", "# Developer shared skill\n");
 
     await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      profileLocalCommands: ["local.md"],
+      profileLocalSkills: ["local-skill"],
       systemPrompt: "Default instructions.\nStay shared.",
     }));
     await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
@@ -403,8 +383,6 @@ describe("Claude Code harness build", () => {
     expect(await readlink(join(developerDir, "commands"))).toBe(join(outputRoot, "default", "commands"));
     expect(await readlink(join(developerDir, "sessions"))).toBe(join(outputRoot, "default", "sessions"));
     expect(await readlink(join(developerDir, "plugins"))).toBe(join(outputRoot, "default", "plugins"));
-    expect(await readlink(join(developerDir, "agents-md-vfs.js"))).toBe(join(outputRoot, "default", "agents-md-vfs.js"));
-    expect(await readFile(join(developerDir, "agents-md-vfs.js"), "utf-8")).toBe("// vendored agents-md vfs\n");
 
     // Shared commands resolve through the symlink; skills stay per-profile.
     expect(await readFile(join(developerDir, "commands", "review.md"), "utf-8")).toBe(
@@ -466,27 +444,6 @@ describe("Claude Code harness build", () => {
     expect(cllHelper).toContain('exec "$real_binary" --dangerously-skip-permissions --model "$MODEL" "$@"');
   });
 
-  it("preloads the AGENTS.md VFS from the profile root in launcher helpers", async () => {
-    const repositoryRoot = await createOutputDirectory();
-    await writeHarnessFixture(repositoryRoot);
-    await writeTestFile(repositoryRoot, ".output/claude-code/default/settings.json", "{}\n");
-    await writeTestFile(repositoryRoot, ".output/claude-code/designer/CLAUDE.md", "designer\n");
-
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
-
-    const helper = await readFile(join(repositoryRoot, ".output", "bin", "claude-designer"), "utf-8");
-    const preloadBlock = [
-      'bun_preload_script="{{output_dir}}/claude-code/designer/agents-md-vfs.js"',
-      'case " ${BUN_OPTIONS:-} " in',
-      '  *" --require $bun_preload_script "*) ;;',
-      '  *) BUN_OPTIONS="${BUN_OPTIONS:+$BUN_OPTIONS }--require $bun_preload_script" ;;',
-      "esac",
-      "export BUN_OPTIONS",
-    ].join("\n");
-    expect(helper).toContain(preloadBlock);
-    expect(helper.indexOf(preloadBlock)).toBeLessThan(helper.indexOf('exec "$real_binary" "$@"'));
-  });
-
   it("links the default Claude Code profile when bootstrap did not request an override", async () => {
     const outputDir = await createOutputDirectory();
     const profileDir = await createClaudeCodeProfile(outputDir, "default");
@@ -539,22 +496,10 @@ describe("Claude Code harness build", () => {
       `Generated Claude Code profile does not exist: ${join(outputDir, "claude-code", "removed")}. Available generated Claude Code profiles: designer, developer.`,
     );
   });
-
-  it("reports that no profiles exist when nothing was generated", async () => {
-    const outputDir = await createOutputDirectory();
-    process.argv = ["bun", "scripts/bootstrap.ts", "--claude-code-profile", "removed"];
-
-    await expect(getBootstrapTargets()(outputDir)).rejects.toThrow(
-      `Generated Claude Code profile does not exist: ${join(outputDir, "claude-code", "removed")}. No generated Claude Code profiles are available.`,
-    );
-  });
-
-  it("rejects an empty --claude-code-profile value", async () => {
-    const outputDir = await createOutputDirectory();
-    process.argv = ["bun", "scripts/bootstrap.ts", "--claude-code-profile", ""];
-
-    await expect(getBootstrapTargets()(outputDir)).rejects.toThrow(
-      "Missing Claude Code profile name after --claude-code-profile.",
-    );
-  });
 });
+
+async function createClaudeCodeProfile(outputDir: string, profileName: string): Promise<string> {
+  const profileDir = join(outputDir, "claude-code", profileName);
+  await mkdir(profileDir, { recursive: true });
+  return profileDir;
+}

@@ -197,7 +197,7 @@ The build script generates unified final outputs in `.output/` for the targets t
 - `.output/opencode`: OpenCode config with skills (copied from source with template tags resolved), commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `packages/registry-cli/src/harnesses/opencode/build.ts`.
 - `.output/codex/<profile>`: Codex profile root for one ai-registry profile. Each generated profile renders its own `AGENTS.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `prompts/` plus a symlinked mutable `config.toml`, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Codex-specific shaping lives in `packages/registry-cli/src/harnesses/codex/build.ts`, which reapplies `harnesses/codex/config.toml` as managed defaults into `{{repo_root}}/.tmp/codex/config.toml` on each build while preserving local Codex state. Runtime files such as `auth.json` stay Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
 - `.output/pi/<profile>`: Pi profile root for one ai-registry profile. Each generated profile renders its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json`, `prompts/`, and static `sessions/` directory, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Pi-specific final shaping lives in `packages/registry-cli/src/harnesses/pi/build.ts`.
-- `.output/claude-code/<profile>`: Claude Code config root for one ai-registry profile, matching the layout Claude Code expects at `CLAUDE_CONFIG_DIR`. Each generated profile renders its own `CLAUDE.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json`, `commands/`, the `agents-md-vfs.js` preload symlinked from `vendor/claude-agents-md/`, and the static runtime directories Claude Code writes into, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Claude Code-specific shaping lives in `packages/registry-cli/src/harnesses/claude-code/build.ts`.
+- `.output/claude-code/<profile>`: Claude Code config root for one ai-registry profile, matching the layout Claude Code expects at `CLAUDE_CONFIG_DIR`. Each generated profile renders its own `CLAUDE.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json`, `commands/`, and the static runtime directories Claude Code writes into, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Claude Code-specific shaping lives in `packages/registry-cli/src/harnesses/claude-code/build.ts`.
 - `.output/manifest.json`: SHA-256 manifest for the generated files, directories, and symlinks that the registry manages under `.output/`. The next `bun run build` checks those managed entries before overwriting them so externally edited generated files are not overwritten silently. Runtime directories that the harness tools own (Claude Code `sessions/`, `todos/`, and its other state directories; Codex `sessions/`, `log/`, `.tmp/`; Pi `sessions/`) are created by the build so profiles can share them but are deliberately left out of the manifest: they never count as drift, are never removed by the build, and are recreated when a tool prunes them.
 
 The build writes only final generated outputs into `.output/` and updates only the managed paths recorded in the manifest.
@@ -272,33 +272,9 @@ Claude Code uses one active config directory at a time. This repository links th
 
 Bootstrap also links generated Claude Code launchers into `~/.local/bin`:
 
-- `claude-<profile>` launches any non-default generated Claude Code profile by setting `CLAUDE_CONFIG_DIR` and preloading that profile's `agents-md-vfs.js` through `BUN_OPTIONS`
+- `claude-<profile>` launches any non-default generated Claude Code profile by setting `CLAUDE_CONFIG_DIR`
 - `cll` launches Claude Code routed through LiteLLM (reading `ANTHROPIC_BASE_URL` or `LITELLM_BASE_URL`, and `ANTHROPIC_AUTH_TOKEN` or `LITELLM_API_KEY`), defaulting to `gemini-3.7-flash` (or a custom model name passed as the first argument)
 - no `claude` wrapper is generated, so the real `claude` binary stays on `PATH` untouched and reads the generated `default` profile through the `~/.claude` symlink
-
-#### AGENTS.md Support
-
-Claude Code natively reads `CLAUDE.md` only. Every generated Claude Code profile root exposes `agents-md-vfs.js`, the Bun preload vendored from the [alexgorbatchev/claude-agents-md](https://github.com/alexgorbatchev/claude-agents-md) fork of [hexsprite/claude-agents-md](https://github.com/hexsprite/claude-agents-md) and documented in [`vendor/claude-agents-md/README.md`](vendor/claude-agents-md/README.md). When Bun loads it into the `claude` process, `CLAUDE.md` lookups are served from the sibling `AGENTS.md`: a lone `AGENTS.md` is read as if it were `CLAUDE.md`, and a real `CLAUDE.md` next to it is appended as a Claude-only overlay. Nothing is written to disk, so repositories need no `CLAUDE.md` file or `@AGENTS.md` import.
-
-The `claude-<profile>` launchers set `BUN_OPTIONS` themselves. For the bare `claude` command, define a shell function in the configuration that owns your shell startup so the preload is scoped to `claude` and never reaches other Bun processes:
-
-```zsh
-claude() {
-  local vfs="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents-md-vfs.js"
-  if [[ ! -f "$vfs" ]]; then
-    command claude "$@"
-    return $?
-  fi
-  local BUN_OPTIONS="${BUN_OPTIONS:-}"
-  case " $BUN_OPTIONS " in
-    *" --require $vfs "*) ;;
-    *) BUN_OPTIONS="${BUN_OPTIONS:+$BUN_OPTIONS }--require $vfs" ;;
-  esac
-  BUN_OPTIONS="$BUN_OPTIONS" command claude "$@"
-}
-```
-
-Set `AGENTS_MD_VFS_DEBUG=1` before starting `claude` to log every `CLAUDE.md` read with the branch it took (`read kind=path-swap ...` for a lone `AGENTS.md`) to `/tmp/agents-md-vfs-latest.log`; a `gate off: ...` line there means the preload rejected the binary.
 
 ### Bootstrap Overrides
 

@@ -14,7 +14,7 @@ author: alexgorbatchev
 ## Configuration Surfaces
 
 - `settings.json` holds `permissions`, `env`, `hooks`, `model`, `statusLine`, and similar options. It is JSON, not JSONC, so do not add comments.
-- `CLAUDE.md` in the config directory is user-global memory that is prepended to every session. Project memory lives in `./CLAUDE.md` and `./.claude/CLAUDE.md`; with this registry's profiles it also lives in `./AGENTS.md`, see [AGENTS.md Support](#agentsmd-support).
+- `CLAUDE.md` in the config directory is user-global memory that is prepended to every session. Project memory lives in `./AGENTS.md`, `./CLAUDE.md`, and `./.claude/CLAUDE.md`.
 - `commands/*.md` are user slash commands, invoked as `/<filename>`. Frontmatter supports `description`, `argument-hint`, `allowed-tools`, and `model`.
 - `skills/<name>/SKILL.md` are Agent Skills. Frontmatter requires `name` and `description`; the description is the only routing signal, so state both what the skill does and when to use it.
 - `agents/*.md` are subagent definitions with `name`, `description`, `tools`, and `model` frontmatter.
@@ -29,10 +29,9 @@ author: alexgorbatchev
 
 ## AGENTS.md Support
 
-- Claude Code natively reads `CLAUDE.md` only. Every generated profile root exposes `$CLAUDE_CONFIG_DIR/agents-md-vfs.js`, a vendored Bun preload that, once loaded through `BUN_OPTIONS="--require ..."`, serves a sibling `AGENTS.md` wherever Claude Code looks for `CLAUDE.md`. Generated `claude-<profile>` launchers and the shell-level `claude()` function set that variable.
-- Treat `AGENTS.md` as the project memory file. Never create a `CLAUDE.md`, a `CLAUDE.md -> AGENTS.md` symlink, or an `@AGENTS.md` import shim in a project to make Claude Code read its instructions.
-- When both files exist as distinct files, the preload serves `AGENTS.md` followed by `CLAUDE.md`, so a real `CLAUDE.md` is a Claude-only overlay that wins on conflicts. Put Claude-specific instructions there only when they must not apply to other harnesses.
-- To confirm the preload is active, start `claude` with `AGENTS_MD_VFS_DEBUG=1` and read `/tmp/agents-md-vfs-latest.log`; a session whose log shows the helper loaded but zero `CLAUDE.md` reads means Claude Code stopped using `node:fs` for memory files and the vendored copy under `{{repo_root}}/vendor/claude-agents-md/` needs attention.
+- Claude Code natively supports `AGENTS.md` for project memory alongside `CLAUDE.md`.
+- Treat `AGENTS.md` as the shared cross-harness project instruction file.
+- When both `AGENTS.md` and `CLAUDE.md` exist, `CLAUDE.md` serves as Claude-specific instructions that layer on top.
 
 ## Runtime State
 

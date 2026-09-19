@@ -1,34 +1,8 @@
-export type IExternalProfileHelperOptions = {
-  // Absolute path (template tokens allowed) to a script Bun must preload into the
-  // launched binary through BUN_OPTIONS="--require ...". Only meaningful for
-  // binaries compiled with Bun, such as Claude Code.
-  bunPreloadScriptPath?: string;
-};
-
-function renderBunPreloadBlock(bunPreloadScriptPath: string): string {
-  // Call-time merge: keep whatever BUN_OPTIONS the caller already exported and
-  // append the preload only when it is missing, so the launcher composes with
-  // other BUN_OPTIONS setters instead of clobbering them and never double-appends.
-  return `bun_preload_script="${bunPreloadScriptPath}"
-case " \${BUN_OPTIONS:-} " in
-  *" --require $bun_preload_script "*) ;;
-  *) BUN_OPTIONS="\${BUN_OPTIONS:+$BUN_OPTIONS }--require $bun_preload_script" ;;
-esac
-export BUN_OPTIONS
-
-`;
-}
-
 export function createExternalProfileHelper(
   binaryName: string,
   environmentVariableName: string,
   profilePath: string,
-  options: IExternalProfileHelperOptions = {},
 ): string {
-  const bunPreloadBlock = options.bunPreloadScriptPath === undefined
-    ? ""
-    : renderBunPreloadBlock(options.bunPreloadScriptPath);
-
   return `#!/usr/bin/env bash
 set -euo pipefail
 
@@ -79,6 +53,6 @@ if [ -z "\$real_binary" ]; then
   exit 1
 fi
 
-${bunPreloadBlock}${environmentVariableName}="${profilePath}" exec "\$real_binary" "\$@"
+${environmentVariableName}="${profilePath}" exec "\$real_binary" "\$@"
 `;
 }

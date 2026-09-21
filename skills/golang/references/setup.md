@@ -23,7 +23,9 @@ These are non-negotiable and apply to every Go project. The rest of this file sh
 - **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory using the project's actual application name (e.g., `go build -o bin/<app-name> ./cmd/<app-name>`). Never output binaries into root or source directories, and never output literally as `bin/app` (replace `<app-name>` with the project binary name). Always git-ignore `bin/`.
 - **Never Commit Compiled Binaries**: Compiled Go binaries (executables, `.exe` files, shared libraries, etc.) are platform-specific, huge, and must never be committed to git repositories. Distribute compiled assets solely through CI/CD pipelines, package registries, or release platforms.
 - **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
-- **CLI Framework & Argument Parsing (Cobra & cobra-help-tree)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) for CLI command structure, flags, and argument parsing. Do not use the standard library `flag` package or write custom argument parsers. For help screen output, always use `github.com/alexgorbatchev/cobra-help-tree` (`cobrahelptree.Setup(rootCmd)`) to display aligned hierarchical tree-view help screens across all command levels.
+- **Third-Party Libraries & Selection**: Encourage using mature third-party libraries instead of rolling custom functionality. Before adding new functionality, research candidate libraries, rank by maturity and adoption (stars, activity, releases, community trust), present options with GitHub links, and let the user pick. Follow standard library exceptions (`net/http.ServeMux`, `log/slog`, `testing`).
+- **LLM Integrations (`any-llm-go`)**: Whenever an application requires LLM completions, chat streaming, tool calling, embeddings, or reasoning, always use `github.com/mozilla-ai/any-llm-go` (https://github.com/mozilla-ai/any-llm-go) to provide a unified interface across providers.
+- **CLI Framework & Argument Parsing (Cobra & cobra-help-tree/v2)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) and `github.com/alexgorbatchev/cobra-help-tree/v2`. Fully leverage all `cobra-help-tree` features (positional argument documentation via `TechCatalog`, tree help on stdout, error usage on stderr, `TreeOptions.HideGeneratedCommands`, and dual-mode `AGENT=1` output) in place of standard Cobra help formatting. Do not use the standard library `flag` package or write custom argument parsers.
 - **Version Flag Output (`--version`)**: `--version` must return ONLY the raw version string (e.g., `1.2.3` or `v1.2.3`), followed by a newline. Do not include application names, banners, labels, or extra formatting (e.g., NOT `app version 1.2.3` or `Version: 1.2.3`). Clean version output is strictly required for automated scripting, tooling, and CI/CD validation.
 - **XDG Base Directory Specification**: Applications must strictly follow XDG Base Directory conventions (`$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, `$XDG_CACHE_HOME`, `$XDG_STATE_HOME`) for user configuration, data, cache, and state directories unless otherwise explicitly specified by requirements or CLI flags. Leverage standard APIs like `os.UserCacheDir()` or `os.UserConfigDir()` with appropriate fallbacks.
 - **Build/Dev Tools as Module Tools**: For CLI tooling used by the repo (linters, generators, etc.), use `tool` directives in `go.mod` (Go 1.24+) rather than `tools.go` blank-import stubs. This keeps tool dependencies explicit and enables `go get -tool`, `go install tool`, and `go tool`.
@@ -34,7 +36,9 @@ Verify before shipping a project change:
 - [ ] Go version is latest (at least Go 1.26+) declared in `go.mod`
 - [ ] Binaries are built strictly into `bin/`, and `bin/` is git-ignored with no compiled binaries committed
 - [ ] Task automation uses `just` with a `justfile` (`just build`, `just test`, etc.)
-- [ ] CLI tools use Cobra with `github.com/alexgorbatchev/cobra-help-tree` for flags, subcommands, argument parsing, and tree help screens
+- [ ] Third-party libraries preferred over rolling custom code (researched, ranked, and user-selected)
+- [ ] LLM workflows use `github.com/mozilla-ai/any-llm-go`
+- [ ] CLI tools use Cobra with `github.com/alexgorbatchev/cobra-help-tree/v2` leveraging TechCatalog for arguments, tree help screens, and output stream separation
 - [ ] `--version` returns ONLY the version string (no app name, prefix, or extra text)
 - [ ] User paths follow XDG Base Directory conventions unless explicitly specified otherwise
 - [ ] Module tool dependencies use `tool` directives (not `tools.go` blank imports)
@@ -146,16 +150,37 @@ clean:
 
 ## 4. Cobra CLI Setup, Tree Help & Version Flag
 
-When building CLI applications, use Cobra (`github.com/spf13/cobra`) for flag and argument parsing, and `github.com/alexgorbatchev/cobra-help-tree` for hierarchical tree help formatting.
+When building CLI applications, use Cobra (`github.com/spf13/cobra`) for command structure and flags, and `github.com/alexgorbatchev/cobra-help-tree/v2` for hierarchical tree help formatting, positional argument documentation, and agent mode.
 
-### 4.1 Installing Cobra & cobra-help-tree
+### 4.1 Installing Cobra & cobra-help-tree/v2
 
 ```bash
 go get github.com/spf13/cobra@latest
-go get github.com/alexgorbatchev/cobra-help-tree@latest
+go get github.com/alexgorbatchev/cobra-help-tree/v2@latest
 ```
 
-### 4.2 Main Command Setup
+### 4.2 Using cobra-help-tree in Place of Standard Cobra Features
+
+Cobra's default help screens have limitations that `cobra-help-tree/v2` replaces:
+
+1. **Documenting Positional Arguments (`TechCatalog`)**:
+   - *Cobra default*: Has no field or screen for describing positional arguments; `Use: "create <name>"` leaves arguments unexplained.
+   - *cobra-help-tree feature*: Define a `cobrahelptree.TechCatalog` mapping full command paths to `cobrahelptree.ArgSpec{Name: "...", Description: "..."}`. Both human and agent modes render arguments cleanly in an `Arguments:` block aligned with the command tree's description column.
+2. **Aligned Hierarchical Tree Help**:
+   - Replaces Cobra's flat command list with multi-level box-drawing ASCII trees (`├─ `, `╰─ `, `│  `) measured in terminal cells (supporting wide runes and emoji).
+3. **Suppressing Generated Commands (`HideGeneratedCommands`)**:
+   - Standard Cobra automatically injects a verbose `completion` command and its shell subtrees (`bash`, `zsh`, `fish`, `powershell`).
+   - Set `TreeOptions.HideGeneratedCommands: true` in `HelpOptions` to drop Cobra's generated shell completion command from human help screens.
+4. **Native Dual-Mode Agent Support (`AGENT=1`)**:
+   - When `AGENT=1` is present in the environment, help automatically switches from ASCII tree graphics to compact, structured YAML-like key-value output designed for AI agents and scripts.
+   - Attach machine metadata via `TechInfo.Metadata` and `TechInfo.MutatesDB` in the catalog.
+5. **Dynamic Terminal Width Protection**:
+   - Detects terminal width and truncates long descriptions with `...` to prevent line wrapping that breaks column alignment.
+6. **Clean Output Stream Separation**:
+   - User-requested `--help` writes to stdout (pipe-friendly: `mytool --help | less`).
+   - Flag/argument syntax errors and usage write to stderr where diagnostics belong.
+
+### 4.3 Complete CLI Setup Template
 
 ```go
 package main
@@ -164,7 +189,7 @@ import (
 	"fmt"
 	"os"
 
-	cobrahelptree "github.com/alexgorbatchev/cobra-help-tree"
+	cobrahelptree "github.com/alexgorbatchev/cobra-help-tree/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -176,8 +201,7 @@ func main() {
 		Use:   "<app-name>",
 		Short: "<app-name> description",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Root command execution
-			return nil
+			return cmd.Help()
 		},
 	}
 
@@ -185,8 +209,47 @@ func main() {
 	rootCmd.Version = version
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 
-	// Enable hierarchical tree help screens across all command levels
-	cobrahelptree.Setup(rootCmd)
+	// Define subcommands
+	userCmd := &cobra.Command{
+		Use:   "user",
+		Short: "Manage user accounts",
+	}
+
+	createCmd := &cobra.Command{
+		Use:   "create <name>",
+		Short: "Create a new user",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Command execution
+			return nil
+		},
+	}
+	userCmd.AddCommand(createCmd)
+	rootCmd.AddCommand(userCmd)
+
+	// Document positional arguments and machine metadata via TechCatalog
+	catalog := cobrahelptree.TechCatalog{
+		"<app-name> user create": {
+			Args: []cobrahelptree.ArgSpec{
+				{Name: "<name>", Description: "Login username for the new user"},
+			},
+			MutatesDB: true,
+			Metadata: map[string]string{
+				"scope": "admin",
+			},
+		},
+	}
+
+	// Install tree help with full options in place of standard Cobra help
+	err := cobrahelptree.SetupWithOptions(rootCmd, cobrahelptree.HelpOptions{
+		Catalog: catalog,
+		Tree: cobrahelptree.TreeOptions{
+			HideGeneratedCommands: true, // Suppress Cobra's auto-generated completion command
+		},
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -195,7 +258,7 @@ func main() {
 }
 ```
 
-### 4.3 Version Flag Output Contract
+### 4.4 Version Flag Output Contract
 
 The `--version` flag MUST return ONLY the version string followed by a newline:
 

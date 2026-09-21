@@ -9,7 +9,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-09-18 10:43
+  last_modified: 2026-09-21 18:28
   status: current
 ---
 
@@ -21,7 +21,7 @@ This skill defines the non-negotiable idioms and design principles for writing G
 
 Read the matching file when the task goes beyond writing code:
 
-- [references/setup.md](references/setup.md) — **Binding project rules** (Go version, `go-scaffold`, `bin/` output, `just`, Cobra + `cobra-help-tree`, `--version` contract, XDG paths, module `tool` directives) plus setup, `justfile`, Cobra, and `.gitignore` templates. Read before starting, restructuring, building, or releasing a project.
+- [references/setup.md](references/setup.md) — **Binding project rules** (Go version, `go-scaffold`, `bin/` output, `just`, Cobra + `cobra-help-tree/v2`, `any-llm-go`, `--version` contract, XDG paths, module `tool` directives) plus setup, `justfile`, Cobra, and `.gitignore` templates. Read before starting, restructuring, building, or releasing a project.
 - [references/github-ci-cd-releases.md](references/github-ci-cd-releases.md) — GitHub Actions CI, tagged releases, GoReleaser config, and binary version metadata.
 - [references/go-release-notes.md](references/go-release-notes.md) — Language and tooling changes in Go 1.23+, released after the model training cutoff. Read when choosing between a newer and an older idiom, raising the `go` line, or relying on a recent `go` subcommand or analyzer.
 
@@ -36,35 +36,24 @@ Go naming communicates scope and intent through brevity. Names earn their length
 The farther a variable is from its declaration, the more descriptive its name should be. The closer it is, the shorter.
 
 ```go
-// GOOD — single-letter in tight scope
+// GOOD — single-letter in tight scope, descriptive across wide scope
 for i, v := range items {
     process(v)
 }
-
-// GOOD — short name, used within a few lines
 resp, err := http.Get(url)
 if err != nil {
     return err
 }
 defer resp.Body.Close()
 
-// GOOD — descriptive name, lives across many lines or is a struct field
 type Worker struct {
     MaxRetryAttempts int
     ShutdownTimeout  time.Duration
 }
-```
 
-```go
-// BAD — unnecessarily verbose in tight scope
-for index, value := range items {
-    process(value)
-}
-
-// BAD — cryptic name that persists across a wide scope
-t := time.Hour * 24 * 7
-// ... 40 lines later ...
-if elapsed > t { // what is t?
+// BAD — unnecessarily verbose in tight scope, cryptic across wide scope
+for index, value := range items { process(value) }
+t := time.Hour * 24 * 7 // what is t 40 lines later?
 ```
 
 ### 1.2 Receiver Names
@@ -100,10 +89,7 @@ Short, lowercase, single-word. The package name is part of the call site — don
 package http    // http.Client
 package user    // user.Create(...)
 
-// BAD
-package httputil     // httputil.HTTPClient — stutter
-package users        // no plurals
-package userService  // no camelCase
+// BAD: package httputil (stutter), package users (plural), package userService (camelCase)
 ```
 
 ### 1.5 Exported vs Unexported
@@ -467,21 +453,38 @@ Keep the same readability bar: use the form that makes intent easiest to review 
 
 ---
 
-## 8. Standard Library First
+## 8. Third-Party Libraries & Dependencies
 
-Reach for the standard library before any third-party dependency. Go's stdlib is unusually rich. Common traps:
+Encourage using mature third-party libraries instead of rolling custom functionality.
 
-| Don't pull in...         | When stdlib has...                           |
-|--------------------------|----------------------------------------------|
-| gorilla/mux              | `net/http.ServeMux` (1.22+ has patterns)     |
-| logrus/zap (maybe)       | `log/slog` (1.21+)                           |
-| testify                  | `testing` + table-driven tests               |
-| uuid libraries           | `crypto/rand` + explicit formatting           |
-| config libraries         | `os.Getenv` + a small struct                  |
+### 8.1 Research & User Selection Workflow
 
-*Exception for CLI applications*: Use Cobra (`github.com/spf13/cobra`) with `github.com/alexgorbatchev/cobra-help-tree` for CLI commands, argument handling, and tree-structured help screens instead of stdlib `flag`.
+Before introducing new functionality:
+1. **Research Options**: Search for established, maintained Go libraries solving the problem.
+2. **Rank by Maturity & Adoption**: Evaluate by GitHub stars, commit activity, release cadence, issue turnaround, and adoption.
+3. **Present Options with Links**: Print ranked candidates with GitHub URLs, feature summaries, and adoption metrics.
+4. **User Selects**: Let the user choose the library before writing code or adding imports.
 
-Add a dependency only when it provides clear, substantial value that the stdlib cannot match with reasonable effort. Repo build and dev tooling is declared with `tool` directives in `go.mod`, not added as a code dependency — see [references/setup.md](references/setup.md).
+### 8.2 Domain-Specific Must-Use Libraries
+
+Always use the designated library for these domains instead of custom code:
+- **CLI Applications**: Cobra (`github.com/spf13/cobra`) with `github.com/alexgorbatchev/cobra-help-tree/v2`. Use all `cobra-help-tree` features (`TechCatalog` for positional arguments, tree help, `HideGeneratedCommands`, `AGENT=1` machine mode, width protection, stdout for help / stderr for usage) in place of standard Cobra help. Never use stdlib `flag` or custom parsers.
+- **LLM Completions & AI Workflows**: `github.com/mozilla-ai/any-llm-go` (https://github.com/mozilla-ai/any-llm-go) for all LLM completions, chat streaming, embeddings, tool calling, and provider switching.
+- **Integration Testing with Real Services**: `testcontainers-go` (`github.com/testcontainers/testcontainers-go`) for containerized dependencies.
+
+### 8.3 Standard Library Exceptions
+
+Do not pull third-party libraries when Go's standard library provides built-in, idiomatic primitives:
+
+| Don't pull in... | When stdlib has... |
+|---|---|
+| gorilla/mux, chi (basic routing) | `net/http.ServeMux` (Go 1.22+ patterns) |
+| logrus/zap (basic logging) | `log/slog` (Go 1.21+) |
+| testify | `testing` + table-driven tests |
+| uuid libraries (simple IDs) | `crypto/rand` + hex formatting |
+| config libraries (basic envs) | `os.Getenv` + a typed struct |
+
+Repo build and dev tooling is declared with `tool` directives in `go.mod`, not added as a code dependency — see [references/setup.md](references/setup.md).
 
 
 ---
@@ -498,7 +501,9 @@ Before producing any Go code, verify the following. Project provisioning, toolch
 - [ ] Goroutines have clear ownership and shutdown paths
 - [ ] Packages named for responsibility, not layer
 - [ ] Exported API is minimal — only what external consumers need
-- [ ] Standard library used unless a dependency provides substantial value
+- [ ] Third-party libraries preferred over custom implementations (researched, ranked, user-selected)
+- [ ] Domain-specific must-use libraries applied (Cobra + cobra-help-tree/v2 for CLI, any-llm-go for LLMs)
+- [ ] Standard library exceptions honored (slog, ServeMux, testing) without redundant wrappers
 - [ ] Comments explain why, code explains what
 - [ ] Zero values are useful
 - [ ] Tests are table-driven where applicable

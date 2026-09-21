@@ -441,6 +441,7 @@ describe("Claude Code harness build", () => {
     const cllHelper = await readFile(join(binDir, "cll"), "utf-8");
     expect(cllHelper).toContain('MODEL="${CLAUDE_MODEL:-gemini-3.7-flash}"');
     expect(cllHelper).toContain('ANTHROPIC_CUSTOM_MODEL_OPTION="$MODEL"');
+    expect(cllHelper).toContain('export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-1000000}"');
     expect(cllHelper).toContain('exec "$real_binary" --dangerously-skip-permissions --model "$MODEL" "$@"');
   });
 

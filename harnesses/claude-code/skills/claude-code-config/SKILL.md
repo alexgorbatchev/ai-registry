@@ -2,6 +2,10 @@
 name: claude-code-config
 description: Configure Claude Code (`claude`) memory, settings, skills, commands, subagents, and hooks. Use when working with Claude Code config surfaces such as `settings.json`, `CLAUDE.md`, `commands/`, `skills/`, `agents/`, `hooks`, `output-styles/`, or `CLAUDE_CONFIG_DIR`, and when mapping another harness's prompts or skills into Claude Code's native configuration surface.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-09-18 18:00
+  last_modified: 2026-09-19 15:10
+  status: current
 ---
 
 # Claude Code Config
@@ -14,6 +18,8 @@ author: alexgorbatchev
 ## Configuration Surfaces
 
 - `settings.json` holds `permissions`, `env`, `hooks`, `model`, `statusLine`, and similar options. It is JSON, not JSONC, so do not add comments.
+- Keys in `settings.json` must be kept sorted alphabetically, nested objects included.
+- `env` under `settings.json` defines session environment variables (e.g. `CLAUDE_CODE_MAX_CONTEXT_TOKENS` for overriding context window limits on custom/LiteLLM models).
 - `CLAUDE.md` in the config directory is user-global memory that is prepended to every session. Project memory lives in `./AGENTS.md`, `./CLAUDE.md`, and `./.claude/CLAUDE.md`.
 - `commands/*.md` are user slash commands, invoked as `/<filename>`. Frontmatter supports `description`, `argument-hint`, `allowed-tools`, and `model`.
 - `skills/<name>/SKILL.md` are Agent Skills. Frontmatter requires `name` and `description`; the description is the only routing signal, so state both what the skill does and when to use it.

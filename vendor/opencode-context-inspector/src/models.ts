@@ -24,6 +24,11 @@ const CONTEXT_WINDOWS: Record<string, number> = {
   "gemini-2.5-pro": 1_000_000,
   "gemini-2.5-flash": 1_000_000,
   "gemini-3-pro": 1_000_000,
+  "gemini-3-flash": 1_000_000,
+  "gemini-3.5-flash": 1_000_000,
+  "gemini-3.6-flash": 1_000_000,
+  "gemini-3.7-flash": 1_000_000,
+  "gemini-3.8-flash": 1_000_000,
   // xAI
   "grok-4": 256_000,
   "grok-4-fast": 2_000_000,

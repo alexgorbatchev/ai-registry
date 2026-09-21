@@ -37,11 +37,15 @@
         }
       }
     },
-    "skills": { "enabled": false },
-    "mcp": { "enabled": false }
+    "skills": {
+      "enabled": false
+    },
+    "mcp": {
+      "enabled": false
+    }
   },
   "enableSkillCommands": true,
-  "lastChangelogVersion": "0.85.1",
+  "lastChangelogVersion": "0.87.0",
   "theme": "dark",
   "hideThinkingBlock": false,
   "defaultProvider": "litellm",

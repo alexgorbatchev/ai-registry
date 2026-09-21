@@ -13,6 +13,18 @@
           "name": "Gemini 3.6 Flash",
           "contextWindow": 1048576,
           "maxTokens": 65536
+        },
+        {
+          "id": "gemini-3.7-flash",
+          "name": "Gemini 3.7 Flash",
+          "contextWindow": 1048576,
+          "maxTokens": 65536
+        },
+        {
+          "id": "gemini-3.8-flash",
+          "name": "Gemini 3.8 Flash",
+          "contextWindow": 1048576,
+          "maxTokens": 65536
         }
       ]
     }

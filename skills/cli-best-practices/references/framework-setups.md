@@ -41,7 +41,7 @@ import (
 	"fmt"
 	"os"
 
-	cobrahelptree "github.com/alexgorbatchev/cobra-help-tree"
+	cobrahelptree "github.com/alexgorbatchev/cobra-help-tree/v2"
 	"github.com/spf13/cobra"
 )
 

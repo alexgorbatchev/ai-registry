@@ -8,7 +8,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-18 13:22
-  last_modified: 2026-09-21 15:45
+  last_modified: 2026-09-21 17:15
   status: current
 ---
 
@@ -32,7 +32,7 @@ For the full section-by-section anatomy of each issue type, read [references/iss
    - If this issue depends on another issue, clearly specify that dependency (e.g., under `## Dependencies` or `Depends on #<number>`).
    - If this new issue introduces a dependency into an existing issue (i.e., the existing issue cannot proceed without this one), **update the existing issue** (via `gh issue comment` or `gh issue edit`) to explicitly declare that dependency.
 5. **Pick labels.** See the rule below. Do this before drafting, because an issue that fits no existing label is usually an issue whose type you have not settled.
-6. **Draft to `.tmp/issue.md`.** First line is the title, second line blank, the rest is the body. Keep drafts out of the repository root.
+6. **Draft to `.tmp/issue.md` (or `.tmp/issue-<name>.md` when drafting multiple).** First line is the title, second line blank, the rest is the body. Keep drafts out of the repository root.
 7. **Stop and wait for the user to review.** Never create the issue unprompted.
 8. **Create it after approval:**
    ```bash
@@ -48,6 +48,11 @@ For the full section-by-section anatomy of each issue type, read [references/iss
    gh issue view <number> --json number,title,labels
    ```
    Report the issue number and title. Do not paste URLs.
+10. **Clean up draft files:**
+    Once created and verified, remove all `.tmp/issue*` draft files to keep the workspace clean:
+    ```bash
+    rm -f .tmp/issue*
+    ```
 
 ## Labels Are Mandatory
 

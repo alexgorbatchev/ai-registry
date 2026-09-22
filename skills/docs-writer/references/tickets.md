@@ -26,16 +26,21 @@ ticket_status: open
 
 ## Workflow
 
-1.  **Discover the Need:** Map user requests, roadmap plans, or design specs (`{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/`) to a discrete unit of actionable development work.
-2.  **Define the Problem:** Write a clear explanation of the current system gap, codebase limitation, or user friction in the `## Problem` section. Avoid vague generalities.
-3.  **Establish Value:** Explain *why* resolving this problem is critical, detailing performance gains, stability enhancements, or future capability enablement in `## Why this matters`.
-4.  **Map Observed Context:** Search the repository to identify exactly which files, designs, ADRs, or configurations are relevant. List them explicitly under `## Observed context`.
-5.  **Formulate Acceptance Criteria:** Write a precise, exhaustive markdown checklist (using `- [ ]` checkboxes) under `## Acceptance criteria` detailing:
+1.  **Review Existing Tickets First:** Search `{{ env "DOCS_INTERNAL_DIR" }}/tickets/` (both active and `closed/`) before writing a new ticket.
+    -   **Already covered:** If an existing ticket already covers this problem, do not create a duplicate; reference the existing ticket.
+    -   **Partially covered:** If an existing ticket partially covers the problem or scope, **update the existing ticket** with the new requirements, observed context, and acceptance criteria rather than creating a fragmented new ticket.
+2.  **Discover the Need:** Map user requests, roadmap plans, or design specs (`{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/`) to a discrete unit of actionable development work.
+3.  **Define the Problem:** Write a clear explanation of the current system gap, codebase limitation, or user friction in the `## Problem` section. Avoid vague generalities.
+4.  **Establish Value:** Explain *why* resolving this problem is critical, detailing performance gains, stability enhancements, or future capability enablement in `## Why this matters`.
+5.  **Map Observed Context & Dependencies:** Search the repository to identify exactly which files, designs, ADRs, or configurations are relevant. List them explicitly under `## Observed context`.
+    -   **Document prerequisites:** If this ticket depends on another ticket, specify the prerequisite ticket path under `## Dependencies`.
+    -   **Update existing tickets:** If this new ticket introduces a dependency into an existing ticket (i.e., an existing ticket now depends on or is blocked by this ticket), immediately update that existing ticket's `## Dependencies` section to document the dependency.
+6.  **Formulate Acceptance Criteria:** Write a precise, exhaustive markdown checklist (using `- [ ]` checkboxes) under `## Acceptance criteria` detailing:
     - [ ] Specific interfaces, modules, properties, or functions to implement or refactor.
     - [ ] Preservation of key system properties (e.g., memory limits, reference equality).
     - [ ] Strict test suites, coverage baselines, or golden snapshot verifications that must pass.
     - [ ] **Mandatory Review Pass:** Include a required item to run a separate review pass on the ticket using an independent review workflow or review subagent, resolving all identified feedback/issues until a completely clean review is returned.
-6.  **Validate against template:** Ensure the formatting matches `assets/tickets-template.md`.
+7.  **Validate against template:** Ensure the formatting matches `assets/tickets-template.md`.
 
 ## Lifecycle and Archiving Rules
 
@@ -49,6 +54,8 @@ ticket_status: open
 
 ## Final Checklist
 
+-   Existing tickets were reviewed, and any partially covered tickets were updated rather than duplicated.
+-   Dependencies are clearly declared, and any existing tickets that depend on this ticket were updated.
 -   File is written to `{{ env "DOCS_INTERNAL_DIR" }}/tickets/` (or `closed/` / `archived/` depending on lifecycle state).
 -   Frontmatter contains standard `created_on`, `last_modified`, `status`, and `ticket_status` keys.
 -   Timestamps follow `YYYY-MM-DD HH:MM` format.

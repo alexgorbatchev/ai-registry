@@ -28,6 +28,11 @@ ticket_status: open
   - `path/to/file.ext` (describe current state or refactor goal)
   - `path/to/another_file.ext`
 
+## Dependencies
+
+- **Prerequisites (Depends on):** `<path-to-ticket-or-issue>` (or "None")
+- **Blocks:** `<path-to-ticket-or-issue>` (update blocked tickets when this ticket introduces a new dependency)
+
 ## Desired outcome
 
 <Provide a high-level summary of the target solution and final end-state of the system after this ticket is implemented.>

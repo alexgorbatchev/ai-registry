@@ -61,9 +61,12 @@ The shape of the fix, the trade-off if there is one, and the test that should co
 
 Do not write the patch. The issue argues the case; the pull request implements it.
 
-### `## Related`
+### `## Dependencies` or `## Related`
 
-Issue numbers, and how they relate: "Found while fixing #72."
+Document issue relationships and dependencies explicitly:
+- **Prerequisites (`Depends on` / `Blocked by`):** If this issue cannot be implemented until another issue lands, explicitly state it: "Depends on #45 before the pipeline integration can proceed."
+- **Reverse dependencies (`Blocks`):** If this issue introduces a prerequisite for an existing issue, document it here ("Blocks #78") and **update the existing issue** to specify that it is now blocked by this issue.
+- **Related issues:** Issue numbers, and how they relate: "Found while fixing #72; sibling defect to #80."
 
 ---
 

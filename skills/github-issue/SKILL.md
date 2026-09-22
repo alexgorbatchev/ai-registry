@@ -8,7 +8,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-18 13:22
-  last_modified: 2026-09-18 13:22
+  last_modified: 2026-09-21 15:45
   status: current
 ---
 
@@ -18,24 +18,32 @@ For the full section-by-section anatomy of each issue type, read [references/iss
 
 ## Workflow
 
-1. **Search for duplicates first, open and closed.**
+1. **Review open issues first.**
+   Check currently open issues to see if the problem is already being tracked:
    ```bash
-   gh issue list --state all --search "<distinctive keywords>" --limit 30
+   gh issue list --state open --search "<distinctive keywords>" --limit 30
    ```
-   Search the symbol, flag, or setting name rather than your prose description. If the problem is already reported, stop and give the user the matching issue numbers and titles instead of filing anything.
+   **Always use `--state open`** with targeted keywords (search the specific symbol, flag, or error message rather than broad prose descriptions). **Do not fetch all issues** or list without filters.
+   - **Already covered:** If an existing open issue already covers the problem, stop and give the user the matching issue numbers and titles instead of filing anything.
+   - **Partially covered:** If an existing open issue partially covers the problem (e.g., related symptom, same root cause in another component, or incomplete reproduction), **do not file a new issue**. Instead, update the existing issue (via `gh issue comment` or `gh issue edit`) with the new evidence, additional call sites, or expanded scope.
 2. **Read the repository's conventions.** Check `.github/ISSUE_TEMPLATE/` and follow the matching template when one exists; its structure wins over the default anatomy.
 3. **Investigate before drafting.** Find the responsible code, the call sites, and any place the same problem is handled correctly. A contrasting correct call site is the strongest evidence an issue can carry: it shows the defect is an oversight rather than a design choice.
-4. **Pick labels.** See the rule below. Do this before drafting, because an issue that fits no existing label is usually an issue whose type you have not settled.
-5. **Draft to `.tmp/issue.md`.** First line is the title, second line blank, the rest is the body. Keep drafts out of the repository root.
-6. **Stop and wait for the user to review.** Never create the issue unprompted.
-7. **Create it after approval:**
+4. **Identify dependencies.**
+   - If this issue depends on another issue, clearly specify that dependency (e.g., under `## Dependencies` or `Depends on #<number>`).
+   - If this new issue introduces a dependency into an existing issue (i.e., the existing issue cannot proceed without this one), **update the existing issue** (via `gh issue comment` or `gh issue edit`) to explicitly declare that dependency.
+5. **Pick labels.** See the rule below. Do this before drafting, because an issue that fits no existing label is usually an issue whose type you have not settled.
+6. **Draft to `.tmp/issue.md`.** First line is the title, second line blank, the rest is the body. Keep drafts out of the repository root.
+7. **Stop and wait for the user to review.** Never create the issue unprompted.
+8. **Create it after approval:**
    ```bash
    sed '1,2d' .tmp/issue.md | gh issue create \
      --title "$(sed -n '1p' .tmp/issue.md)" \
      --label bug \
      --body-file -
    ```
-8. **Verify the labels landed**, because a silently unlabelled issue is the failure this skill exists to prevent:
+9. **Update dependent issues and verify:**
+   - If this new issue introduced a dependency into existing issues, ensure those existing issues are updated with the newly assigned issue number (`#<number>`).
+   - Verify the labels landed, because a silently unlabelled issue is the failure this skill exists to prevent:
    ```bash
    gh issue view <number> --json number,title,labels
    ```
@@ -69,5 +77,6 @@ The title is the whole issue compressed into one specific sentence.
 - Say why it matters in user-visible terms: what a person loses, and a realistic way to reach it. Relate it to sibling issues by number when the same class of defect appears more than once.
 - State the expected behavior as a requirement, not a wish.
 - Offer a direction for the fix and name the test that should cover it. Stop short of writing the patch.
+- Explicitly declare dependencies: if this issue depends on another issue, state `Depends on #<number>` (or `Blocked by #<number>`). If it introduces a dependency into an existing issue, update that existing issue immediately.
 - Prose is present tense and factual. No changelog phrasing, no promotional filler, no AI signature, no emojis.
 - Reference other issues as `#72`. Never paste URLs into issues or into your replies to the user.

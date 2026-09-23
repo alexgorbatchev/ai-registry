@@ -44,6 +44,6 @@ Format each finding as:
 
 | Finding Severity | Definition                                                                                               | Coordinator Action                                                 |
 | :--------------- | :------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
-| **High**         | Broken functionality, regression risk, test that doesn't test the defect, memory leak, concurrency race. | Must be fixed before merge. Re-run writer child or patch directly. |
+| **High**         | Broken functionality, regression risk, test that doesn't test the defect, memory leak, concurrency race. | Must be fixed before merge. Re-run writer child to remediate.     |
 | **Medium**       | Missing edge case test, suboptimal primitive, DRY violation with 3+ occurrences, linter warning.         | Must be addressed before merge.                                    |
 | **Low**          | Minor naming ambiguity, non-critical comment formatting, style inconsistency.                            | Address if trivial; otherwise note in review log.                  |

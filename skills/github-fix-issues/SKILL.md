@@ -1,7 +1,7 @@
 ---
 name: github-fix-issues
 description: >-
-  REQUIRED when fixing, resolving, or implementing GitHub issues using subagents in any repository.
+  REQUIRED when fixing, resolving, or implementing GitHub issues labeled `bug` or `feature` using subagents in any repository.
   Trigger whenever asked to "fix issue #123", "resolve github issue", "work on open issues",
   "fix this bug with subagents", or execute a delegated issue remediation workflow. Your default training
   knowledge is insufficient; you MUST READ this to execute the parent coordinator lifecycle, red/green TDD
@@ -10,7 +10,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-09-23 11:45
+  last_modified: 2026-09-23 15:45
   status: current
 ---
 
@@ -29,11 +29,11 @@ Never invent a command, path, package, or threshold that these sources do not st
 
 - **HARD PROHIBITION**: The coordinator agent is strictly prohibited from invoking `edit` or `write` on any files inside issue worktrees or package directories. Any file modification to implementation or test code MUST be performed by a delegated child subagent. If the coordinator edits code directly, the turn is an automatic failure.
 - **Coordinator Boundary**: The coordinator manages queue ordering, provisions worktrees, receives clean review notifications from subagents, merges verified worktrees into `issues-dev`, tears down worktrees, performs the final merge, and closes GitHub issues. The coordinator does NOT micromanage the review loop.
-- **Coordinator Rebase Before Provisioning**: The coordinator MUST rebase `issues-dev` onto `<default-branch>` before starting any new subagent or provisioning a new issue worktree.
+- **Coordinator Sync Before Provisioning**: The coordinator MUST keep `issues-dev` up to date with `<default-branch>` by fetching and merging upstream changes before starting any new subagent or provisioning a new issue worktree. Never rebase `issues-dev`, as rebasing rewrites merge commits and invalidates base commits for active concurrent worktrees.
 - **Subagent Rebase Before Review**: Subagents MUST rebase their branch on `issues-dev` before entering the review pairing loop to eliminate integration conflicts for the coordinator.
-- **Autonomous Subagent Review Pairing**: Subagents pair autonomously with review agents until no further issues are reported ("clean review"), and notify the coordinator only when the review is clean and ready for integration.
-- **Full Queue Completion**: The coordinator works through the entire open issue set, continuing until no open issues remain.
-- **Dependency-Aware Order Determination**: The coordinator analyzes all open tickets to establish an execution order:
+- **Autonomous Subagent Review Pairing**: Subagents pair with review agents until no further issues are reported ("clean review"), and notify the coordinator only when the review is clean and ready for integration. Where the harness supports nested subagents and permissions allow, the child invokes the reviewer directly; otherwise, the coordinator alternates between writer and reviewer subagents on the issue worktree without editing code directly.
+- **Full Queue Completion**: The coordinator works through the entire open issue set labeled `bug` or `feature`, continuing until no matching open issues remain.
+- **Dependency-Aware Order Determination**: The coordinator analyzes all open `bug` and `feature` tickets to establish an execution order:
   1. Foundational defects first: data sources, ingestion, parsing, storage, and core domain logic.
   2. Service, middleware, classification, and reconciliation defects second.
   3. UI, presentation, and other consumer-surface adjustments third.
@@ -59,27 +59,33 @@ Never invent a command, path, package, or threshold that these sources do not st
    git worktree add .workspaces/issues-dev -b issues-dev <default-branch>
    ```
 
-   If it already exists, ensure it is rebased on `<default-branch>`:
+   If it already exists, ensure it is synchronized with `<default-branch>`:
 
    ```bash
    git -C .workspaces/issues-dev fetch origin <default-branch>
-   git -C .workspaces/issues-dev rebase origin/<default-branch>
+   git -C .workspaces/issues-dev merge origin/<default-branch>
    ```
 
-3. **Ingest Issue Queue & Order Tasks**:
+3. **Ingest Issue Queue & Filter by Labels**:
+   Query open issues and restrict execution strictly to issues tagged with `bug` or `feature` labels (ignoring unlabeled issues, questions, discussions, or other labels):
 
    ```bash
-   gh issue list --state open --limit 20
+   gh issue list --state open --json number,title,labels --limit 50
+   ```
+
+   Filter the queue to issues whose labels include `bug` or `feature`. For each matching issue:
+
+   ```bash
    gh issue view <issue-number> --json number,title,body,comments,labels,author
    ```
 
    Map dependencies across open issues and order them into execution batches.
 
-4. **Rebase `issues-dev` & Provision Per-Issue Worktrees (Up to 3 Max)**:
+4. **Sync `issues-dev` & Provision Per-Issue Worktrees (Up to 3 Max)**:
    Before provisioning each new issue worktree:
    ```bash
    git -C .workspaces/issues-dev fetch origin <default-branch>
-   git -C .workspaces/issues-dev rebase origin/<default-branch>
+   git -C .workspaces/issues-dev merge origin/<default-branch>
    git worktree add .workspaces/issue-<number> -b fix/issue-<number> issues-dev
    ```
 
@@ -94,6 +100,13 @@ Delegate each issue to a subagent scoped strictly to `.workspaces/issue-<number>
 1. Locate the test file next to the affected code, following the project's existing test layout and naming.
 2. Author an automated unit or integration test reproducing the exact defect described in the issue.
 3. Run it with the project's targeted-test command inside `.workspaces/issue-<number>` and verify it fails with the expected assertion error. Do not write implementation code until the failure is directly observed in the tool output.
+
+**Exception for Non-Code & Non-Testable Issues**:
+When an issue strictly modifies non-testable surfaces (such as documentation, GitHub Actions / CI workflow YAML, static configuration files, assets, or package metadata) where an automated reproduction unit/integration test is inapplicable:
+- Skip authoring a reproduction test.
+- The subagent brief and report MUST document the non-testable rationale.
+- If static validators, linters, or schema checkers exist for the touched files (e.g. `actionlint` for workflows, markdown linters for docs, schema validation), run them as the verification check before and after the change.
+- In Step 2E, verify the change using the appropriate static validator or project lint check instead of disabling/re-enabling a reproduction test.
 
 ### Step 2B — Green Phase (Primitive-Correct Fix)
 
@@ -117,7 +130,7 @@ This absorbs changes integrated by concurrent subagents, resolves conflicts insi
 
 ### Step 2D — Autonomous Review Pairing Loop
 
-1. Pair with a review agent with fresh context on the worktree diff, using [references/reviewer-prompt.md](references/reviewer-prompt.md). If the project or user provides a code-review skill (for example `code-review-baseline`), instruct the reviewer to load it.
+1. Pair with a review agent with fresh context on the worktree diff, using [references/reviewer-prompt.md](references/reviewer-prompt.md). If the project or user provides a code-review skill (for example `code-review-baseline`), instruct the reviewer to load it. (If the harness supports nested delegation and permissions allow, the child invokes the reviewer; in harnesses without nested subagent support, the coordinator drives the review loop by alternating between writer and reviewer subagents on the issue worktree without editing code directly.)
 2. Fix every reported defect in `.workspaces/issue-<number>` and re-submit for review.
 3. The loop continues until the review agent reports `NO DEFECTS FOUND`.
 
@@ -157,7 +170,7 @@ Upon receiving the clean review notification:
 
 3. **Record the Closing Summary**: Keep the subagent's root cause, fix, and verification evidence for section 4. Do not close the issue yet; the fix is not on `<default-branch>`.
 
-4. **Replenish Concurrency Pool**: If additional open issues remain, rebase `issues-dev` onto `origin/<default-branch>` and provision the next `.workspaces/issue-<number>` to maintain up to 3 parallel workers.
+4. **Replenish Concurrency Pool**: If additional open issues remain, sync `issues-dev` with `origin/<default-branch>` (`git -C .workspaces/issues-dev fetch origin <default-branch> && git -C .workspaces/issues-dev merge origin/<default-branch>`) and provision the next `.workspaces/issue-<number>` to maintain up to 3 parallel workers.
 
 ---
 
@@ -178,7 +191,14 @@ When all queued issues have been merged into `issues-dev`:
 
    ```bash
    git checkout <default-branch>
+   git pull --ff-only origin <default-branch>
    git merge --ff-only issues-dev
+   ```
+
+   If `--ff-only` rejects the merge (for example, when `issues-dev` contains merge commits from syncing with upstream or repository policy prohibits fast-forward merges), complete integration with a non-fast-forward merge:
+
+   ```bash
+   git merge --no-ff issues-dev -m "merge: integrate issues-dev into <default-branch>"
    ```
 
 3. **Push With Consent**: Show the user `git log --oneline origin/<default-branch>..<default-branch>` and ask for approval to push `<default-branch>` to `origin`. If the user declines, leave every issue open, report the unpushed commits, and skip step 4.
@@ -205,6 +225,6 @@ When all queued issues have been merged into `issues-dev`:
 
 6. **Final Issue Check Before Turn Yield**:
    ```bash
-   gh issue list --state open --limit 20
+   gh issue list --state open --json number,title,labels --limit 20
    ```
-   If new actionable issues were filed, repeat from Step 1.
+   Filter for open issues labeled `bug` or `feature`. If matching actionable issues remain, repeat from Step 1.

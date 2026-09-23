@@ -7,6 +7,9 @@ import {
   applyTemplateVariablesToGeneratedOutput,
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
+  stageProfileAssets,
+  type IBuildSupport,
+  type IProfileBuildContext,
   type ITemplateContext,
 } from "../harnessBuild";
 
@@ -169,5 +172,78 @@ describe("harnessBuild template rendering", () => {
     expect(await readFile(join(targetDir, "references", "ref.md"), "utf-8")).toBe(
       `# Reference\n\nSkills live in ${join(repositoryRoot, "skills")}.`,
     );
+  });
+
+  it("stages skills and commands from custom source paths when provided", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const overlayDir = await createTestDirectory();
+
+    const baseSkillDir = join(repositoryRoot, "skills", "base-skill");
+    await writeTestFile(baseSkillDir, "SKILL.md", "# Base Skill");
+
+    const overlaySkillDir = join(overlayDir, "skills", "overlay-skill");
+    await writeTestFile(overlaySkillDir, "SKILL.md", "# Overlay Skill");
+
+    const baseCommandFile = join(repositoryRoot, "commands", "base-cmd.md");
+    await writeTestFile(repositoryRoot, "commands/base-cmd.md", "# Base Cmd");
+
+    const overlayCommandFile = join(overlayDir, "commands", "overlay-cmd.md");
+    await writeTestFile(overlayDir, "commands/overlay-cmd.md", "# Overlay Cmd");
+
+    const targetSkillsDir = join(repositoryRoot, "staged", "skills");
+    const targetCommandsDir = join(repositoryRoot, "staged", "commands");
+
+    const templateContext: ITemplateContext = {
+      repo_root: repositoryRoot,
+      skills_dir: join(repositoryRoot, "skills"),
+      commands_dir: join(repositoryRoot, "commands"),
+      profiles_dir: join(repositoryRoot, "profiles"),
+      output_dir: join(repositoryRoot, "output"),
+    };
+
+    const buildSupport: IBuildSupport = {
+      copyDirectoryWithTemplateVariables: async (source, target, ctx) => {
+        await copyDirectoryWithTemplateVariables(source, target, ctx);
+      },
+      copyPathWithTemplateVariables: async (source, target, ctx) => {
+        await copyPathWithTemplateVariables(source, target, ctx);
+      },
+      mergeDirectory: async () => {},
+      stageProfileAssets: async () => {},
+      writeBinScript: async () => {},
+      ensureRuntimeDirectory: async () => {},
+    };
+
+    const context: IProfileBuildContext = {
+      harnessDir: join(repositoryRoot, "harnesses", "test"),
+      profileName: "test-profile",
+      profileDir: join(repositoryRoot, "profiles", "test-profile"),
+      manifest: {},
+      globalMatchedSkills: ["base-skill", "overlay-skill"],
+      globalMatchedCommands: ["base-cmd.md", "overlay-cmd.md"],
+      globalSkillSourcePaths: {
+        "base-skill": baseSkillDir,
+        "overlay-skill": overlaySkillDir,
+      },
+      globalCommandSourcePaths: {
+        "base-cmd.md": baseCommandFile,
+        "overlay-cmd.md": overlayCommandFile,
+      },
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+      outputDir: join(repositoryRoot, "staged"),
+      templateContext,
+      buildSupport,
+    };
+
+    await stageProfileAssets(context, {
+      skillsDir: targetSkillsDir,
+      commandsDir: targetCommandsDir,
+    });
+
+    expect(await readFile(join(targetSkillsDir, "base-skill", "SKILL.md"), "utf-8")).toBe("# Base Skill");
+    expect(await readFile(join(targetSkillsDir, "overlay-skill", "SKILL.md"), "utf-8")).toBe("# Overlay Skill");
+    expect(await readFile(join(targetCommandsDir, "base-cmd.md"), "utf-8")).toBe("# Base Cmd");
+    expect(await readFile(join(targetCommandsDir, "overlay-cmd.md"), "utf-8")).toBe("# Overlay Cmd");
   });
 });

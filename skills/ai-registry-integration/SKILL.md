@@ -15,7 +15,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Template Tokens
 
 - Use template tokens when checked-in guidance or generated text needs canonical repository paths that would otherwise be machine-specific.
-- For string-variable tokens, write the token name with the template resolver's variable syntax in source files. Available path tokens are `repo_root`, `skills_dir`, `commands_dir`, `profiles_dir`, `output_dir`, `file_path`, and `file_dir`.
+- For string-variable tokens, write the token name with the template resolver's variable syntax in source files. Available path tokens are `repo_root`, `overlay_dir`, `skills_dir`, `commands_dir`, `profiles_dir`, `output_dir`, `file_path`, and `file_dir`.
 - Use the `include` directive for repository-root-relative file inclusion.
 - Use the `env` directive to read environment variables, with an optional default value when the variable may be absent.
 - Escape a tag that must reach the agent literally by prefixing it with a single backslash, such as when a skill documents justfile or Go-template syntax. The backslash is consumed and the tag is emitted as written; double the backslash to emit a literal backslash before the tag.
@@ -44,6 +44,14 @@ Treat this repository as the source of truth. Add things to the reusable source 
 4. Run the narrowest relevant validation.
 5. Run `bun run build` from the repo_root token.
 6. Inspect the generated output under the output_dir token if the change affects shipped harness content.
+
+## Private Overlay Registries
+
+- Work-specific, proprietary skills, commands, and profiles that cannot be committed to this public repository live in a separate private repository.
+- Configure the overlay path in `.env` (which is git-ignored): `AI_REGISTRY_OVERLAY=/path/to/private-ai-registry`.
+- The overlay repository should mirror standard registry folders: `skills/`, `commands/`, and `profiles/`.
+- During `bun run build`, assets from the overlay are merged with public assets. On collision, overlay assets take precedence over public base assets.
+- If generated files from the overlay are edited in `.output/`, drift resolution syncs changes back to the overlay repository.
 
 ## Add A Skill
 

@@ -180,8 +180,11 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsDir: stri
       continue;
     }
 
+    const sourceDir =
+      context.globalSkillSourcePaths?.[matchedSkill] ??
+      join(context.templateContext.skills_dir, matchedSkill);
     await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(context.templateContext.skills_dir, matchedSkill),
+      sourceDir,
       outputPath,
       context.templateContext,
     );

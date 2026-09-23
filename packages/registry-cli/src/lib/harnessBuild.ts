@@ -59,6 +59,8 @@ export type IProfileBuildContext = {
   manifest: IProfileManifest;
   globalMatchedSkills: string[];
   globalMatchedCommands: string[];
+  globalSkillSourcePaths?: Record<string, string>;
+  globalCommandSourcePaths?: Record<string, string>;
   profileLocalSkills: string[];
   profileLocalCommands: string[];
   outputDir: string;
@@ -446,8 +448,11 @@ export async function stageProfileAssets(
   for (const matchedCommand of context.globalMatchedCommands) {
     const outputPath = join(commandsDir, matchedCommand);
     if (existsSync(outputPath)) continue;
+    const sourcePath =
+      context.globalCommandSourcePaths?.[matchedCommand] ??
+      join(context.templateContext.commands_dir, matchedCommand);
     await context.buildSupport.copyPathWithTemplateVariables(
-      join(context.templateContext.commands_dir, matchedCommand),
+      sourcePath,
       outputPath,
       context.templateContext,
     );
@@ -467,8 +472,11 @@ export async function stageProfileAssets(
   for (const matchedSkill of context.globalMatchedSkills) {
     const outputPath = join(skillsDir, matchedSkill);
     if (existsSync(outputPath)) continue;
+    const sourceDir =
+      context.globalSkillSourcePaths?.[matchedSkill] ??
+      join(context.templateContext.skills_dir, matchedSkill);
     await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(context.templateContext.skills_dir, matchedSkill),
+      sourceDir,
       outputPath,
       context.templateContext,
     );

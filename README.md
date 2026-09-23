@@ -63,6 +63,7 @@ Generated harness outputs are compiled by plugins at `packages/registry-cli/src/
 Generated output files may use a small set of build-time template tags. `bun run build` scans generated text outputs recursively and resolves them wherever they appear. Unsupported tags, unknown variables, missing include files, circular includes, and missing environment variables all fail the build. Supported forms:
 
 - `{{repo_root}}`: Absolute path to the repository root during template expansion.
+- `{{overlay_dir}}`: Absolute path to the active private overlay directory, or empty string if none is configured.
 - `{{skills_dir}}`: Absolute path to the repository's `skills/` directory.
 - `{{commands_dir}}`: Absolute path to the repository's `commands/` directory.
 - `{{profiles_dir}}`: Absolute path to the repository's `profiles/` directory.
@@ -82,6 +83,28 @@ For the normal machine setup flow after cloning, run:
 ```bash
 bun run bootstrap
 ```
+
+### Private Overlay Registries
+
+For proprietary or work-specific skills, commands, and profiles that cannot be committed to a public repository, use the overlay registry feature:
+
+1. Create a separate, private git repository for your work assets (e.g. `~/work/ai-registry`).
+2. Mirror the standard directory structure:
+   ```text
+   my-work-registry/
+   ├── skills/
+   │   └── internal-tool/SKILL.md
+   ├── commands/
+   │   └── jira-ticket.md
+   └── profiles/
+       └── work/
+           └── profile.yaml
+   ```
+3. Set the overlay path in `.env` (automatically loaded by Bun and git-ignored):
+   ```bash
+   AI_REGISTRY_OVERLAY=~/work/ai-registry
+   ```
+4. Run `bun run build` or `bun run bootstrap`. The build will automatically merge assets from the overlay. On name collision, overlay assets take precedence.
 
 Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, relink the generated `default` Codex profile into `~/.codex`, relink the generated `default` Pi profile into `~/.pi/agent`, relink the generated `default` Claude Code profile into `~/.claude`, and resync the repo-local `air-*`, `claude-*`, `codex-*`, `pi-*`, and `cll` wrappers into `~/.local/bin`. Add `-- --codex-profile <profile>`, `-- --pi-profile <profile>`, and/or `-- --claude-code-profile <profile>` when you want to override those linked non-native profile targets.
 

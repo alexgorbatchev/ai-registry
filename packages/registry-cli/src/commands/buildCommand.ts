@@ -11,7 +11,7 @@ import { stdin, stdout } from "process";
 import { globby } from "globby";
 import { existsSync } from "fs";
 
-import { getRegistryPaths } from "../lib/getRegistryPaths";
+import { getRegistryPaths, type IRegistryPaths } from "../lib/getRegistryPaths";
 import {
   type IBuildSupport,
   type IProfileManifest,
@@ -25,6 +25,7 @@ import {
   getObjectValue,
 } from "../lib/harnessBuild";
 import { discoverProfileLocalAssets } from "../lib/discoverProfileLocalAssets";
+import { discoverProfiles, resolveMatchedAssets } from "../lib/resolveRegistryAssets";
 import {
   collectGeneratedOutputEntries,
   createGeneratedOutputManifest,
@@ -321,29 +322,27 @@ async function writeGeneratedOutputManifest(
   await rm(join(outputDir, LEGACY_GENERATED_OUTPUT_MANIFEST_NAME), { force: true });
 }
 
-async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> {
-  if (!patterns || !Array.isArray(patterns) || patterns.length === 0) return [];
-  const matches = await globby(patterns, {
-    cwd,
-    onlyFiles: false,
-    markDirectories: false,
-    expandDirectories: false,
-  });
-  return matches;
-}
-
-export async function buildCommand(options: { hasAutoConfirm: boolean }): Promise<void> {
+export async function buildCommand(options: {
+  hasAutoConfirm: boolean;
+  registryPaths?: IRegistryPaths;
+}): Promise<void> {
   console.log("🚀 Building Unified Agent Outputs...");
-  const { root, output, harnesses, profiles, skills, commands, temp } = getRegistryPaths();
+  const { root, overlay, output, harnesses, profiles, skills, commands, temp } =
+    options.registryPaths ?? getRegistryPaths();
   
   const GENERATED_OUTPUT_STAGING_DIR = join(temp, "generated-output-staging");
   const TEMPLATE_CONTEXT = {
     repo_root: root,
+    overlay_dir: overlay ?? "",
     skills_dir: skills,
     commands_dir: commands,
     profiles_dir: profiles,
     output_dir: output,
   } as const;
+
+  if (overlay) {
+    console.log(`📦 Using overlay: ${overlay}`);
+  }
 
   console.log();
 
@@ -369,19 +368,16 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
     ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
   };
 
-  const profileDirents = await readdir(profiles, { withFileTypes: true });
-  const profileDirs = profileDirents.filter(d => d.isDirectory());
+  const overlayProfilesDir = overlay ? join(overlay, "profiles") : null;
+  const overlaySkillsDir = overlay ? join(overlay, "skills") : null;
+  const overlayCommandsDir = overlay ? join(overlay, "commands") : null;
 
-  for (const dirent of profileDirs) {
-    const profileName = dirent.name;
-    const profileDir = join(profiles, profileName);
+  const discoveredProfiles = await discoverProfiles(profiles, overlayProfilesDir);
 
-    const hasJson = existsSync(join(profileDir, "profile.json"));
-    const hasYaml = existsSync(join(profileDir, "profile.yaml"));
+  for (const discoveredProfile of discoveredProfiles) {
+    const { profileName, profileDir, isOverlay } = discoveredProfile;
 
-    if (!hasJson && !hasYaml) continue;
-
-    console.log(`📦 Processing persona: ${profileName}`);
+    console.log(`📦 Processing persona: ${profileName}${isOverlay ? " (overlay)" : ""}`);
     let manifest: IProfileManifest | null = null;
 
     const yamlPath = join(profileDir, "profile.yaml");
@@ -407,11 +403,16 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
       throw new Error(`Profile manifest for ${profileName} must be a JSON/YAML object.`);
     }
 
-    const [globalMatchedSkills, globalMatchedCommands, localAssets] = await Promise.all([
-      manifest.skills ? resolveGlobs(manifest.skills, skills) : [],
-      manifest.commands ? resolveGlobs(manifest.commands, commands) : [],
+    const [matchedSkillsResult, matchedCommandsResult, localAssets] = await Promise.all([
+      resolveMatchedAssets(manifest.skills ?? [], skills, overlaySkillsDir),
+      resolveMatchedAssets(manifest.commands ?? [], commands, overlayCommandsDir),
       discoverProfileLocalAssets(profileDir),
     ]);
+
+    const globalMatchedSkills = matchedSkillsResult.matchedNames;
+    const globalSkillSourcePaths = matchedSkillsResult.sourcePaths;
+    const globalMatchedCommands = matchedCommandsResult.matchedNames;
+    const globalCommandSourcePaths = matchedCommandsResult.sourcePaths;
 
     for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
       if (!unifiedHarnessPlugin.stageProfile) continue;
@@ -423,6 +424,8 @@ export async function buildCommand(options: { hasAutoConfirm: boolean }): Promis
         manifest,
         globalMatchedSkills,
         globalMatchedCommands,
+        globalSkillSourcePaths,
+        globalCommandSourcePaths,
         profileLocalSkills: localAssets.profileLocalSkills,
         profileLocalCommands: localAssets.profileLocalCommands,
         outputDir: GENERATED_OUTPUT_STAGING_DIR,

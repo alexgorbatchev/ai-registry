@@ -4,7 +4,9 @@ bun.lockb
 bun.lock
 
 # Environment variables
-.env.local
+.env
+.env.*
+!.env.example
 
 # Local skills-cli installs and state
 .agents/

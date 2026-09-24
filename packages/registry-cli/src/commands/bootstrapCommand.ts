@@ -220,8 +220,11 @@ function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResul
 }
 
 export async function bootstrapCommand(): Promise<void> {
-  const { root, output } = getRegistryPaths();
+  const { root, overlay, output } = getRegistryPaths();
   console.log("🚀 Bootstrapping ai-registry...\n");
+  if (overlay) {
+    console.log(`📦 Using overlay: ${overlay}\n`);
+  }
 
   console.log("Installing dependencies...");
   await runCommand({
@@ -265,6 +268,9 @@ export async function bootstrapCommand(): Promise<void> {
   printPublicScriptResult(PUBLIC_BIN_DIR, publicScriptResult);
 
   console.log("\nReady.");
+  if (overlay) {
+    console.log(`Overlay merged: ${overlay}`);
+  }
   for (const target of bootstrapTargets) {
     console.log(`${target.description} now reads from: ${target.targetPath}`);
   }

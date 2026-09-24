@@ -414,6 +414,21 @@ export async function buildCommand(options: {
     const globalMatchedCommands = matchedCommandsResult.matchedNames;
     const globalCommandSourcePaths = matchedCommandsResult.sourcePaths;
 
+    if (overlay) {
+      const overlaySkillNames = globalMatchedSkills.filter(
+        (name) => globalSkillSourcePaths[name]?.startsWith(overlay),
+      );
+      const overlayCommandNames = globalMatchedCommands.filter(
+        (name) => globalCommandSourcePaths[name]?.startsWith(overlay),
+      );
+      if (overlaySkillNames.length > 0) {
+        console.log(`   ↳ overlay skills (${overlaySkillNames.length}): ${overlaySkillNames.join(", ")}`);
+      }
+      if (overlayCommandNames.length > 0) {
+        console.log(`   ↳ overlay commands (${overlayCommandNames.length}): ${overlayCommandNames.join(", ")}`);
+      }
+    }
+
     for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
       if (!unifiedHarnessPlugin.stageProfile) continue;
 
@@ -480,6 +495,9 @@ export async function buildCommand(options: {
     console.log(`  - ${join(output, unifiedHarnessPlugin.target)}`);
   }
   console.log(`  - ${join(output, GENERATED_OUTPUT_MANIFEST_NAME)}`);
+  if (overlay) {
+    console.log(`  - overlay merged: ${overlay}`);
+  }
   console.log("\nTo test OpenCode instantly via CLI, run:");
   console.log(`  XDG_CONFIG_HOME=${join(root, ".output")} opencode --agent designer\n`);
   console.log("To apply the generated outputs to your machine, run:");

@@ -6,13 +6,14 @@
     "npm:pi-web-access",
     "npm:pi-ask-user",
     "npm:pi-file-change-reminder",
-    "npm:@alexgorbatchev/pi-skill-library",
-    "npm:@alexgorbatchev/pi-env",
     "npm:pi-timestamps",
     "npm:pi-herdr-btw",
     "git:github.com/alexgorbatchev/pi-codegraph@fix/dangling-managed-symlinks",
     "npm:pi-provider-litellm",
-    "npm:@alexgorbatchev/pi-quick-answer"
+    "npm:@alexgorbatchev/pi-skill-library",
+    "npm:@alexgorbatchev/pi-env",
+    "npm:@alexgorbatchev/pi-quick-answer",
+    "npm:@alexgorbatchev/pi-workspace"
   ],
   "steeringMode": "one-at-a-time",
   "enabledModels": [

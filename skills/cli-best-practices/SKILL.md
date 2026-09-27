@@ -11,7 +11,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-09-18 11:12
+  last_modified: 2026-09-27 08:29
   status: current
 ---
 
@@ -21,7 +21,7 @@ metadata:
 2. **Command Structure (`cli subject [subject] verb ...`)**: Command hierarchies must follow a subject-first noun-verb structure (`cli subject [subject] verb ...`) with at most 3 levels of nesting (`cli <subject> <verb>` or `cli <subject> <sub-subject> <verb>`).
 3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it. Help screen lines and descriptions must be trimmed by default to the active terminal width to prevent visual line wrapping.
 4. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
-5. **Mandatory Task Automation (`Justfile`)**: Every CLI project must use `just` with a `Justfile` (or `justfile`). It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`.
+5. **Mandatory Task Automation (`justfile`)**: Every CLI project must use `just` with a `justfile`. It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`. In multi-package repositories or workspaces, the root `justfile` must link all nested child `justfile`s as modules (`mod <name> '<path>'`).
 6. **GitHub Releases Distribution Only**: Ship end users prebuilt binaries from GitHub Releases. Never require them to build from source, and never use the `gh` CLI in end-user instructions.
 7. **README Content Is Owned By `docs-writer`**: Do not write or restate README structure, section order, or tone rules here. Load the `docs-writer` skill and read its `references/readme.md` plus `references/readme-cli.md` before touching a CLI `README.md`.
 8. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
@@ -169,9 +169,9 @@ For setup templates and code snippets per framework, see [references/framework-s
 
 ---
 
-## 4. Mandatory `Justfile` Standard
+## 4. Mandatory `justfile` Standard
 
-Every repository and CLI tool must use `just` for workflow and task orchestration.
+Every repository and CLI tool must use `just` with a `justfile` for workflow and task orchestration.
 
 ### Required Recipes
 
@@ -195,7 +195,21 @@ test:
 - `lint`: Checks formatting and static analysis.
 - `check`: Runs typecheck, lint, and test in sequence.
 
-For complete `Justfile` templates for Bun/Node, Go, Python, and Rust, see [references/justfile-templates.md](references/justfile-templates.md).
+### Workspace & Nested `justfile` Modules (`mod`)
+
+When a repository contains multiple packages, services, or sub-projects (e.g. in `apps/` or `packages/`), each nested directory must maintain its own `justfile`. The parent root `justfile` must link all nested `justfile`s using `mod` directives:
+
+```justfile
+mod devhost 'apps/devhost/justfile'
+mod design 'packages/design/justfile'
+mod ui 'packages/devhost-ui/justfile'
+mod docs 'packages/docs/justfile'
+```
+
+- **Scoped Invocation**: Submodule recipes can be executed directly from root using module syntax: `just devhost run`, `just design check`, `just ui test`.
+- **Root Coordination**: The parent `justfile` should coordinate common tasks across modules (e.g. `test` or `check` recipe running tests across all linked submodules).
+
+For complete `justfile` templates for Bun/Node, Go, Python, Rust, and workspace parent setups, see [references/justfile-templates.md](references/justfile-templates.md).
 
 ---
 
@@ -228,7 +242,7 @@ Before publishing or finalizing any CLI tool, verify:
 - [ ] In human mode: CLI help, argument descriptions, and user messages contain no internal technical jargon.
 - [ ] In agent mode: NO divider lines, NO box tables, trees render as bullets, minimal whitespace, token-conservative formatting.
 - [ ] Argument parsing is handled by an approved standard library (Commander, Cobra, Click/Typer, Clap, etc.). No custom argv slicing.
-- [ ] `Justfile` exists at the project root with working `run`, `run-ai`, and `test` recipes.
+- [ ] `justfile` exists at the project root with working `run`, `run-ai`, and `test` recipes (and links nested `justfile`s with `mod` when in a multi-package workspace).
 - [ ] When compiled to binary, output goes to `bin/` and is excluded by `.gitignore`.
 - [ ] `README.md` was written against the `docs-writer` skill's `references/readme.md` and `references/readme-cli.md`, and passes the checklist there.
 - [ ] Prebuilt binaries are published to GitHub Releases with versioned archive names (e.g. `mytool_X.X.X_darwin_arm64.tar.gz`).

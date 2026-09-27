@@ -1,6 +1,6 @@
-# Justfile Templates
+# justfile Templates
 
-All CLI tools and repositories must provide a `Justfile` (or `justfile`) at root with `run`, `run-ai`, and `test` recipes.
+All CLI tools and repositories must provide a `justfile` at root with `run`, `run-ai`, and `test` recipes.
 
 ---
 
@@ -118,4 +118,42 @@ build:
 check:
     cargo clippy -- -D warnings
     cargo test
+```
+
+---
+
+## Workspace / Monorepo Parent Template (Nested Modules)
+
+In multi-package workspaces and monorepos, use `mod` in the parent `justfile` to link each nested child `justfile`:
+
+```justfile
+set dotenv-load := false
+
+# Link nested workspace justfiles
+mod devhost 'apps/devhost/justfile'
+mod design 'packages/design/justfile'
+mod ui 'packages/devhost-ui/justfile'
+mod docs 'packages/docs/justfile'
+
+# Run default app in human mode
+run *args:
+    just devhost run \{{args}}
+
+# Run default app in agent-facing mode
+run-ai *args:
+    just devhost run-ai \{{args}}
+
+# Run test suites across modules
+test:
+    just devhost test
+    just design test
+    just ui test
+    just docs test
+
+# Lint and check all modules
+check:
+    just devhost check
+    just design check
+    just ui check
+    just docs check
 ```

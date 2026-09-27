@@ -1,5 +1,5 @@
 ---
-name: github-issue-pipeline
+name: github-fix-issues
 description: >-
   REQUIRED when the user invokes github-issue-pipeline or asks to run the gated multi-agent issue pipeline:
   working a GitHub tracking issue or a queue of `bug`/`feature` issues through per-issue worktrees, an

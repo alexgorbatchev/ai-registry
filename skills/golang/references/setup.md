@@ -7,7 +7,7 @@ This reference provides the binding project-level rules plus setup instructions,
 - [0. Binding Project Rules](#0-binding-project-rules)
 - [1. Initializing a New Go Project](#1-initializing-a-new-go-project)
 - [2. Recommended Directory Structure](#2-recommended-directory-structure)
-- [3. Justfile Automation Template](#3-justfile-automation-template)
+- [3. justfile Automation Template](#3-justfile-automation-template)
 - [4. Cobra CLI Setup, Tree Help & Version Flag](#4-cobra-cli-setup-tree-help--version-flag)
 - [5. XDG Base Directory Compliance](#5-xdg-base-directory-compliance)
 - [6. GitIgnore Baseline](#6-gitignore-baseline)
@@ -117,7 +117,7 @@ project/
 
 ---
 
-## 3. Justfile Automation Template
+## 3. justfile Automation Template
 
 Use `just` for task automation instead of makefiles or uncoordinated shell scripts:
 

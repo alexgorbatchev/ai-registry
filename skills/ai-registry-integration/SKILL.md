@@ -99,6 +99,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Only files under a harness directory are copied into generated output for that harness, subject to `.registry-ignore`.
 - Do not place repo-only notes inside a harness directory unless they are intentionally meant to ship.
 - Prefer the harness's native configuration surface over local wrappers when the harness already supports the feature directly.
+- Harness-specific skills under `harnesses/<target>/skills/` cleanly take precedence over global skills (`skills/` and overlay `skills/`) on name collision across all four harnesses.
 - For Codex-only shipped skills, place them under `harnesses/codex/skills/`; the Codex build merges that directory into each generated `skills/` root inside `.output/codex/<profile>/`.
 - For Claude Code-only shipped skills, place them under `harnesses/claude-code/skills/`; the Claude Code build merges that directory into each generated `skills/` root inside `.output/claude-code/<profile>/`. Everything else under `harnesses/claude-code/` is copied verbatim into the generated `default` profile root.
 - If a local file-based harness dependency needs installed runtime imports, vendor it under `vendor/<name>/` beneath the repo_root token, add it to the root Bun workspaces, and reference it from the harness config using the repo_root token.

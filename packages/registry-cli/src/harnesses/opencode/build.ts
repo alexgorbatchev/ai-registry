@@ -10,6 +10,7 @@ import type {
   IUnifiedHarnessPlugin,
 } from "../../lib/harnessBuild";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
+import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
 import { createSkillPermission } from "./lib/profileLocalAssetRules";
 
 const AGENT_STAGING_DIR_NAME = ".opencode-agents";
@@ -79,33 +80,42 @@ function createAgentMarkdown(context: IProfileBuildContext): string {
   );
 }
 
+async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir: string): Promise<void> {
+  const harnessSkillsDir = join(context.harnessDir, "skills");
+  if (!existsSync(harnessSkillsDir)) {
+    return;
+  }
+
+  const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
+  for (const harnessSkillEntry of harnessSkillEntries) {
+    if (!harnessSkillEntry.isDirectory()) continue;
+    const outputPath = join(skillsDir, harnessSkillEntry.name);
+    if (existsSync(outputPath)) {
+      await rm(outputPath, { recursive: true, force: true });
+    }
+
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
+      join(harnessSkillsDir, harnessSkillEntry.name),
+      outputPath,
+      context.templateContext,
+    );
+  }
+}
+
 async function stageProfile(context: IProfileBuildContext): Promise<void> {
   const agentStagingDir = getAgentStagingDir(context.outputDir);
+  const skillsDir = getSkillStagingDir(context.outputDir);
 
   await mkdir(agentStagingDir, { recursive: true });
   await writeFile(join(agentStagingDir, `${context.profileName}.md`), createAgentMarkdown(context), "utf-8");
 
+  await stageHarnessLocalSkills(context, skillsDir);
+
   await context.buildSupport.stageProfileAssets(context, {
-    skillsDir: getSkillStagingDir(context.outputDir),
+    skillsDir,
     commandsDir: getCommandStagingDir(context.outputDir),
     localCommandRenamer: getProfileLocalCommandOutputName,
   });
-
-  const harnessSkillsDir = join(context.harnessDir, "skills");
-  if (existsSync(harnessSkillsDir)) {
-    const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
-    for (const harnessSkillEntry of harnessSkillEntries) {
-      if (!harnessSkillEntry.isDirectory()) continue;
-      const outputPath = join(getSkillStagingDir(context.outputDir), harnessSkillEntry.name);
-      if (existsSync(outputPath)) continue;
-
-      await context.buildSupport.copyDirectoryWithTemplateVariables(
-        join(harnessSkillsDir, harnessSkillEntry.name),
-        outputPath,
-        context.templateContext,
-      );
-    }
-  }
 }
 
 async function generateAirHelpers(context: IUnifiedHarnessBuildContext): Promise<void> {
@@ -174,6 +184,7 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     }
 
     await generateAirHelpers(context);
+    await logHarnessSkillOverrides(context, "opencode");
   } finally {
     await rm(agentStagingDir, { recursive: true, force: true });
     await rm(commandStagingDir, { recursive: true, force: true });

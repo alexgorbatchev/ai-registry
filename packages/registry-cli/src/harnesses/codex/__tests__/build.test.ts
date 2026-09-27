@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { existsSync } from "fs";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, lstat, readFile, readdir, readlink, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
@@ -385,6 +386,35 @@ CODEX_HOME="{{output_dir}}/codex/developer" exec "$real_binary" "$@"
         targetPath,
       },
     ]);
+  });
+
+  it("overrides global skills with harness-specific skills on collision", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Global version\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/extra.txt", "global extra\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/skills/shared-skill/SKILL.md", "# Harness version\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: ["shared-skill"],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
+      globalMatchedSkills: ["shared-skill"],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+
+    const skillDir = join(repositoryRoot, ".output", "codex", "default", "skills", "shared-skill");
+    expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
+    expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
+
+    const devSkillDir = join(repositoryRoot, ".output", "codex", "developer", "skills", "shared-skill");
+    expect(await readFile(join(devSkillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
+    expect(existsSync(join(devSkillDir, "extra.txt"))).toBe(false);
   });
 
   it("reports generated Codex profiles when the requested profile is missing", async () => {

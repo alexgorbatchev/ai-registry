@@ -1,4 +1,4 @@
-import { lstat, mkdir, readdir, rename, symlink, writeFile } from "fs/promises";
+import { lstat, mkdir, readdir, rename, rm, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
 import { dirname, join } from "path";
@@ -14,6 +14,7 @@ import type {
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
 import { getErrorMessage } from "../../lib/getErrorMessage";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
+import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
 import {
   assertMissingClaudeCodeOutputPath,
   assertSupportedClaudeCodeManifest,
@@ -160,10 +161,9 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
     }
 
     const outputPath = join(skillsDir, harnessSkillEntry.name);
-    assertMissingClaudeCodeOutputPath(
-      outputPath,
-      `Claude Code harness skill ${harnessSkillEntry.name}`,
-    );
+    if (existsSync(outputPath)) {
+      await rm(outputPath, { recursive: true, force: true });
+    }
 
     await context.buildSupport.copyDirectoryWithTemplateVariables(
       join(harnessSkillsDir, harnessSkillEntry.name),
@@ -215,6 +215,8 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   await mkdir(skillsDir, { recursive: true });
   await stageProfileMemoryFile(context, profileOutputDir);
 
+  await stageHarnessLocalSkills(context, skillsDir);
+
   if (isDefaultProfile) {
     await stageHarnessFiles(context, profileOutputDir);
     await stageSharedRuntimeDirectories(context, profileOutputDir);
@@ -229,8 +231,6 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   } else {
     await stageProfileSkills(context, skillsDir);
   }
-
-  await stageHarnessLocalSkills(context, skillsDir);
 }
 
 function createLiteLLMHelper(): string {
@@ -374,6 +374,8 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     "cll",
     createLiteLLMHelper(),
   );
+
+  await logHarnessSkillOverrides(context, "claude-code");
 }
 
 function getRequestedClaudeCodeProfile(argv: string[]): string | null {

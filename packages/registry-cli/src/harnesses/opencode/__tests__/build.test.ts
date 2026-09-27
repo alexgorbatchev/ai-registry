@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { existsSync } from "fs";
 import { afterEach, describe, expect, it } from "bun:test";
 import { lstat, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
@@ -51,7 +52,7 @@ function createBuildSupport(repositoryRoot: string): IBuildSupport {
   };
 }
 
-function createProfileContext(repositoryRoot: string): IProfileBuildContext {
+function createProfileContext(repositoryRoot: string, overrides: Partial<IProfileBuildContext> = {}): IProfileBuildContext {
   return {
     harnessDir: join(repositoryRoot, "harnesses", "opencode"),
     profileName: "developer",
@@ -69,6 +70,7 @@ function createProfileContext(repositoryRoot: string): IProfileBuildContext {
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
     buildSupport: createBuildSupport(repositoryRoot),
+    ...overrides,
   };
 }
 
@@ -118,6 +120,26 @@ describe("OpenCode harness build plugin", () => {
     ].join("\n"));
   });
 
+  it("handles custom manifest tools and permissions", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, {
+      manifest: {
+        description: "Custom profile",
+        skills: ["shared-skill"],
+        tools: { bash: true },
+        permission: { bash: "ask" },
+        system_prompt: "Custom prompt",
+      },
+      profileLocalSkills: [],
+    }));
+
+    const agentContent = await readFile(join(repositoryRoot, ".output", ".opencode-agents", "developer.md"), "utf-8");
+    expect(agentContent).toContain("bash: true");
+    expect(agentContent).toContain("bash: ask");
+  });
+
   it("stages skills as rendered copies in finalizeOutput", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "harnesses/opencode/.registry-ignore", "./skills/\n");
@@ -137,5 +159,23 @@ describe("OpenCode harness build plugin", () => {
     expect(
       (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "harness-skill", "SKILL.md"))).isSymbolicLink(),
     ).toBe(false);
+  });
+
+  it("overrides global skills with harness-specific skills on collision", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/opencode/.registry-ignore", "./skills/\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Global version\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/extra.txt", "global extra\n");
+    await writeTestFile(repositoryRoot, "harnesses/opencode/skills/shared-skill/SKILL.md", "# Harness version\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, {
+      globalMatchedSkills: ["shared-skill"],
+      profileLocalSkills: [],
+    }));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    const skillDir = join(repositoryRoot, ".output", "opencode", "skills", "shared-skill");
+    expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
+    expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
   });
 });

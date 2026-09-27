@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { existsSync } from "fs";
 import { lstat, mkdir, mkdtemp, readFile, readdir, readlink, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
 import { dirname, join } from "path";
@@ -425,5 +426,38 @@ fi
 PI_CODING_AGENT_DIR="{{output_dir}}/pi/developer" exec "$real_binary" "$@"
 "
 `);
+  });
+
+  it("overrides global skills with harness-specific skills on collision", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Global version\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/extra.txt", "global extra\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/skills/shared-skill/SKILL.md", "# Harness version\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: ["shared-skill"],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
+      globalMatchedSkills: ["shared-skill"],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    const skillDir = join(repositoryRoot, ".output", "pi", "default", "skills", "shared-skill");
+    expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
+    expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
+
+    const devSkillDir = join(repositoryRoot, ".output", "pi", "developer", "skills", "shared-skill");
+    expect(await readFile(join(devSkillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
+    expect(existsSync(join(devSkillDir, "extra.txt"))).toBe(false);
   });
 });

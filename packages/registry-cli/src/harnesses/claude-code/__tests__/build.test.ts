@@ -487,6 +487,35 @@ describe("Claude Code harness build", () => {
     ]);
   });
 
+  it("overrides global skills with harness-specific skills on collision", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Global version\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/extra.txt", "global extra\n");
+    await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/shared-skill/SKILL.md", "# Harness version\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: ["shared-skill"],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
+      globalMatchedSkills: ["shared-skill"],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+
+    const skillDir = join(repositoryRoot, ".output", "claude-code", "default", "skills", "shared-skill");
+    expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
+    expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
+
+    const devSkillDir = join(repositoryRoot, ".output", "claude-code", "developer", "skills", "shared-skill");
+    expect(await readFile(join(devSkillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
+    expect(existsSync(join(devSkillDir, "extra.txt"))).toBe(false);
+  });
+
   it("reports generated Claude Code profiles when the requested profile is missing", async () => {
     const outputDir = await createOutputDirectory();
     await createClaudeCodeProfile(outputDir, "designer");

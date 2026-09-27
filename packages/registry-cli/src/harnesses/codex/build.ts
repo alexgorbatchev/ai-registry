@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, symlink, writeFile } from "fs/promises";
+import { mkdir, readFile, readdir, rm, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
@@ -13,6 +13,7 @@ import type {
 } from "../../lib/harnessBuild";
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
+import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
 const CODEX_MUTABLE_STATE_DIR_NAME = "codex";
@@ -100,7 +101,7 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
     const sourcePath = join(harnessSkillsDir, harnessSkillEntry.name);
     const outputPath = join(skillsDir, harnessSkillEntry.name);
     if (existsSync(outputPath)) {
-      throw new Error(`Cannot stage Codex harness skill because the output path already exists: ${outputPath}`);
+      await rm(outputPath, { recursive: true, force: true });
     }
 
     await context.buildSupport.copyDirectoryWithTemplateVariables(
@@ -189,6 +190,7 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
     }
     await stageMutableCodexState(context, profileOutputDir);
     await stageHarnessRules(context, profileOutputDir);
+    await stageHarnessLocalSkills(context, skillsDir);
 
     await context.buildSupport.stageProfileAssets(context, {
       commandsDir: promptsDir,
@@ -196,10 +198,9 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
       localCommandRenamer: getProfileLocalCommandOutputName,
     });
   } else {
+    await stageHarnessLocalSkills(context, skillsDir);
     await stageProfileSkills(context, skillsDir);
   }
-
-  await stageHarnessLocalSkills(context, skillsDir);
 }
 
 async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<void> {
@@ -254,6 +255,8 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     );
     await context.buildSupport.writeBinScript(context.outputDir, `codex-${profileEntry.name}`, content);
   }
+
+  await logHarnessSkillOverrides(context, "codex");
 }
 
 function getRequestedCodexProfile(argv: string[]): string | null {

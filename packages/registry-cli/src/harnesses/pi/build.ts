@@ -12,6 +12,7 @@ import type {
   IUnifiedHarnessPlugin,
 } from "../../lib/harnessBuild";
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
+import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
 import { assertSupportedPiManifest } from "./lib/profileOutputRules";
 
 const PROFILE_STAGING_DIR_NAME = ".pi-profiles";
@@ -84,6 +85,28 @@ async function stageProfileAppendSystemFile(context: IProfileBuildContext, profi
   await writeFile(join(profileStagingDir, APPEND_SYSTEM_FILE_NAME), `${renderedSystemPrompt.trim()}\n`, "utf-8");
 }
 
+async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir: string): Promise<void> {
+  const harnessSkillsDir = join(context.harnessDir, "skills");
+  if (!existsSync(harnessSkillsDir)) {
+    return;
+  }
+
+  const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
+  for (const harnessSkillEntry of harnessSkillEntries) {
+    if (!harnessSkillEntry.isDirectory()) continue;
+    const outputPath = join(skillsDir, harnessSkillEntry.name);
+    if (existsSync(outputPath)) {
+      await rm(outputPath, { recursive: true, force: true });
+    }
+
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
+      join(harnessSkillsDir, harnessSkillEntry.name),
+      outputPath,
+      context.templateContext,
+    );
+  }
+}
+
 async function stageProfile(context: IProfileBuildContext): Promise<void> {
   assertSupportedPiManifest(context.manifest, context.profileName);
 
@@ -92,7 +115,10 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   const isDefaultProfile = context.profileName === DEFAULT_PROFILE_NAME;
 
   await mkdir(profileStagingDir, { recursive: true });
+  await mkdir(skillsOutputDir, { recursive: true });
   await stageProfileAppendSystemFile(context, profileStagingDir);
+
+  await stageHarnessLocalSkills(context, skillsOutputDir);
 
   if (isDefaultProfile) {
     const promptsOutputDir = join(profileStagingDir, "prompts");
@@ -169,18 +195,6 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       await mkdir(visibleProfileDir, { recursive: true });
 
       await context.buildSupport.mergeDirectory(join(stagedProfileDir, "skills"), join(visibleProfileDir, "skills"));
-      const harnessSkillsDir = join(context.harnessDir, "skills");
-      if (existsSync(harnessSkillsDir)) {
-        const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
-        for (const entry of harnessSkillEntries) {
-          if (!entry.isDirectory()) continue;
-          await context.buildSupport.copyDirectoryWithTemplateVariables(
-            join(harnessSkillsDir, entry.name),
-            join(visibleProfileDir, "skills", entry.name),
-            context.templateContext,
-          );
-        }
-      }
 
       const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
       if (existsSync(stagedAppendSystemPath)) {
@@ -240,6 +254,7 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     }
 
     await generatePiHelpers(context, profileNames);
+    await logHarnessSkillOverrides(context, "pi");
   } finally {
     await rm(profileStagingRoot, { force: true, recursive: true });
   }

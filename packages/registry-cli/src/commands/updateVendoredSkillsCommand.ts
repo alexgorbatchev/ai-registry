@@ -1,7 +1,9 @@
 import { $ } from "bun";
-import { readFile } from "fs/promises";
+import { existsSync } from "fs";
+import { readFile, rename, rm, writeFile } from "fs/promises";
 import { join } from "path";
 import { getRegistryPaths } from "../lib/getRegistryPaths";
+import { removeDisableModelInvocation } from "../lib/userSkillUtils";
 
 type IVendoredSkillEntry = {
   source: string;
@@ -39,6 +41,34 @@ async function readVendoredSkillLock(lockPath: string): Promise<IVendoredSkillLo
   };
 }
 
+async function relocateUpdatedSkill(root: string, skillName: string): Promise<void> {
+  const flatPath = join(root, "skills", skillName);
+  if (!existsSync(flatPath)) {
+    return;
+  }
+
+  const userDir = join(root, "skills", "user", skillName);
+  const isExistingUser = existsSync(userDir);
+
+  const skillFile = join(flatPath, "SKILL.md");
+  let isUserSkill = isExistingUser;
+  if (existsSync(skillFile)) {
+    const content = await readFile(skillFile, "utf-8");
+    if (content.includes("disable-model-invocation: true")) {
+      isUserSkill = true;
+    }
+    if (isUserSkill) {
+      const stripped = removeDisableModelInvocation(content);
+      await writeFile(skillFile, stripped, "utf-8");
+    }
+  }
+
+  const targetGroup = isUserSkill ? "user" : "agent";
+  const targetDir = join(root, "skills", targetGroup, skillName);
+  await rm(targetDir, { recursive: true, force: true });
+  await rename(flatPath, targetDir);
+}
+
 export async function updateVendoredSkillsCommand(): Promise<void> {
   const { root } = getRegistryPaths();
   const lockPath = join(root, "skills-lock.json");
@@ -63,5 +93,6 @@ export async function updateVendoredSkillsCommand(): Promise<void> {
     const installSource = buildInstallSource(entry);
     console.log(`\nUpdating ${skillName} from ${installSource}`);
     await $`npx skills add ${installSource} --skill ${skillName} -a openclaw --copy -y`.cwd(root);
+    await relocateUpdatedSkill(root, skillName);
   }
 }

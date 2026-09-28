@@ -146,5 +146,91 @@ describe("resolveRegistryAssets", () => {
       );
       expect(resultWithMissing.matchedNames).toEqual(["cmd-a.md"]);
     });
+
+    it("resolves skills grouped into agent and user subdirectories with wildcard pattern", async () => {
+      const baseSkills = join(baseDir, "skills");
+      await mkdir(join(baseSkills, "agent", "bun"), { recursive: true });
+      await mkdir(join(baseSkills, "agent", "typescript"), { recursive: true });
+      await mkdir(join(baseSkills, "user", "continue-session"), { recursive: true });
+
+      const result = await resolveMatchedAssets(["*"], baseSkills);
+      expect(result.matchedNames).toEqual(["bun", "continue-session", "typescript"]);
+      expect(result.sourcePaths["bun"]).toBe(join(baseSkills, "agent", "bun"));
+      expect(result.sourcePaths["typescript"]).toBe(join(baseSkills, "agent", "typescript"));
+      expect(result.sourcePaths["continue-session"]).toBe(join(baseSkills, "user", "continue-session"));
+      expect(Array.from(result.userSkillNames ?? []).sort()).toEqual(["continue-session"]);
+    });
+
+    it("matches specific skill names regardless of whether they are in agent or user", async () => {
+      const baseSkills = join(baseDir, "skills");
+      await mkdir(join(baseSkills, "agent", "movie-showtime-search"), { recursive: true });
+      await mkdir(join(baseSkills, "user", "policy-audit"), { recursive: true });
+
+      const result = await resolveMatchedAssets(["movie-showtime-search", "policy-audit"], baseSkills);
+      expect(result.matchedNames).toEqual(["movie-showtime-search", "policy-audit"]);
+      expect(result.sourcePaths["movie-showtime-search"]).toBe(join(baseSkills, "agent", "movie-showtime-search"));
+      expect(result.sourcePaths["policy-audit"]).toBe(join(baseSkills, "user", "policy-audit"));
+      expect(Array.from(result.userSkillNames ?? [])).toEqual(["policy-audit"]);
+    });
+
+    it("filters skills by agent/* or user/* prefix", async () => {
+      const baseSkills = join(baseDir, "skills");
+      await mkdir(join(baseSkills, "agent", "bun"), { recursive: true });
+      await mkdir(join(baseSkills, "agent", "typescript"), { recursive: true });
+      await mkdir(join(baseSkills, "user", "continue-session"), { recursive: true });
+
+      const userOnly = await resolveMatchedAssets(["user/*"], baseSkills);
+      expect(userOnly.matchedNames).toEqual(["continue-session"]);
+      expect(Array.from(userOnly.userSkillNames ?? [])).toEqual(["continue-session"]);
+
+      const agentOnly = await resolveMatchedAssets(["agent/*"], baseSkills);
+      expect(agentOnly.matchedNames).toEqual(["bun", "typescript"]);
+      expect(Array.from(agentOnly.userSkillNames ?? [])).toEqual([]);
+
+      const excludedUser = await resolveMatchedAssets(["*", "!user/*"], baseSkills);
+      expect(excludedUser.matchedNames).toEqual(["bun", "typescript"]);
+
+      const excludedSpecific = await resolveMatchedAssets(["agent/*", "!agent/bun"], baseSkills);
+      expect(excludedSpecific.matchedNames).toEqual(["typescript"]);
+    });
+
+    it("supports flat overlay merged with grouped base assets", async () => {
+      const baseSkills = join(baseDir, "skills");
+      const overlaySkills = join(overlayDir, "skills");
+
+      await mkdir(join(baseSkills, "agent", "base-skill"), { recursive: true });
+      await mkdir(join(overlaySkills, "overlay-flat-skill"), { recursive: true });
+
+      const result = await resolveMatchedAssets(["*"], baseSkills, overlaySkills);
+      expect(result.matchedNames).toEqual(["base-skill", "overlay-flat-skill"]);
+      expect(result.sourcePaths["overlay-flat-skill"]).toBe(join(overlaySkills, "overlay-flat-skill"));
+    });
+
+    it("throws an error when the same skill name exists in both agent and user", async () => {
+      const baseSkills = join(baseDir, "skills");
+      await mkdir(join(baseSkills, "agent", "duplicate-skill"), { recursive: true });
+      await mkdir(join(baseSkills, "user", "duplicate-skill"), { recursive: true });
+
+      await expect(resolveMatchedAssets(["*"], baseSkills)).rejects.toThrow(
+        "Duplicate skill name \"duplicate-skill\" found in both agent and user",
+      );
+    });
+
+    it("supports overlay overriding grouped skills", async () => {
+      const baseSkills = join(baseDir, "skills");
+      const overlaySkills = join(overlayDir, "skills");
+
+      await mkdir(join(baseSkills, "agent", "shared-skill"), { recursive: true });
+      await mkdir(join(baseSkills, "user", "base-user-skill"), { recursive: true });
+
+      await mkdir(join(overlaySkills, "user", "shared-skill"), { recursive: true });
+      await mkdir(join(overlaySkills, "agent", "overlay-agent-skill"), { recursive: true });
+
+      const result = await resolveMatchedAssets(["*"], baseSkills, overlaySkills);
+      expect(result.matchedNames).toEqual(["base-user-skill", "overlay-agent-skill", "shared-skill"]);
+      // overlay overrides base-agent with overlay-user:
+      expect(result.sourcePaths["shared-skill"]).toBe(join(overlaySkills, "user", "shared-skill"));
+      expect(Array.from(result.userSkillNames ?? []).sort()).toEqual(["base-user-skill", "shared-skill"]);
+    });
   });
 });

@@ -73,6 +73,42 @@ describe("logHarnessSkillOverrides", () => {
     expect(logged).toEqual(["   ↳ claude-code skill overrides (1): github-fix-issues"]);
   });
 
+  it("detects and logs harness skills that override grouped global skills", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "skills/agent/github-fix-issues/SKILL.md", "# Global Agent\n");
+    await writeTestFile(repositoryRoot, "skills/user/custom-tool/SKILL.md", "# Global User\n");
+    await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/github-fix-issues/SKILL.md", "# Harness\n");
+    await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/custom-tool/SKILL.md", "# Harness\n");
+
+    const logged: string[] = [];
+    const context = createUnifiedContext(repositoryRoot, "claude-code");
+
+    const overrides = await logHarnessSkillOverrides(context, "claude-code", (message) => {
+      logged.push(message);
+    });
+
+    expect(overrides.sort()).toEqual(["custom-tool", "github-fix-issues"]);
+    expect(logged).toEqual(["   ↳ claude-code skill overrides (2): custom-tool, github-fix-issues"]);
+  });
+
+  it("detects and logs grouped harness skills that override grouped global skills", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "skills/agent/github-fix-issues/SKILL.md", "# Global Agent\n");
+    await writeTestFile(repositoryRoot, "skills/user/custom-tool/SKILL.md", "# Global User\n");
+    await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/user/github-fix-issues/SKILL.md", "# Harness User\n");
+    await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/agent/custom-tool/SKILL.md", "# Harness Agent\n");
+
+    const logged: string[] = [];
+    const context = createUnifiedContext(repositoryRoot, "claude-code");
+
+    const overrides = await logHarnessSkillOverrides(context, "claude-code", (message) => {
+      logged.push(message);
+    });
+
+    expect(overrides.sort()).toEqual(["custom-tool", "github-fix-issues"]);
+    expect(logged).toEqual(["   ↳ claude-code skill overrides (2): custom-tool, github-fix-issues"]);
+  });
+
   it("detects and logs harness skills that override overlay skills", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "overlay/skills/custom-skill/SKILL.md", "# Overlay\n");

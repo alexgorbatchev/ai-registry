@@ -16,6 +16,7 @@ import { basename, dirname, isAbsolute, join, relative } from "path";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 import walk from "ignore-walk";
+import { injectDisableModelInvocation, isUserSkillPath } from "./userSkillUtils";
 const REGISTRY_IGNORE_FILE_NAME = ".registry-ignore";
 const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
 
@@ -34,7 +35,14 @@ export type IProfileManifest = {
 
 export type IBuildSupport = {
   mergeDirectory(sourceDir: string, destDir: string, options?: { move?: boolean }): Promise<void>;
-  stageProfileAssets(context: IProfileBuildContext, destinations: { skillsDir: string; commandsDir: string; localCommandRenamer?: (profileName: string, commandName: string) => string; }): Promise<void>;
+  stageProfileAssets(
+    context: IProfileBuildContext,
+    destinations: {
+      skillsDir: string;
+      commandsDir?: string;
+      localCommandRenamer?: (profileName: string, commandName: string) => string;
+    },
+  ): Promise<void>;
   writeBinScript(outputDir: string, filename: string, content: string): Promise<void>;
   copyDirectoryWithTemplateVariables(
     sourceDir: string,
@@ -61,6 +69,7 @@ export type IProfileBuildContext = {
   globalMatchedCommands: string[];
   globalSkillSourcePaths?: Record<string, string>;
   globalCommandSourcePaths?: Record<string, string>;
+  globalUserSkillNames?: Set<string>;
   profileLocalSkills: string[];
   profileLocalCommands: string[];
   outputDir: string;
@@ -433,7 +442,7 @@ export async function stageProfileAssets(
   context: IProfileBuildContext,
   destinations: {
     skillsDir: string;
-    commandsDir: string;
+    commandsDir?: string;
     localCommandRenamer?: (profileName: string, commandName: string) => string;
   }
 ): Promise<void> {
@@ -445,28 +454,30 @@ export async function stageProfileAssets(
     }
   };
 
-  for (const matchedCommand of context.globalMatchedCommands) {
-    const outputPath = join(commandsDir, matchedCommand);
-    if (existsSync(outputPath)) continue;
-    const sourcePath =
-      context.globalCommandSourcePaths?.[matchedCommand] ??
-      join(context.templateContext.commands_dir, matchedCommand);
-    await context.buildSupport.copyPathWithTemplateVariables(
-      sourcePath,
-      outputPath,
-      context.templateContext,
-    );
-  }
+  if (commandsDir) {
+    for (const matchedCommand of context.globalMatchedCommands) {
+      const outputPath = join(commandsDir, matchedCommand);
+      if (existsSync(outputPath)) continue;
+      const sourcePath =
+        context.globalCommandSourcePaths?.[matchedCommand] ??
+        join(context.templateContext.commands_dir, matchedCommand);
+      await context.buildSupport.copyPathWithTemplateVariables(
+        sourcePath,
+        outputPath,
+        context.templateContext,
+      );
+    }
 
-  for (const profileLocalCommand of context.profileLocalCommands) {
-    const outputName = localCommandRenamer ? localCommandRenamer(context.profileName, profileLocalCommand) : profileLocalCommand;
-    const outputPath = join(commandsDir, outputName);
-    assertMissingOutputPath(outputPath, `profile-local command ${profileLocalCommand} for profile ${context.profileName}`);
-    await context.buildSupport.copyPathWithTemplateVariables(
-      join(context.profileDir, "commands", profileLocalCommand),
-      outputPath,
-      context.templateContext,
-    );
+    for (const profileLocalCommand of context.profileLocalCommands) {
+      const outputName = localCommandRenamer ? localCommandRenamer(context.profileName, profileLocalCommand) : profileLocalCommand;
+      const outputPath = join(commandsDir, outputName);
+      assertMissingOutputPath(outputPath, `profile-local command ${profileLocalCommand} for profile ${context.profileName}`);
+      await context.buildSupport.copyPathWithTemplateVariables(
+        join(context.profileDir, "commands", profileLocalCommand),
+        outputPath,
+        context.templateContext,
+      );
+    }
   }
 
   for (const matchedSkill of context.globalMatchedSkills) {
@@ -480,6 +491,21 @@ export async function stageProfileAssets(
       outputPath,
       context.templateContext,
     );
+
+    const isUserSkill =
+      context.globalUserSkillNames?.has(matchedSkill) ||
+      isUserSkillPath(sourceDir);
+
+    if (isUserSkill) {
+      const skillFilePath = join(outputPath, "SKILL.md");
+      if (existsSync(skillFilePath)) {
+        const content = await readFile(skillFilePath, "utf-8");
+        const injected = injectDisableModelInvocation(content);
+        if (injected !== content) {
+          await writeFile(skillFilePath, injected, "utf-8");
+        }
+      }
+    }
   }
 
   for (const profileLocalSkill of context.profileLocalSkills) {

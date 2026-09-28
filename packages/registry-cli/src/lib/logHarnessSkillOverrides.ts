@@ -1,8 +1,8 @@
 import { existsSync } from "fs";
-import { readdir } from "fs/promises";
 import { join } from "path";
 
 import type { IUnifiedHarnessBuildContext } from "./harnessBuild";
+import { readHarnessSkillEntries } from "./userSkillUtils";
 
 export async function logHarnessSkillOverrides(
   context: IUnifiedHarnessBuildContext,
@@ -19,16 +19,20 @@ export async function logHarnessSkillOverrides(
     ? join(context.templateContext.overlay_dir, "skills")
     : null;
 
-  const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
+  const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
   const overriddenSkills: string[] = [];
 
   for (const entry of harnessSkillEntries) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
 
-    const isOverridingGlobal = existsSync(join(globalSkillsDir, entry.name));
-    const isOverridingOverlay = overlaySkillsDir ? existsSync(join(overlaySkillsDir, entry.name)) : false;
+    const isOverridingGlobal =
+      existsSync(join(globalSkillsDir, "agent", entry.name)) ||
+      existsSync(join(globalSkillsDir, "user", entry.name)) ||
+      existsSync(join(globalSkillsDir, entry.name));
+    const isOverridingOverlay = overlaySkillsDir
+      ? existsSync(join(overlaySkillsDir, "agent", entry.name)) ||
+        existsSync(join(overlaySkillsDir, "user", entry.name)) ||
+        existsSync(join(overlaySkillsDir, entry.name))
+      : false;
 
     if (isOverridingGlobal || isOverridingOverlay) {
       overriddenSkills.push(entry.name);

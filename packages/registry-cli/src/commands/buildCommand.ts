@@ -41,6 +41,7 @@ import {
 } from "../lib/generatedOutputUtils";
 import { promptForYesNo, promptForOverwriteDecision } from "../lib/promptForYesNo";
 import { reverseTemplateContent } from "../lib/reverseTemplateContent";
+import { isUserSkillPath, removeDisableModelInvocation } from "../lib/userSkillUtils";
 
 // Statically import harness plugins
 import claudeCodePlugin from "../harnesses/claude-code/build";
@@ -223,7 +224,11 @@ export async function syncBackModifiedFiles(
       const modifiedContent = await readFile(modifiedOutputPath, "utf-8");
       const reversedContent = reverseTemplateContent(modifiedContent, templateContext);
 
-      await writeFile(sourcePath, reversedContent, "utf-8");
+      const finalContent = isUserSkillPath(sourcePath) && sourcePath.endsWith("SKILL.md")
+        ? removeDisableModelInvocation(reversedContent)
+        : reversedContent;
+
+      await writeFile(sourcePath, finalContent, "utf-8");
       console.log(`  - ✅ Synced ${entry.path} -> ${sourcePath}`);
 
       // Now copy the modified file from outputDir to nextOutputDir so the current build
@@ -411,6 +416,7 @@ export async function buildCommand(options: {
 
     const globalMatchedSkills = matchedSkillsResult.matchedNames;
     const globalSkillSourcePaths = matchedSkillsResult.sourcePaths;
+    const globalUserSkillNames = matchedSkillsResult.userSkillNames;
     const globalMatchedCommands = matchedCommandsResult.matchedNames;
     const globalCommandSourcePaths = matchedCommandsResult.sourcePaths;
 
@@ -441,6 +447,7 @@ export async function buildCommand(options: {
         globalMatchedCommands,
         globalSkillSourcePaths,
         globalCommandSourcePaths,
+        globalUserSkillNames,
         profileLocalSkills: localAssets.profileLocalSkills,
         profileLocalCommands: localAssets.profileLocalCommands,
         outputDir: GENERATED_OUTPUT_STAGING_DIR,

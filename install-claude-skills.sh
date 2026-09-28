@@ -44,15 +44,41 @@ fi
 
 echo "Installing skills into $TARGET_DIR..."
 COUNT=0
-for skill in "$SKILLS_SRC"/*; do
+
+install_skill() {
+  local skill="$1"
+  local is_user="${2:-false}"
   if [ -d "$skill" ]; then
+    local skill_name
     skill_name="$(basename "$skill")"
     rm -rf "$TARGET_DIR/$skill_name"
     cp -R "$skill" "$TARGET_DIR/$skill_name"
+    if [ "$is_user" = "true" ] && [ -f "$TARGET_DIR/$skill_name/SKILL.md" ]; then
+      if ! grep -q "disable-model-invocation:" "$TARGET_DIR/$skill_name/SKILL.md"; then
+        perl -i -0777 -pe 's/^---\n/---\ndisable-model-invocation: true\n/' "$TARGET_DIR/$skill_name/SKILL.md" 2>/dev/null || true
+      fi
+    fi
     echo "  - $skill_name"
     COUNT=$((COUNT + 1))
   fi
-done
+}
+
+if [ -d "$SKILLS_SRC/agent" ] || [ -d "$SKILLS_SRC/user" ]; then
+  if [ -d "$SKILLS_SRC/agent" ]; then
+    for skill in "$SKILLS_SRC/agent"/*; do
+      install_skill "$skill" "false"
+    done
+  fi
+  if [ -d "$SKILLS_SRC/user" ]; then
+    for skill in "$SKILLS_SRC/user"/*; do
+      install_skill "$skill" "true"
+    done
+  fi
+else
+  for skill in "$SKILLS_SRC"/*; do
+    install_skill "$skill" "false"
+  done
+fi
 
 echo ""
 echo "Successfully installed system prompt and $COUNT skills into $(pwd)/$CLAUDE_DIR"

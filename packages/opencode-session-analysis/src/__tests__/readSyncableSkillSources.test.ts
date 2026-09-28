@@ -88,4 +88,37 @@ describe("readSyncableSkillSources", () => {
       "Duplicate syncable skill name bun found in developer and skills",
     );
   });
+
+  it("discovers skills grouped into agent and user subdirectories", async () => {
+    const registryRootPath = createFixtureRoot("discovers-sources");
+    writeSkill(registryRootPath, "skills/agent/bun", "---\nname: bun\ndescription: bun\n---\n");
+    writeSkill(
+      registryRootPath,
+      "skills/user/continue-session",
+      "---\nname: continue-session\ndescription: continue\n---\n",
+    );
+
+    const sources = await readSyncableSkillSources(registryRootPath);
+
+    expect([...sources.entries()].sort(([leftName], [rightName]) => leftName.localeCompare(rightName))).toEqual([
+      [
+        "bun",
+        {
+          name: "bun",
+          sourceDirPath: join(registryRootPath, "skills", "agent", "bun"),
+          sourceKind: "registry",
+          owner: "skills",
+        },
+      ],
+      [
+        "continue-session",
+        {
+          name: "continue-session",
+          sourceDirPath: join(registryRootPath, "skills", "user", "continue-session"),
+          sourceKind: "registry",
+          owner: "skills",
+        },
+      ],
+    ]);
+  });
 });

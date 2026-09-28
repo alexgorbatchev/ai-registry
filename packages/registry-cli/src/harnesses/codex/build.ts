@@ -14,6 +14,7 @@ import type {
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
+import { injectDisableModelInvocation, readHarnessSkillEntries } from "../../lib/userSkillUtils";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
 const CODEX_MUTABLE_STATE_DIR_NAME = "codex";
@@ -90,59 +91,34 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
     return;
   }
 
-  const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
+  const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
   for (const harnessSkillEntry of harnessSkillEntries) {
-    if (!harnessSkillEntry.isDirectory()) {
-      throw new Error(
-        `Codex harness skills must be directories: ${join(harnessSkillsDir, harnessSkillEntry.name)}`,
-      );
-    }
-
-    const sourcePath = join(harnessSkillsDir, harnessSkillEntry.name);
     const outputPath = join(skillsDir, harnessSkillEntry.name);
     if (existsSync(outputPath)) {
       await rm(outputPath, { recursive: true, force: true });
     }
 
     await context.buildSupport.copyDirectoryWithTemplateVariables(
-      sourcePath,
+      harnessSkillEntry.sourcePath,
       outputPath,
       context.templateContext,
     );
+
+    if (harnessSkillEntry.isUser) {
+      const skillFilePath = join(outputPath, "SKILL.md");
+      if (existsSync(skillFilePath)) {
+        const content = await readFile(skillFilePath, "utf-8");
+        const injected = injectDisableModelInvocation(content);
+        if (injected !== content) {
+          await writeFile(skillFilePath, injected, "utf-8");
+        }
+      }
+    }
   }
 }
 
 async function stageProfileSkills(context: IProfileBuildContext, skillsDir: string): Promise<void> {
-  for (const matchedSkill of context.globalMatchedSkills) {
-    const outputPath = join(skillsDir, matchedSkill);
-    if (existsSync(outputPath)) {
-      continue;
-    }
-
-    const sourceDir =
-      context.globalSkillSourcePaths?.[matchedSkill] ??
-      join(context.templateContext.skills_dir, matchedSkill);
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      sourceDir,
-      outputPath,
-      context.templateContext,
-    );
-  }
-
-  for (const profileLocalSkill of context.profileLocalSkills) {
-    const outputPath = join(skillsDir, profileLocalSkill);
-    if (existsSync(outputPath)) {
-      throw new Error(
-        `Cannot stage profile-local skill ${profileLocalSkill} for profile ${context.profileName} because the output path already exists: ${outputPath}`,
-      );
-    }
-
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(context.profileDir, "skills", profileLocalSkill),
-      outputPath,
-      context.templateContext,
-    );
-  }
+  await context.buildSupport.stageProfileAssets(context, { skillsDir });
 }
 
 async function renderSystemPrompt(context: IProfileBuildContext): Promise<string> {

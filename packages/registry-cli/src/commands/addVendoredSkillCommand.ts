@@ -1,5 +1,9 @@
 import { $ } from "bun";
+import { existsSync } from "fs";
+import { readFile, rename, rm, writeFile } from "fs/promises";
+import { join } from "path";
 import { getRegistryPaths } from "../lib/getRegistryPaths";
+import { removeDisableModelInvocation } from "../lib/userSkillUtils";
 
 type IParsedAddCommand = {
   source: string;
@@ -119,6 +123,29 @@ function parseAddCommand(command: string): IParsedAddCommand {
   return { source, skillNames };
 }
 
+async function relocateVendoredSkill(root: string, skillName: string): Promise<void> {
+  const flatPath = join(root, "skills", skillName);
+  if (!existsSync(flatPath)) {
+    return;
+  }
+
+  const skillFile = join(flatPath, "SKILL.md");
+  let isUserSkill = false;
+  if (existsSync(skillFile)) {
+    const content = await readFile(skillFile, "utf-8");
+    if (content.includes("disable-model-invocation: true")) {
+      isUserSkill = true;
+      const stripped = removeDisableModelInvocation(content);
+      await writeFile(skillFile, stripped, "utf-8");
+    }
+  }
+
+  const targetGroup = isUserSkill ? "user" : "agent";
+  const targetDir = join(root, "skills", targetGroup, skillName);
+  await rm(targetDir, { recursive: true, force: true });
+  await rename(flatPath, targetDir);
+}
+
 export async function addVendoredSkillCommand(): Promise<void> {
   const rawCommand = getRawCommand();
   const parsedCommand = parseAddCommand(rawCommand);
@@ -129,6 +156,7 @@ export async function addVendoredSkillCommand(): Promise<void> {
   for (const skillName of parsedCommand.skillNames) {
     console.log(`\nAdding ${skillName}`);
     await $`npx skills add ${parsedCommand.source} --skill ${skillName} -a openclaw --copy -y`.cwd(root);
+    await relocateVendoredSkill(root, skillName);
   }
 
   console.log("\nRebuilding generated outputs...");

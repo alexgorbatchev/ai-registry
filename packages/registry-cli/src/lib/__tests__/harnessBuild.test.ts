@@ -246,4 +246,68 @@ describe("harnessBuild template rendering", () => {
     expect(await readFile(join(targetCommandsDir, "base-cmd.md"), "utf-8")).toBe("# Base Cmd");
     expect(await readFile(join(targetCommandsDir, "overlay-cmd.md"), "utf-8")).toBe("# Overlay Cmd");
   });
+
+  it("automatically injects disable-model-invocation: true for user skills and merges skills flat into skillsDir", async () => {
+    const repositoryRoot = await createTestDirectory();
+
+    const agentSkillDir = join(repositoryRoot, "skills", "agent", "bun");
+    await writeTestFile(agentSkillDir, "SKILL.md", "---\nname: bun\n---\n# Bun Skill\n");
+
+    const userSkillDir = join(repositoryRoot, "skills", "user", "continue-session");
+    await writeTestFile(userSkillDir, "SKILL.md", "---\nname: continue-session\n---\n# Continue Session Skill\n");
+
+    const targetSkillsDir = join(repositoryRoot, "staged", "skills");
+
+    const templateContext: ITemplateContext = {
+      repo_root: repositoryRoot,
+      skills_dir: join(repositoryRoot, "skills"),
+      commands_dir: join(repositoryRoot, "commands"),
+      profiles_dir: join(repositoryRoot, "profiles"),
+      output_dir: join(repositoryRoot, "output"),
+    };
+
+    const buildSupport: IBuildSupport = {
+      copyDirectoryWithTemplateVariables: async (source, target, ctx) => {
+        await copyDirectoryWithTemplateVariables(source, target, ctx);
+      },
+      copyPathWithTemplateVariables: async (source, target, ctx) => {
+        await copyPathWithTemplateVariables(source, target, ctx);
+      },
+      mergeDirectory: async () => {},
+      stageProfileAssets: async () => {},
+      writeBinScript: async () => {},
+      ensureRuntimeDirectory: async () => {},
+    };
+
+    const context: IProfileBuildContext = {
+      harnessDir: join(repositoryRoot, "harnesses", "test"),
+      profileName: "test-profile",
+      profileDir: join(repositoryRoot, "profiles", "test-profile"),
+      manifest: {},
+      globalMatchedSkills: ["bun", "continue-session"],
+      globalMatchedCommands: [],
+      globalSkillSourcePaths: {
+        bun: agentSkillDir,
+        "continue-session": userSkillDir,
+      },
+      globalUserSkillNames: new Set(["continue-session"]),
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+      outputDir: join(repositoryRoot, "staged"),
+      templateContext,
+      buildSupport,
+    };
+
+    await stageProfileAssets(context, {
+      skillsDir: targetSkillsDir,
+    });
+
+    const agentSkillContent = await readFile(join(targetSkillsDir, "bun", "SKILL.md"), "utf-8");
+    const userSkillContent = await readFile(join(targetSkillsDir, "continue-session", "SKILL.md"), "utf-8");
+
+    expect(agentSkillContent).toBe("---\nname: bun\n---\n# Bun Skill\n");
+    expect(userSkillContent).toBe(
+      "---\ndisable-model-invocation: true\nname: continue-session\n---\n# Continue Session Skill\n",
+    );
+  });
 });

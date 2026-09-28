@@ -18,16 +18,43 @@ async function readSkillDirectories(
     return [];
   }
 
-  const entries = await readdir(rootPath, { withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isDirectory() && existsSync(join(rootPath, entry.name, "SKILL.md")))
-    .map((entry) => ({
-      name: entry.name,
-      owner,
-      sourceDirPath: join(rootPath, entry.name),
-      sourceKind,
-    }))
-    .sort((left, right) => left.name.localeCompare(right.name));
+  const agentPath = join(rootPath, "agent");
+  const userPath = join(rootPath, "user");
+  const dirsToScan: string[] = [];
+
+  if (existsSync(agentPath)) dirsToScan.push(agentPath);
+  if (existsSync(userPath)) dirsToScan.push(userPath);
+
+  const results: ISyncableSkillSource[] = [];
+
+  for (const dir of dirsToScan) {
+    const entries = await readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory() && existsSync(join(dir, entry.name, "SKILL.md"))) {
+        results.push({
+          name: entry.name,
+          owner,
+          sourceDirPath: join(dir, entry.name),
+          sourceKind,
+        });
+      }
+    }
+  }
+
+  const rootEntries = await readdir(rootPath, { withFileTypes: true });
+  for (const entry of rootEntries) {
+    if (entry.name === "agent" || entry.name === "user" || !entry.isDirectory()) continue;
+    if (existsSync(join(rootPath, entry.name, "SKILL.md"))) {
+      results.push({
+        name: entry.name,
+        owner,
+        sourceDirPath: join(rootPath, entry.name),
+        sourceKind,
+      });
+    }
+  }
+
+  return results.sort((left, right) => left.name.localeCompare(right.name));
 }
 
 async function readProfileLocalSkillDirectories(registryRootPath: string): Promise<ISyncableSkillSource[]> {

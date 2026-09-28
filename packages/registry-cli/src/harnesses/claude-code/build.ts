@@ -1,4 +1,4 @@
-import { lstat, mkdir, readdir, rename, rm, symlink, writeFile } from "fs/promises";
+import { lstat, mkdir, readFile, readdir, rename, rm, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
 import { dirname, join } from "path";
@@ -15,6 +15,7 @@ import { createExternalProfileHelper } from "../../lib/createExternalProfileHelp
 import { getErrorMessage } from "../../lib/getErrorMessage";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
+import { injectDisableModelInvocation, readHarnessSkillEntries } from "../../lib/userSkillUtils";
 import {
   assertMissingClaudeCodeOutputPath,
   assertSupportedClaudeCodeManifest,
@@ -152,57 +153,34 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
     return;
   }
 
-  const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
+  const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
   for (const harnessSkillEntry of harnessSkillEntries) {
-    if (!harnessSkillEntry.isDirectory()) {
-      throw new Error(
-        `Claude Code harness skills must be directories: ${join(harnessSkillsDir, harnessSkillEntry.name)}`,
-      );
-    }
-
     const outputPath = join(skillsDir, harnessSkillEntry.name);
     if (existsSync(outputPath)) {
       await rm(outputPath, { recursive: true, force: true });
     }
 
     await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(harnessSkillsDir, harnessSkillEntry.name),
+      harnessSkillEntry.sourcePath,
       outputPath,
       context.templateContext,
     );
+
+    if (harnessSkillEntry.isUser) {
+      const skillFilePath = join(outputPath, "SKILL.md");
+      if (existsSync(skillFilePath)) {
+        const content = await readFile(skillFilePath, "utf-8");
+        const injected = injectDisableModelInvocation(content);
+        if (injected !== content) {
+          await writeFile(skillFilePath, injected, "utf-8");
+        }
+      }
+    }
   }
 }
 
 async function stageProfileSkills(context: IProfileBuildContext, skillsDir: string): Promise<void> {
-  for (const matchedSkill of context.globalMatchedSkills) {
-    const outputPath = join(skillsDir, matchedSkill);
-    if (existsSync(outputPath)) {
-      continue;
-    }
-
-    const sourceDir =
-      context.globalSkillSourcePaths?.[matchedSkill] ??
-      join(context.templateContext.skills_dir, matchedSkill);
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      sourceDir,
-      outputPath,
-      context.templateContext,
-    );
-  }
-
-  for (const profileLocalSkill of context.profileLocalSkills) {
-    const outputPath = join(skillsDir, profileLocalSkill);
-    assertMissingClaudeCodeOutputPath(
-      outputPath,
-      `profile-local skill ${profileLocalSkill} for profile ${context.profileName}`,
-    );
-
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(context.profileDir, SKILLS_DIR_NAME, profileLocalSkill),
-      outputPath,
-      context.templateContext,
-    );
-  }
+  await context.buildSupport.stageProfileAssets(context, { skillsDir });
 }
 
 async function stageProfile(context: IProfileBuildContext): Promise<void> {

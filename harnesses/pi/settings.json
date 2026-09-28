@@ -4,7 +4,6 @@
     "npm:pi-tool-display",
     "npm:pi-subagents",
     "npm:pi-web-access",
-    "npm:pi-ask-user",
     "npm:pi-file-change-reminder",
     "npm:pi-timestamps",
     "npm:pi-herdr-btw",
@@ -50,5 +49,6 @@
   "hideThinkingBlock": false,
   "defaultProvider": "litellm",
   "defaultModel": "gemini-3.8-flash",
-  "defaultThinkingLevel": "high"
+  "defaultThinkingLevel": "high",
+  "theme": "dark"
 }

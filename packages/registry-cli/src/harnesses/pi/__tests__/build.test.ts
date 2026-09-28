@@ -460,4 +460,40 @@ PI_CODING_AGENT_DIR="{{output_dir}}/pi/developer" exec "$real_binary" "$@"
     expect(await readFile(join(devSkillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
     expect(existsSync(join(devSkillDir, "extra.txt"))).toBe(false);
   });
+
+  it("stages grouped harness skills (agent and user), injecting disable-model-invocation for user skills", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/pi/skills/agent/harness-agent-skill/SKILL.md",
+      "---\nname: harness-agent-skill\n---\n# Agent\n",
+    );
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/pi/skills/user/harness-user-skill/SKILL.md",
+      "---\nname: harness-user-skill\n---\n# User\n",
+    );
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: [],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    const agentSkillDir = join(repositoryRoot, ".output", "pi", "default", "skills", "harness-agent-skill");
+    const userSkillDir = join(repositoryRoot, ".output", "pi", "default", "skills", "harness-user-skill");
+
+    expect(await readFile(join(agentSkillDir, "SKILL.md"), "utf-8")).toBe(
+      "---\nname: harness-agent-skill\n---\n# Agent\n",
+    );
+    expect(await readFile(join(userSkillDir, "SKILL.md"), "utf-8")).toBe(
+      "---\ndisable-model-invocation: true\nname: harness-user-skill\n---\n# User\n",
+    );
+  });
 });

@@ -417,6 +417,38 @@ CODEX_HOME="{{output_dir}}/codex/developer" exec "$real_binary" "$@"
     expect(existsSync(join(devSkillDir, "extra.txt"))).toBe(false);
   });
 
+  it("stages grouped harness skills (agent and user), injecting disable-model-invocation for user skills", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/codex/skills/agent/harness-agent-skill/SKILL.md",
+      "---\nname: harness-agent-skill\n---\n# Agent\n",
+    );
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/codex/skills/user/harness-user-skill/SKILL.md",
+      "---\nname: harness-user-skill\n---\n# User\n",
+    );
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: [],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+
+    const agentSkillDir = join(repositoryRoot, ".output", "codex", "default", "skills", "harness-agent-skill");
+    const userSkillDir = join(repositoryRoot, ".output", "codex", "default", "skills", "harness-user-skill");
+
+    expect(await readFile(join(agentSkillDir, "SKILL.md"), "utf-8")).toBe(
+      "---\nname: harness-agent-skill\n---\n# Agent\n",
+    );
+    expect(await readFile(join(userSkillDir, "SKILL.md"), "utf-8")).toBe(
+      "---\ndisable-model-invocation: true\nname: harness-user-skill\n---\n# User\n",
+    );
+  });
+
   it("reports generated Codex profiles when the requested profile is missing", async () => {
     const outputDir = await createTestDirectory();
     await mkdir(join(outputDir, "codex", "designer"), { recursive: true });

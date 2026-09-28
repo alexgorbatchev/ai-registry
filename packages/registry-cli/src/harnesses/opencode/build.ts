@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readdir, rm, writeFile } from "fs/promises";
+import { copyFile, mkdir, readFile, readdir, rm, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { basename, join } from "path";
 import { homedir } from "os";
@@ -12,6 +12,7 @@ import type {
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
 import { createSkillPermission } from "./lib/profileLocalAssetRules";
+import { injectDisableModelInvocation, readHarnessSkillEntries } from "../../lib/userSkillUtils";
 
 const AGENT_STAGING_DIR_NAME = ".opencode-agents";
 const COMMAND_STAGING_DIR_NAME = ".opencode-commands";
@@ -86,19 +87,29 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
     return;
   }
 
-  const harnessSkillEntries = await readdir(harnessSkillsDir, { withFileTypes: true });
+  const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
   for (const harnessSkillEntry of harnessSkillEntries) {
-    if (!harnessSkillEntry.isDirectory()) continue;
     const outputPath = join(skillsDir, harnessSkillEntry.name);
     if (existsSync(outputPath)) {
       await rm(outputPath, { recursive: true, force: true });
     }
 
     await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(harnessSkillsDir, harnessSkillEntry.name),
+      harnessSkillEntry.sourcePath,
       outputPath,
       context.templateContext,
     );
+
+    if (harnessSkillEntry.isUser) {
+      const skillFilePath = join(outputPath, "SKILL.md");
+      if (existsSync(skillFilePath)) {
+        const content = await readFile(skillFilePath, "utf-8");
+        const injected = injectDisableModelInvocation(content);
+        if (injected !== content) {
+          await writeFile(skillFilePath, injected, "utf-8");
+        }
+      }
+    }
   }
 }
 
@@ -122,7 +133,7 @@ async function generateAirHelpers(context: IUnifiedHarnessBuildContext): Promise
   const helpers = [
     {
       name: "air-opencode-conversation-extract",
-      scriptPath: "{{repo_root}}/harnesses/opencode/skills/opencode-conversation-analysis/scripts/extract.ts",
+      scriptPath: "{{repo_root}}/harnesses/opencode/skills/agent/opencode-conversation-analysis/scripts/extract.ts",
       envVar: "OPENCODE_CONVERSATION_EXTRACT_COMMAND",
     },
     {
@@ -132,7 +143,7 @@ async function generateAirHelpers(context: IUnifiedHarnessBuildContext): Promise
     },
     {
       name: "air-opencode-session-export",
-      scriptPath: "{{repo_root}}/harnesses/opencode/skills/opencode-sessions/scripts/export.ts",
+      scriptPath: "{{repo_root}}/harnesses/opencode/skills/agent/opencode-sessions/scripts/export.ts",
       envVar: "OPENCODE_SESSION_EXPORT_COMMAND",
     },
   ];

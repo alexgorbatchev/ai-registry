@@ -36,7 +36,7 @@ These files are source-of-truth inputs for generated Codex homes; `{{output_dir}
 5. Keep `description` as routing metadata. Put workflow rules in the body, not in frontmatter.
 6. Put detailed setup material in `references/setup.md`; put large reference material in `references/*.md`; add scripts or assets only when they materially improve reuse.
 7. Avoid private names, internal URLs, hostnames, secrets, and other non-public details.
-8. Validate changed skills with `bun {{repo_root}}/skills/skill-writer/scripts/quick_validate.ts harnesses/codex/skills/<skill-name>` when practical.
+8. Validate changed skills with `bun {{repo_root}}/skills/skill-writer/scripts/quick-validate.ts harnesses/codex/skills/<skill-name>` when practical.
 9. Run `bun run build` and inspect `{{output_dir}}/codex/default/skills/<skill-name>/` or another affected generated profile.
 
 ## Generated Output Contract

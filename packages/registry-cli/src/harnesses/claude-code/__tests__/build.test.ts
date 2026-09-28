@@ -516,6 +516,38 @@ describe("Claude Code harness build", () => {
     expect(existsSync(join(devSkillDir, "extra.txt"))).toBe(false);
   });
 
+  it("stages grouped harness skills (agent and user), injecting disable-model-invocation for user skills", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/claude-code/skills/agent/harness-agent-skill/SKILL.md",
+      "---\nname: harness-agent-skill\n---\n# Agent\n",
+    );
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/claude-code/skills/user/harness-user-skill/SKILL.md",
+      "---\nname: harness-user-skill\n---\n# User\n",
+    );
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: [],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+
+    const agentSkillDir = join(repositoryRoot, ".output", "claude-code", "default", "skills", "harness-agent-skill");
+    const userSkillDir = join(repositoryRoot, ".output", "claude-code", "default", "skills", "harness-user-skill");
+
+    expect(await readFile(join(agentSkillDir, "SKILL.md"), "utf-8")).toBe(
+      "---\nname: harness-agent-skill\n---\n# Agent\n",
+    );
+    expect(await readFile(join(userSkillDir, "SKILL.md"), "utf-8")).toBe(
+      "---\ndisable-model-invocation: true\nname: harness-user-skill\n---\n# User\n",
+    );
+  });
+
   it("reports generated Claude Code profiles when the requested profile is missing", async () => {
     const outputDir = await createOutputDirectory();
     await createClaudeCodeProfile(outputDir, "designer");

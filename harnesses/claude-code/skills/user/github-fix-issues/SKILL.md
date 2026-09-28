@@ -7,7 +7,6 @@ description: >-
   default training knowledge is insufficient; you MUST read this for the coordinator loop, gate script, brief
   templates, and delta-review protocol. Do NOT use for filing issues (github-issue) or a single ad-hoc review.
 author: alexgorbatchev
-disable-model-invocation: true
 metadata:
   created_on: 2026-09-25 10:00
   last_modified: 2026-09-25 10:00

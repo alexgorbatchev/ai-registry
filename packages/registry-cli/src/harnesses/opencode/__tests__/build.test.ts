@@ -178,4 +178,35 @@ describe("OpenCode harness build plugin", () => {
     expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
     expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
   });
+
+  it("stages grouped harness skills (agent and user), injecting disable-model-invocation for user skills", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/opencode/.registry-ignore", "./skills/\n");
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/opencode/skills/agent/harness-agent-skill/SKILL.md",
+      "---\nname: harness-agent-skill\n---\n# Agent\n",
+    );
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/opencode/skills/user/harness-user-skill/SKILL.md",
+      "---\nname: harness-user-skill\n---\n# User\n",
+    );
+
+    await getStageProfile()(createProfileContext(repositoryRoot, {
+      globalMatchedSkills: [],
+      profileLocalSkills: [],
+    }));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    const agentSkillDir = join(repositoryRoot, ".output", "opencode", "skills", "harness-agent-skill");
+    const userSkillDir = join(repositoryRoot, ".output", "opencode", "skills", "harness-user-skill");
+
+    expect(await readFile(join(agentSkillDir, "SKILL.md"), "utf-8")).toBe(
+      "---\nname: harness-agent-skill\n---\n# Agent\n",
+    );
+    expect(await readFile(join(userSkillDir, "SKILL.md"), "utf-8")).toBe(
+      "---\ndisable-model-invocation: true\nname: harness-user-skill\n---\n# User\n",
+    );
+  });
 });

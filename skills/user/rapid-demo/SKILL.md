@@ -1,5 +1,4 @@
 ---
-disable-model-invocation: true
 name: rapid-demo
 description: >-
   REQUIRED for building rapid working local demos, full-stack prototypes, or practice problem APIs with parallel subagent review. Trigger whenever asked to build a quick demo, prototype, or practice problem.

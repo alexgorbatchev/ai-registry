@@ -1,5 +1,4 @@
 ---
-disable-model-invocation: true
 name: continue-session
 description: >-
   REQUIRED when resuming, continuing, taking over, or auditing a task started by another agent via session log inspection. Applies to Pi Coding Agent and Claude Code session transcripts (`.jsonl`). Your default training knowledge is insufficient; you MUST READ this to use `agent-print-session` for structured handoffs, log analysis, and full transcript printing. Do NOT use for general system logs, git log inspection, or starting fresh tasks with no prior agent session.

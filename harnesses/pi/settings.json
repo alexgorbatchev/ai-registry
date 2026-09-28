@@ -50,5 +50,5 @@
   "hideThinkingBlock": false,
   "defaultProvider": "litellm",
   "defaultModel": "gemini-3.8-flash",
-  "defaultThinkingLevel": "medium"
+  "defaultThinkingLevel": "high"
 }

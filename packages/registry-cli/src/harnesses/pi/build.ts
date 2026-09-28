@@ -211,6 +211,14 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
             context.templateContext,
           );
         }
+        const masterExtensionsDir = join(context.harnessDir, "extensions");
+        if (existsSync(masterExtensionsDir)) {
+          await context.buildSupport.copyPathWithTemplateVariables(
+            masterExtensionsDir,
+            join(visibleProfileDir, "extensions"),
+            context.templateContext,
+          );
+        }
         await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
         await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
 

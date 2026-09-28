@@ -496,4 +496,34 @@ PI_CODING_AGENT_DIR="{{output_dir}}/pi/developer" exec "$real_binary" "$@"
       "---\ndisable-model-invocation: true\nname: harness-user-skill\n---\n# User\n",
     );
   });
+
+  it("copies harnesses/pi/extensions to default profile and symlinks it in non-default profiles", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/extensions/timestamps.ts", "// timestamps extension\n");
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: [],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
+      globalMatchedSkills: [],
+      globalMatchedCommands: [],
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+    }));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+
+    const defaultExt = join(repositoryRoot, ".output", "pi", "default", "extensions", "timestamps.ts");
+    expect(existsSync(defaultExt)).toBe(true);
+    expect(await readFile(defaultExt, "utf-8")).toBe("// timestamps extension\n");
+
+    const devExtLink = join(repositoryRoot, ".output", "pi", "developer", "extensions");
+    expect(await readlink(devExtLink)).toBe(join(repositoryRoot, ".output", "pi", "default", "extensions"));
+  });
 });

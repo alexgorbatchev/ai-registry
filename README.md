@@ -6,7 +6,7 @@ This repository serves as a canonical registry for my AI tooling. It keeps reusa
 
 ### 1. Reusable Assets
 The reusable source-of-truth layer.
-- **`skills/`**: Domain-specific AI skills. Each skill lives in its own folder with a `SKILL.md`. This directory is also the repo's install surface for `npx skills`.
+- **`skills/`**: Domain-specific AI skills. Skills are grouped into `skills/agent/` for agent-runnable skills and `skills/user/` for user-invokable skills. Each skill lives in its own folder with a `SKILL.md`. User skills in `skills/user/` do not contain `disable-model-invocation: true` in their source `SKILL.md`; the build/bootstrap process automatically injects it into generated harness outputs. In generated outputs, skills from `agent/` and `user/` are merged flat into `skills/`. This directory is also the repo's install surface for `npx skills`.
 - **`commands/`**: Reusable slash commands, system prompts, and task blueprints.
 - **`system/`**: Shared repo-level instruction fragments and persistent-memory guidance that harness configs and profiles can reference via template includes.
 - **`harnesses/`**: Harness-specific config overrides, unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic lives under `packages/registry-cli/src/harnesses/<target>/` when excluded via `.registry-ignore`.
@@ -234,7 +234,7 @@ The Codex harness compiles the generated `default` profile into the shared Codex
 - each generated profile contributes its own home-level `AGENTS.md` from `profiles/<name>/profile.yaml`
 - the generated `default` profile contributes the shared `prompts/` and mutable `config.toml` symlink
 - `harnesses/codex/config.toml` is continuously merged into `{{repo_root}}/.tmp/codex/config.toml` as the harness-managed defaults; Codex-owned local state such as trusted-project entries is preserved across rebuilds
-- `skills/` plus any Codex-only harness skills under `harnesses/codex/skills/` are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Codex payload
+- `skills/` plus any Codex-only harness skills under `harnesses/codex/skills/` (grouped into `agent/` and `user/`) are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Codex payload
 - non-default generated Codex profile roots symlink every shared top-level entry from `default/` except `AGENTS.md` and `skills/`, so they inherit the default commands and mutable state while keeping their own instructions and skills
 
 To link one generated Codex profile into your active Codex directories, run:
@@ -256,7 +256,7 @@ The Pi harness compiles the generated `default` profile into the shared Pi root 
 
 - each generated profile contributes its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`
 - the generated `default` profile contributes the shared `settings.json`, `prompts/`, and static `sessions/` directory
-- `skills/` plus any Pi-only harness skills under `harnesses/pi/skills/` are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Pi payload
+- `skills/` plus any Pi-only harness skills under `harnesses/pi/skills/` (grouped into `agent/` and `user/`) are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Pi payload
 - non-default generated Pi profile roots symlink every shared top-level entry from `default/` except `APPEND_SYSTEM.md` and `skills/`, so they inherit the default commands, settings, and sessions while keeping their own instructions and skills
 
 To link one generated Pi profile into your active Pi config directory, run:
@@ -281,7 +281,7 @@ The Claude Code harness compiles the generated `default` profile into the shared
 - the generated `default` profile contributes the shared `settings.json`, `commands/`, and the disposable runtime directories Claude Code writes into (`file-history/`, `session-env/`, and `statsig/`)
 - everything Claude Code would be painful to lose — per-project memory files and transcripts (`projects/`), resumable session history (`sessions/`), todo lists (`todos/`), shell snapshots (`shell-snapshots/`), and installed plugins (`plugins/`) — lives outside the generated output under `${XDG_DATA_HOME:-~/.local/share}/ai-registry/claude-code/` and is symlinked into the generated `default` profile, so deleting `.output/` and rebuilding never loses it
 - every file shipped under `harnesses/claude-code/` other than `skills/` is copied into the generated `default` root, so new native config surfaces such as `agents/` or `output-styles/` need no build changes
-- `skills/` plus any Claude Code-only harness skills under `harnesses/claude-code/skills/` are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Claude Code payload
+- `skills/` plus any Claude Code-only harness skills under `harnesses/claude-code/skills/` (grouped into `agent/` and `user/`) are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Claude Code payload
 - non-default generated Claude Code profile roots symlink every shared top-level entry from `default/` except `CLAUDE.md` and `skills/`, so they inherit the default commands, settings, and runtime state while keeping their own instructions and skills
 - the Claude Code harness has no native equivalent for the manifest's `tools` and `permission` fields, so the build fails instead of silently dropping them
 

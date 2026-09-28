@@ -64,6 +64,8 @@ If the project has tests, all development must be done in the red/green way. Whe
 temporarily disable the change and run the tests to verify that our change and tests are correct. 
 We should expect to see failures. If not, the tests need to be worked on more.
 
+DO NOT write tests that only verify static constants, raw configs, or hardcoded values (e.g., asserting a global configuration object equals its definition). However, if a constant is returned as part of a function call or dynamic logic, verify it as part of that behavioral check.
+
 Do not broaden or narrow scope without user's consent.
 
 Do not introduce any backwards compatibility layers unless explicitly asked to.

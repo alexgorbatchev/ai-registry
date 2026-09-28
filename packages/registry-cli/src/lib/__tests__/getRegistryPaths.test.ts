@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { mkdir, mkdtemp, rm } from "fs/promises";
 import { homedir } from "os";
 import { join } from "path";
@@ -50,10 +50,16 @@ describe("getRegistryPaths", () => {
     expect(paths.overlay).toBe(tempDir);
   });
 
-  it("throws an informative error when AI_REGISTRY_OVERLAY points to a non-existent path", () => {
+  it("warns and returns overlay as null when AI_REGISTRY_OVERLAY points to a non-existent path", () => {
     const nonExistent = join(tempDir, "does-not-exist");
     process.env.AI_REGISTRY_OVERLAY = nonExistent;
-    expect(() => getRegistryPaths()).toThrow(/Overlay directory does not exist/);
+    const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+    const paths = getRegistryPaths();
+    expect(paths.overlay).toBeNull();
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining(`Overlay directory does not exist: ${nonExistent}`),
+    );
+    warnSpy.mockRestore();
   });
 
   it("resolves path with home correctly", () => {

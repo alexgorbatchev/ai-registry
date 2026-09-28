@@ -37,11 +37,12 @@ export function getRegistryPaths(): IRegistryPaths {
   if (rawOverlay && rawOverlay.length > 0) {
     const resolvedOverlay = resolvePathWithHome(rawOverlay, root);
     if (!existsSync(resolvedOverlay)) {
-      throw new Error(
-        `Overlay directory does not exist: ${resolvedOverlay} (from AI_REGISTRY_OVERLAY=${rawOverlay})`,
+      console.warn(
+        `⚠️ Overlay directory does not exist: ${resolvedOverlay} (from AI_REGISTRY_OVERLAY=${rawOverlay})`,
       );
+    } else {
+      overlay = resolvedOverlay;
     }
-    overlay = resolvedOverlay;
   }
 
   return {

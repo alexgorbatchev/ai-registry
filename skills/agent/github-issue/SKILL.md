@@ -8,7 +8,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-18 13:22
-  last_modified: 2026-09-21 17:15
+  last_modified: 2026-09-29 11:37
   status: current
 ---
 
@@ -33,14 +33,22 @@ For the full section-by-section anatomy of each issue type, read [references/iss
    - If this new issue introduces a dependency into an existing issue (i.e., the existing issue cannot proceed without this one), **update the existing issue** (via `gh issue comment` or `gh issue edit`) to explicitly declare that dependency.
 5. **Pick labels.** See the rule below. Do this before drafting, because an issue that fits no existing label is usually an issue whose type you have not settled.
 6. **Draft to `.tmp/issue.md` (or `.tmp/issue-<name>.md` when drafting multiple).** First line is the title, second line blank, the rest is the body. Keep drafts out of the repository root.
-7. **Stop and wait for the user to review.** Never create the issue unprompted.
-8. **Create it after approval:**
+7. **Check approval requirement:**
+   Determine the repository owner/organization:
+   ```bash
+   gh repo view --json owner -q .owner.login
+   ```
+   (Pass `<owner>/<repo>` if targeting an external repository).
+   - **Auto-approved (`alexgorbatchev`):** If the owner is `alexgorbatchev`, the ticket is auto-approved. Proceed immediately to creation without prompting for review or waiting for confirmation.
+   - **Review required (any other org):** If the owner is ANY other organization or user, stop and present the draft for user review. Never create the issue unprompted; wait for explicit approval before proceeding. Prohibited excuses for bypassing review: defect severity, urgency, small scope, or implied consent.
+8. **Create the issue (after auto-approval or user approval):**
    ```bash
    sed '1,2d' .tmp/issue.md | gh issue create \
      --title "$(sed -n '1p' .tmp/issue.md)" \
      --label bug \
      --body-file -
    ```
+   When drafting multiple issues (`.tmp/issue-<name>.md`), create each file sequentially.
 9. **Update dependent issues and verify:**
    - If this new issue introduced a dependency into existing issues, ensure those existing issues are updated with the newly assigned issue number (`#<number>`).
    - Verify the labels landed, because a silently unlabelled issue is the failure this skill exists to prevent:

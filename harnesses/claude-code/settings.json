@@ -5,8 +5,24 @@
     "pr": "",
     "sessionUrl": false
   },
+  "enabledPlugins": {
+    "claude-workspace@alexgorbatchev": true
+  },
   "env": {
     "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "1000000"
+  },
+  "extraKnownMarketplaces": {
+    "alexgorbatchev": {
+      "source": {
+        "repo": "alexgorbatchev/claude-workspace",
+        "source": "github"
+      }
+    }
+  },
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "xhigh"
+    }
   },
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark"

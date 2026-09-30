@@ -6,7 +6,7 @@ Read `readme.md` first. This file covers only what differs for a CLI tool or ter
 
 ## Formatting
 
-`# How It Works`, `# How it Really Works`, and `# Prerequisites` are formatted strictly as `-` bulleted lists.
+`# How It Works`, `# How it Really Works`, and `# Setup` are formatted strictly as `-` bulleted lists.
 
 ---
 
@@ -16,9 +16,13 @@ Cover what the user can observe from a terminal: where the tool reads and writes
 
 ---
 
-## `# Prerequisites`
+## `# Setup`
 
-Bulleted list of external runtime requirements — system binaries, API tokens, minimum runtimes — each linked, each with the reason it is needed and what degrades without it. Never list the `gh` CLI as an installation prerequisite.
+For published CLI tools, omit `# Prerequisites`. Place `# Installation` first, followed by optional `# Setup`, then `# Quick Start`.
+
+In `# Setup`, list only requirements for running the published artifact — credentials, accounts, external binaries, or runtimes actually required by that artifact. Link each requirement and explain which operation needs it and how to configure it. Omit this section when no runtime setup is required.
+
+Do not list compilers, SDKs, task runners, or test tooling merely because the source project uses them. Put development prerequisites in `AGENTS.md` or contributor docs alongside build-from-source instructions; do not put them before or inside the README's installation or setup sections. Do not infer runtime requirements from the project's implementation language. Never list the `gh` CLI as an installation prerequisite.
 
 ---
 

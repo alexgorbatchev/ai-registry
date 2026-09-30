@@ -28,7 +28,7 @@ Every README uses this order. Sections marked with `*` are defined by the varian
 2. `# What It Does` — bulleted feature highlights, active voice, bold descriptive prefix per bullet.
 3. `# How It Works` — the user-facing walk-through.
 4. `# How it Really Works` — the same story in depth.
-5. `# Prerequisites` — external runtime requirements with links. Omit when there are none.
+5. `# Prerequisites` — external runtime requirements with links. Omit when there are none. For published CLI tools, use the CLI variant's `# Setup` section after installation instead.
 6. `# Installation` `*`
 7. `# Quick Start` `*`
 8. `# Options & Flags` or `# Configuration` `*`

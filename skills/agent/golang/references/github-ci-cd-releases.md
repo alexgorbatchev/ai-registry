@@ -23,6 +23,8 @@ Replace any explicit `replace-with-*` placeholders before using them in a repo:
 - [github-actions-release.yml](./github-actions-release.yml) — tag-triggered release workflow
 - [goreleaser.yml](./goreleaser.yml) — baseline GoReleaser config
 
+Before copying or updating a workflow, query each action's upstream latest stable release and read its release notes and `action.yml`. Use the latest stable major tag, verify its runner requirements and inputs, and exclude prereleases. Do not assume checked-in template versions remain current or silence deprecated-runtime warnings with environment overrides.
+
 ## Recommended baseline
 
 ### CI workflow

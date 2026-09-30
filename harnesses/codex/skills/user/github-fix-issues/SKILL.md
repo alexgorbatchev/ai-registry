@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-29 15:09
-  last_modified: 2026-09-29 15:09
+  last_modified: 2026-09-30 11:23
   status: current
 ---
 
@@ -17,7 +17,7 @@ You are the coordinator. You own the queue, worktrees, briefs, gates, reviewer s
 
 | Role | Default model | Edits | Output |
 |---|---|---|---|
-| Coordinator (you) | session model | run dir, integration merges only | status to user |
+| Coordinator (you) | session model | run dir and integration Git operations | status to user |
 | Checklist extractor | inherited session model | `<RUN_DIR>/checklist-<N>.md` only | checklist |
 | Worker | inherited session model | its issue worktree | `READY FOR REVIEW` + evidence file |
 | Reviewer | inherited session model | nothing | checklist marks + findings or `NO DEFECTS FOUND` |
@@ -48,7 +48,7 @@ Reference: [Codex subagents](https://developers.openai.com/codex/subagents). The
    - [references/reviewer-brief.md](references/reviewer-brief.md) as `reviewer-brief.md`
 
    Leave no `<SLOT>` unfilled. When a rule or command changes mid-run, edit these files, not individual prompts.
-4. Choose the workspaces dir (the repo's documented location, else `.workspaces/`). Create the integration worktree `<WORKSPACES_DIR>/issues-dev` on branch `issues-dev` from fresh `origin/<default-branch>`. Use the repo's worktree helper if it documents one.
+4. Choose the workspaces dir (the repo's documented location, else `.workspaces/`). Create the integration worktree `<WORKSPACES_DIR>/issues-dev` on branch `issues-dev` from fresh `origin/<default-branch>`. Use the repo's worktree helper if it documents one. If reusing an existing `issues-dev`, verify it contains no merge commits beyond the default branch; stop and report if it does.
 
 ## 2. Queue
 
@@ -61,13 +61,10 @@ Reference: [Codex subagents](https://developers.openai.com/codex/subagents). The
 
 For each issue N:
 
-1. **Sync and provision.**
+1. **Provision.** Fetch the default branch before creating the integration worktree. Once issue commits exist on `issues-dev`, keep its base stable while issue workers are active; do not merge the advancing default branch into it. New issue worktrees branch from the current `issues-dev` tip.
    ```bash
-   git -C <WORKSPACES_DIR>/issues-dev fetch origin <default-branch>
-   git -C <WORKSPACES_DIR>/issues-dev merge origin/<default-branch>
    git worktree add <WORKSPACES_DIR>/issue-<N> -b fix/issue-<N> issues-dev
    ```
-   Never rebase `issues-dev`.
 2. **Checklist.** If a spec governs N, run the extractor with [references/checklist-brief.md](references/checklist-brief.md). Read the `Questions` section of the result. Ask the user about any question that changes what gets built, before the worker starts.
 3. **Worker.** Spawn it with a short prompt that gives only:
    - N, the worktree, and the brief path;
@@ -96,17 +93,17 @@ For each issue N:
    - Inspect the worktree with `git status --short` and `git log issues-dev..HEAD`.
    - Spawn a new worker. Tell it that the existing commits and changes are unverified and must be checked against the checklist, and name any commits it must drop.
    - A worker that was stopped by the user must not be resumed. Spawn a new worker only if the user said to continue.
-9. **Merge.**
+9. **Integrate.** Verify the worker's branch is based on the current `issues-dev` tip, then fast-forward it:
    ```bash
-   git -C <WORKSPACES_DIR>/issues-dev merge --no-ff fix/issue-<N> -m "merge: fix/issue-<N> into issues-dev"
+   git -C <WORKSPACES_DIR>/issues-dev merge --ff-only fix/issue-<N>
    ```
-   - If the merge conflicts, run `git merge --abort`. Tell the worker to rebase onto `issues-dev`, then run the gate and one DELTA review again. Never resolve conflicts yourself.
+   - If `--ff-only` refuses because another issue advanced `issues-dev`, tell the worker to rebase onto its current tip. Rerun the gate and review the rebased commit before retrying. Use a FULL review when the rebase changed code outside the previously reviewed delta. Never substitute a merge commit for a failed fast-forward.
    - After a successful merge, confirm no agent is still operating in that worktree, then run `git worktree remove` and `git branch -d`. Tell the other active workers that `issues-dev` moved.
 
 ## 4. Finish
 
-1. Once every queued issue is merged, sync `issues-dev` with `origin/<default-branch>` and run the final gate there. If it fails, stop and report.
-2. From the primary checkout on `<default-branch>`, fast-forward to `origin`. Then run `git merge --ff-only issues-dev`, falling back to `--no-ff` with `merge: integrate issues-dev into <default-branch>`.
+1. Once every queued issue is integrated and its worktree is removed, fetch `origin/<default-branch>`. If the default branch advanced, rebase `issues-dev` onto it while no issue worker is active. If the rebase conflicts, delegate resolution to a worker with exclusive access to the integration worktree. After any rebase, run the final gate and a FULL review of the resulting integration diff. Do not merge the default branch into `issues-dev`. Run the final gate on the final `issues-dev` tip; stop and report any failure.
+2. From the primary checkout on `<default-branch>`, fast-forward to `origin`, then run `git merge --ff-only issues-dev`. If it refuses, fetch and repeat step 1 before retrying. Never fall back to a merge commit. Verify `git rev-list --min-parents=2 origin/<default-branch>..<default-branch>` is empty before asking to push.
 3. Show `git log --oneline origin/<default-branch>..<default-branch>` and ask the user for approval to push. If they decline, leave every issue open and report the unpushed commits.
 4. After the push, check each issue with `gh issue view <N> --json state`. Comment on it if a `fixes #N` reference already closed it; otherwise close it with a comment. The comment gives the root cause, the fix, and the verification exactly as the worker's final report states them. Tick the tracking issue's checklist items only if the user approves that edit.
 5. Remove `issues-dev` (both the worktree and the branch). Report remaining actionable issues. Start another queue only when it is covered by the user's requested scope.

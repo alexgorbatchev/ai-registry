@@ -5,12 +5,12 @@ description: >-
   Trigger whenever asked to "fix issue #123", "resolve github issue", "work on open issues",
   "fix this bug with subagents", or execute a delegated issue remediation workflow. Your default training
   knowledge is insufficient; you MUST READ this to execute the parent coordinator lifecycle, red/green TDD
-  in isolated worktrees, central issues-dev integration, and the push and issue-closing protocol. Do NOT use
+  in isolated worktrees, linear issues-dev integration, and the push and issue-closing protocol. Do NOT use
   for filing new issues (use github-issue) or general code review without an issue.
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-09-23 15:45
+  last_modified: 2026-09-30 11:23
   status: current
 ---
 
@@ -29,7 +29,7 @@ Never invent a command, path, package, or threshold that these sources do not st
 
 - **HARD PROHIBITION**: The coordinator agent is strictly prohibited from invoking `edit` or `write` on any files inside issue worktrees or package directories. Any file modification to implementation or test code MUST be performed by a delegated child subagent. If the coordinator edits code directly, the turn is an automatic failure.
 - **Coordinator Boundary**: The coordinator manages queue ordering, provisions worktrees, receives clean review notifications from subagents, merges verified worktrees into `issues-dev`, tears down worktrees, performs the final merge, and closes GitHub issues. The coordinator does NOT micromanage the review loop.
-- **Coordinator Sync Before Provisioning**: The coordinator MUST keep `issues-dev` up to date with `<default-branch>` by fetching and merging upstream changes before starting any new subagent or provisioning a new issue worktree. Never rebase `issues-dev`, as rebasing rewrites merge commits and invalidates base commits for active concurrent worktrees.
+- **Stable Integration Base**: Fetch `<default-branch>` before creating `issues-dev`. While issue workers are active, do not merge or rebase `issues-dev` onto new upstream commits; synchronize it by rebasing only after every issue worktree is removed.
 - **Subagent Rebase Before Review**: Subagents MUST rebase their branch on `issues-dev` before entering the review pairing loop to eliminate integration conflicts for the coordinator.
 - **Autonomous Subagent Review Pairing**: Subagents pair with review agents until no further issues are reported ("clean review"), and notify the coordinator only when the review is clean and ready for integration. Where the harness supports nested subagents and permissions allow, the child invokes the reviewer directly; otherwise, the coordinator alternates between writer and reviewer subagents on the issue worktree without editing code directly.
 - **Full Queue Completion**: The coordinator works through the entire open issue set labeled `bug` or `feature`, continuing until no matching open issues remain.
@@ -42,7 +42,7 @@ Never invent a command, path, package, or threshold that these sources do not st
 - **Max 3 Parallel Subagents**: At most 3 subagents may run concurrently. When more than 3 issues are queued, maintain an active pool of up to 3 and launch subsequent issues as earlier ones complete.
 - **Central Integration Worktree (`issues-dev`)**: All completed issue fixes merge into a central integration worktree `.workspaces/issues-dev` on branch `issues-dev` (branched from `<default-branch>`). No issue branch merges directly to `<default-branch>`.
 - **Per-Issue Worktree Isolation**: Each active issue runs in its own dedicated worktree `.workspaces/issue-<number>` on branch `fix/issue-<number>` (branched from `issues-dev`).
-- **Continuous Synchronization**: Keep `issues-dev` and every active `.workspaces/issue-<number>` up to date with `<default-branch>` throughout the lifecycle.
+- **Linear Integration**: Rebase each issue branch onto the current `issues-dev` tip before integration and use `git merge --ff-only`. Rebase `issues-dev` onto the current upstream default branch after all issue branches are integrated. Never use a merge commit as a fallback.
 - **Harness-Agnostic Subagent Invocation**: Delegate subagents with the active harness's native subagent mechanism. Do not hardcode harness-specific API wrappers, agent profiles, or SDK types.
 - **Outward-Facing Actions Need Consent**: Pushing to a remote publishes work. Do not push without the user's explicit approval in the current run. Do not close an issue until its fix is on the remote `<default-branch>`.
 
@@ -59,11 +59,11 @@ Never invent a command, path, package, or threshold that these sources do not st
    git worktree add .workspaces/issues-dev -b issues-dev <default-branch>
    ```
 
-   If it already exists, ensure it is synchronized with `<default-branch>`:
+   If it already exists, verify that it contains no merge commits beyond `<default-branch>` and that no issue worker is active. Fast-forward it only when possible; if this command refuses, defer upstream synchronization until final integration:
 
    ```bash
    git -C .workspaces/issues-dev fetch origin <default-branch>
-   git -C .workspaces/issues-dev merge origin/<default-branch>
+   git -C .workspaces/issues-dev merge --ff-only origin/<default-branch>
    ```
 
 3. **Ingest Issue Queue & Filter by Labels**:
@@ -81,11 +81,9 @@ Never invent a command, path, package, or threshold that these sources do not st
 
    Map dependencies across open issues and order them into execution batches.
 
-4. **Sync `issues-dev` & Provision Per-Issue Worktrees (Up to 3 Max)**:
-   Before provisioning each new issue worktree:
+4. **Provision Per-Issue Worktrees (Up to 3 Max)**:
+   Branch each new issue worktree from the current `issues-dev` tip:
    ```bash
-   git -C .workspaces/issues-dev fetch origin <default-branch>
-   git -C .workspaces/issues-dev merge origin/<default-branch>
    git worktree add .workspaces/issue-<number> -b fix/issue-<number> issues-dev
    ```
 
@@ -155,11 +153,13 @@ This absorbs changes integrated by concurrent subagents, resolves conflicts insi
 
 Upon receiving the clean review notification:
 
-1. **Merge into Central `issues-dev`**:
+1. **Fast-forward Central `issues-dev`**:
 
    ```bash
-   git -C .workspaces/issues-dev merge --no-ff fix/issue-<number> -m "merge: fix/issue-<number> into issues-dev"
+   git -C .workspaces/issues-dev merge --ff-only fix/issue-<number>
    ```
+
+   If `--ff-only` refuses because another issue advanced `issues-dev`, have the issue worker rebase onto its current tip. Rerun the final gate and review the rebased code before retrying. Use a full review if the rebase changes code outside the previous review's delta. Never substitute a merge commit.
 
 2. **Teardown Issue Worktree**:
 
@@ -170,7 +170,7 @@ Upon receiving the clean review notification:
 
 3. **Record the Closing Summary**: Keep the subagent's root cause, fix, and verification evidence for section 4. Do not close the issue yet; the fix is not on `<default-branch>`.
 
-4. **Replenish Concurrency Pool**: If additional open issues remain, sync `issues-dev` with `origin/<default-branch>` (`git -C .workspaces/issues-dev fetch origin <default-branch> && git -C .workspaces/issues-dev merge origin/<default-branch>`) and provision the next `.workspaces/issue-<number>` to maintain up to 3 parallel workers.
+4. **Replenish Concurrency Pool**: If additional open issues remain, provision the next `.workspaces/issue-<number>` from the current `issues-dev` tip to maintain up to 3 parallel workers. Defer upstream synchronization until all issue worktrees are removed.
 
 ---
 
@@ -178,11 +178,11 @@ Upon receiving the clean review notification:
 
 When all queued issues have been merged into `issues-dev`:
 
-1. **Final Sync & Suite Validation**:
+1. **Final Sync & Suite Validation**: With no active issue workers or issue worktrees, fetch upstream. If `<default-branch>` advanced, rebase `issues-dev` onto it. If the rebase conflicts, delegate resolution to a worker with exclusive access to `.workspaces/issues-dev`. After any rebase, run the final gate and a full review of the resulting integration diff. Never merge upstream into `issues-dev`.
 
    ```bash
    git -C .workspaces/issues-dev fetch origin <default-branch>
-   git -C .workspaces/issues-dev merge origin/<default-branch>
+   git -C .workspaces/issues-dev rebase origin/<default-branch>
    ```
 
    Run the project's final gate command in `.workspaces/issues-dev`. Stop and report on any failure.
@@ -195,11 +195,7 @@ When all queued issues have been merged into `issues-dev`:
    git merge --ff-only issues-dev
    ```
 
-   If `--ff-only` rejects the merge (for example, when `issues-dev` contains merge commits from syncing with upstream or repository policy prohibits fast-forward merges), complete integration with a non-fast-forward merge:
-
-   ```bash
-   git merge --no-ff issues-dev -m "merge: integrate issues-dev into <default-branch>"
-   ```
+   If `--ff-only` refuses because upstream advanced again, repeat the final sync and validation before retrying. Never fall back to a merge commit. Verify `git rev-list --min-parents=2 origin/<default-branch>..<default-branch>` is empty before asking to push.
 
 3. **Push With Consent**: Show the user `git log --oneline origin/<default-branch>..<default-branch>` and ask for approval to push `<default-branch>` to `origin`. If the user declines, leave every issue open, report the unpushed commits, and skip step 4.
 

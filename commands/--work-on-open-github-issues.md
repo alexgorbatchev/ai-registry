@@ -74,14 +74,15 @@ Once an issue has passed all tests and received a clean subagent review:
      git fetch origin main
      git rebase origin/main
      ```
-   - Run the full test suite and build checks on the rebased branch to ensure compatibility with any recently merged changes.
+   - Run the full test suite and build checks on the rebased branch to ensure compatibility with any recently merged changes. Repeat independent review on the rebased commit, and integrate only the exact reviewed SHA.
 2. **Sequential Merge**:
    - To prevent git index locks, concurrency conflicts, and race conditions, merges to `main` must occur sequentially (one issue at a time):
      ```sh
      git checkout main
      git pull --rebase origin main # if remote exists
-     git merge --ff-only "issue-<number>" # or git merge --no-ff if project prefers merge commits
+     git merge --ff-only "issue-<number>"
      ```
+   - If the fast-forward fails, stop integration. Rebase the issue branch onto the new `main`, rerun the final checks and independent review, then retry `git merge --ff-only`. Never create a merge commit as a fallback.
 3. **Close Issue**:
    - Close the resolved GitHub issue:
      ```sh

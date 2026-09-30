@@ -7,6 +7,13 @@
       "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
       "computedHash": "a5c65e76275008b469962f7bee8b34866f1c9b0709f4886e71c8e731735640e4"
     },
+    "hunk-review": {
+      "source": "modem-dev/hunk",
+      "ref": "v0.22.0",
+      "sourceType": "github",
+      "skillPath": "packages/hunk/skills/hunk-review/SKILL.md",
+      "computedHash": "ebad9a743f1835959a61d61b49c7e783419833d01f6c29de225932605f2765c5"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",

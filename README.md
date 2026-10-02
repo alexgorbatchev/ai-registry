@@ -8,6 +8,7 @@ This repository serves as a canonical registry for my AI tooling. It keeps reusa
 The reusable source-of-truth layer.
 - **`skills/`**: Domain-specific AI skills. Skills are grouped into `skills/agent/` for agent-runnable skills and `skills/user/` for user-invokable skills. Each skill lives in its own folder with a `SKILL.md`. User skills in `skills/user/` do not contain `disable-model-invocation: true` in their source `SKILL.md`; the build/bootstrap process automatically injects it into generated harness outputs. In generated outputs, skills from `agent/` and `user/` are merged flat into `skills/`. This directory is also the repo's install surface for `npx skills`.
 - **`commands/`**: Reusable slash commands, system prompts, and task blueprints.
+- **`github-pr`**: Reusable PR-writing skill with concise descriptions, no first-person language, related issue references from commit messages, change types, and test results and risks.
 - **`skills/AGENTS.md`**: Skill-authoring rules. Generic skills contain no harness-specific instructions; those belong under `harnesses/<target>/skills/`.
 - **`system/`**: Shared repo-level instruction fragments and persistent-memory guidance that harness configs and profiles can reference via template includes.
 - **`harnesses/`**: Harness-specific config overrides, unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic lives under `packages/registry-cli/src/harnesses/<target>/` when excluded via `.registry-ignore`.

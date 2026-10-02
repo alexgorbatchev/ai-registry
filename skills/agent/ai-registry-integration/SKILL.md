@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-10-01 11:46
+  last_modified: 2026-10-01 21:18
   status: current
 ---
 
@@ -74,6 +74,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 ## Add A Command
 
+- Keep PR-writing guidance in the `github-pr` skill under `{{skills_dir}}/agent/github-pr/`; do not recreate a duplicate PR command.
 - Create the command under the commands_dir token.
 - Use commands for slash-command prompts, reusable task blueprints, and prompt templates.
 - Keep the command self-contained rather than relying on unstated repo context.

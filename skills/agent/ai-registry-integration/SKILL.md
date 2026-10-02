@@ -59,6 +59,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Create a folder under the skills_dir token for the new skill.
 - Put the main instructions in `SKILL.md` within that skill folder.
 - Start `SKILL.md` with YAML frontmatter containing `name`, `description`, `author: alexgorbatchev`, and a `metadata` block with `created_on`, `last_modified`, and `status`.
+- Write `description` using positive trigger conditions only. Keep negative triggers and exclusions in the skill body, never in the description.
 - Keep base skills self-contained. Project-local `<base-skill>-addendum` skills are the narrow exception and may depend on the matching base skill.
 - For project-specific overrides to an existing skill, use a project-local addendum skill named `<base-skill>-addendum` instead of copying the full global skill into the project.
 - Write the addendum description so routing can discover the dependency through `name` and `description` alone: `If <base-skill> skill is used, this skill must be used as well.`

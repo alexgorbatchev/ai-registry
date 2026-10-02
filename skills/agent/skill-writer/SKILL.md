@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-09-18 10:43
+  last_modified: 2026-10-01 21:18
   status: current
 ---
 
@@ -40,6 +40,8 @@ The context window is a public good. Skills share the context window with everyt
 Prefer concise examples over verbose explanations.
 
 Treat the frontmatter `description` as routing metadata, not as a mini playbook. It should help the agent decide whether to load the skill, not try to enforce workflow rules before the skill body is read.
+
+Write descriptions using positive trigger conditions only. Never include negative triggers, exclusions, or “do not use” clauses in `description`; put those boundaries in the skill body.
 
 #### Eliminate Prompt Debt and Redundancy
 To keep skills highly efficient and avoid wasting tokens on useless meta-commentary:
@@ -311,7 +313,7 @@ Added scripts must be tested by actually running them to ensure there are no bug
 
 Do not stop at the first draft that seems acceptable. Self-review the skill against an explicit quality bar, correct weaknesses, and repeat until the result would reasonably score **10/10** against the rubric below.
 
-**Mandatory Watertightness Audit:** Before finalizing any skill's instructions, you MUST consult the `prompt-writer` skill to perform a formal **Watertightness Audit** (using the $W = 10 \times P \times (1 - L) \times C$ formula). If $W < 9.0$, you must identify the logical loopholes, lack of semantic precision, or weak behavioral coupling, and write surgically precise negative guardrails (e.g. "Do not use X", "Prohibited justifications") to close them until $W \ge 9.0$.
+**Mandatory Watertightness Audit:** Before finalizing skill instructions, consult the `prompt-writer` skill and apply its $W = 10 \times P \times (1 - L) \times C$ audit. If $W < 9.0$, identify and close logical loopholes, imprecise constraints, or weak behavioral coupling until $W \ge 9.0$. Put negative guardrails in the body only; never add negative triggers to `description` to improve an audit score.
 
 Use a bounded review loop:
 
@@ -324,7 +326,7 @@ Treat **10/10** as meaning the skill is clear, correctly scoped, concise, intern
 
 Review rubric:
 
-- **Triggering quality**: Does the `description` clearly say what the skill does, when to use it, and nearby cases that should not trigger it?
+- **Triggering quality**: Does the `description` identify the intended actions and artifacts using only positive trigger conditions, with exclusions confined to the body?
 - **Workflow quality**: Are the steps concrete, ordered, and actionable instead of vague advice?
 - **Resource quality**: Are scripts, references, and assets present only when they materially improve reliability or reuse?
 - **Conciseness**: Is every section earning its token cost, with bulky details moved into references when appropriate?
@@ -336,29 +338,22 @@ Review rubric:
 Write the YAML frontmatter with `name`, `description`, and `author`:
 
 - `name`: The skill name
-- `description`: **VERY IMPORTANT: `description` is an obsolete standard name. Treat this field as `trigger`.** The key is spelled `description` only because harnesses and the Agent Skills specification require that spelling; never rename the key. Semantically it is NOT a description of the skill. It is the trigger condition that decides whether the LLM loads the skill body at all. Construct its value with one goal: maximize the probability that an LLM reading only `name` + this field decides to read the skill. Do not write it as a summary, a blurb, or an explanation of what the skill contains. Write it as the exact conditions, tokens, verbs, and artifacts that must fire the skill, plus the boundaries that stop it from firing for neighbors. Every review of a `description` value asks one question: "Would an LLM seeing this line alongside dozens of other skill lines reliably choose to read this skill for the intended requests?" If the answer is not a confident yes, the value is wrong regardless of how accurately it describes the skill.
+- `description`: Keep this required frontmatter key and use it as the skill's trigger condition. State the exact positive conditions, actions, and artifacts that identify when to load the skill. Do not use it as a summary of the skill's contents.
 
-  The `description` is the ONLY stable routing mechanism. To achieve near-100% mathematical certainty that an agent will trigger the skill, you must override its pre-trained complacency. If the model thinks it already knows how to do a task, it will skip the skill unless the description hacks its attention mechanism.
-  
-  **The "Near-100% Certainty" Trigger Formula:**
-  Descriptions must act as security tripwires using these 5 watertight elements:
-  1. **Hard Conditional Imperatives:** Override passive language ("helps with", "guidelines for"). Use "MUST USE", "ALWAYS TRIGGER", "REQUIRED".
-  2. **Exact Lexical Anchors:** Agents route via token matching. Match the user's exact tokens by explicitly listing file extensions (e.g., `.tsx`, `.go`), directory names, CLI commands, and framework names. Do not rely on synonyms.
-  3. **Action-Verb Mapping:** Map exact user intents. Use words like "create", "debug", "refactor", "migrate", "deploy".
-  4. **Anti-Hallucination Clause:** Break the model's pre-trained confidence. Explicitly state that its default training is insufficient or outdated for this specific project.
-  5. **Negative Boundaries (Anti-Dilution):** Explicitly define where the skill stops to prevent probability splitting between similar skills (e.g., "Do NOT use for React").
+  **Positive triggers only:** Never include negative triggers or exclusion clauses in `description`. Prohibit forms such as `Do not use for X`, `Not for X`, `Except when X`, or `Use for X, not Y`, including exclusions hidden in parentheses or subordinate clauses. Put excluded tasks, negative guardrails, and operational boundaries in the body instead. Scope the description by naming the supported work positively.
 
-  **The Formula Template:**
-  > **[REQUIRED/ALWAYS USE]** when **[List exact Verbs: creating, debugging]** **[List exact Nouns/Frameworks]**. Applies to **[List exact file extensions / directories]**. Your default training knowledge is insufficient; you **[MUST READ]** this to get the project-specific rules. Do **NOT** use for **[Negative Boundary]**.
+  **Trigger structure:**
+  1. Name the requested actions, such as writing, reviewing, creating, debugging, or deploying.
+  2. Name the specific artifacts and domains, such as `.go` files, GitHub pull requests, or deployment manifests.
+  3. State the positive conditions that require the skill, including relevant user phrases and supported frameworks.
+
+  **Template:**
+  > Use when **[requested actions]** **[specific artifacts or domains]**, including **[positive trigger conditions]**.
 
   **Examples:**
-  - *Weak (70% hit rate):* "Apply Go coding rules, design principles, and project conventions for maintainable Go code."
-  - *Bulletproof (99.9% hit rate):* "ALWAYS USE when writing, refactoring, or reviewing Go code (`.go` files). You MUST read this to get our specific standard library rules and memory conventions before writing any code. Do NOT use for TypeScript."
-  
-  - *Weak (70% hit rate):* "Use this skill to deploy the application to AWS."
-  - *Bulletproof (99.9% hit rate):* "REQUIRED for all deployment, infrastructure, and AWS tasks. Trigger whenever the user asks to 'deploy', 'ship', or 'push to prod'. Do not rely on your training data for AWS commands; you must load this to see our custom CI/CD pipeline scripts."
-  
-  **Summary:** Don't describe the skill like a book summary. Describe it like a security tripwire. Make it lexically identical to the user's likely input, and explicitly forbid the LLM from relying on its own memory.
+  - `Use when writing, refactoring, or reviewing Go code in .go files.`
+  - `Use when creating or updating AWS deployment manifests, provisioning AWS infrastructure, or diagnosing AWS deployments.`
+  - `Use when preparing, writing, creating, or updating GitHub pull requests, including PR titles and descriptions.`
   
   - Include all true trigger information here, not buried only in the body. The body is loaded after triggering.
   - Do **not** put workflow rules, command requirements, validation criteria, or step-by-step instructions here. Words like "always", "never", "require", and long procedural clauses usually belong in the body.

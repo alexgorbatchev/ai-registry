@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-01 11:46
-last_modified: 2026-10-01 11:46
+last_modified: 2026-10-01 21:18
 status: current
 ---
 
@@ -17,6 +17,8 @@ This directory contains reusable skills that must work across harnesses.
 - When a skill mixes generic and harness-specific instructions, keep only the shared guidance here and move the harness-specific content to `harnesses/<target>/skills/`. Harness skills may override a generic skill with the same name.
 
 ## Validation
+
+Write skill frontmatter descriptions using positive trigger conditions only. Never include negative triggers or exclusion clauses in `description`; place excluded tasks and operational boundaries in the skill body instead.
 
 After skill changes, validate the changed skill folders with `bun skills/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` from the repository root, then run `bun run build`.
 

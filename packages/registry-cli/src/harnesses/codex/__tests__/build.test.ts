@@ -7,6 +7,7 @@ import { dirname, join } from "path";
 
 import plugin from "../../codex/build";
 import {
+  applyTemplateVariablesToGeneratedOutput,
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
   mergeDirectory,
@@ -18,6 +19,7 @@ import {
   type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
 import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
+import { syncBackModifiedFiles } from "../../../commands/buildCommand";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "codex-build-tests");
 const originalArgv: string[] = [...process.argv];
@@ -29,6 +31,7 @@ type IProfileContextOverrides = {
   profileLocalSkills?: string[];
   profileLocalCommands?: string[];
   runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry;
+  sourcePathByOutputPath?: Map<string, string>;
   systemPrompt?: string;
 };
 
@@ -57,13 +60,16 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
 function createBuildSupport(
   repositoryRoot: string,
   runtimeDirectoryRegistry: IRuntimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")),
+  sourcePathByOutputPath?: Map<string, string>,
 ): IBuildSupport {
   return {
-    mergeDirectory,
+    mergeDirectory: (sourceDir, targetDir, options) => mergeDirectory(sourceDir, targetDir, options, sourcePathByOutputPath),
     stageProfileAssets,
     writeBinScript,
-    copyDirectoryWithTemplateVariables,
-    copyPathWithTemplateVariables,
+    copyDirectoryWithTemplateVariables: (sourceDir, targetDir, context) =>
+      copyDirectoryWithTemplateVariables(sourceDir, targetDir, context, sourcePathByOutputPath),
+    copyPathWithTemplateVariables: (sourcePath, targetPath, context) =>
+      copyPathWithTemplateVariables(sourcePath, targetPath, context, sourcePathByOutputPath),
       ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
   };
 }
@@ -89,16 +95,16 @@ function createProfileContext(
     profileLocalCommands: overrides.profileLocalCommands ?? ["local.md"],
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot, overrides.runtimeDirectoryRegistry),
+    buildSupport: createBuildSupport(repositoryRoot, overrides.runtimeDirectoryRegistry, overrides.sourcePathByOutputPath),
   };
 }
 
-function createUnifiedContext(repositoryRoot: string): IUnifiedHarnessBuildContext {
+function createUnifiedContext(repositoryRoot: string, sourcePathByOutputPath?: Map<string, string>): IUnifiedHarnessBuildContext {
   return {
     harnessDir: join(repositoryRoot, "harnesses", "codex"),
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot),
+    buildSupport: createBuildSupport(repositoryRoot, undefined, sourcePathByOutputPath),
   };
 }
 
@@ -131,16 +137,19 @@ describe("Codex harness build plugin", () => {
 
   it("stages the default Codex profile as the shared root", async () => {
     const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Test workflow\n---\nReview the changes.\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/rules/default.rules", "prefix_rule(pattern = [\"git\", \"reset\"], decision = \"forbidden\")\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/skills/harness-skill/SKILL.md", "# Harness skill\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "---\ndescription: Test workflow\n---\nLocal command.\n");
     await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
 
     const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output"));
     await getStageProfile()(createProfileContext(repositoryRoot, "default", { runtimeDirectoryRegistry }));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+    expect(existsSync(join(repositoryRoot, ".output", "codex", "default", "prompts"))).toBe(false);
+    expect(await Bun.file(join(repositoryRoot, ".output", "codex", "default", "skills", "command-review", "agents", "openai.yaml")).text()).toBe("policy:\n  allow_implicit_invocation: false\n");
 
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "AGENTS.md"), "utf-8")).toBe(
       "Follow the repo guidance.\nEscalate risky changes.\n",
@@ -154,12 +163,12 @@ describe("Codex harness build plugin", () => {
       "codex/default/log",
       "codex/default/sessions",
     ]);
-    expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "prompts", "review.md"), "utf-8")).toBe(
-      "Review the changes.\n",
+    expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "skills", "command-review", "SKILL.md"), "utf-8")).toBe(
+      "---\ndescription: Test workflow\n---\nReview the changes.\n",
     );
     expect(
-      await readFile(join(repositoryRoot, ".output", "codex", "default", "prompts", "--default-local.md"), "utf-8"),
-    ).toBe("Local command.\n");
+      await readFile(join(repositoryRoot, ".output", "codex", "default", "skills", "command-default-local", "SKILL.md"), "utf-8"),
+    ).toBe("---\ndescription: Test workflow\n---\nLocal command.\n");
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe(
       "# Shared skill\n",
     );
@@ -192,15 +201,15 @@ describe("Codex harness build plugin", () => {
 
   it("builds per-profile AGENTS.md and symlinks other shared non-default Codex files", async () => {
     const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
-    await writeTestFile(repositoryRoot, "commands/developer-only.md", "Developer-only command.\n");
+    await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Test workflow\n---\nReview the default changes.\n");
+    await writeTestFile(repositoryRoot, "commands/developer-only.md", "---\ndescription: Test workflow\n---\nDeveloper-only command.\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/skills/harness-skill/SKILL.md", "# Harness skill\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
     await writeTestFile(repositoryRoot, "skills/developer-shared-skill/SKILL.md", "# Developer shared skill\n");
-    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "---\ndescription: Test workflow\n---\nDefault local command.\n");
     await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
-    await writeTestFile(repositoryRoot, "profiles/developer/commands/local.md", "Developer local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/commands/local.md", "---\ndescription: Test workflow\n---\nDeveloper local command.\n");
     await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Developer local skill\n");
 
     await getStageProfile()(createProfileContext(repositoryRoot, "default", {
@@ -218,20 +227,20 @@ describe("Codex harness build plugin", () => {
     expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "AGENTS.md"), "utf-8")).toBe(
       "Developer-only instructions.\nShould ship here.\n",
     );
-    expect(await readlink(join(repositoryRoot, ".output", "codex", "developer", "prompts"))).toBe(
-      join(repositoryRoot, ".output", "codex", "default", "prompts"),
-    );
+    expect(existsSync(join(repositoryRoot, ".output", "codex", "developer", "prompts"))).toBe(false);
+    expect((await lstat(join(repositoryRoot, ".output", "codex", "developer", "skills", "command-review"))).isSymbolicLink()).toBe(false);
+    expect(existsSync(join(repositoryRoot, ".output", "codex", "developer", "skills", "command-developer-only"))).toBe(false);
     expect(await readlink(join(repositoryRoot, ".output", "codex", "developer", "config.toml"))).toBe(
       join(repositoryRoot, ".output", "codex", "default", "config.toml"),
     );
     await expect(lstat(join(repositoryRoot, ".output", "codex", "developer", "auth.json"))).rejects.toMatchObject({
       code: "ENOENT",
     });
-    expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "prompts", "review.md"), "utf-8")).toBe(
-      "Review the default changes.\n",
+    expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "skills", "command-review", "SKILL.md"), "utf-8")).toBe(
+      "---\ndescription: Test workflow\n---\nReview the default changes.\n",
     );
-    expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "prompts", "--default-local.md"), "utf-8")).toBe(
-      "Default local command.\n",
+    expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "skills", "command-default-local", "SKILL.md"), "utf-8")).toBe(
+      "---\ndescription: Test workflow\n---\nDefault local command.\n",
     );
     expect(await readFile(join(repositoryRoot, ".output", "codex", "developer", "skills", "developer-shared-skill", "SKILL.md"), "utf-8")).toBe(
       "# Developer shared skill\n",
@@ -246,12 +255,12 @@ describe("Codex harness build plugin", () => {
 
   it("generates named Codex launcher helpers without a bare codex wrapper", async () => {
     const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Test workflow\n---\nReview the changes.\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "---\ndescription: Test workflow\n---\nDefault command.\n");
     await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
-    await writeTestFile(repositoryRoot, "profiles/developer/commands/local.md", "Developer command.\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/commands/local.md", "---\ndescription: Test workflow\n---\nDeveloper command.\n");
     await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Developer local skill\n");
 
     await getStageProfile()(createProfileContext(repositoryRoot, "default"));
@@ -458,5 +467,72 @@ CODEX_HOME="{{output_dir}}/codex/developer" exec "$real_binary" "$@"
     await expect(getBootstrapTargets()(outputDir)).rejects.toThrow(
       `Generated Codex profile does not exist: ${join(outputDir, "codex", "removed")}. Available generated Codex profiles: designer, developer.`,
     );
+  });
+
+  it("rejects commands that normalize to the same native skill name", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
+    await writeTestFile(repositoryRoot, "commands/--review.md", "---\ndescription: Review changes\n---\nReview.\n");
+    await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Review changes\n---\nReview again.\n");
+
+    await expect(getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: [], globalMatchedCommands: ["--review.md", "review.md"],
+      profileLocalSkills: [], profileLocalCommands: [],
+    }))).rejects.toThrow("Duplicate Codex command skill name: command-review");
+  });
+
+  it("preserves original command provenance through template rendering and sync-back", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const commandPath = await writeTestFile(repositoryRoot, "overlay/commands/review.md",
+      "---\ndescription: Review\n---\nInspect {{file_path}} under {{repo_root}}. Keep \\{{args}}.\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
+    const sourcePathByOutputPath = new Map<string, string>();
+    const defaultContext = createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: [], globalMatchedCommands: ["review.md"], profileLocalSkills: [], profileLocalCommands: [],
+      sourcePathByOutputPath,
+    });
+    defaultContext.globalCommandSourcePaths = { "review.md": commandPath };
+    await getStageProfile()(defaultContext);
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
+      globalMatchedSkills: [], globalMatchedCommands: [], profileLocalSkills: [], profileLocalCommands: [],
+      sourcePathByOutputPath,
+    }));
+    const unifiedContext = createUnifiedContext(repositoryRoot, sourcePathByOutputPath);
+    await getFinalizeOutput()(unifiedContext);
+    await applyTemplateVariablesToGeneratedOutput(unifiedContext.outputDir, unifiedContext.templateContext, sourcePathByOutputPath);
+
+    const relativePath = "codex/developer/skills/command-review/SKILL.md";
+    const outputPath = join(unifiedContext.outputDir, relativePath);
+    expect(sourcePathByOutputPath.get(outputPath)).toBe(commandPath);
+    expect(await Bun.file(outputPath).text())
+      .toBe(`---\ndescription: Review\n---\nInspect ${commandPath} under ${repositoryRoot}. Keep {{args}}.\n`);
+    const editedOutputDir = join(repositoryRoot, ".tmp", "edited-output");
+    await writeTestFile(editedOutputDir, relativePath, `---\ndescription: Updated review\n---\nInspect changes under ${repositoryRoot}.\n`);
+
+    await syncBackModifiedFiles([{ path: relativePath, reason: "modified" }], editedOutputDir,
+      unifiedContext.outputDir, sourcePathByOutputPath, unifiedContext.templateContext);
+
+    expect(await Bun.file(commandPath).text()).toBe("---\ndescription: Updated review\n---\nInspect changes under {{repo_root}}.\n");
+  });
+
+  it.each([
+    { profileName: "default", defaultSkills: ["command-review"], developerSkills: [] },
+    { profileName: "developer", defaultSkills: [], developerSkills: ["command-review"] },
+  ])("rejects command collisions with selected skills in $profileName", async ({ profileName, defaultSkills, developerSkills }) => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
+    await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Review changes\n---\nReview.\n");
+    await writeTestFile(repositoryRoot, "skills/command-review/SKILL.md", "---\nname: command-review\ndescription: Existing skill\n---\nInspect.\n");
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
+      globalMatchedSkills: [...defaultSkills], globalMatchedCommands: ["review.md"], profileLocalSkills: [], profileLocalCommands: [],
+    }));
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
+      globalMatchedSkills: [...developerSkills], globalMatchedCommands: [], profileLocalSkills: [], profileLocalCommands: [],
+    }));
+
+    await expect(getFinalizeOutput()(createUnifiedContext(repositoryRoot)))
+      .rejects.toThrow(`Codex command skill command-review collides with a skill in profile ${profileName}.`);
+    expect(await Bun.file(join(repositoryRoot, ".output", "codex", profileName, "skills", "command-review", "SKILL.md")).text())
+      .toBe("---\nname: command-review\ndescription: Existing skill\n---\nInspect.\n");
   });
 });

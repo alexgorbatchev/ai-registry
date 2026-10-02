@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { existsSync } from "fs";
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
-import { homedir } from "os";
 import { join } from "path";
 
 import { buildCommand } from "../buildCommand";
 import { type IRegistryPaths } from "../../lib/getRegistryPaths";
+
+const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-overlay-tests");
 
 describe("buildCommand with overlay", () => {
   let tempDir: string;
@@ -14,7 +15,8 @@ describe("buildCommand with overlay", () => {
   let registryPaths: IRegistryPaths;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(homedir(), ".tmp-build-overlay-test-"));
+    await mkdir(TEST_ROOT, { recursive: true });
+    tempDir = await mkdtemp(join(TEST_ROOT, "case-"));
     repoRoot = join(tempDir, "repo");
     overlayDir = join(tempDir, "overlay");
 
@@ -22,7 +24,7 @@ describe("buildCommand with overlay", () => {
     await writeFile(join(repoRoot, "skills", "base-skill", "SKILL.md"), "---\nname: base-skill\n---\n# Base Skill\n");
 
     await mkdir(join(repoRoot, "commands"), { recursive: true });
-    await writeFile(join(repoRoot, "commands", "base-cmd.md"), "# Base Command\n");
+    await writeFile(join(repoRoot, "commands", "base-cmd.md"), "---\ndescription: Base command\n---\n# Base Command\n");
 
     await mkdir(join(repoRoot, "profiles", "default"), { recursive: true });
     await writeFile(
@@ -38,7 +40,7 @@ describe("buildCommand with overlay", () => {
     await writeFile(join(overlayDir, "skills", "work-skill", "SKILL.md"), "---\nname: work-skill\n---\n# Work Skill\n");
 
     await mkdir(join(overlayDir, "commands"), { recursive: true });
-    await writeFile(join(overlayDir, "commands", "work-cmd.md"), "# Work Command\n");
+    await writeFile(join(overlayDir, "commands", "work-cmd.md"), "---\ndescription: Work command\n---\n# Work Command\n");
 
     await mkdir(join(overlayDir, "profiles", "work"), { recursive: true });
     await writeFile(
@@ -90,5 +92,29 @@ describe("buildCommand with overlay", () => {
 
     // Manifest should exist
     expect(existsSync(join(outputDir, "manifest.json"))).toBe(true);
+  });
+
+  it("renders overlay command skills in every Codex profile without changing the source commands", async () => {
+    const commandPath = join(overlayDir, "commands", "base-cmd.md");
+    const commandContent = "---\ndescription: Overlay review\n---\nReview {{file_path}} in {{repo_root}}. Keep \\{{args}} literal.\n";
+    await Bun.write(commandPath, commandContent);
+
+    await buildCommand({ hasAutoConfirm: true, registryPaths });
+
+    const renderedContent = `---\ndescription: Overlay review\n---\nReview ${commandPath} in ${repoRoot}. Keep {{args}} literal.\n`;
+    const outputRelativePath = "codex/work/skills/command-base-cmd/SKILL.md";
+    const skillPath = join(registryPaths.output, outputRelativePath);
+    expect(await Bun.file(skillPath).text()).toBe(renderedContent);
+    expect(await Bun.file(join(registryPaths.output, "codex/default/skills/command-base-cmd/SKILL.md")).text())
+      .toBe(renderedContent);
+    expect(await Bun.file(join(registryPaths.output, "codex/work/skills/command-base-cmd/agents/openai.yaml")).text())
+      .toBe("policy:\n  allow_implicit_invocation: false\n");
+    expect(existsSync(join(registryPaths.output, "codex/default/prompts"))).toBe(false);
+    expect(existsSync(join(registryPaths.output, "codex/work/prompts"))).toBe(false);
+    expect(existsSync(join(registryPaths.output, ".codex-command-skills"))).toBe(false);
+
+    expect(await Bun.file(commandPath).text()).toBe(commandContent);
+    expect(await Bun.file(join(repoRoot, "commands/base-cmd.md")).text())
+      .toBe("---\ndescription: Base command\n---\n# Base Command\n");
   });
 });

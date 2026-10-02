@@ -15,10 +15,12 @@ import { createExternalProfileHelper } from "../../lib/createExternalProfileHelp
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
 import { injectDisableModelInvocation, readHarnessSkillEntries } from "../../lib/userSkillUtils";
+import { getCommandSkillName } from "./getCommandSkillName";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
 const CODEX_MUTABLE_STATE_DIR_NAME = "codex";
 const DEFAULT_PROFILE_NAME = "default";
+const COMMAND_SKILLS_STAGING_DIR_NAME = ".codex-command-skills";
 
 // Directories Codex writes runtime state into. They are materialized in the default
 // profile root so every generated profile shares them, then owned by Codex.
@@ -121,6 +123,41 @@ async function stageProfileSkills(context: IProfileBuildContext, skillsDir: stri
   await context.buildSupport.stageProfileAssets(context, { skillsDir });
 }
 
+async function stageCommandSkill(
+  context: IProfileBuildContext,
+  commandFileName: string,
+  sourcePath: string,
+): Promise<void> {
+  const content = await Bun.file(sourcePath).text();
+  const skillName = getCommandSkillName(commandFileName, content);
+  const skillDir = join(context.outputDir, COMMAND_SKILLS_STAGING_DIR_NAME, skillName);
+  if (existsSync(skillDir)) {
+    throw new Error(`Duplicate Codex command skill name: ${skillName}`);
+  }
+
+  await context.buildSupport.copyPathWithTemplateVariables(
+    sourcePath,
+    join(skillDir, "SKILL.md"),
+    context.templateContext,
+  );
+  await mkdir(join(skillDir, "agents"), { recursive: true });
+  await Bun.write(join(skillDir, "agents", "openai.yaml"), "policy:\n  allow_implicit_invocation: false\n");
+}
+
+async function stageCommandSkills(context: IProfileBuildContext): Promise<void> {
+  for (const command of context.globalMatchedCommands) {
+    const sourcePath = context.globalCommandSourcePaths?.[command] ?? join(context.templateContext.commands_dir, command);
+    await stageCommandSkill(context, command, sourcePath);
+  }
+  for (const command of context.profileLocalCommands) {
+    await stageCommandSkill(
+      context,
+      getProfileLocalCommandOutputName(context.profileName, command),
+      join(context.profileDir, "commands", command),
+    );
+  }
+}
+
 async function renderSystemPrompt(context: IProfileBuildContext): Promise<string> {
   const systemPrompt = typeof context.manifest.system_prompt === "string"
     ? context.manifest.system_prompt
@@ -150,7 +187,6 @@ async function stageProfileAgentsFile(context: IProfileBuildContext, profileOutp
 
 async function stageProfile(context: IProfileBuildContext): Promise<void> {
   const profileOutputDir = getProfileOutputDir(context.outputDir, context.profileName);
-  const promptsDir = join(profileOutputDir, "prompts");
   const skillsDir = join(profileOutputDir, "skills");
   const isDefaultProfile = context.profileName === DEFAULT_PROFILE_NAME;
 
@@ -158,7 +194,6 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   await stageProfileAgentsFile(context, profileOutputDir);
 
   if (isDefaultProfile) {
-    await mkdir(promptsDir, { recursive: true });
     // Codex-owned runtime state, shared by every generated profile through the
     // default root: created here, never tracked by the manifest.
     for (const runtimeDirName of CODEX_RUNTIME_DIR_NAMES) {
@@ -168,11 +203,8 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
     await stageHarnessRules(context, profileOutputDir);
     await stageHarnessLocalSkills(context, skillsDir);
 
-    await context.buildSupport.stageProfileAssets(context, {
-      commandsDir: promptsDir,
-      skillsDir,
-      localCommandRenamer: getProfileLocalCommandOutputName,
-    });
+    await stageProfileSkills(context, skillsDir);
+    await stageCommandSkills(context);
   } else {
     await stageHarnessLocalSkills(context, skillsDir);
     await stageProfileSkills(context, skillsDir);
@@ -193,10 +225,20 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
   }
 
   const defaultProfileEntries = await readdir(defaultProfileOutputDir, { withFileTypes: true });
+  const commandSkillsDir = join(context.outputDir, COMMAND_SKILLS_STAGING_DIR_NAME);
+  const commandSkillNames = existsSync(commandSkillsDir) ? await readdir(commandSkillsDir) : [];
   for (const profileEntry of profileEntries) {
     if (!profileEntry.isDirectory()) {
       continue;
     }
+
+    const profileSkillsDir = join(codexOutputDir, profileEntry.name, "skills");
+    for (const skillName of commandSkillNames) {
+      if (existsSync(join(profileSkillsDir, skillName))) {
+        throw new Error(`Codex command skill ${skillName} collides with a skill in profile ${profileEntry.name}.`);
+      }
+    }
+    await context.buildSupport.mergeDirectory(commandSkillsDir, profileSkillsDir);
 
     if (profileEntry.name !== DEFAULT_PROFILE_NAME) {
       const profileOutputDir = join(codexOutputDir, profileEntry.name);
@@ -232,6 +274,7 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     await context.buildSupport.writeBinScript(context.outputDir, `codex-${profileEntry.name}`, content);
   }
 
+  await rm(commandSkillsDir, { recursive: true, force: true });
   await logHarnessSkillOverrides(context, "codex");
 }
 

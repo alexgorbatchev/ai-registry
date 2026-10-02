@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-09-18 10:43
+  last_modified: 2026-10-01 11:46
   status: current
 ---
 
@@ -77,6 +77,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Use commands for slash-command prompts, reusable task blueprints, and prompt templates.
 - Keep the command self-contained rather than relying on unstated repo context.
 - If the command is meant to be available in a profile, make sure the profile manifest under the profiles_dir token includes it directly or via an existing glob.
+- For Codex, include YAML frontmatter with a non-empty `description`. The default profile's selected reusable and profile-local commands become native skill bundles in every Codex profile, with `policy.allow_implicit_invocation: false` in `agents/openai.yaml`; do not emit deprecated `prompts/` files. Invoke with `$<skill-name>` or `/skills`. An explicit `name` is honored; otherwise the build derives `command-<filename>` with leading hyphens removed and repeated hyphens collapsed, including the `default` namespace for profile-local commands. Use lowercase kebab-case names of at most 64 characters and avoid collisions with selected skills. Non-default Codex command selections are not emitted.
 - Run `bun run build` from the repo_root token after the command change.
 
 ## Add A Profile

@@ -58,6 +58,8 @@ For temporary scripts default to Bun and TypeScript and use Bun's built-in featu
 
 When the answer depends on external behavior, third-party APIs, standards, or tool semantics, check the online docs instead of speculating or trying to guess. Your training data may have stale or incomplete information. 
 
+Before implementing a feature in any language, check existing dependencies and maintained third-party libraries. Prefer a suitable library over writing a custom implementation. Use native or standard-library functionality when it already meets the requirements. Implement custom functionality only when suitable existing solutions cannot meet them.
+
 When using or integrating external libraries ALWAYS use them the way they are intended to be used. When the user instructs to use a library, never massage existing code into a soft compatibility layer, instead always perform a full and complete integration to take full advantage of the functionality library provides.
 
 If the project has tests, all development must be done in the red/green way. When done, 

@@ -9,7 +9,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-09-29 20:46
+  last_modified: 2026-10-01 11:34
   status: current
 ---
 
@@ -410,21 +410,7 @@ If a function exceeds ~40 lines, look for extraction opportunities. This isn't a
 
 More than 3-4 parameters usually means you want an options struct or a rethink of the function's responsibility.
 
-```go
-// GOOD
-type ServerConfig struct {
-    Addr            string
-    ReadTimeout     time.Duration
-    WriteTimeout    time.Duration
-    MaxConns        int
-    TLSConfig       *tls.Config
-}
-
-func NewServer(cfg ServerConfig) (*Server, error) { ... }
-
-// BAD
-func NewServer(addr string, readTimeout, writeTimeout time.Duration, maxConns int, tlsCfg *tls.Config) (*Server, error) { ... }
-```
+See [references/parameter-design.md](references/parameter-design.md) for options-struct and argument-order examples when designing function signatures.
 
 ### 7.5 Zero Values Are Useful
 
@@ -450,6 +436,14 @@ Use post-1.22 language features when they make code clearer, not because they ar
 - `new(expr)` (Go 1.26+) is a concise way to produce pointers to computed values in literals.
 
 Keep the same readability bar: use the form that makes intent easiest to review for the team.
+
+### 7.7 Put Callbacks Last; Avoid Dangling Arguments
+
+When designing or changing APIs you control, put callback parameters last. Put sizes, flags, state, and other non-callback parameters before the callback, so calls end with the callback's closing brace rather than trailing arguments such as `}, status)`.
+
+Apply the same ordering to multiline composite literals: put ordinary arguments before the literal. When a call needs both a composite literal and a callback, bind the literal to a local variable and keep the callback last. Do not compress a multiline expression onto one line merely to hide trailing arguments.
+
+Respect existing external API signatures; do not reorder arguments without changing the corresponding declaration. If a fixed signature leaves arguments after a multiline expression, bind that expression to a named local before the call. See [references/parameter-design.md](references/parameter-design.md) for before-and-after examples.
 
 ---
 
@@ -505,6 +499,7 @@ Before producing any Go code, verify the following. Project provisioning, toolch
 - [ ] Domain-specific must-use libraries applied (Cobra + cobra-help-tree/v2 for CLI, any-llm-go for LLMs)
 - [ ] Standard library exceptions honored (slog, ServeMux, testing) without redundant wrappers
 - [ ] Comments explain why, code explains what
+- [ ] Callbacks come last in APIs you control; no ordinary arguments dangle after multiline callbacks or composite literals
 - [ ] Zero values are useful
 - [ ] Tests are table-driven where applicable
 - [ ] `go mod tidy -diff` is clean for module hygiene checks

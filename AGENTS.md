@@ -7,6 +7,7 @@ This repository manages reusable AI skills and commands plus the configurations 
 
 ## File Conventions
 - **Reusable Assets**:
+  - **Skill Authoring Guidance**: Follow `skills/AGENTS.md`. Generic skills must contain no harness-specific instructions; place those under `harnesses/<target>/skills/` instead.
   - **Skills (`skills/`)**: Skills are grouped into `skills/agent/` for agent-runnable skills and `skills/user/` for user-invokable skills. Each skill resides in its own isolated folder and contains at least a `SKILL.md` file detailing the domain knowledge, workflows, and rules. User skills in `skills/user/` do not contain `disable-model-invocation: true` in their source `SKILL.md`; the build/bootstrap process automatically injects it into generated harness outputs. In generated outputs, skills from `agent/` and `user/` are merged flat into `skills/`.
   - **Commands (`commands/`)**: Slash commands and reusable task prompts belong here.
   - **System (`system/`)**: Shared repo-level instruction fragments and memory guidance that can be referenced from harness configs or included into profile prompts belong here.

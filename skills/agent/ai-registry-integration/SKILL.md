@@ -55,6 +55,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 ## Add A Skill
 
+- Follow `{{skills_dir}}/AGENTS.md`: keep generic skills free of harness-specific instructions, including bundled files and conditional harness sections. Place harness-specific content under `harnesses/<target>/skills/agent/<skill-name>/` or `harnesses/<target>/skills/user/<skill-name>/` instead.
 - Create a folder under the skills_dir token for the new skill.
 - Put the main instructions in `SKILL.md` within that skill folder.
 - Start `SKILL.md` with YAML frontmatter containing `name`, `description`, `author: alexgorbatchev`, and a `metadata` block with `created_on`, `last_modified`, and `status`.

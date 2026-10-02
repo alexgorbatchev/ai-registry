@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
-import { homedir } from "os";
 import { join } from "path";
 
 import {
@@ -15,7 +14,8 @@ describe("resolveRegistryAssets", () => {
   let overlayDir: string;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(homedir(), ".tmp-registry-assets-test-"));
+    await mkdir(join(process.cwd(), ".tmp"), { recursive: true });
+    tempDir = await mkdtemp(join(process.cwd(), ".tmp", "registry-assets-test-"));
     baseDir = join(tempDir, "base");
     overlayDir = join(tempDir, "overlay");
     await mkdir(baseDir, { recursive: true });
@@ -147,14 +147,18 @@ describe("resolveRegistryAssets", () => {
       expect(resultWithMissing.matchedNames).toEqual(["cmd-a.md"]);
     });
 
-    it("resolves skills grouped into agent and user subdirectories with wildcard pattern", async () => {
+    it("resolves grouped and flat skill directories while ignoring root guidance files", async () => {
       const baseSkills = join(baseDir, "skills");
       await mkdir(join(baseSkills, "agent", "bun"), { recursive: true });
       await mkdir(join(baseSkills, "agent", "typescript"), { recursive: true });
       await mkdir(join(baseSkills, "user", "continue-session"), { recursive: true });
+      await mkdir(join(baseSkills, "flat-skill"), { recursive: true });
+      await Bun.write(join(baseSkills, "AGENTS.md"), "# Skill authoring guidance");
+      await Bun.write(join(baseSkills, "README.md"), "# Skills");
 
       const result = await resolveMatchedAssets(["*"], baseSkills);
-      expect(result.matchedNames).toEqual(["bun", "continue-session", "typescript"]);
+      expect(result.matchedNames).toEqual(["bun", "continue-session", "flat-skill", "typescript"]);
+      expect(result.sourcePaths["flat-skill"]).toBe(join(baseSkills, "flat-skill"));
       expect(result.sourcePaths["bun"]).toBe(join(baseSkills, "agent", "bun"));
       expect(result.sourcePaths["typescript"]).toBe(join(baseSkills, "agent", "typescript"));
       expect(result.sourcePaths["continue-session"]).toBe(join(baseSkills, "user", "continue-session"));
@@ -200,6 +204,7 @@ describe("resolveRegistryAssets", () => {
 
       await mkdir(join(baseSkills, "agent", "base-skill"), { recursive: true });
       await mkdir(join(overlaySkills, "overlay-flat-skill"), { recursive: true });
+      await Bun.write(join(overlaySkills, "AGENTS.md"), "# Overlay skill authoring guidance");
 
       const result = await resolveMatchedAssets(["*"], baseSkills, overlaySkills);
       expect(result.matchedNames).toEqual(["base-skill", "overlay-flat-skill"]);

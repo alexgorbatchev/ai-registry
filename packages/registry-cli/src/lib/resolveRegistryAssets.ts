@@ -70,6 +70,7 @@ async function collectGroupedAssets(targetDir: string): Promise<Map<string, IGro
 
   const rootEntries = await readdir(targetDir, { withFileTypes: true });
   for (const entry of rootEntries) {
+    if (!entry.isDirectory()) continue;
     if (entry.name === "agent" || entry.name === "user" || entry.name.startsWith(".")) continue;
     if (assetMap.has(entry.name)) continue;
     assetMap.set(entry.name, {
@@ -91,6 +92,7 @@ async function collectFlatAssets(targetDir: string): Promise<Map<string, IGroupe
 
   const rootEntries = await readdir(targetDir, { withFileTypes: true });
   for (const entry of rootEntries) {
+    if (!entry.isDirectory()) continue;
     if (entry.name.startsWith(".")) continue;
     assetMap.set(entry.name, {
       name: entry.name,

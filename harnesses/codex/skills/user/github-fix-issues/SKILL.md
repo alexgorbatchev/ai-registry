@@ -2,16 +2,17 @@
 name: github-fix-issues
 description: >-
   Run a gated Codex multi-agent pipeline for a GitHub tracking issue or a queue of
-  bug/feature issues, including github-issue-pipeline requests. Excludes filing
-  issues and single ad-hoc reviews.
+  bug/feature issues, including github-issue-pipeline requests.
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-29 15:09
-  last_modified: 2026-09-30 11:23
+  last_modified: 2026-10-02 21:58
   status: current
 ---
 
 You are the coordinator. You own the queue, worktrees, briefs, gates, reviewer spawning, merges, and the push/close handshake. Delegate ALL code and doc edits in issue worktrees to worker subagents.
+
+Do not use this workflow for filing issues or single ad-hoc reviews.
 
 ## Roles and Models
 
@@ -55,7 +56,17 @@ Reference: [Codex subagents](https://developers.openai.com/codex/subagents). The
 - **Tracking issue:** use the child issues in the order the tracking issue (and its spec's implementation order) gives. Include every open child, whatever its label.
 - **No tracking issue:** use the open issues labeled `bug` or `feature`, ordered: foundational/data/core first, then services, then UI, then tooling.
 - **Running in parallel:** run at most 3 issues at once, only when they touch disjoint files and session capacity permits. Count the coordinator and all live extractors, workers, and reviewers against the session limit. Reserve a slot for extraction or review; serialize issues when necessary. An issue whose dependency is still unmerged waits.
-- **Pre-existing failures:** run the final gate on the unchanged integration branch before starting workers. If it fails, stop the issue queue, reproduce the failure, and report the evidence. Repair it through a separate worker worktree only when the user authorizes that additional scope.
+- **Baseline repair is included:** invoking this pipeline authorizes repairing pre-existing failures required to pass the discovered final gate. Run that gate on the unchanged integration branch before starting issue workers. If it fails, hold the issue queue and execute the baseline repair loop below without asking for additional scope approval.
+
+### Baseline repair loop
+
+1. Reproduce the failure and save the integration SHA, exact command, exit code, and failure output in `<RUN_DIR>/baseline-failure.md`. Report the failure and the repair task as a progress update; continue working.
+2. Create a separate worker worktree `<WORKSPACES_DIR>/baseline-<K>` on branch `fix/baseline-<K>` from the current `issues-dev` tip, using a new K for each repair task. Keep issue workers waiting until the integration gate passes.
+3. Save a checklist of the reproduced failures and required passing checks as `<RUN_DIR>/checklist-baseline-<K>.md`. Copy the discovered worker brief to `<RUN_DIR>/worker-brief-baseline-<K>.md`; replace the GitHub issue contract and issue-reference commit requirement with that checklist and the recorded failure evidence, and set the assigned worktree and branch to the baseline task. Give the reviewer the same checklist as C. Use `baseline-<K>` as N in task identifiers and evidence filenames; do not run GitHub issue commands for this task.
+4. Delegate the repair to a worker and apply the per-issue loop's steps 3–9, substituting the baseline worktree and `fix/baseline-<K>` branch for the issue paths and branch. Require the gate, independent review, red/green verification, interruption handling, and fast-forward integration; save the final report as baseline evidence rather than an issue closure comment. Limit edits to the reproduced failures and their required tests, generated artifacts, and documentation. Do not disable checks, weaken assertions, or lower coverage thresholds to obtain a passing baseline.
+5. Run the final gate on the resulting `issues-dev` tip. If it fails, record the remaining failure and repeat this loop. Start the issue queue automatically only after the integration gate exits 0. Keep the repair SHAs and verification evidence in the run report.
+
+If repair requires unavailable credentials, an unavailable external service, or a user decision that cannot be resolved from repository instructions, report the exact blocker and required input. Do not claim the baseline passes or start issue workers while the gate fails. Unrelated enhancements remain outside baseline repair scope; the finish phase's push and issue-edit approval rules still apply.
 
 ## 3. Per-Issue Loop
 

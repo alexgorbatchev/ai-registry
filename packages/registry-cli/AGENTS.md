@@ -6,6 +6,7 @@ This package implements the repository build, bootstrap, and synchronization com
 
 - Dev / Build: `bun run build` from repository root
 - Test: `bun test packages/registry-cli`
+- Scheduled update: `bun run scheduled:update` from repository root; serialize scheduled runs with a scheduler lock.
 
 ## Boundaries & Quality Rules
 

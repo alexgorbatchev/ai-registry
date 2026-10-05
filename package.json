@@ -11,6 +11,7 @@
     "build": "bun run typecheck && air-build",
     "bootstrap": "air-bootstrap",
     "bootstrap:smoke": "air-smoke-bootstrap",
+    "scheduled:update": "bun run packages/registry-cli/src/bin/scheduled-update.ts",
     "prepare": "bun run packages/registry-cli/src/bin/install-git-hooks.ts",
     "typecheck": "tsc -p tsconfig.json",
     "sync:opencode-docs": "air-sync-opencode-docs",

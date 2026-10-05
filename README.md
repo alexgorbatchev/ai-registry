@@ -134,6 +134,20 @@ That command:
 
 After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps generated outputs, the default Codex, Pi, and Claude Code links, and the repo-local wrapper symlinks refreshed. Add `-- --codex-profile <profile>`, `-- --pi-profile <profile>`, and/or `-- --claude-code-profile <profile>` when you need non-default linked targets.
 
+### Scheduled updates
+
+Run `bun run scheduled:update` to pull the current branch's configured upstream and run `bun run bootstrap -- -y` when the pull changes the checked-out commit. The pull is fast-forward only, rejects tracked local changes, and disables Git hooks for that command so bootstrap runs once. A failed bootstrap leaves `.tmp/scheduled-update-pending`, which makes the next successful pull retry bootstrap even without new commits. Failures return a nonzero exit status.
+
+The entrypoint at `packages/registry-cli/src/bin/scheduled-update.ts` resolves the repository from its own location, so it can also be invoked by absolute path from another working directory. It uses the running Bun executable for bootstrap and puts that executable's directory on the child processes' `PATH`.
+
+For Linux cron, this example runs every 15 minutes and uses [`flock`](https://man7.org/linux/man-pages/man1/flock.1.html) to skip overlapping scheduled runs. Replace `/path/to/ai-registry` with the checkout location and `/path/to/bun` with the absolute executable path reported by `command -v bun`:
+
+```cron
+*/15 * * * * cd /path/to/ai-registry && mkdir -p .tmp && flock -n -E 0 .tmp/scheduled-update.lock /path/to/bun run scheduled:update >> .tmp/scheduled-update.log 2>&1
+```
+
+Use the account whose harness configuration should be refreshed. Git must be on the scheduler's `PATH`, and upstream authentication must work without interactive prompts. The lock coordinates scheduled runs using that lock file; avoid editing or updating the same checkout concurrently. This script updates the registry checkout; it does not pull a private overlay repository.
+
 To compile the configurations, simply run:
 
 ```bash

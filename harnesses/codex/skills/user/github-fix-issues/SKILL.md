@@ -12,7 +12,7 @@ metadata:
 
 You are the coordinator. You own the queue, worktrees, briefs, gates, reviewer spawning, merges, and the push/close handshake. Delegate ALL code and doc edits in issue worktrees to worker subagents.
 
-Do not use this workflow for filing issues or single ad-hoc reviews.
+Filing issues and single ad-hoc reviews are outside this pipeline's scope.
 
 ## Roles and Models
 
@@ -25,9 +25,10 @@ Do not use this workflow for filing issues or single ad-hoc reviews.
 
 Use the collaboration tools exposed by the active Codex session; check their schemas before calling them. If delegation is unavailable, stop and report the missing capability rather than doing the workers' edits yourself.
 
-- Create agents with `spawn_agent`, using unique task names for each issue, role, and review round. Include absolute worktree and brief paths in each task; instruct the agent to run every command in its assigned worktree. Agents share the filesystem; spawning one does not create a worktree or change its working directory.
+- Create new agents with `spawn_agent`, using unique task names. Include absolute worktree and brief paths in each assignment, including follow-ups; instruct the agent to run every command in its assigned worktree. Agents share the filesystem; spawning one does not create a worktree or change its working directory.
 - Omit model and reasoning overrides by default. Honor explicit user choices only when the tool exposes and supports them. For an override, use `fork_turns: "none"` or a supported positive turn count; full-history forks inherit the parent settings. Do not substitute another model if the requested one is unavailable.
-- Send messages to running agents with `send_message`. For an idle worker, use `followup_task` to start its next round. Use `wait_agent` for results and `list_agents` for status. These collaboration calls are direct tool calls, never calls inside `functions.exec`.
+- Send messages to running agents with `send_message`. For an idle worker or reviewer, use `followup_task` to start its next assignment. Use `wait_agent` for results and `list_agents` for status. These collaboration calls are direct tool calls, never calls inside `functions.exec`.
+- Reviewers may be reused across review rounds, issues, and the final integration review. Before reuse, check `list_agents` and the recorded assignments: the agent must be idle and must not have written any code it will review. Do not assign a second review to a running agent or resume one stopped by the user without permission to continue. Spawn a new reviewer when no eligible idle reviewer is available.
 - Record agent identifiers, assigned worktrees, issue numbers, review rounds, and reviewed SHAs in the run directory. A returned report does not establish that the agent has exited; inspect its status before takeover or worktree removal.
 
 Reference: [Codex subagents](https://developers.openai.com/codex/subagents). The active tool schemas determine availability and parameters.
@@ -93,7 +94,7 @@ For each issue N:
    Pass one `--fmt` per formatter and one `--pair` per pairing rule found in discovery. Omit either flag when the repo has none. Pass `--solo-ok <ext>` only for a side whose partner the final gate compares on every run (for example, when tests always compare `.golden`, an `.ansi`-only color change is safe). Read the test helpers to confirm which side is compared; do not guess. If the gate exits 1, send its output to the worker as the next round's findings, and do not spawn a reviewer. Also treat a missing evidence file as a gate failure.
 
    Treat every nonzero exit, including usage errors, as failure. Never use `--skip-check` for review readiness. This bundled gate supports pair rules whose directory names are single path components; validate other pairing rules separately with repository tooling. Inspect deleted and renamed artifact paths separately because the gate excludes deletions. For any one-sided pair, verify the actual no-diff evidence yourself: the script checks only whether the evidence file names the path. Capture HEAD before and after the gate; if it moved or the gate left tracked changes, rerun on the resulting clean HEAD before review. Save the passing SHA with the review round.
-5. **Review.** Spawn a fresh reviewer for every round. Give it N, W, C (the checklist path or `none`), E (the evidence path) and the review mode:
+5. **Review.** Reuse an eligible idle reviewer with `followup_task`, or spawn a new one. Every assignment must give it N, W, the current reviewer brief path, C (the checklist path or `none`), E (the evidence path), H (the passing gate's HEAD SHA), and the review mode. Require a new report for this assignment; previous findings and approvals do not replace reviewing H:
    - Round 1 is FULL.
    - Later rounds are DELTA: S is the SHA the previous review covered, and P is the previous findings file.
    - Run another FULL review after every 3 DELTA rounds, and whenever a rebase changed code outside the previous delta.
@@ -122,7 +123,7 @@ For each issue N:
 ## Prohibited
 
 - Editing implementation, test, or doc files in any issue worktree yourself, including to resolve merge conflicts.
-- Spawning a reviewer before the gate passes, or accepting a worker's claim of "`just check` passed" instead of the gate's own run.
+- Starting a review, whether with a new or reused reviewer, before the gate passes, or accepting a worker's claim of "`just check` passed" instead of the gate's own run.
 - Merging an issue without a `NO DEFECTS FOUND` from a reviewer that did not write the code.
 - Telling a reviewer to skip the checklist, the spot-checked red/green, or the snapshot-list check to save tokens.
 - Pushing, closing issues, or editing issue bodies without the user's explicit approval in this run.

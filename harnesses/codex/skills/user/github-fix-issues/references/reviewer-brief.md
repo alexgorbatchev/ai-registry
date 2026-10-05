@@ -15,12 +15,15 @@ Your prompt gives you:
 - W (the worktree path)
 - C (the checklist file, or `none`)
 - E (the evidence file)
+- H (the passing gate's HEAD SHA)
 - the mode: FULL or DELTA
 - for DELTA only: S (the last reviewed SHA) and P (the previous findings file)
 
+For each assignment, read the current brief and supplied files again. Use the issue, worktree, checklist, evidence, and mode from this assignment rather than a previous one. If you wrote any code in the assigned diff, decline the review and report the conflict. Confirm W's HEAD equals H before and after the review; if it changes, report the mismatch instead of `NO DEFECTS FOUND`.
+
 ## Already verified: do NOT redo
 
-Before spawning you, the coordinator ran a deterministic gate on W's HEAD. It confirmed that:
+Before this review assignment, the coordinator ran a deterministic gate on H. It confirmed that:
 - the worktree is clean;
 - the formatters are clean on the changed files;
 - paired generated artifacts changed together, or E lists the one-sided ones with evidence;

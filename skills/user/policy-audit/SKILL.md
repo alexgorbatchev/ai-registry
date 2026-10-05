@@ -4,7 +4,7 @@ description: Audit whether a repository's checked-in code, scripts, workflows, a
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-16 14:52
-  last_modified: 2026-08-03 12:56
+  last_modified: 2026-10-04 17:50
   status: current
 ---
 
@@ -20,7 +20,7 @@ Use this skill for evidence-based repository policy audits that must follow a fi
 4. Follow wrapper commands until the real validation, test, CI, hook, and deploy or release paths are clear.
 5. Run canonical validation and test commands in a read-only manner whenever feasible.
 6. After making fixes, perform a post-fix review of the changed documentation and surrounding instructions to verify there were no regressions.
-7. Create `{{ env "DOCS_INTERNAL_DIR" }}/audit/` if it does not exist, then write the final Markdown report to `{{ env "DOCS_INTERNAL_DIR" }}/audit/policy.md`, including the quality checks that were run and their results.
+7. Create `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/audit/` if it does not exist, then write the final Markdown report to `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/audit/policy.md`, including the quality checks that were run and their results.
 8. Return the same Markdown report with no extra commentary.
 
 ## Reference

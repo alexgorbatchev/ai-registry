@@ -27,7 +27,7 @@ Most repos have a single context:
 ```
 /
 ├── CONTEXT.md
-├── {{ env "DOCS_INTERNAL_DIR" }}/
+├── {{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/
 │   └── adr/
 │       ├── 0001-event-sourced-orders.md
 │       └── 0002-postgres-for-write-model.md
@@ -39,15 +39,15 @@ If a `CONTEXT-MAP.md` exists at the root, the repo has multiple contexts. The ma
 ```
 /
 ├── CONTEXT-MAP.md
-├── {{ env "DOCS_INTERNAL_DIR" }}/
+├── {{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/
 │   └── adr/                      ← system-wide decisions
 ├── src/
 │   ├── ordering/
 │   │   ├── CONTEXT.md
-│   │   └── {{ env "DOCS_INTERNAL_DIR" }}/adr/        ← context-specific decisions
+│   │   └── {{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/adr/        ← context-specific decisions
 │   └── billing/
 │       ├── CONTEXT.md
-│       └── {{ env "DOCS_INTERNAL_DIR" }}/adr/
+│       └── {{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/adr/
 ```
 
 ## Document Naming and Location Rules
@@ -63,7 +63,7 @@ If a `CONTEXT-MAP.md` exists at the root, the repo has multiple contexts. The ma
 - **Format:** For new glossary files, use the template in `assets/context-template.md`. For new context maps, use `assets/context-map-template.md`.
 
 ### 2. Architecture Decision Records (ADRs)
-- **Location:** System-wide ADRs live in `{{ env "DOCS_INTERNAL_DIR" }}/adr/`. Context-specific ADRs live in `{{ env "DOCS_INTERNAL_DIR" }}/adr/` relative to their respective context directory.
+- **Location:** System-wide ADRs live in `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/adr/`. Context-specific ADRs live in `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/adr/` relative to their respective context directory.
 - **Directory Creation:** Create the `adr/` directory lazily — only when the first ADR is needed.
 - **Naming & Sequential Numbering:** Use `0001-slug.md`, `0002-slug.md`, etc., with sequential 4-digit zero-padded numbers. Scan the target `adr/` folder for the highest existing number and increment by one.
 - **Format:** For new ADRs, use the template in `assets/adr-template.md`.

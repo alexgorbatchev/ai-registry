@@ -4,9 +4,9 @@ Write and maintain structured, implementation-ready project tickets. Ensure ever
 
 ## Default output path
 
-- Write active tickets to `{{ env "DOCS_INTERNAL_DIR" }}/tickets/<date>-wave-<number>-<description>.md`.
-- Use `YYYY-MM-DD` for the date prefix, followed by descriptive `kebab-case` naming (e.g., `{{ env "DOCS_INTERNAL_DIR" }}/tickets/2026-06-04-wave-1-implement-handwritten-js-dom-host-and-event-gateway.md`).
-- Ensure the `{{ env "DOCS_INTERNAL_DIR" }}/tickets/` folder exists before writing.
+- Write active tickets to `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/tickets/<date>-wave-<number>-<description>.md`.
+- Use `YYYY-MM-DD` for the date prefix, followed by descriptive `kebab-case` naming (e.g., `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/tickets/2026-06-04-wave-1-implement-handwritten-js-dom-host-and-event-gateway.md`).
+- Ensure the `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/tickets/` folder exists before writing.
 
 ## Ticket Document Schema
 
@@ -26,10 +26,10 @@ ticket_status: open
 
 ## Workflow
 
-1.  **Review Existing Tickets First:** Search `{{ env "DOCS_INTERNAL_DIR" }}/tickets/` (both active and `closed/`) before writing a new ticket.
+1.  **Review Existing Tickets First:** Search `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/tickets/` (both active and `closed/`) before writing a new ticket.
     -   **Already covered:** If an existing ticket already covers this problem, do not create a duplicate; reference the existing ticket.
     -   **Partially covered:** If an existing ticket partially covers the problem or scope, **update the existing ticket** with the new requirements, observed context, and acceptance criteria rather than creating a fragmented new ticket.
-2.  **Discover the Need:** Map user requests, roadmap plans, or design specs (`{{ env "DOCS_INTERNAL_DIR" }}/eng-designs/`) to a discrete unit of actionable development work.
+2.  **Discover the Need:** Map user requests, roadmap plans, or design specs (`{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/eng-designs/`) to a discrete unit of actionable development work.
 3.  **Define the Problem:** Write a clear explanation of the current system gap, codebase limitation, or user friction in the `## Problem` section. Avoid vague generalities.
 4.  **Establish Value:** Explain *why* resolving this problem is critical, detailing performance gains, stability enhancements, or future capability enablement in `## Why this matters`.
 5.  **Map Observed Context & Dependencies:** Search the repository to identify exactly which files, designs, ADRs, or configurations are relevant. List them explicitly under `## Observed context`.
@@ -47,16 +47,16 @@ ticket_status: open
 -   **Closing a Ticket:**
     -   Ensure all checklist items under `## Acceptance criteria` have been fully checked off (transitioned to `- [x]`).
     -   Update the ticket's frontmatter: set `ticket_status: closed` and update the `last_modified` timestamp.
-    -   Relocate the closed ticket file into the `closed/` subdirectory (e.g., `{{ env "DOCS_INTERNAL_DIR" }}/tickets/closed/<date>-wave-<number>-<description>.md`) to keep the active tickets directory uncluttered.
+    -   Relocate the closed ticket file into the `closed/` subdirectory (e.g., `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/tickets/closed/<date>-wave-<number>-<description>.md`) to keep the active tickets directory uncluttered.
     -   **Git Commit Reference:** The final Git commit that completes and closes the ticket must explicitly reference the ticket's final closed file path in its commit message.
 -   **Archiving a Stale Ticket:**
-    -   If a ticket is superseded, canceled, or no longer relevant, update its frontmatter to `status: archived` and move it to `{{ env "DOCS_INTERNAL_DIR" }}/tickets/archived/` folder.
+    -   If a ticket is superseded, canceled, or no longer relevant, update its frontmatter to `status: archived` and move it to `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/tickets/archived/` folder.
 
 ## Final Checklist
 
 -   Existing tickets were reviewed, and any partially covered tickets were updated rather than duplicated.
 -   Dependencies are clearly declared, and any existing tickets that depend on this ticket were updated.
--   File is written to `{{ env "DOCS_INTERNAL_DIR" }}/tickets/` (or `closed/` / `archived/` depending on lifecycle state).
+-   File is written to `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/tickets/` (or `closed/` / `archived/` depending on lifecycle state).
 -   Frontmatter contains standard `created_on`, `last_modified`, `status`, and `ticket_status` keys.
 -   Timestamps follow `YYYY-MM-DD HH:MM` format.
 -   The file structure strictly adheres to `assets/tickets-template.md`.

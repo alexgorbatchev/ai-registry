@@ -4,7 +4,7 @@ description: Read, write, rewrite, reorganize, and archive project and internal 
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-04 11:44
-  last_modified: 2026-10-04 17:50
+  last_modified: 2026-10-06 13:39
   status: current
 ---
 
@@ -67,7 +67,9 @@ For writing wave-based roadmap tickets with detailed problems, value justificati
 
 ### 3. Agent Persona Guidelines (AGENTS.md)
 For maintaining, generating, auditing, or topology splits of canonical root or nested AGENTS.md instructions:
+-   Preserve standing project rules and substantive technical details. Apply the persistence filter in `references/agents.md`; exclude task history, progress, handoffs, and dated user amendments.
 -   **Guidelines:** Read `references/agents.md`
+-   **Cleanup or conformance requests:** Follow "Full Rewrite of Existing Agent Instructions" in that reference. Rewrite the requested files completely while accounting for every technical detail; adapt sections when the templates do not fit.
 -   **Templates:** Use `assets/agents-templates.md`
 
 ### 4. Repository READMEs (README.md)

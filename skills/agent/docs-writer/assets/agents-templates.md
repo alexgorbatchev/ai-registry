@@ -4,6 +4,8 @@ Use these as starting structures only.
 
 Do **not** ship them verbatim. Replace placeholders with repository evidence.
 
+For cleanup/conformance requests, rewrite the complete requested files using the full rewrite procedure in `references/agents.md`. These headings and lengths are starting points, not a content limit. Add project-specific technical sections when needed; never drop technical details because they do not fit a template. Account for every original rule and technical detail before finishing.
+
 ## Single-project root template
 
 ```md
@@ -28,7 +30,8 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 - `<failure mode> -> <what to do instead>`
 
 ## Boundaries
-- Always: automatically record all new instructions in the most appropriate `AGENTS.md` file immediately upon receipt (check with user if existing instructions conflict)
+- Always: persist only standing project instructions that apply to future tasks; update the relevant rule in place when it changes
+- Never: record task history, progress, handoffs, or dated user amendments in `AGENTS.md`
 - Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (scripts/ folder is excluded from this rule)
 - Always: `<safe repeated action>`
 - Ask first: `<risky change>`
@@ -60,7 +63,8 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 - `<cross-workspace gotcha> -> <fix>`
 
 ## Shared boundaries
-- Always: automatically record all new instructions in the most appropriate `AGENTS.md` file immediately upon receipt (check with user if existing instructions conflict)
+- Always: persist only standing project instructions that apply to future tasks; update the relevant rule in place when it changes
+- Never: record task history, progress, handoffs, or dated user amendments in `AGENTS.md`
 - Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (scripts/ folder is excluded from this rule)
 - Always: `<shared repeated action>`
 - Ask first: `<shared risky change>`
@@ -91,6 +95,8 @@ Do **not** ship them verbatim. Replace placeholders with repository evidence.
 - `<local failure mode> -> <fix>`
 
 ## Boundaries
+- Always: persist only standing local instructions that apply to future tasks; update the relevant rule in place when it changes
+- Never: record task history, progress, handoffs, or dated user amendments in `AGENTS.md`
 - Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (scripts/ folder is excluded from this rule)
 - Ask first: `<local risky change>`
 - Never: `<local forbidden zone>`

@@ -17,6 +17,8 @@ You implement ONE GitHub issue of `<REPO_SLUG>` in your own git worktree `<WORKS
 2. The issue checklist `<RUN_DIR>/checklist-<N>.md`, if the coordinator gave you one. It is the requirement list distilled from the spec. Open the spec itself (`<SPEC_PATH>`) only for the sections the checklist cites. Where the issue and the spec disagree, the spec wins.
 3. The repository instruction files for every path you touch: <INSTRUCTION_FILES>.
 4. Any findings file the coordinator names (`<RUN_DIR>/review-<N>-round<K>.md`). Fix every finding in it.
+5. The autonomy reference `<AUTONOMY_RULES_PATH>` and coordinator decision log `<RUN_DIR>/decisions.md`. Resolve implementation choices from verified sources, record them in `<worktree>/.tmp/decisions.md` with impact grades and dependent IDs, and update verification from actual check results. Send unresolved questions to the coordinator after investigation; do not ask the user directly. Continue independent work within your assigned scope.
+6. Your row in `<RUN_DIR>/queue.md`. The coordinator owns this file. Report newly discovered blockers and dependency evidence to it; preserve affected work and continue independent implementation only within verified acceptance criteria.
 
 ## Project commands
 
@@ -49,17 +51,18 @@ D. **Hand off for review.** Hand off only after all of the following hold:
 
    Then write `<worktree>/.tmp/review-evidence.md` (untracked). It must contain:
    - commit SHAs;
+   - the decision file path, relevant decision IDs, impact grades, and interaction checks;
    - for each checklist item or finding: `done` / `deferred (to #X, why)` / `question`, with `file:line`;
    - for each behavioral test, the exact failure text you saw when the fix was reverted;
    - every one-sided change to a paired artifact, with its path and your no-diff evidence;
    - the last 30 lines of the final gate output.
 
-   End your turn with a short report whose first line is `READY FOR REVIEW`.
+   If required acceptance criteria are unresolved, report `BLOCKED`, the investigated sources, exact missing input, and decision IDs to the coordinator instead of declaring readiness. Otherwise end your turn with `READY FOR REVIEW`, the evidence and decision file paths, and decision IDs. The coordinator continues the gate and review loop without user confirmation.
 E. **After the coordinator says the review is clean:**
    - Revert the fix temporarily, run the new tests, and capture the failure.
    - Restore the fix and confirm the tests pass.
    - Run `<FINAL_GATE_CMD>` again. <POST_COMMIT_STEPS>
-   - Send the final report: SHAs, root cause, fix, red/green output, gate result, coverage figure, and a `DUE DILIGENCE` list of problems you saw but did not fix.
+   - Send the final report: SHAs, root cause, fix, decision file path and IDs, red/green output, gate result, coverage figure, and a `DUE DILIGENCE` list of problems you saw but did not fix.
 
 ## Prohibited
 
@@ -68,5 +71,5 @@ E. **After the coordinator says the review is clean:**
 - Stubs, placeholders, empty functions, and TODOs standing in for required behavior.
 - Compatibility fallbacks, aliases, or "legacy" branches, unless the issue explicitly asks for them.
 - Deleting or weakening existing assertions to make the gate pass. Consolidating tests is allowed only when every removed assertion has a stronger equivalent, and the evidence file must list those equivalents.
-- Scope changes. Do not implement work the spec assigns to other issues. If a requirement is ambiguous or contradicts the code, stop and put the exact question in your report instead of guessing.
+- Scope changes. Do not implement work the spec assigns to other issues or invent missing acceptance criteria. Investigate apparent ambiguity using the issue, governing spec, instructions, code, tests, and history; a code/requirement disagreement may be the defect. Record supported resolutions and continue. Escalate unresolved acceptance criteria or scope decisions to the coordinator with evidence, blocking only the affected work.
 - Unscoped snapshot regeneration that deletes unrelated artifacts. Restore any collateral deletions before committing.

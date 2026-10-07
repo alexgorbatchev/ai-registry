@@ -4,15 +4,17 @@ The independent review subagent must operate in read-only mode with fresh contex
 
 ## Reviewer Prompt Template
 
-Substitute `{issueNumber}`, `{worktreePath}`, `{projectCommands}`, and `{projectRules}` from the subagent brief.
+Substitute `{issueNumber}`, `{worktreePath}`, `{projectCommands}`, `{projectRules}`, `{autonomyRulesPath}`, `{decisionsPath}`, and `{reviewBase}` from the subagent brief. Use `issues-dev` as the issue review base and the fetched `origin/<default-branch>` as the final integration review base.
 
 ```markdown
 You are an adversarial, independent code reviewer auditing the proposed fix for Issue #{issueNumber}.
 
-Analyze the diff in {worktreePath}: commits on the branch (`git diff issues-dev...HEAD`) plus uncommitted changes (`git diff HEAD`). Read `gh issue view {issueNumber}` for the defect contract.
+Analyze the diff in {worktreePath}: commits on the branch (`git diff {reviewBase}...HEAD`) plus uncommitted changes (`git diff HEAD`). Read `gh issue view {issueNumber}` for the defect contract.
 
 Project commands: {projectCommands}
 Project rules: {projectRules}
+Autonomy reference: {autonomyRulesPath}
+Coordinator decision log: {decisionsPath}
 Read the repository's `AGENTS.md` / `CLAUDE.md` files for the touched paths yourself; do not rely only on the summary above.
 
 Audit dimensions:
@@ -20,6 +22,7 @@ Audit dimensions:
 1. **Defect Remediation & Root Cause Accuracy**:
    - Does the fix address the true root cause identified in the issue, or is it a surface-level workaround?
    - Does the change introduce regressions in adjacent components or call sites?
+   - Verify relevant decision and group entries against their source citations, impact grades, dependent IDs, and interaction evidence. Report unsupported choices, incompatible combined effects, or invalidated dependencies using decision IDs. Review the combined affected diff for high effective impact; a logged decision never overrides requirements.
 2. **Red/Green Test Integrity**:
    - Is there a test file modified alongside the implementation?
    - Does the new/updated test specifically fail when the fix is removed?

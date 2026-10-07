@@ -1,29 +1,33 @@
 ---
 name: github-fix-issues
 description: >-
-  REQUIRED when fixing, resolving, or implementing GitHub issues labeled `bug` or `feature` using subagents in any repository.
-  Trigger whenever asked to "fix issue #123", "resolve github issue", "work on open issues",
-  "fix this bug with subagents", or execute a delegated issue remediation workflow. Your default training
-  knowledge is insufficient; you MUST READ this to execute the parent coordinator lifecycle, red/green TDD
-  in isolated worktrees, linear issues-dev integration, and the push and issue-closing protocol. Do NOT use
-  for filing new issues (use github-issue) or general code review without an issue.
+  Use when fixing, resolving, or implementing GitHub issues using subagents in any repository,
+  including requests to fix a numbered issue, work on open issues with any labels or no labels,
+  or execute a delegated issue remediation workflow.
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-09-30 11:23
+  last_modified: 2026-10-07 14:08
   status: current
 ---
+
+Filing new issues (use github-issue) and general code review without an issue are outside this workflow's scope.
+
+Read [references/autonomy.md](references/autonomy.md) before discovery. Apply its execution, escalation, validation discovery, and decision-record rules to the coordinator and every delegated agent. The coordinator completes verified merges, pushes, and issue closure within the requested scope without an additional approval phase.
+
+Read [references/readiness.md](references/readiness.md) before queue ingestion. Prepare requirements and readiness states before provisioning issue worktrees; schedule independent ready issues while other questions are investigated.
 
 ## Project Discovery
 
 Resolve these once, before provisioning anything, and substitute them everywhere below:
 
 - `<default-branch>`: `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`.
+- `<RUN_DIR>`: a unique run directory under the repository's documented scratch location, otherwise `.tmp/issue-pipeline/<run-id>/`. Verify it is git-ignored; create `decisions.md` there as described in the autonomy reference.
 - `<project-commands>`: the exact commands the project documents for targeted tests, the full test suite, lint, typecheck, coverage, and the final "run before declaring work complete" gate. Read them from the repository's instruction files (root and nested `AGENTS.md`, `CLAUDE.md`) first, then from build definitions (`justfile`, `Makefile`, `package.json` scripts, `go.mod`, `pyproject.toml`, `Cargo.toml`). Record each command verbatim with the file it came from.
 - `<project-rules>`: the coding, logging, testing, coverage-threshold, and file-placement rules those instruction files state, including nested `AGENTS.md` files for the packages an issue touches.
 - `<commit-convention>`: the subject format and issue-reference form used by `git log --oneline -30` on `<default-branch>` (for example `fix(scope): summary (fixes #N)`), overridden by any commit rule in the instruction files or the user's instructions, including rules about attribution trailers.
 
-Never invent a command, path, package, or threshold that these sources do not state. When a category has no documented command, write "none documented" in the subagent brief instead of a guessed one.
+Never invent a command, path, package, or threshold. Extend discovery to CI workflows and executable project scripts when instructions do not name a command. If no aggregate final gate is named, compose and record one from verified project checks as described in the autonomy reference. Mark missing optional categories "none documented" and omit them from execution.
 
 ## Concurrency & Worktree Topology
 
@@ -32,19 +36,14 @@ Never invent a command, path, package, or threshold that these sources do not st
 - **Stable Integration Base**: Fetch `<default-branch>` before creating `issues-dev`. While issue workers are active, do not merge or rebase `issues-dev` onto new upstream commits; synchronize it by rebasing only after every issue worktree is removed.
 - **Subagent Rebase Before Review**: Subagents MUST rebase their branch on `issues-dev` before entering the review pairing loop to eliminate integration conflicts for the coordinator.
 - **Autonomous Subagent Review Pairing**: Subagents pair with review agents until no further issues are reported ("clean review"), and notify the coordinator only when the review is clean and ready for integration. Where the harness supports nested subagents and permissions allow, the child invokes the reviewer directly; otherwise, the coordinator alternates between writer and reviewer subagents on the issue worktree without editing code directly.
-- **Full Queue Completion**: The coordinator works through the entire open issue set labeled `bug` or `feature`, continuing until no matching open issues remain.
-- **Dependency-Aware Order Determination**: The coordinator analyzes all open `bug` and `feature` tickets to establish an execution order:
-  1. Foundational defects first: data sources, ingestion, parsing, storage, and core domain logic.
-  2. Service, middleware, classification, and reconciliation defects second.
-  3. UI, presentation, and other consumer-surface adjustments third.
-  4. Tooling, scripts, build, and developer ergonomics fourth.
-  5. Issues in distinct packages with no shared files are prioritized for parallel execution across the 3 subagent slots; issues touching the same files run sequentially.
+- **Full Queue Completion**: The coordinator works through the entire open issue set, regardless of labels, including unlabeled issues, continuing until no open issues remain.
+- **Readiness and Dependency Order**: The coordinator inventories dependencies and mandatory implementation order, then records readiness in `<RUN_DIR>/queue.md`. Start only queued `ready` issues, prioritizing those that unlock documented dependents; use foundational/data/core, services, UI, then tooling as tie-breakers. Hold unresolved issues and their dependents while independent ready issues run. Preserve file-disjointness and the existing concurrency limit.
 - **Max 3 Parallel Subagents**: At most 3 subagents may run concurrently. When more than 3 issues are queued, maintain an active pool of up to 3 and launch subsequent issues as earlier ones complete.
 - **Central Integration Worktree (`issues-dev`)**: All completed issue fixes merge into a central integration worktree `.workspaces/issues-dev` on branch `issues-dev` (branched from `<default-branch>`). No issue branch merges directly to `<default-branch>`.
 - **Per-Issue Worktree Isolation**: Each active issue runs in its own dedicated worktree `.workspaces/issue-<number>` on branch `fix/issue-<number>` (branched from `issues-dev`).
 - **Linear Integration**: Rebase each issue branch onto the current `issues-dev` tip before integration and use `git merge --ff-only`. Rebase `issues-dev` onto the current upstream default branch after all issue branches are integrated. Never use a merge commit as a fallback.
 - **Harness-Agnostic Subagent Invocation**: Delegate subagents with the active harness's native subagent mechanism. Do not hardcode harness-specific API wrappers, agent profiles, or SDK types.
-- **Outward-Facing Actions Need Consent**: Pushing to a remote publishes work. Do not push without the user's explicit approval in the current run. Do not close an issue until its fix is on the remote `<default-branch>`.
+- **Remote Completion**: The coordinator pushes verified work and closes resolved issues within the requested scope. Do not close an issue until its fix is on the remote `<default-branch>`.
 
 ---
 
@@ -66,23 +65,23 @@ Never invent a command, path, package, or threshold that these sources do not st
    git -C .workspaces/issues-dev merge --ff-only origin/<default-branch>
    ```
 
-3. **Ingest Issue Queue & Filter by Labels**:
-   Query open issues and restrict execution strictly to issues tagged with `bug` or `feature` labels (ignoring unlabeled issues, questions, discussions, or other labels):
+3. **Ingest Issue Queue**:
+   Query all open issues, regardless of labels, including unlabeled issues. Do not apply label filters to the query or discard issues based on their labels:
 
    ```bash
    gh issue list --state open --json number,title,labels --limit 50
    ```
 
-   Filter the queue to issues whose labels include `bug` or `feature`. For each matching issue:
+   For each open issue:
 
    ```bash
    gh issue view <issue-number> --json number,title,body,comments,labels,author
    ```
 
-   Map dependencies across open issues and order them into execution batches.
+   Map dependencies across the requested queue. Apply the readiness reference's preparation steps and write `<RUN_DIR>/queue.md` before provisioning any issue worktree. Prepare each issue's requirements checklist and resolve questions supported by evidence before marking it `ready`. Start eligible ready issues while remaining preparation and investigation continue.
 
-4. **Provision Per-Issue Worktrees (Up to 3 Max)**:
-   Branch each new issue worktree from the current `issues-dev` tip:
+4. **Provision Ready Per-Issue Worktrees (Up to 3 Max)**:
+   Recheck the chosen queued `ready` row, its checklist, source revisions, dependencies, and mandatory order. Branch its worktree from the current `issues-dev` tip; do not provision `investigate` or `blocked` issues:
    ```bash
    git worktree add .workspaces/issue-<number> -b fix/issue-<number> issues-dev
    ```
@@ -92,6 +91,8 @@ Never invent a command, path, package, or threshold that these sources do not st
 ## 2. Subagent Worktree Execution & Autonomous Review Pairing
 
 Delegate each issue to a subagent scoped strictly to `.workspaces/issue-<number>`. The brief MUST contain the issue number, title, body, and comments; the worktree path; `<project-commands>` verbatim; `<project-rules>` for the packages involved; `<commit-convention>`; and steps 2A–2E below.
+
+Include the absolute paths of this skill's autonomy reference, `<RUN_DIR>/decisions.md`, `<RUN_DIR>/queue.md`, and the prepared checklist. Require the worker to read them, record decisions in its own worktree's `.tmp/decisions.md`, and send unresolved questions to the coordinator after investigating the available evidence. Update the queue when a worker reports a blocker. Copy its decision entries into the run log before review; pass the log and reference paths to the reviewer and require verification of relevant decisions.
 
 ### Step 2A — Red Phase (Failing Reproduction Test)
 
@@ -145,7 +146,7 @@ This absorbs changes integrated by concurrent subagents, resolves conflicts insi
    git -C .workspaces/issue-<number> add <modified-files>
    git -C .workspaces/issue-<number> commit -m "<subject per commit-convention referencing #<issue-number>>"
    ```
-4. Notify the coordinator with the issue number, commit SHA, root cause, fix, and verification evidence (red/green output, final gate result, coverage figure): "Issue #<number> review is clean, tests verified, ready to merge."
+4. Notify the coordinator with the issue number, commit SHA, root cause, fix, decision file path and IDs, and verification evidence (red/green output, final gate result, coverage figure): "Issue #<number> review is clean, tests verified, ready to merge." The coordinator continues integration without asking the user to confirm.
 
 ---
 
@@ -170,7 +171,7 @@ Upon receiving the clean review notification:
 
 3. **Record the Closing Summary**: Keep the subagent's root cause, fix, and verification evidence for section 4. Do not close the issue yet; the fix is not on `<default-branch>`.
 
-4. **Replenish Concurrency Pool**: If additional open issues remain, provision the next `.workspaces/issue-<number>` from the current `issues-dev` tip to maintain up to 3 parallel workers. Defer upstream synchronization until all issue worktrees are removed.
+4. **Replenish Concurrency Pool**: Mark the integrated issue in `<RUN_DIR>/queue.md`, recheck its dependents, and provision the next eligible `ready` issue from the current `issues-dev` tip. Keep up to 3 workers active within session capacity and reserve capacity for review; continue investigation of other rows without waiting for their answers. Defer upstream synchronization until all issue worktrees are removed.
 
 ---
 
@@ -185,7 +186,7 @@ When all queued issues have been merged into `issues-dev`:
    git -C .workspaces/issues-dev rebase origin/<default-branch>
    ```
 
-   Run the project's final gate command in `.workspaces/issues-dev`. Stop and report on any failure.
+   Run the project's final gate command in `.workspaces/issues-dev`. On failure, record the evidence and delegate an isolated repair using the autonomy reference's repair loop. Require verification and independent review, fast-forward the repair, and rerun the integration gate before continuing. Before final integration, assess linked decisions' combined impact and complete the reference's required interaction checks and reviews.
 
 2. **Merge `issues-dev` into `<default-branch>`** from the repository root:
 
@@ -195,9 +196,9 @@ When all queued issues have been merged into `issues-dev`:
    git merge --ff-only issues-dev
    ```
 
-   If `--ff-only` refuses because upstream advanced again, repeat the final sync and validation before retrying. Never fall back to a merge commit. Verify `git rev-list --min-parents=2 origin/<default-branch>..<default-branch>` is empty before asking to push.
+   If `--ff-only` refuses because upstream advanced again, repeat the final sync and validation before retrying. Never fall back to a merge commit. Verify `git rev-list --min-parents=2 origin/<default-branch>..<default-branch>` is empty before pushing.
 
-3. **Push With Consent**: Show the user `git log --oneline origin/<default-branch>..<default-branch>` and ask for approval to push `<default-branch>` to `origin`. If the user declines, leave every issue open, report the unpushed commits, and skip step 4.
+3. **Push**: Record `git log --oneline origin/<default-branch>..<default-branch>` in the run report, then run `git push origin <default-branch>`. If upstream advanced, repeat final sync, verification, and review before retrying. If publishing is blocked by unavailable access or an explicit user restriction, retain unpushed commits and leave their issues open; continue other authorized work.
 
 4. **Issue Closure Handshake** after the push succeeds. For each merged issue, check `gh issue view <issue-number> --json state`. If a `fixes #N` reference in the pushed commits already closed it, post the summary with `gh issue comment <issue-number> --body "..."`; otherwise:
 
@@ -223,4 +224,4 @@ When all queued issues have been merged into `issues-dev`:
    ```bash
    gh issue list --state open --json number,title,labels --limit 20
    ```
-   Filter for open issues labeled `bug` or `feature`. If matching actionable issues remain, repeat from Step 1.
+   Check all open issues, regardless of labels, including unlabeled issues. If actionable issues remain, repeat from Step 1.

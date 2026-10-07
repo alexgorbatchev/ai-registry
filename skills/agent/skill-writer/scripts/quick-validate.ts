@@ -23,8 +23,9 @@ const BODY_MAX_LINES = 500;
 type Finding = { level: "ERROR" | "WARN"; message: string };
 
 /**
- * Vendored skills are upstream copies that `bun run skills:update` overwrites, so repo
- * conventions (`author`, `metadata`) are reported against them as warnings, not errors.
+ * Vendored skills are upstream copies that lack registry metadata (`metadata`), so that
+ * convention is reported against them as a warning, not an error. Required keys (`name`,
+ * `description`, `author`) are always enforced.
  */
 async function vendoredSkillNames(skillDir: string): Promise<Set<string>> {
   let dir = skillDir;
@@ -110,8 +111,8 @@ async function validateSkill(skillFile: string): Promise<Finding[]> {
   for (const key of REQUIRED_KEYS) {
     if (!(key in fm)) {
       findings.push({
-        level: key === "author" ? convention : "ERROR",
-        message: `Frontmatter is missing required key \`${key}\`.${key === "author" ? upstream : ""}`,
+        level: "ERROR",
+        message: `Frontmatter is missing required key \`${key}\`.`,
       });
     }
   }

@@ -130,6 +130,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Track the vendored source in `skills-lock.json` beneath the repo_root token.
 - Add a third-party skill with `bun run skills:add 'npx skills add <source> --skill <skill-name>'` from the repo_root token.
 - Do not use plain `npx skills add ...` for vendoring into this repo; the wrapper enforces the repo's canonical destination and flags.
+- Vendored skills must have `author` set (derived from the source owner or upstream author) and kept up to date across additions and updates.
 - Update vendored skills with `bun run skills:update` from the repo_root token.
 - Commit both the vendored skill directory under the skills_dir token and `skills-lock.json` beneath the repo_root token when vendoring or updating an external skill.
 - Run `bun run build` from the repo_root token afterward.

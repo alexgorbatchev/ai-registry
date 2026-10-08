@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-10-07 17:11
+  last_modified: 2026-10-07 17:29
   status: current
 ---
 
@@ -19,6 +19,9 @@ normal issue work does not authorize rewriting published history.
 | Create, refine, or check for an existing issue | [Issue authoring](references/issue-authoring.md) |
 | Implement one ticket or a queue, including restart | [Setup](references/setup.md), [queue](references/queue.md), then the implementation loop below |
 | Remove historical issue-integration merges | [History repair](references/history-repair.md) |
+
+Run the bundled reviewer helper during [setup](references/setup.md) to verify bot
+access, automatically invite/accept when needed, and list open issues oldest first.
 
 Keep the workflow independent of any agent harness. Use its available mechanism
 to start an independent reviewer for each pending PR; do not require a particular tool name, agent
@@ -111,3 +114,44 @@ work on the next eligible issue; it does not block the queue until sign-off.
     implementation, returned reviews, or integration remain; pending reviews are
     unfinished work. Report ticket/PR links, landed SHAs, evidence and approval
     links, cleanup results, and exact blockers; never describe blocked work as done.
+
+## Reviewer helper interface
+
+Invoke `bun /path/to/github-fix-issues/scripts/reviewer.ts` from the target
+repository. Resolve the path from the installed skill; setup owns one-time
+dependency installation and saved configuration. The command name in help is
+`reviewer`. No command accepts positional arguments except generated help.
+
+| Command or flag | Contract |
+| --- | --- |
+| `access ensure` | Verify identities/access, automatically invite and accept a missing collaborator, then list open issues oldest first |
+| `--repo <owner/repo>` | Repository string; defaults to `gh repo view` in the current checkout, honoring `GH_REPO` |
+| `--reviewer <login>` | Expected bot login; otherwise `GH_REVIEWER_LOGIN`, then Git config `github-fix-issues.reviewer`; required |
+| `--token-env <name>` | Name of the exported bot-token variable; otherwise `GH_REVIEWER_TOKEN_ENV`, then Git config `github-fix-issues.tokenEnv`; required |
+| `--hostname <host>` | Hostname without scheme; otherwise `GH_HOST`, then `github.com` |
+| `--pr <number>` | Positive integer; additionally check the actual PR author differs from the bot; omitted at queue startup, required before each review submission |
+| `--no-issues` | Boolean flag suppressing the issue listing; listing is enabled by default |
+| `skill` | Print this embedded skill verbatim; operates offline without credentials; accepts no custom flags or arguments |
+| `-h`, `--help` | Show help on any command |
+| `help [command]` | Generated help at the root and `access` group; optional immediate child command |
+
+Keep the implementing identity selected in default `gh` authentication. The helper
+uses `GH_TOKEN`/`GITHUB_TOKEN` or enterprise equivalents as GitHub CLI normally
+does, and overrides them only in bot subprocesses. It neither changes saved
+authentication nor writes configuration. The named token must already be exported;
+shell aliases and shell initialization files are not evaluated. Git config applies
+its normal local-over-global precedence. Each subprocess times out after 30 seconds.
+
+Human output reports the bot, access outcome, PR author-check status, then issue
+creation dates, numbers, titles, and URLs. `AGENT=1`, `true`, or `yes` produces one
+JSON result with `repo`, `implementer`, `reviewer`, `author` (null without `--pr`),
+`access` (`existing`, `accepted`, `invited-and-accepted`, or `granted`), and `issues`
+(omitted with `--no-issues`). Each issue has `number`, `title`, `createdAt`, and
+`url`. Equal creation times sort by issue number. Agent-mode access diagnostics go
+to stderr before listing; help is untruncated and `skill` remains verbatim Markdown.
+
+Exit zero means the requested operations completed. Invalid arguments, missing
+configuration, identity mismatch, insufficient permissions, API/transport errors,
+and output failures exit nonzero with a stderr diagnostic. Errors can occur after
+an invitation was created or accepted; fix the reported cause and rerun to resume.
+Do not treat failed output or a missing PR-author check as review authorization.

@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-07 15:07
-last_modified: 2026-10-07 17:11
+last_modified: 2026-10-07 17:29
 status: current
 ---
 
@@ -21,7 +21,7 @@ There are no issue-specific command aliases or harness overrides.
 | Ordering | Oldest eligible tickets first, with verified prerequisites before dependents; one implementation at a time and multiple PRs in review | [Queue](../../../skills/agent/github-fix-issues/references/queue.md) |
 | Restart | Persist resolved order in `.tmp/github-issues.md`; refresh changed metadata and inspect existing work before starting a ticket | [Queue](../../../skills/agent/github-fix-issues/references/queue.md) |
 | Branches | New work uses `fix/issue-NNN-slug` in `.workspaces/issue-NNN`, based on `main` | [Skill](../../../skills/agent/github-fix-issues/SKILL.md) |
-| Review identity | Distinct configured bot account; invite and accept when needed, then verify access and actual authentication | [Setup](../../../skills/agent/github-fix-issues/references/setup.md) |
+| Review identity | Bundled `scripts/reviewer.ts access ensure` verifies the configured bot, automatically invites/accepts, then lists open issues oldest first; `--pr NUMBER --no-issues` repeats verification before reviews | [Setup](../../../skills/agent/github-fix-issues/references/setup.md) |
 | Evidence | Implementer runs checks; every round retains full stdout/stderr, exit codes, commands, and revisions in folded PR sections | [Checks and evidence](../../../skills/agent/github-fix-issues/references/checks-and-evidence.md) |
 | Review | Same independent reviewer across rounds; diff/context/evidence inspection only; all communication on the PR; native Request changes or Approve | [Reviewer](../../../skills/agent/github-fix-issues/references/reviewer.md) |
 | Integration | Rebase before each handoff; exact checked and approved commits reach `main` by fast-forward only | [Integration](../../../skills/agent/github-fix-issues/references/integration.md) |

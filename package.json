@@ -5,7 +5,8 @@
   "private": true,
   "workspaces": [
     "vendor/*",
-    "packages/*"
+    "packages/*",
+    "skills/agent/github-fix-issues/scripts"
   ],
   "scripts": {
     "build": "bun run typecheck && air-build",

@@ -20,33 +20,68 @@ disable protections or use an administrator bypass to satisfy this workflow.
 
 ## Separate reviewer identity
 
-Obtain the reviewer login and GitHub CLI command/alias from user-provided or
-repository-local configuration. Keep credentials and machine-specific shell paths
-out of reusable instructions. Do not assume an alias's name proves its identity.
+Use the bundled `scripts/reviewer.ts` helper for identity and access checks;
+do not repeat alias, environment, or dotfile discovery. It requires Bun, Git,
+GitHub CLI, the implementer's existing `gh` authentication, and an exported bot
+token. Keep the token outside Git configuration, files, logs, and PR content.
 
-1. Run `gh api user --jq .login` with the implementer's credentials.
-2. Run the same identity query through the configured reviewer command in the
-   shell context that actually defines it. Verify the result equals the configured
-   bot login and differs from the PR author. Repeat before submitting a review.
-   Do not dump environment variables or tokens. If the command is unavailable or
-   resolves to the wrong account, report the exact mismatch; do not search unrelated
-   shell configuration or substitute the implementer's identity.
-3. With authorized repository access, check
-   `GET /repos/{owner}/{repo}/collaborators/{username}`. Treat authentication
-   failures separately from confirmed missing access. If the configured reviewer
-   is absent, invite it using `PUT /repos/{owner}/{repo}/collaborators/{username}`.
-   For an organization repository request the `push` permission needed for review;
-   do not grant administrator access. Reuse an outstanding invitation.
-4. With the verified bot identity, inspect its repository invitations and accept
-   the matching invitation using `PATCH /user/repository_invitations/{id}`. If the
-   bot command cannot authenticate, leave this pending and request the missing
-   access. Never accept another account's or another repository's invitation.
-5. Recheck collaborator access after acceptance. Native review submission and any
-   stricter repository reviewer requirements must be available before handoff.
+Resolve `reviewer_scripts` to the absolute `scripts/` directory beside this skill's
+`SKILL.md`. Install its pinned CLI dependency once as the implementing agent:
+
+```sh
+bun install --cwd "$reviewer_scripts" --ignore-scripts
+```
+
+Save the user-supplied login and token **variable name** once. These example values
+are placeholders; use the account and exported variable the user configured:
+
+```sh
+git config --global github-fix-issues.reviewer review-bot
+git config --global github-fix-issues.tokenEnv REVIEW_BOT_TOKEN
+```
+
+Use `--local` instead of `--global` for a repository-specific override. Flags and
+the two `GH_REVIEWER_*` environment settings documented in the main skill also
+override saved configuration. Do not discover token names by dumping environment
+variables. If configuration or the token is missing, report the named requirement.
+
+Run from the target repository, or pass `--repo OWNER/REPO`:
+
+```sh
+bun "$reviewer_scripts/reviewer.ts" access ensure
+```
+
+The helper verifies both identities and implementer write access before checking
+membership. For confirmed missing membership, it reuses the bot's matching write
+invitation, or creates one with the implementer's administrator permission and
+accepts it with the bot token. Organization invitations request `push`; personal
+repositories omit that organization-only parameter. An invitation visible only
+to the implementer stops the helper with a token-access diagnostic. Authentication,
+rate-limit, forbidden, and network errors never authorize a new invitation.
+
+It rechecks membership and the bot's write access, then lists every open issue
+oldest first, excluding PRs. This listing seeds queue inspection; it does not
+resolve prerequisites, inspect existing work, or replace `.tmp/github-issues.md`.
+If a mutation succeeded before a later request failed, access may already exist;
+rerun after fixing the reported cause. Existing permissions are never escalated.
+
+Before every review handoff and again before reviewer submission, run:
+
+```sh
+bun "$reviewer_scripts/reviewer.ts" access ensure --pr 123 --no-issues
+```
+
+Use the actual PR number. This also checks that the verified bot differs from the
+PR author. Keep default `gh` authentication as the implementer when running this
+helper; it selects the bot token only in isolated subprocess environments. A
+successful access check does not prove that a token can submit reviews or satisfy
+additional ruleset requirements; verify the native submission and read it back.
 
 Use the implementer's identity for implementation comments and the reviewer's
-identity for its comments/reviews. Do not have the implementing agent impersonate
-the reviewer by publishing an approval itself.
+identity for its comments/reviews. Use a user-configured bot CLI wrapper or invoke
+`gh` with the selected bot token only in that process's `GH_TOKEN` (or
+`GH_ENTERPRISE_TOKEN` for an enterprise host). Do not switch the saved default
+account. Do not have the implementing agent publish the reviewer's approval.
 
 Configure the review agent with this skill's reviewer contract by placing it on
 the PR. The PR can name the local reviewer command and expected public login, but
@@ -54,5 +89,6 @@ must not contain secrets. A tool-launch message carries only the PR locator and
 an instruction to read it; all subsequent coordination remains on the PR.
 
 References: [collaborators](https://docs.github.com/en/rest/collaborators/collaborators),
-[invitations](https://docs.github.com/en/rest/collaborators/invitations), and
+[invitations](https://docs.github.com/en/rest/collaborators/invitations),
+[CLI authentication environment](https://cli.github.com/manual/gh_help_environment), and
 [native reviews](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request#submitting-your-review).

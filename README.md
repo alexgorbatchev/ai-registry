@@ -9,6 +9,7 @@ The reusable source-of-truth layer.
 - **`skills/`**: Domain-specific AI skills. Skills are grouped into `skills/agent/` for agent-runnable skills and `skills/user/` for user-invokable skills. Each skill lives in its own folder with a `SKILL.md`. User skills in `skills/user/` do not contain `disable-model-invocation: true` in their source `SKILL.md`; the build/bootstrap process automatically injects it into generated harness outputs. In generated outputs, skills from `agent/` and `user/` are merged flat into `skills/`. This directory is also the repo's install surface for `npx skills`.
 - **`commands/`**: Reusable slash commands, system prompts, and task blueprints.
 - **`github-fix-issues`**: One harness-independent skill for filing issues, implementing tickets oldest first with prerequisite ordering, and explicitly requested historical issue-merge repair. One implementer works on the next eligible ticket while PR review runs and checks pending reviews after each submission. Full check logs stay in folded PR sections, native approval gates fast-forward integration, and owned artifacts are cleaned up afterward. See the [workflow reference](docs/internal/references/github-issue-workflow.md).
+  Its [reviewer helper](skills/agent/github-fix-issues/references/setup.md) verifies bot access, automatically invites and accepts when needed, and immediately lists open issues oldest first using saved local configuration.
 - **`github-pr`**: Reusable PR-writing skill with concise descriptions, no first-person language, related issue references from commit messages, change types, and test results and risks.
 - **`skills/AGENTS.md`**: Skill-authoring rules. Generic skills contain no harness-specific instructions; those belong under `harnesses/<target>/skills/`.
 - **`system/`**: Shared repo-level instruction fragments and persistent-memory guidance that harness configs and profiles can reference via template includes.
@@ -120,7 +121,7 @@ bun run bootstrap:smoke
 That command:
 
 - runs `bun install`
-- installs dependencies for all root workspaces declared in `package.json`, including `vendor/*` and `packages/*`
+- installs dependencies for all root workspaces declared in `package.json`, including `vendor/*`, `packages/*`, and the bundled GitHub reviewer helper
 - installs the repo-local Git hooks from `.githooks`
 - builds the generated outputs
 - verifies the previous generated-output manifest before overwriting managed generated paths in `.output/`

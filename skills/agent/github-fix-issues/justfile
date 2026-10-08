@@ -1,0 +1,8 @@
+run *args:
+    bun scripts/reviewer.ts {{args}}
+
+run-ai *args:
+    AGENT=1 bun scripts/reviewer.ts {{args}}
+
+test:
+    bun test scripts/__tests__

@@ -5,9 +5,12 @@ conversation, review threads, native reviews, requirements, and the current roun
 manifest. Obtain all task context and communicate solely through this PR. Reuse
 the PR record after a restart; do not request a private implementer briefing.
 
-1. Verify your configured GitHub command authenticates as the expected reviewer
-   bot, distinct from the PR author, before posting. Never approve through the
-   author's account. Use the reviewer identity for every review comment.
+1. Run the installed skill's reviewer helper with `access ensure --pr NUMBER
+   --no-issues` before posting, using the setup/configuration reference on the PR.
+   This authentication/access helper is permitted tooling; the implementer must
+   have installed its dependencies before handoff. It verifies the bot differs
+   from the PR author. Use that verified identity for every comment and review;
+   never approve through the author's account.
 2. Review the full diff at the manifest's base and head, with source context and
    applicable repository instructions. Inspect changes since the prior round too,
    but do not substitute that delta for checking the complete proposed result.
@@ -16,7 +19,8 @@ the PR record after a restart; do not request a private implementer briefing.
 3. Do not run tests, builds, linters, typechecks, formatters, coverage, benchmarks,
    reproduction commands, package installs, repository scripts, or application
    code. Do not trigger CI or ask another agent to run checks on your behalf.
-   Git diff/show, source/file reads, searches, GitHub inspection, authentication,
+   Git diff/show, source/file reads, searches, GitHub inspection, the installed
+   reviewer access helper, authentication,
    comments, and native review submission are permitted. Use the supplied logs
    to assess execution results; never claim to have executed them yourself.
 4. Verify the round identifies every required check, command, exit status, tested

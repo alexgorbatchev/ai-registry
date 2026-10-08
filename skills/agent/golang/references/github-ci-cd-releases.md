@@ -20,7 +20,7 @@ Use these checked-in templates instead of reconstructing workflow YAML from scra
 Replace any explicit `replace-with-*` placeholders before using them in a repo:
 
 - [github-actions-ci.yml](./github-actions-ci.yml) — baseline CI workflow
-- [github-actions-release.yml](./github-actions-release.yml) — tag-triggered release workflow
+- [github-actions-release.yml](./github-actions-release.yml) — CI and tag-triggered release workflow
 - [goreleaser.yml](./goreleaser.yml) — baseline GoReleaser config
 
 Before copying or updating a workflow, query each action's upstream latest stable release and read its release notes and `action.yml`. Use the latest stable major tag, verify its runner requirements and inputs, and exclude prereleases. Do not assume checked-in template versions remain current or silence deprecated-runtime warnings with environment overrides.
@@ -62,15 +62,18 @@ For local development, either:
 
 ### Trigger releases from tags
 
-Use a dedicated release workflow triggered by version tags such as:
+Use a release workflow that builds CI across all branches and main, and gates the release job to version tags:
 
 ```yaml
 on:
   push:
+    branches: ["**"]
     tags:
       - "v*"
+  pull_request:
 ```
 
+Gate the release job with a tag check (such as `if: startsWith(github.ref, 'refs/tags/v')`) and require CI verification to pass first (`needs: [verify, lint]`).
 Do not trigger production release artifacts from arbitrary branch pushes.
 Treat the Git tag as the release boundary.
 
@@ -212,6 +215,8 @@ See [github-actions-release.yml](./github-actions-release.yml).
 Use:
 - `actions/checkout` with `fetch-depth: 0`
 - `actions/setup-go`
+- `verify` and `lint` running across all branches, pull requests, and tags
+- `release` gated with `if: startsWith(github.ref, 'refs/tags/v')` and `needs: [verify, lint]`
 - `goreleaser/goreleaser-action`
 
 ## Common failure modes

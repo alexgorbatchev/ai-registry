@@ -6,9 +6,12 @@ Read live GitHub state, not just the queue. Require all of the following:
 - The PR description contains the issue reference and current round's complete
   passing evidence; no findings remain unresolved.
 - The expected bot's latest decisive native review is `APPROVED`, not dismissed,
-  and names this exact commit and round. An earlier approval followed by a changes
-  request is insufficient. Repository-required reviewers and thread resolution
-  rules are also satisfied.
+  and its `commit_id` matches this exact checked head. Associate its review ID with
+  the current round's request and description using the queue's round/review
+  record; refresh review if that association is uncertain. The approval body is
+  empty by design, so do not require or infer a round from approval prose. An
+  earlier approval followed by a changes request is insufficient. Repository-required
+  reviewers and thread resolution rules are also satisfied.
 - Required CI/status checks have completed successfully for that head. Check
   repository protection/ruleset requirements directly; an absence of configured
   checks does not waive the project's required local gate.

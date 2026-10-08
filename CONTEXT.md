@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-07 14:55
-last_modified: 2026-10-07 19:43
+last_modified: 2026-10-07 21:00
 status: current
 ---
 
@@ -35,8 +35,8 @@ The recorded output and results of repository checks supplied by the implementin
 _Avoid_: Treating a pass/fail claim or an index of evidence-comment links as the check evidence.
 
 **Review sign-off**:
-The review agent's native GitHub approval of the pull request after no findings remain. Findings requiring revision are submitted using GitHub's native request-changes review outcome.
-_Avoid_: Substituting an approval-like comment for a native review decision.
+The review agent's native GitHub approval with no review body or comments after no actionable findings remain. Findings requiring revision are submitted using GitHub's native request-changes review outcome.
+_Avoid_: Substituting an approval-like comment for a native review decision or adding a summary to a clean review.
 
 **Reviewer identity**:
 The GitHub bot account through which the review agent posts feedback and native review decisions, distinct from the account that authors the pull request.

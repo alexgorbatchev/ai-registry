@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-07 15:07
-last_modified: 2026-10-07 19:43
+last_modified: 2026-10-07 21:00
 status: current
 ---
 
@@ -23,7 +23,7 @@ There are no issue-specific command aliases or harness overrides.
 | Branches | New work uses `fix/issue-NNN-slug` in `.workspaces/issue-NNN`, based on `main` | [Skill](../../../skills/agent/github-fix-issues/SKILL.md) |
 | Review identity | Bundled `scripts/reviewer.ts access ensure` verifies the configured bot, automatically invites/accepts, then lists open issues oldest first; `--pr NUMBER --no-issues` repeats verification before reviews | [Setup](../../../skills/agent/github-fix-issues/references/setup.md) |
 | Evidence | Implementer runs checks; every round retains stdout/stderr, exit codes, commands, and revisions in folded sections of the PR description; no evidence comments | [Checks and evidence](../../../skills/agent/github-fix-issues/references/checks-and-evidence.md) |
-| Review | PR references its issue for requirements; same independent reviewer follows the installed skill without posted instruction blocks, inspects diff/context/evidence only, and submits native Request changes or Approve | [Reviewer](../../../skills/agent/github-fix-issues/references/reviewer.md) |
+| Review | PR references its issue for requirements; same independent reviewer follows the installed skill, inspects diff/context/evidence only, and requests changes for actionable findings or submits native approval with no body, comments, or summary | [Reviewer](../../../skills/agent/github-fix-issues/references/reviewer.md) |
 | Integration | Rebase before each handoff; exact checked and approved commits reach `main` by fast-forward only | [Integration](../../../skills/agent/github-fix-issues/references/integration.md) |
 | Cleanup | Verify remote reachability and PR merged state, then remove owned worktrees, branches, and scratch; retain PR evidence and queue | [Integration](../../../skills/agent/github-fix-issues/references/integration.md) |
 | Recovery | Explicit request, isolated candidate, backup, exact tree preservation, and separately authorized publication with exact lease | [History repair](../../../skills/agent/github-fix-issues/references/history-repair.md) |

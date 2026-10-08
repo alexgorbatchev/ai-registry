@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-10-07 19:43
+  last_modified: 2026-10-07 21:00
   status: current
 ---
 
@@ -104,7 +104,9 @@ work on the next eligible issue; it does not block the queue until sign-off.
    setup. Launch or resume the reviewer with the PR locator only; its instructions
    come from this skill's [reviewer workflow](references/reviewer.md).
    The reviewer posts findings with native **Request changes** or
-   signs off using native **Approve** on that exact head.
+   signs off using native **Approve** on that exact head with no review body,
+   inline comments, or separate summary. Reviewer prose is limited to actionable
+   issues; a clean review produces only the native approval.
    Mark the ticket `review-pending`, scan all pending PRs for returned reviews,
    and start the oldest eligible independent issue when none needs action.
 8. **Pair until clean when reviews return.** Read the PR, implement fixes, and answer each finding on

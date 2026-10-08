@@ -41,14 +41,17 @@ a private implementer briefing or a pasted reviewer contract.
    requirements. Distinguish actionable defects from personal stylistic preferences.
 6. Post each actionable finding on the PR with severity, file/line or evidence
    reference, failing scenario, impact, and requested correction. Include unresolved
-   earlier findings. Ask questions on the PR. Submit native **Request changes**
+   earlier findings. Ask only questions needed to resolve actionable issues.
+   Keep feedback limited to those findings; omit diff recaps, review summaries,
+   compliments, and check-assessment narration. Submit native **Request changes**
    when any finding or evidence gap prevents sign-off; a comment alone does not
    communicate the required review outcome.
 7. When every finding is resolved and all evidence requirements hold, submit
-   native **Approve** against the exact reviewed head. State the base/head,
-   round and PR-description evidence references, and that checks were assessed
-   from supplied evidence, not executed by you. Recheck the live PR immediately
-   before submission.
+   native **Approve** against the exact reviewed head with no review body and no
+   inline comments. Do not post a separate approval comment, summary, diff recap,
+   evidence recap, assessment notice, or "no issues" message. The native approval
+   is the entire clean-review response. Recheck the live PR immediately before
+   submission; all existing review and evidence gates still apply.
 8. Read back the review to verify its author, submitted state, and commit ID.
    Do not send findings or approval through agent messages or final chat reports.
    Remain available for the next PR round; the implementing agent reads GitHub.
@@ -57,8 +60,11 @@ a private implementer briefing or a pasted reviewer contract.
 
 Use GitHub's native review API through the configured reviewer CLI command:
 `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews` with `commit_id` set to the
-full reviewed head, `event` set to `REQUEST_CHANGES` or `APPROVE`, and `body`
-containing the findings or sign-off above. Use a structured JSON file with
+full reviewed head. For a clean review, send `event: "APPROVE"` and omit `body`
+and `comments`; GitHub's returned `commit_id` records the reviewed revision.
+For actionable findings, send `event: "REQUEST_CHANGES"` with a concise `body`
+identifying the issues and any precise inline finding comments. Do not add a
+general review summary to either outcome. Use a structured JSON file with
 `api --method POST ... --input PATH`; do not interpolate review text into a shell
 command. GitHub returns `CHANGES_REQUESTED` or `APPROVED` respectively.
 

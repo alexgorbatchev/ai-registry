@@ -14,7 +14,13 @@ import type {
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
 import { assertSupportedPiManifest } from "./lib/profileOutputRules";
-import { injectDisableModelInvocation, readHarnessSkillEntries } from "../../lib/userSkillUtils";
+import {
+  getOutputSkillName,
+  injectDisableModelInvocation,
+  parseSkillAuthor,
+  readHarnessSkillEntries,
+  updateSkillName,
+} from "../../lib/userSkillUtils";
 
 const PROFILE_STAGING_DIR_NAME = ".pi-profiles";
 const APPEND_SYSTEM_FILE_NAME = "APPEND_SYSTEM.md";
@@ -67,7 +73,14 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
 
   const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
   for (const harnessSkillEntry of harnessSkillEntries) {
-    const outputPath = join(skillsDir, harnessSkillEntry.name);
+    const skillFilePath = join(harnessSkillEntry.sourcePath, "SKILL.md");
+    let skillAuthor: string | null = null;
+    if (existsSync(skillFilePath)) {
+      const content = await readFile(skillFilePath, "utf-8");
+      skillAuthor = parseSkillAuthor(content);
+    }
+    const outputSkillName = getOutputSkillName(harnessSkillEntry.name, skillAuthor);
+    const outputPath = join(skillsDir, outputSkillName);
     if (existsSync(outputPath)) {
       await rm(outputPath, { recursive: true, force: true });
     }
@@ -78,15 +91,16 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
       context.templateContext,
     );
 
-    if (harnessSkillEntry.isUser) {
-      const skillFilePath = join(outputPath, "SKILL.md");
-      if (existsSync(skillFilePath)) {
-        const content = await readFile(skillFilePath, "utf-8");
-        const injected = injectDisableModelInvocation(content);
-        if (injected !== content) {
-          await writeFile(skillFilePath, injected, "utf-8");
-        }
+    const generatedSkillFilePath = join(outputPath, "SKILL.md");
+    if (existsSync(generatedSkillFilePath)) {
+      let content = await readFile(generatedSkillFilePath, "utf-8");
+      if (outputSkillName !== harnessSkillEntry.name) {
+        content = updateSkillName(content, outputSkillName);
       }
+      if (harnessSkillEntry.isUser) {
+        content = injectDisableModelInvocation(content);
+      }
+      await writeFile(generatedSkillFilePath, content, "utf-8");
     }
   }
 }

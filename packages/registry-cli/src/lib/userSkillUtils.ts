@@ -58,6 +58,50 @@ export function removeDisableModelInvocation(source: string): string {
   return `${fence}${updatedFrontmatter}${body}`;
 }
 
+export function parseSkillAuthor(content: string): string | null {
+  const frontmatter = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1];
+  if (!frontmatter) return null;
+  const match = frontmatter.match(/^author:\s*(.*)$/m);
+  const author = match?.[1]?.trim();
+  return author ? author : null;
+}
+
+export function getOutputSkillName(skillName: string, author?: string | null): string {
+  if (!author || author === "alexgorbatchev" || author === "agorbatchev") {
+    return skillName;
+  }
+  if (skillName.startsWith(`${author}-`)) {
+    return skillName;
+  }
+  return `${author}-${skillName}`;
+}
+
+export function updateSkillName(source: string, newName: string): string {
+  if (!source.startsWith("---\n") && !source.startsWith("---\r\n")) {
+    return source;
+  }
+
+  const isCrlf = source.startsWith("---\r\n");
+  const newline = isCrlf ? "\r\n" : "\n";
+  const fence = `---${newline}`;
+  const end = source.indexOf(`${newline}---`, 3);
+
+  if (end === -1) {
+    return source;
+  }
+
+  const frontmatter = source.slice(fence.length, end);
+  const body = source.slice(end);
+
+  const nameRegex = /^name:\s*(.*)$/m;
+  if (nameRegex.test(frontmatter)) {
+    const updatedFrontmatter = frontmatter.replace(nameRegex, `name: ${newName}`);
+    return `${fence}${updatedFrontmatter}${body}`;
+  }
+
+  return `${fence}name: ${newName}${newline}${frontmatter}${body}`;
+}
+
 export function isUserSkillPath(targetPath: string): boolean {
   const normalizedPath = targetPath.replaceAll("\\", "/");
   return (

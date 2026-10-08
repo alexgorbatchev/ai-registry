@@ -1,7 +1,7 @@
 ---
 name: code-review-baseline
 description: Use whenever reviewing code.
-author: agorbatchev
+author: alexgorbatchev
 metadata:
   created_on: 2026-05-30 12:40
   last_modified: 2026-05-30 12:40

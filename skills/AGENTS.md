@@ -20,7 +20,7 @@ This directory contains reusable skills that must work across harnesses.
 
 Write skill frontmatter descriptions using positive trigger conditions only. Never include negative triggers or exclusion clauses in `description`; place excluded tasks and operational boundaries in the skill body instead.
 
-Vendored skills must maintain their upstream `author` in `SKILL.md` frontmatter, which is automatically resolved and preserved during `bun run skills:add` and `bun run skills:update`.
+Vendored skills must maintain their upstream `author` in `SKILL.md` frontmatter, which is automatically resolved and preserved during `bun run skills:add` and `bun run skills:update`. In generated harness outputs, skills not authored by `alexgorbatchev` are automatically prefixed as `<author>-<skill>`.
 
 After skill changes, validate the changed skill folders with `bun skills/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` from the repository root, then run `bun run build`.
 

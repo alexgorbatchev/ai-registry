@@ -310,4 +310,82 @@ describe("harnessBuild template rendering", () => {
       "---\ndisable-model-invocation: true\nname: continue-session\n---\n# Continue Session Skill\n",
     );
   });
+
+  it("prefixes output skill directory and updates name in frontmatter when author is not alexgorbatchev", async () => {
+    const repositoryRoot = await createTestDirectory();
+
+    const mattSkillDir = join(repositoryRoot, "skills", "user", "triage");
+    await writeTestFile(
+      mattSkillDir,
+      "SKILL.md",
+      "---\nname: triage\ndescription: Triage issues.\nauthor: mattpocock\n---\n# Triage\n",
+    );
+
+    const alexSkillDir = join(repositoryRoot, "skills", "agent", "git-commit");
+    await writeTestFile(
+      alexSkillDir,
+      "SKILL.md",
+      "---\nname: git-commit\ndescription: Commit changes.\nauthor: alexgorbatchev\n---\n# Git Commit\n",
+    );
+
+    const targetSkillsDir = join(repositoryRoot, "staged", "skills");
+
+    const templateContext: ITemplateContext = {
+      repo_root: repositoryRoot,
+      skills_dir: join(repositoryRoot, "skills"),
+      commands_dir: join(repositoryRoot, "commands"),
+      profiles_dir: join(repositoryRoot, "profiles"),
+      output_dir: join(repositoryRoot, "output"),
+    };
+
+    const buildSupport: IBuildSupport = {
+      copyDirectoryWithTemplateVariables: async (source, target, ctx) => {
+        await copyDirectoryWithTemplateVariables(source, target, ctx);
+      },
+      copyPathWithTemplateVariables: async (source, target, ctx) => {
+        await copyPathWithTemplateVariables(source, target, ctx);
+      },
+      mergeDirectory: async () => {},
+      stageProfileAssets: async () => {},
+      writeBinScript: async () => {},
+      ensureRuntimeDirectory: async () => {},
+    };
+
+    const context: IProfileBuildContext = {
+      harnessDir: join(repositoryRoot, "harnesses", "test"),
+      profileName: "test-profile",
+      profileDir: join(repositoryRoot, "profiles", "test-profile"),
+      manifest: {},
+      globalMatchedSkills: ["triage", "git-commit"],
+      globalMatchedCommands: [],
+      globalSkillSourcePaths: {
+        triage: mattSkillDir,
+        "git-commit": alexSkillDir,
+      },
+      globalUserSkillNames: new Set(["triage"]),
+      profileLocalSkills: [],
+      profileLocalCommands: [],
+      outputDir: join(repositoryRoot, "staged"),
+      templateContext,
+      buildSupport,
+    };
+
+    await stageProfileAssets(context, {
+      skillsDir: targetSkillsDir,
+    });
+
+    // triage should be named mattpocock-triage
+    expect(existsSync(join(targetSkillsDir, "triage"))).toBe(false);
+    expect(existsSync(join(targetSkillsDir, "mattpocock-triage"))).toBe(true);
+    const mattSkillContent = await readFile(join(targetSkillsDir, "mattpocock-triage", "SKILL.md"), "utf-8");
+    expect(mattSkillContent).toContain("name: mattpocock-triage");
+    expect(mattSkillContent).toContain("author: mattpocock");
+    expect(mattSkillContent).toContain("disable-model-invocation: true");
+
+    // git-commit should remain git-commit
+    expect(existsSync(join(targetSkillsDir, "git-commit"))).toBe(true);
+    const alexSkillContent = await readFile(join(targetSkillsDir, "git-commit", "SKILL.md"), "utf-8");
+    expect(alexSkillContent).toContain("name: git-commit");
+    expect(alexSkillContent).toContain("author: alexgorbatchev");
+  });
 });

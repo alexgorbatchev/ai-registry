@@ -16,7 +16,13 @@ import { basename, dirname, isAbsolute, join, relative } from "path";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 import walk from "ignore-walk";
-import { injectDisableModelInvocation, isUserSkillPath } from "./userSkillUtils";
+import {
+  getOutputSkillName,
+  injectDisableModelInvocation,
+  isUserSkillPath,
+  parseSkillAuthor,
+  updateSkillName,
+} from "./userSkillUtils";
 const REGISTRY_IGNORE_FILE_NAME = ".registry-ignore";
 const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
 
@@ -481,41 +487,62 @@ export async function stageProfileAssets(
   }
 
   for (const matchedSkill of context.globalMatchedSkills) {
-    const outputPath = join(skillsDir, matchedSkill);
-    if (existsSync(outputPath)) continue;
     const sourceDir =
       context.globalSkillSourcePaths?.[matchedSkill] ??
       join(context.templateContext.skills_dir, matchedSkill);
+    const skillFilePath = join(sourceDir, "SKILL.md");
+    let skillAuthor: string | null = null;
+    if (existsSync(skillFilePath)) {
+      const content = await readFile(skillFilePath, "utf-8");
+      skillAuthor = parseSkillAuthor(content);
+    }
+    const outputSkillName = getOutputSkillName(matchedSkill, skillAuthor);
+    const outputPath = join(skillsDir, outputSkillName);
+    if (existsSync(outputPath)) continue;
     await context.buildSupport.copyDirectoryWithTemplateVariables(
       sourceDir,
       outputPath,
       context.templateContext,
     );
 
-    const isUserSkill =
-      context.globalUserSkillNames?.has(matchedSkill) ||
-      isUserSkillPath(sourceDir);
-
-    if (isUserSkill) {
-      const skillFilePath = join(outputPath, "SKILL.md");
-      if (existsSync(skillFilePath)) {
-        const content = await readFile(skillFilePath, "utf-8");
-        const injected = injectDisableModelInvocation(content);
-        if (injected !== content) {
-          await writeFile(skillFilePath, injected, "utf-8");
-        }
+    const generatedSkillFilePath = join(outputPath, "SKILL.md");
+    if (existsSync(generatedSkillFilePath)) {
+      let content = await readFile(generatedSkillFilePath, "utf-8");
+      if (outputSkillName !== matchedSkill) {
+        content = updateSkillName(content, outputSkillName);
       }
+      const isUserSkill =
+        context.globalUserSkillNames?.has(matchedSkill) ||
+        isUserSkillPath(sourceDir);
+
+      if (isUserSkill) {
+        content = injectDisableModelInvocation(content);
+      }
+      await writeFile(generatedSkillFilePath, content, "utf-8");
     }
   }
 
   for (const profileLocalSkill of context.profileLocalSkills) {
-    const outputPath = join(skillsDir, profileLocalSkill);
+    const sourceDir = join(context.profileDir, "skills", profileLocalSkill);
+    const skillFilePath = join(sourceDir, "SKILL.md");
+    let skillAuthor: string | null = null;
+    if (existsSync(skillFilePath)) {
+      const content = await readFile(skillFilePath, "utf-8");
+      skillAuthor = parseSkillAuthor(content);
+    }
+    const outputSkillName = getOutputSkillName(profileLocalSkill, skillAuthor);
+    const outputPath = join(skillsDir, outputSkillName);
     assertMissingOutputPath(outputPath, `profile-local skill ${profileLocalSkill} for profile ${context.profileName}`);
     await context.buildSupport.copyDirectoryWithTemplateVariables(
-      join(context.profileDir, "skills", profileLocalSkill),
+      sourceDir,
       outputPath,
       context.templateContext,
     );
+    const generatedSkillFilePath = join(outputPath, "SKILL.md");
+    if (existsSync(generatedSkillFilePath) && outputSkillName !== profileLocalSkill) {
+      const content = await readFile(generatedSkillFilePath, "utf-8");
+      await writeFile(generatedSkillFilePath, updateSkillName(content, outputSkillName), "utf-8");
+    }
   }
 }
 

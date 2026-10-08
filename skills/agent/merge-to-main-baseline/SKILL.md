@@ -1,7 +1,7 @@
 ---
 name: merge-to-main-baseline
 description: Use whenever merging code to main/master branches.
-author: agorbatchev
+author: alexgorbatchev
 metadata:
   created_on: 2026-05-30 12:46
   last_modified: 2026-09-30 19:47

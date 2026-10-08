@@ -2,10 +2,13 @@ import { describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
 import {
+  getOutputSkillName,
   injectDisableModelInvocation,
   isUserSkillPath,
+  parseSkillAuthor,
   readHarnessSkillEntries,
   removeDisableModelInvocation,
+  updateSkillName,
 } from "../userSkillUtils";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "user-skill-utils-tests");
@@ -217,6 +220,88 @@ description: Native Bun APIs.
       } finally {
         await rm(testDir, { recursive: true, force: true });
       }
+    });
+  });
+
+  describe("parseSkillAuthor", () => {
+    it("extracts author from standard frontmatter", () => {
+      const source = `---
+name: triage
+author: mattpocock
+description: Triage issues.
+---
+# Content`;
+      expect(parseSkillAuthor(source)).toBe("mattpocock");
+    });
+
+    it("extracts author with CRLF line endings", () => {
+      const source = "---\r\nname: triage\r\nauthor: mattpocock\r\n---\r\n# Content";
+      expect(parseSkillAuthor(source)).toBe("mattpocock");
+    });
+
+    it("returns null when author is missing or empty", () => {
+      expect(parseSkillAuthor("---\nname: triage\n---\n")).toBeNull();
+      expect(parseSkillAuthor("---\nauthor:\n---\n")).toBeNull();
+      expect(parseSkillAuthor("# No frontmatter")).toBeNull();
+    });
+  });
+
+  describe("getOutputSkillName", () => {
+    it("returns skill name unchanged when author is alexgorbatchev", () => {
+      expect(getOutputSkillName("bun", "alexgorbatchev")).toBe("bun");
+      expect(getOutputSkillName("git-commit", "alexgorbatchev")).toBe("git-commit");
+    });
+
+    it("returns skill name unchanged when author is agorbatchev alias", () => {
+      expect(getOutputSkillName("code-review-baseline", "agorbatchev")).toBe("code-review-baseline");
+    });
+
+    it("returns skill name unchanged when author is null or empty", () => {
+      expect(getOutputSkillName("my-skill", null)).toBe("my-skill");
+      expect(getOutputSkillName("my-skill", "")).toBe("my-skill");
+      expect(getOutputSkillName("my-skill")).toBe("my-skill");
+    });
+
+    it("prefixes non-alexgorbatchev author to skill name", () => {
+      expect(getOutputSkillName("triage", "mattpocock")).toBe("mattpocock-triage");
+      expect(getOutputSkillName("diagnosing-bugs", "mattpocock")).toBe("mattpocock-diagnosing-bugs");
+      expect(getOutputSkillName("to-tickets", "mattpocock")).toBe("mattpocock-to-tickets");
+      expect(getOutputSkillName("hunk-review", "modem-dev")).toBe("modem-dev-hunk-review");
+      expect(getOutputSkillName("shadcn", "shadcn")).toBe("shadcn-shadcn");
+      expect(getOutputSkillName("thermo-nuclear-code-quality-review", "cursor")).toBe(
+        "cursor-thermo-nuclear-code-quality-review",
+      );
+    });
+
+    it("does not double prefix if skill already starts with author prefix", () => {
+      expect(getOutputSkillName("mattpocock-triage", "mattpocock")).toBe("mattpocock-triage");
+    });
+  });
+
+  describe("updateSkillName", () => {
+    it("replaces existing name in frontmatter", () => {
+      const source = `---
+name: triage
+author: mattpocock
+---
+# Content`;
+      expect(updateSkillName(source, "mattpocock-triage")).toBe(`---
+name: mattpocock-triage
+author: mattpocock
+---
+# Content`);
+    });
+
+    it("handles CRLF line endings when updating name", () => {
+      const source = "---\r\nname: triage\r\nauthor: mattpocock\r\n---\r\n# Content";
+      expect(updateSkillName(source, "mattpocock-triage")).toBe(
+        "---\r\nname: mattpocock-triage\r\nauthor: mattpocock\r\n---\r\n# Content",
+      );
+    });
+
+    it("returns non-frontmatter content unchanged", () => {
+      const source = "# Just Content";
+      expect(updateSkillName(source, "new-name")).toBe(source);
     });
   });
 });

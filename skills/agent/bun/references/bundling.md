@@ -135,3 +135,19 @@ await Bun.build({
   plugins: [myPlugin],
 });
 ```
+
+---
+
+## 7. React Compiler (`reactCompiler`)
+Bun integrates the native Rust port of the React Compiler into `Bun.build`:
+```ts
+await Bun.build({
+  entrypoints: ["./index.html"],
+  outdir: "./dist",
+  target: "browser",
+  minify: true,
+  reactCompiler: true, // Native Rust transform (no Babel needed)
+});
+```
+For complete setup across production builds, dev server static routing (`Bun.serve`), error resilience, and Oxlint rules, see [react-compiler.md](react-compiler.md).
+

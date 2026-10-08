@@ -4,7 +4,7 @@ description: Must use whenever Bun is used.
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-15 21:48
-  last_modified: 2026-06-17 09:49
+  last_modified: 2026-10-07 22:20
   status: current
 ---
 
@@ -116,6 +116,7 @@ for await (const file of glob.scan(".")) {
 Open and read these reference files whenever your task involves the following domains:
 
 - **Bundler / Compilation / `Bun.build`**: Read [references/bundling.md](references/bundling.md). Includes options, custom loaders, virtual in-memory builds (`files`), env inlining, code splitting, and browser/bun targets.
+- **React Compiler Setup**: Read [references/react-compiler.md](references/react-compiler.md). Covers configuring Bun's native Rust React Compiler for production builds (`Bun.build`), dev-server static routing with `Bun.serve` (`bunfig.toml`), error resilience, and Oxlint validation.
 - **S3 / R2 Bucket Storage (`S3Client`)**: Read [references/s3.md](references/s3.md). Covers file reading/writing, presigning URLs (PUT/GET), automatic streaming multipart uploads, and 302 download redirect responses.
 - **Redis & Valkey Client (`RedisClient`)**: Read [references/redis.md](references/redis.md). Covers automatic command pipelining, Pub/Sub channels (subscriber connections), key/hash/set basic operations, and connection options.
 - **Tar & Gzip Archives (`Bun.Archive`)**: Read [references/archive.md](references/archive.md). Covers creating archives from in-memory objects, recursive file extraction, file filtering via globbing, and native gzip/deflate/zstd compression.

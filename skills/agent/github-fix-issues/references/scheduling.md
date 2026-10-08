@@ -21,7 +21,8 @@ Inspect all pending PRs through GitHub, in saved dependency/oldest-first order:
   targeted checks complete, so long-running implementation cannot starve reviews.
 - On restart, before selecting new implementation work.
 
-Read comments, review threads, native review outcomes, and live head/base SHAs.
+Read the description's current evidence round, comments, review threads, native
+review outcomes, and live head/base SHAs.
 Record the scan time and resulting state in `.tmp/github-issues.md`. Reviewer
 results still travel only through the PR, never agent messages or scratch files.
 

@@ -1,3 +1,6 @@
+Contents: [Discover and execute checks](#discover-and-execute-checks) ·
+[Publish a round before requesting review](#publish-a-round-before-requesting-review)
+
 ## Discover and execute checks
 
 Read applicable repository instructions, task definitions, CI workflows, and
@@ -45,18 +48,24 @@ or a required environment cannot be obtained, record the blocker on the PR.
 
 ## Publish a round before requesting review
 
-Assign monotonically increasing round numbers from the PR record. Post a round
-manifest containing issue and PR, fetched base SHA, published head SHA, acceptance
-checklist, exact gate inventory, results, and links to all of that round's evidence.
-Include resolutions and consequential decisions with source citations. Evaluate
+Assign monotonically increasing round numbers from the PR description. Update
+that description with a round manifest containing the linked issue, fetched base
+SHA, published head SHA, exact gate inventory, results, and each check's evidence.
+Read requirements and acceptance criteria from the linked issue instead of copying
+its body or a reviewer instruction block. Include consequential decisions with
+source citations; keep finding discussions and replies in review threads. Evaluate
 interacting changes together; separate passing checks do not prove compatibility
 of a changed public contract or persisted format.
 
-Put the complete recorded output in PR comments inside folded sections. Keep a
-short outcome and manifest visible; preserve details for every invocation:
+Put the complete recorded output in the **PR description itself**, inside folded
+sections. Never use PR comments, review comments, or an index of comment links as
+the evidence store. Keep the change summary, issue reference, and latest round's
+outcome visible; fold historical rounds and individual check logs. Preserve the
+following details for every invocation, including red/green/fail-again checks:
 
 ````markdown
 ## Review round N
+Issue: #NNN
 Base: FULL_BASE_SHA
 Head: FULL_HEAD_SHA
 Result: PASS or BLOCKED, with reason
@@ -82,15 +91,25 @@ as data. Redact credentials and private data before upload; mark redactions with
 discarding relevant diagnostics. If redaction prevents review, block and resolve
 that gap instead of uploading secrets or asserting success.
 
-Split oversized output into numbered folded PR comments, preserving all parts and
-their order. Link each part from the round manifest; never truncate to fit a
-comment or replace recorded output with a local path. Keep the PR description's
-evidence index current. Publish via body files or structured API inputs, then
-read back the comments to verify all content arrived before requesting review.
+Draft the complete updated description in an owned `.tmp/` body file. Read its
+current remote content before editing, preserve the issue reference and existing
+rounds, and reconcile concurrent edits instead of overwriting them. Publish with
+`gh pr edit PR --body-file PATH` or a structured PR-body API update. Read back the
+description and compare the published evidence with the intended body before
+requesting review. An unsuccessful or incomplete update blocks handoff.
 
-Retain every round, including failures and superseded heads, after sign-off and
-merge. Append corrections and mark old rounds superseded; do not delete their
-logs. Delete local copies only after verified remote retention and integration.
+If the full description exceeds GitHub's accepted body size, report the size
+blocker and retain the complete local records. Do not truncate output, drop older
+rounds, split evidence into comments, or silently substitute external log links.
+Resume publication only when the complete record fits or the user explicitly
+chooses a different evidence-retention policy.
+
+Retain every round in the description, including failures and superseded heads,
+after sign-off and merge. Append corrections and mark old rounds superseded;
+do not delete their logs. Delete local copies only after verified remote retention
+and integration. For an existing PR with comment-based evidence, copy and verify
+the complete record in its description before using it for another review round;
+preserve existing discussion and do not mistake comment links for migrated logs.
 
 References: [folded Markdown sections](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections)
-and [PR check inspection](https://cli.github.com/manual/gh_pr_checks).
+and [PR description updates](https://cli.github.com/manual/gh_pr_edit).

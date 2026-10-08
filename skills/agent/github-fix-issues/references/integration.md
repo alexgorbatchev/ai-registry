@@ -3,7 +3,8 @@
 Read live GitHub state, not just the queue. Require all of the following:
 
 - The PR targets `main`; its head equals the locally committed, checked head.
-- The current round has complete passing evidence and no unresolved findings.
+- The PR description contains the issue reference and current round's complete
+  passing evidence; no findings remain unresolved.
 - The expected bot's latest decisive native review is `APPROVED`, not dismissed,
   and names this exact commit and round. An earlier approval followed by a changes
   request is insufficient. Repository-required reviewers and thread resolution
@@ -60,8 +61,9 @@ Only after remote reachability and PR merged state are verified:
 1. Close the issue if closing references have not already done so. Comment with the
    PR, landed SHA, outcome, and links to retained check evidence and native approval.
    Mark the queue row done and unblock verified dependents.
-2. Read back all evidence comments. Retain the PR, reviews, and folded logs for all
-   rounds permanently. Preserve `.tmp/github-issues.md` and other tickets' work.
+2. Read back the PR description and verify its folded evidence for every round.
+   Retain that description, PR conversation, and native reviews permanently.
+   Preserve `.tmp/github-issues.md` and other tickets' work.
 3. Verify the remote issue branch still points to the integrated head and has no
    active owner or another open PR using it. Delete only that owned branch, using
    an exact expected-SHA lease for the deletion; if it changed, preserve it and

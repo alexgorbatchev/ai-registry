@@ -1,12 +1,15 @@
-## Review contract to publish on the PR
+## Reviewer workflow
 
-You are the independent review agent for this PR. Read the PR description,
-conversation, review threads, native reviews, requirements, and the current round
-manifest. Obtain all task context and communicate solely through this PR. Reuse
-the PR record after a restart; do not request a private implementer briefing.
+Read these instructions from the installed skill; do not publish them on the PR.
+As the independent reviewer, read the PR description, its linked issue and issue
+comments for requirements, the PR conversation, review threads, native reviews,
+and the current round's evidence in the description. Communicate solely through
+the PR. Reuse that record and linked requirements after a restart; do not request
+a private implementer briefing or a pasted reviewer contract.
 
 1. Run the installed skill's reviewer helper with `access ensure --pr NUMBER
-   --no-issues` before posting, using the setup/configuration reference on the PR.
+   --no-issues` before posting, using this skill's setup reference and saved local
+   reviewer configuration.
    This authentication/access helper is permitted tooling; the implementer must
    have installed its dependencies before handoff. It verifies the bot differs
    from the PR author. Use that verified identity for every comment and review;
@@ -23,12 +26,15 @@ the PR record after a restart; do not request a private implementer briefing.
    reviewer access helper, authentication,
    comments, and native review submission are permitted. Use the supplied logs
    to assess execution results; never claim to have executed them yourself.
-4. Verify the round identifies every required check, command, exit status, tested
-   revision, and complete recorded output. Require final passing evidence for the
+4. Verify the PR references the correct issue and its description contains the
+   round's manifest, every required check, command, exit status, tested revision,
+   and complete recorded output. Logs or manifests posted only in comments do not
+   satisfy the evidence requirement. Require final passing evidence for the
    exact head and documented red/green evidence or the static-only rationale.
    Check that generated artifacts, docs, tests, and acceptance criteria match the
    diff. Missing, truncated, unrelated, or stale evidence is a finding; request
-   the implementing agent to supply it on the PR rather than running the check.
+   correction in the PR description rather than running the check. Do not treat
+   prose claiming a regression failed or passed as its recorded output.
 5. Review for correctness, edge cases, regressions, security, data loss, semantic
    misuse, unsupported assumptions, maintainability, and project-rule violations
    within the diff and affected callers. Trace consequential decisions to cited
@@ -40,8 +46,9 @@ the PR record after a restart; do not request a private implementer briefing.
    communicate the required review outcome.
 7. When every finding is resolved and all evidence requirements hold, submit
    native **Approve** against the exact reviewed head. State the base/head,
-   round/evidence links, and that repository checks were assessed from supplied
-   evidence, not executed by you. Recheck the live PR immediately before submission.
+   round and PR-description evidence references, and that checks were assessed
+   from supplied evidence, not executed by you. Recheck the live PR immediately
+   before submission.
 8. Read back the review to verify its author, submitted state, and commit ID.
    Do not send findings or approval through agent messages or final chat reports.
    Remain available for the next PR round; the implementing agent reads GitHub.

@@ -83,10 +83,11 @@ identity for its comments/reviews. Use a user-configured bot CLI wrapper or invo
 `GH_ENTERPRISE_TOKEN` for an enterprise host). Do not switch the saved default
 account. Do not have the implementing agent publish the reviewer's approval.
 
-Configure the review agent with this skill's reviewer contract by placing it on
-the PR. The PR can name the local reviewer command and expected public login, but
-must not contain secrets. A tool-launch message carries only the PR locator and
-an instruction to read it; all subsequent coordination remains on the PR.
+Ensure the review agent has this installed skill, its bundled reviewer workflow,
+and the saved local reviewer configuration before handoff. Keep setup commands,
+token-variable details, and reviewer instructions out of the PR. Its description
+references the issue and contains the check evidence. A tool-launch message
+carries only the PR locator; all task-specific coordination remains on the PR.
 
 References: [collaborators](https://docs.github.com/en/rest/collaborators/collaborators),
 [invitations](https://docs.github.com/en/rest/collaborators/invitations),

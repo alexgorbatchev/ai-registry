@@ -2,12 +2,12 @@
 name: github-fix-issues
 description: >-
   Use when creating or updating GitHub issues, fixing a numbered issue, working
-  through open tickets, resuming issue work, or repairing historical issue-flow
-  merge commits.
+  through open tickets, reviewing ticket PRs, resuming issue work, or repairing
+  historical issue-flow merge commits.
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-10-07 17:29
+  last_modified: 2026-10-07 19:43
   status: current
 ---
 
@@ -18,6 +18,7 @@ normal issue work does not authorize rewriting published history.
 | --- | --- |
 | Create, refine, or check for an existing issue | [Issue authoring](references/issue-authoring.md) |
 | Implement one ticket or a queue, including restart | [Setup](references/setup.md), [queue](references/queue.md), then the implementation loop below |
+| Review a ticket's PR | [Reviewer workflow](references/reviewer.md); read requirements from the issue linked by the PR |
 | Remove historical issue-integration merges | [History repair](references/history-repair.md) |
 
 Run the bundled reviewer helper during [setup](references/setup.md) to verify bot
@@ -42,9 +43,13 @@ record the blocker rather than self-approving.
   Read-only inspection and GitHub communication tools remain available.
 - All communication between these two agents belongs on the PR: requests,
   findings, questions, answers, decisions, and sign-off. A launch/resume message
-  can contain only the PR locator and an instruction to read it. Put the review
-  contract and configuration references on the PR before launching the reviewer.
-  Do not exchange findings through agent messages, shared scratch files, or chat.
+  contains only the PR locator. Both agents follow this installed skill; the
+  reviewer loads its bundled reviewer workflow and reads the linked issue for
+  requirements. Keep role prompts, review contracts, bot setup commands, and agent
+  operating instructions out of PR descriptions and comments. Put check evidence
+  in the PR description; use comments for findings, questions, replies, and short
+  status notices. Do not exchange findings through agent messages, shared scratch
+  files, or chat.
 - Continue within the user's authorized scope without repeatedly asking permission.
   Resolve implementation choices from inspected requirements, code, tests, and
   repository instructions. Record consequential choices and their sources on the
@@ -79,21 +84,26 @@ work on the next eligible issue; it does not block the queue until sign-off.
    a reproduction test is inapplicable and use the relevant validators; do not
    manufacture static-value tests. Commit only this ticket's changes.
 5. **Create or update the PR.** Push the issue branch and use `main` as its base.
-   Follow the repository PR template. Include the problem, resulting behavior,
-   change type, `Fixes #NNN`, acceptance checklist, decisions, risks, and check
-   evidence index. Avoid first-person narration. Reuse the matching open PR.
+   Follow the repository PR template. Reference the actual ticket with `Fixes #NNN`
+   and keep requirements and acceptance criteria in that linked issue. Include a
+   concise problem/result summary, change type, material decisions, risks, and
+   folded check evidence in the description itself. Do not duplicate the issue
+   body or add a reviewer briefing. Avoid first-person narration. Reuse the
+   matching open PR.
    Keep drafts and logs in an owned `.tmp/` directory, never in committed files.
 6. **Prepare every review round.** Fetch `main`, rebase the issue branch onto it,
    resolve conflicts, and run all required checks on the resulting committed HEAD.
-   Publish the branch and a new round's complete recorded evidence on the PR using
-   the evidence reference. Verify the remote PR head equals the checked SHA.
+   Publish the branch and update the PR description with the round's manifest and
+   complete recorded evidence using the evidence reference. Do not publish logs
+   or manifests as comments. Verify the remote PR head equals the checked SHA.
    A push after rebase uses an exact lease against the previously verified issue
    branch SHA; never force-push `main` in normal ticket work.
-7. **Request review on the PR.** Post the full [reviewer contract](references/reviewer.md),
-   round number, base and head SHAs, evidence links, and configured reviewer
-   identity/command reference. Authenticate and request review from the distinct
-   bot account as described in setup. Launch or resume the reviewer with the PR
-   locator only. The reviewer posts findings with native **Request changes** or
+7. **Request review on the PR.** Verify its description references the issue and
+   contains the current round number, base/head SHAs, and complete evidence.
+   Authenticate and request review from the distinct bot account as described in
+   setup. Launch or resume the reviewer with the PR locator only; its instructions
+   come from this skill's [reviewer workflow](references/reviewer.md).
+   The reviewer posts findings with native **Request changes** or
    signs off using native **Approve** on that exact head.
    Mark the ticket `review-pending`, scan all pending PRs for returned reviews,
    and start the oldest eligible independent issue when none needs action.
@@ -107,7 +117,8 @@ work on the next eligible issue; it does not block the queue until sign-off.
    A changed base or head invalidates the round: rebase, rerun checks, and obtain
    another native approval. Verify remote integration and PR merged state before
    closing the issue and deleting owned artifacts. Retain every round's folded
-   evidence on the PR and the persistent queue across cleanup and restarts.
+   evidence in the PR description and the persistent queue across cleanup and
+   restarts.
 10. **Continue the queue.** Refresh affected dependencies and blockers after each
     transition. After every PR submission or review resubmission, inspect all
     pending reviews before starting more implementation. Continue while eligible

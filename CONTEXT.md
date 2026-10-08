@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-07 14:55
-last_modified: 2026-10-07 17:11
+last_modified: 2026-10-07 19:43
 status: current
 ---
 
@@ -19,7 +19,7 @@ The single agent responsible for making changes, executing repository checks, an
 _Avoid_: Treating the implementing agent as a coordinator that delegates implementation to other agents.
 
 **Review agent**:
-The independent agent that reviews the proposed diff and the implementing agent's check evidence without executing repository checks itself. Inspection and communication tools remain available to this agent.
+The independent agent that follows the installed skill to review the proposed diff against the linked issue and the implementing agent's check evidence without executing repository checks itself. Inspection and communication tools remain available to this agent.
 _Avoid_: Interpreting "no checks" as a prohibition on all tooling.
 
 **Issue queue**:
@@ -31,8 +31,8 @@ A submitted PR round awaiting its reviewer's response. It releases the implement
 _Avoid_: Treating review handoff as a requirement to idle or as completion of the ticket.
 
 **Check evidence**:
-The recorded output and results of repository checks supplied by the implementing agent for review. This evidence remains available on the pull request after sign-off.
-_Avoid_: Treating a pass/fail claim without recorded output as the check evidence.
+The recorded output and results of repository checks supplied by the implementing agent in folded sections of the PR description. This evidence remains available there after sign-off.
+_Avoid_: Treating a pass/fail claim or an index of evidence-comment links as the check evidence.
 
 **Review sign-off**:
 The review agent's native GitHub approval of the pull request after no findings remain. Findings requiring revision are submitted using GitHub's native request-changes review outcome.

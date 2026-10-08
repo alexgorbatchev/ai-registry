@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-07 15:07
-last_modified: 2026-10-07 17:29
+last_modified: 2026-10-07 19:43
 status: current
 ---
 
@@ -22,8 +22,8 @@ There are no issue-specific command aliases or harness overrides.
 | Restart | Persist resolved order in `.tmp/github-issues.md`; refresh changed metadata and inspect existing work before starting a ticket | [Queue](../../../skills/agent/github-fix-issues/references/queue.md) |
 | Branches | New work uses `fix/issue-NNN-slug` in `.workspaces/issue-NNN`, based on `main` | [Skill](../../../skills/agent/github-fix-issues/SKILL.md) |
 | Review identity | Bundled `scripts/reviewer.ts access ensure` verifies the configured bot, automatically invites/accepts, then lists open issues oldest first; `--pr NUMBER --no-issues` repeats verification before reviews | [Setup](../../../skills/agent/github-fix-issues/references/setup.md) |
-| Evidence | Implementer runs checks; every round retains full stdout/stderr, exit codes, commands, and revisions in folded PR sections | [Checks and evidence](../../../skills/agent/github-fix-issues/references/checks-and-evidence.md) |
-| Review | Same independent reviewer across rounds; diff/context/evidence inspection only; all communication on the PR; native Request changes or Approve | [Reviewer](../../../skills/agent/github-fix-issues/references/reviewer.md) |
+| Evidence | Implementer runs checks; every round retains stdout/stderr, exit codes, commands, and revisions in folded sections of the PR description; no evidence comments | [Checks and evidence](../../../skills/agent/github-fix-issues/references/checks-and-evidence.md) |
+| Review | PR references its issue for requirements; same independent reviewer follows the installed skill without posted instruction blocks, inspects diff/context/evidence only, and submits native Request changes or Approve | [Reviewer](../../../skills/agent/github-fix-issues/references/reviewer.md) |
 | Integration | Rebase before each handoff; exact checked and approved commits reach `main` by fast-forward only | [Integration](../../../skills/agent/github-fix-issues/references/integration.md) |
 | Cleanup | Verify remote reachability and PR merged state, then remove owned worktrees, branches, and scratch; retain PR evidence and queue | [Integration](../../../skills/agent/github-fix-issues/references/integration.md) |
 | Recovery | Explicit request, isolated candidate, backup, exact tree preservation, and separately authorized publication with exact lease | [History repair](../../../skills/agent/github-fix-issues/references/history-repair.md) |
@@ -36,8 +36,11 @@ the repair remains limited to failures blocking required checks.
 
 An existing matching branch, worktree, or PR is resumed when no active owner is
 present. Conflicting candidates or active ownership block takeover. A replacement
-reviewer after a restart reconstructs its context from the PR, not private agent
-messages. Repository checks remain exclusively the implementing agent's work;
+reviewer after a restart reads the installed skill, PR record, and linked issue.
+The description carries a concise change summary, the issue reference, and check
+evidence. Comments carry findings, questions, replies, and short status notices;
+reviewer contracts, role prompts, and bot setup commands remain outside the PR.
+Repository checks remain exclusively the implementing agent's work;
 inspection and GitHub tooling are available to the reviewer.
 
 Each submitted review round releases the implementer to the next eligible issue.
@@ -52,7 +55,7 @@ rebase, check-evidence round, and approval before integration.
 ## Platform constraints
 
 GitHub supports folded Markdown sections with `<details>` and `<summary>`. All
-rounds remain on the PR after sign-off, including failures and superseded heads.
+rounds remain in its description after sign-off, including failures and superseded heads.
 [Collapsed-section documentation](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections).
 
 A PR author cannot approve their own PR. The reviewer's configured CLI identity

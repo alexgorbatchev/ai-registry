@@ -18,7 +18,7 @@ Read live GitHub state, not just the queue. Require all of the following:
 - A fresh fetch still resolves remote `main` to the round's base SHA. That base
   is an ancestor of the approved head, and
   `git rev-list --min-parents=2 BASE..HEAD` contains no merge commits.
-- Local branch/worktree ownership is established, with no unowned staged changes,
+- Source branch/worktree ownership is established, with no unowned staged changes,
   index locks, unfinished Git operations, or source changes outside the commit.
 
 If the base or head moved, rebase onto current `main`, rerun all required checks,
@@ -35,11 +35,16 @@ merge commit, squash replaces commits, and GitHub rebase-and-merge rewrites SHAs
 Do not use `gh pr merge` for this workflow. Integrate the approved commit with Git
 fast-forward semantics and then verify GitHub recognizes the PR as merged.
 
-In the clean, owned checkout of `main`, fast-forward to fetched remote `main`,
-then `git merge --ff-only APPROVED_HEAD`. If that checkout has unowned work, do not
-switch or reset it. Publish the checked head directly as described below and defer
-its local synchronization until that work is safe. Never create a merge commit as
-a fallback. Refuse integration if local `main` has unrelated unpublished commits.
+Local-only commits on `main` are not by themselves a reason to refuse integration.
+In its clean, owned checkout, use `git merge --ff-only APPROVED_HEAD` when local
+`main` is an ancestor of the approved head. Retain approved local-only commits
+already contained in that reviewed head.
+
+If local `main` contains unrelated unpublished commits, diverges from the approved
+head, or its checkout has unowned work, preserve the branch and checkout. Publish
+the exact approved head directly as described below and defer local synchronization.
+Do not switch, reset, or rewrite that checkout, publish unrelated commits, or create
+a merge commit to unblock integration.
 
 Immediately before publishing, recheck live PR head, approval, required checks,
 and remote `main`. Use a normal non-forced push of the exact approved commit:
@@ -77,10 +82,11 @@ Only after remote reachability and PR merged state are verified:
    unknown files. Delete the integrated local branch with `git branch -d BRANCH`
    after confirming it is an ancestor of remote `main`; do not use broad pruning
    or `git branch -D` to hide an unresolved ownership or integration problem.
-5. Synchronize local `main` with `--ff-only` when its checkout is clean and owned.
-   Verify exact local/remote refs and worktree registration after cleanup. Record
-   any deferred local synchronization or retained artifacts with their reason in
-   the queue and completion report.
+5. Synchronize local `main` with `--ff-only` when its checkout is clean and owned
+   and its tip is an ancestor of fetched remote `main`. Otherwise preserve its
+   unpublished work and defer synchronization. Verify exact local/remote refs and
+   worktree registration after cleanup. Record any deferred local synchronization
+   or retained artifacts with their reason in the queue and completion report.
 
 References: [GitHub merge behavior](https://docs.github.com/en/pull-requests/reference/pull-request-merges)
 and [Git push and explicit leases](https://git-scm.com/docs/git-push).

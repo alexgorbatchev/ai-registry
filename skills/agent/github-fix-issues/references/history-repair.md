@@ -1,12 +1,8 @@
----
-name: git-issue-history-cleanup
-description: Use when asked to remove merge commits left by a GitHub issue integration flow, such as merges of issue branches into an integration branch. Do not use for ordinary branch merges, general history editing, or commit-message cleanup.
-author: alexgorbatchev
-metadata:
-  created_on: 2026-09-30 19:43
-  last_modified: 2026-09-30 19:47
-  status: current
----
+## Explicit recovery mode
+
+Use only when the user requests removal of historical issue-flow merges. Routine
+issue integration and artifact cleanup never enter this mode. Preserve backups
+beyond cleanup until their recovery purpose is explicitly released.
 
 Treat this as a history rewrite of issue-flow merges. Preserve the selected tip's exact file tree and every non-merge commit. A clean-looking log alone is insufficient.
 
@@ -34,3 +30,6 @@ Treat this as a history rewrite of issue-flow merges. Preserve the selected tip'
    If the lease fails, stop and rebuild the candidate from the new tip; do not use `--force` or a lease based only on a mutable remote-tracking ref. Fetch and verify that the remote resolves to the candidate SHA. Update the primary local branch only after confirming it has no unowned tracked or staged changes and its tree is identical; use an exact-old-value ref update rather than resetting unrelated files. Retain the backup ref until the user no longer needs a recovery path. Remove the temporary worktree and candidate branch when safe.
 
 Report the final remote and local SHAs, tree equality, issue-flow merge count, validation performed, backup ref, and any branches or references that still point into the old history. If any gate fails, report the candidate and blocker without publishing it.
+
+Reference: [Git rebase](https://git-scm.com/docs/git-rebase) and
+[exact push leases](https://git-scm.com/docs/git-push).

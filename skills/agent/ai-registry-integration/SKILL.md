@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-10-01 21:18
+  last_modified: 2026-10-07 17:11
   status: current
 ---
 
@@ -75,6 +75,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 ## Add A Command
 
+- Maintain GitHub issue authoring, implementation/review/integration, and historical issue-merge repair together in `{{skills_dir}}/agent/github-fix-issues/`. Keep it harness-independent; do not recreate separate issue commands, issue skills, or harness overrides. Its bundled references define one implementer continuing eligible work during PR review, persistent scheduling, and integration gates.
 - Keep PR-writing guidance in the `github-pr` skill under `{{skills_dir}}/agent/github-pr/`; do not recreate a duplicate PR command.
 - Create the command under the commands_dir token.
 - Use commands for slash-command prompts, reusable task blueprints, and prompt templates.

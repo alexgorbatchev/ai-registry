@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-10-08 14:09
+  last_modified: 2026-10-08 15:29
   status: current
 ---
 
@@ -103,14 +103,17 @@ work on the next eligible issue; it does not block the queue until sign-off.
    Authenticate and request review from the distinct bot account as described in
    setup. Launch or resume the reviewer with the PR locator only; its instructions
    come from this skill's [reviewer workflow](references/reviewer.md).
-   The reviewer posts findings with native **Request changes** or
+   The reviewer posts code findings as native inline review comments attached to
+   the affected diff lines and submits native **Request changes**, or
    signs off using native **Approve** on that exact head with no review body,
    inline comments, or separate summary. Reviewer prose is limited to actionable
    issues; a clean review produces only the native approval.
    Mark the ticket `review-pending`, scan all pending PRs for returned reviews,
    and start the oldest eligible independent issue when none needs action.
-8. **Pair until clean when reviews return.** Read the PR, implement fixes, and answer each finding on
-   the PR with the corrective commit or grounded explanation. Return to step 6
+8. **Pair until clean when reviews return.** Read the PR and its native review
+   comments, implement fixes, and answer each inline finding in its existing
+   thread with the corrective commit or grounded explanation. Answer other
+   findings on the PR. Return to step 6
    for every review request, including evidence-only corrections. No findings,
    complete passing evidence, and current native approval are all required.
    Do not treat silence, a plain comment, or an old approval as sign-off.

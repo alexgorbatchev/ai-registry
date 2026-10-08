@@ -39,9 +39,15 @@ a private implementer briefing or a pasted reviewer contract.
    misuse, unsupported assumptions, maintainability, and project-rule violations
    within the diff and affected callers. Trace consequential decisions to cited
    requirements. Distinguish actionable defects from personal stylistic preferences.
-6. Post each actionable finding on the PR with severity, file/line or evidence
-   reference, failing scenario, impact, and requested correction. Include unresolved
-   earlier findings. Ask only questions needed to resolve actionable issues.
+6. Post each actionable code finding as a native inline review comment anchored
+   to the affected diff line or smallest relevant line range. Include severity,
+   failing scenario, impact, and requested correction in the comment body. Do not
+   substitute a PR conversation comment or review-body list containing paths and
+   line numbers for an inline thread. Put evidence gaps and other findings with
+   no code location in the Request changes body with their evidence reference;
+   never invent a code anchor. Keep unresolved earlier findings in their existing
+   threads and reference those threads in the new review rather than duplicating
+   them. Ask only questions needed to resolve actionable issues.
    Keep feedback limited to those findings; omit diff recaps, review summaries,
    compliments, and check-assessment narration. Submit native **Request changes**
    when any finding or evidence gap prevents sign-off; a comment alone does not
@@ -52,7 +58,8 @@ a private implementer briefing or a pasted reviewer contract.
    evidence recap, assessment notice, or "no issues" message. The native approval
    is the entire clean-review response. Recheck the live PR immediately before
    submission; all existing review and evidence gates still apply.
-8. Read back the review to verify its author, submitted state, and commit ID.
+8. Read back the review and its native review comments to verify the author,
+   submitted state, commit ID, and each intended file/line or range anchor.
    Do not send findings or approval through agent messages or final chat reports.
    Remain available for the next PR round; the implementing agent reads GitHub.
 
@@ -62,16 +69,41 @@ Use GitHub's native review API through the configured reviewer CLI command:
 `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews` with `commit_id` set to the
 full reviewed head. For a clean review, send `event: "APPROVE"` and omit `body`
 and `comments`; GitHub's returned `commit_id` records the reviewed revision.
-For actionable findings, send `event: "REQUEST_CHANGES"` with a concise `body`
-identifying the issues and any precise inline finding comments. Do not add a
-general review summary to either outcome. Use a structured JSON file with
+For actionable findings, send `event: "REQUEST_CHANGES"` and put each new code
+finding in the review's `comments` array. Each entry supplies `path` (repository
+relative), `body`, `line` (file line number, not diff position), and `side`.
+Use `RIGHT` for additions or unchanged context and `LEFT` for deletions. For a
+multi-line finding, also supply `start_line` and `start_side`; `line` and `side`
+identify the end of the range. Derive every anchor from the inspected diff at
+the reviewed base/head; do not guess line numbers or use deprecated `position`.
+
+GitHub requires `body` for `REQUEST_CHANGES`. When all findings are inline, use
+only a pointer such as "Address the inline review findings." Otherwise include
+only the non-code findings and links to unresolved earlier threads. Do not copy
+inline findings into the body or post them with `gh pr comment`. `gh pr review`
+does not expose inline anchors; use `gh api` through the configured bot identity.
+If an inline submission fails, inspect the API error and refresh the diff and
+live SHAs before retrying. Do not fall back to a path/line list or claim an
+unposted finding was delivered. Do not add a general review summary to either
+outcome. Use a structured JSON file in an owned `.tmp/` directory with
 `api --method POST ... --input PATH`; do not interpolate review text into a shell
 command. GitHub returns `CHANGES_REQUESTED` or `APPROVED` respectively.
 
-Read back the native review and recheck the head after submission. If either SHA
+Read back the native review and its comments using
+`GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments`.
+Verify each new finding's review ID, bot author, commit ID, path, side, line, and
+range match the submitted payload. Read native review comments explicitly;
+general PR conversation comments alone do not contain the inline findings.
+Reply to an existing finding through
+`POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`
+with a structured `body`, using the thread's top-level comment ID and the replying
+agent's identity. Keep corrections and follow-up questions in that thread.
+
+Recheck the live base/head after submission. If either SHA
 changed during submission, report staleness on the PR; that review does not unlock
 integration. A pending review, plain comment, reaction, or approval on a previous
 head cannot satisfy sign-off. Repository-required additional reviewers still apply.
 
 References: [native review API](https://docs.github.com/en/rest/pulls/reviews#create-a-review-for-a-pull-request)
+and [review comments and replies](https://docs.github.com/en/rest/pulls/comments)
 and [structured CLI API input](https://cli.github.com/manual/gh_api).

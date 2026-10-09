@@ -1,0 +1,11 @@
+{
+  "litellm": {
+    "providers": {
+      "litellm": {
+        "headers": {
+          "x-litellm-tags": "proj-ai-registry"
+        }
+      }
+    }
+  }
+}

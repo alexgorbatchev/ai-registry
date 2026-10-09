@@ -73,6 +73,17 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Validate every changed skill folder with `bun {{skills_dir}}/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` and fix every reported error before building.
 - Run `bun run build` from the repo_root token after the skill change.
 
+## Add Hostname Skill Variants
+
+- Keep the skill bundle's default `SKILL.md`. Add each machine-specific version at `variants/<hostname>/SKILL.md`, with normal skill frontmatter and the same `name` and `author` as the default.
+- Match the hostname exactly, including case and domain suffixes. Hostnames start with a letter or digit and contain only letters, digits, dots, underscores, or hyphens.
+- Use `AI_REGISTRY_HOSTNAME=workstation-a bun run build` to validate and generate a specific variant. The build otherwise detects the OS hostname once; an absent matching directory uses the default, and an invalid matching variant fails.
+- Keep shared references, scripts, and assets at the bundle root. Only the root `SKILL.md` changes by hostname; the entire root `variants/` directory stays out of generated outputs. Link bundled resources by their generated locations.
+- Use existing repository-root-relative includes for shared text. Template expansion runs once, with `file_path` and `file_dir` identifying the selected variant's original source path.
+- Place actual private hostnames and environment instructions in the private overlay. Include all required resources there: overlays replace entire bundles, and a private default does not inherit public variants.
+- Preserve existing harness boundaries and override precedence. Put harness-specific variants inside harness-specific skill bundles; profile-local variants belong in that profile's skill bundle.
+- Recover generated edits with the original hostname and overlay selection. Sync-back targets the selected variant and rejects a source mismatch recorded in the manifest. Edit include-based variants at their source because recovery does not reconstruct include directives.
+
 ## Add A Command
 
 - Maintain GitHub issue authoring, implementation/review/integration, and historical issue-merge repair together in `{{skills_dir}}/agent/github-fix-issues/`. Keep it harness-independent; do not recreate separate issue commands, issue skills, or harness overrides. Its bundled references define one issue at a time through merge and cleanup, persistent scheduling, and integration gates. Select by verified priority labels, highest first, then oldest within each group; without priority labels use oldest first. Resolve prerequisites before dependents.

@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-01 11:46
-last_modified: 2026-10-01 21:18
+last_modified: 2026-10-09 21:14
 status: current
 ---
 
@@ -15,6 +15,15 @@ This directory contains reusable skills that must work across harnesses.
 - Keep harness-specific tool names, configuration, command invocation, approval behavior, session handling, and runtime paths in the matching harness skill.
 - Do not add conditional harness sections to generic skills, such as “if using Codex” or “for Claude Code.” Move those instructions into the matching harness skill.
 - When a skill mixes generic and harness-specific instructions, keep only the shared guidance here and move the harness-specific content to `harnesses/<target>/skills/`. Harness skills may override a generic skill with the same name.
+
+## Hostname Variants
+
+- Keep the bundle's default `SKILL.md`; add machine-specific instructions in `variants/<hostname>/SKILL.md` with the same frontmatter `name` and `author` as the default and the normal skill metadata conventions.
+- Use exact hostnames, including case and domain suffixes. The build uses the OS hostname unless `AI_REGISTRY_HOSTNAME` selects another machine; an absent matching directory uses the default, while an invalid matching variant fails.
+- Keep shared references, scripts, and assets at the bundle root. Only `SKILL.md` varies by hostname, and the root `variants/` directory is omitted from generated outputs. Markdown links refer to generated bundle locations.
+- Keep private hostnames and environment instructions in the private overlay. Overlay bundles replace whole public bundles and must carry all required resources.
+- Keep generic variants free of harness-specific instructions. Place harness-specific variants inside the matching harness skill bundle.
+- Edit include-based variants at their source; generated-edit recovery does not reconstruct include directives. Recover generated edits with the same hostname and overlay selection that produced them.
 
 ## Validation
 

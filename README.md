@@ -110,6 +110,35 @@ For proprietary or work-specific skills, commands, and profiles that cannot be c
    ```
 4. Run `bun run build` or `bun run bootstrap`. The build will automatically merge assets from the overlay. On name collision, overlay assets take precedence.
 
+### Hostname Skill Variants
+
+Keep a default `SKILL.md` in each skill bundle and place machine-specific versions under `variants/<hostname>/SKILL.md`:
+
+```text
+skills/agent/example/
+├── SKILL.md
+├── references/shared.md
+└── variants/
+    └── workstation-a/
+        └── SKILL.md
+```
+
+The build detects the operating system hostname once and selects an exact match, preserving case and domain suffixes. Set `AI_REGISTRY_HOSTNAME` in your local environment or `.env` to select a different hostname:
+
+```bash
+AI_REGISTRY_HOSTNAME=workstation-a bun run build
+```
+
+Hostnames must start with a letter or digit and contain only letters, digits, dots, underscores, or hyphens. An empty or invalid override fails the build. If no matching variant directory exists, the build uses the default `SKILL.md`. A matching directory must contain a regular `SKILL.md` file with valid YAML frontmatter, a non-empty description and body, and the same name and author as the default; an invalid matching variant fails the build.
+
+Selection happens within each resolved skill bundle, after private overlay and harness override precedence. This applies to reusable, profile-local, and harness-local skills across all four harnesses. The selected file is emitted as the normal `SKILL.md`; existing author prefixes and user-skill invocation rules still apply. References, scripts, and assets come from the bundle root. The entire root `variants/` directory is excluded from generated output, and selected variant source paths appear in build output.
+
+Use the existing repository-root-relative `include` directive to share instructions between variants. Template expansion runs once, and `file_path` and `file_dir` refer to the selected variant's original source file and directory. Markdown links to bundled references should use their generated locations, such as `references/shared.md`.
+
+Keep actual private hostnames and environment instructions in the private overlay. An overlay replaces the entire same-named skill bundle, so include every resource the private skill needs. An overlay skill without a matching variant uses its own default; it does not inherit a public variant.
+
+The generated-output manifest records skill source paths. Generated-edit recovery writes changes to the selected variant and rejects recovery when the recorded source differs from the current selection, such as after switching hostnames. Rebuild with the original hostname and overlay before recovering those edits. Recovery reverses path tokens but does not reconstruct include directives; edit include-based skills in their source files to preserve those directives.
+
 Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, relink the generated `default` Codex profile into `~/.codex`, relink the generated `default` Pi profile into `~/.pi/agent`, relink the generated `default` Claude Code profile into `~/.claude`, and resync the repo-local `air-*`, `claude-*`, `codex-*`, `pi-*`, and `cll` wrappers into `~/.local/bin`. Add `-- --codex-profile <profile>`, `-- --pi-profile <profile>`, and/or `-- --claude-code-profile <profile>` when you want to override those linked non-native profile targets.
 
 To smoke test that flow without touching your real XDG config paths, run:

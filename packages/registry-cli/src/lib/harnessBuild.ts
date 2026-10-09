@@ -16,6 +16,7 @@ import { basename, dirname, isAbsolute, join, relative } from "path";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 import walk from "ignore-walk";
+import { resolveSkillVariant } from "./resolveSkillVariant";
 import {
   getOutputSkillName,
   injectDisableModelInvocation,
@@ -282,12 +283,17 @@ export async function copyDirectoryWithTemplateVariables(
   targetDir: string,
   templateContext: ITemplateContext,
   sourcePathByOutputPath?: ISourcePathByOutputPath,
+  hostname?: string,
 ): Promise<void> {
+  const skillSourcePath = await resolveSkillVariant(sourceDir, hostname);
   await mkdir(targetDir, { recursive: true });
 
   const entries = await getSourceCopyEntries(sourceDir);
   for (const relativePath of entries) {
-    const sourcePath = join(sourceDir, relativePath);
+    if (skillSourcePath && (relativePath === "variants" || relativePath.startsWith("variants/"))) continue;
+    const sourcePath = skillSourcePath && relativePath === "SKILL.md"
+      ? skillSourcePath
+      : join(sourceDir, relativePath);
     const targetPath = join(targetDir, relativePath);
     const sourceStats = await lstat(sourcePath);
 
@@ -308,6 +314,9 @@ export async function copyDirectoryWithTemplateVariables(
     await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath);
     await chmod(targetPath, sourceStats.mode);
   }
+  if (skillSourcePath && skillSourcePath !== join(sourceDir, "SKILL.md")) {
+    console.log(`   Hostname variant: ${skillSourcePath}`);
+  }
 }
 
 export async function copyPathWithTemplateVariables(
@@ -315,6 +324,7 @@ export async function copyPathWithTemplateVariables(
   targetPath: string,
   templateContext: ITemplateContext,
   sourcePathByOutputPath?: ISourcePathByOutputPath,
+  hostname?: string,
 ): Promise<void> {
   const sourceStats = await lstat(sourcePath);
 
@@ -323,7 +333,7 @@ export async function copyPathWithTemplateVariables(
   }
 
   if (sourceStats.isDirectory()) {
-    await copyDirectoryWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath);
+    await copyDirectoryWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath, hostname);
     return;
   }
 

@@ -6,7 +6,8 @@ import {
   rm,
   writeFile,
 } from "fs/promises";
-import { join } from "path";
+import { join, relative } from "path";
+import { hostname } from "node:os";
 import { stdin, stdout } from "process";
 import { globby } from "globby";
 import { existsSync } from "fs";
@@ -41,7 +42,9 @@ import {
 } from "../lib/generatedOutputUtils";
 import { promptForYesNo, promptForOverwriteDecision } from "../lib/promptForYesNo";
 import { reverseTemplateContent } from "../lib/reverseTemplateContent";
-import { isUserSkillPath, removeDisableModelInvocation } from "../lib/userSkillUtils";
+import { isUserSkillPath, removeDisableModelInvocation, updateSkillName } from "../lib/userSkillUtils";
+import { resolveBuildHostname } from "../lib/resolveBuildHostname";
+import { parseSkillIdentity } from "../lib/resolveSkillVariant";
 
 // Statically import harness plugins
 import claudeCodePlugin from "../harnesses/claude-code/build";
@@ -93,10 +96,12 @@ function isGeneratedOutputManifest(
   const version = getObjectValue(value, "version");
   const generatedAt = getObjectValue(value, "generatedAt");
   const entries = getObjectValue(value, "entries");
+  const sourcePaths = getObjectValue(value, "sourcePaths");
   return (
     version === GENERATED_OUTPUT_MANIFEST_VERSION &&
     typeof generatedAt === "string" &&
-    isGeneratedOutputManifestEntryRecord(entries)
+    isGeneratedOutputManifestEntryRecord(entries) &&
+    (sourcePaths === undefined || isStringRecord(sourcePaths))
   );
 }
 
@@ -202,7 +207,17 @@ export async function syncBackModifiedFiles(
   nextOutputDir: string,
   sourcePathByOutputPath: Map<string, string>,
   templateContext: Record<string, string>,
+  previousSourcePaths: Record<string, string> = {},
 ): Promise<void> {
+  for (const entry of drift) {
+    const previousSource = previousSourcePaths[entry.path];
+    const nextSource = sourcePathByOutputPath.get(join(nextOutputDir, entry.path));
+    if (entry.reason === "modified" && previousSource !== undefined && previousSource !== nextSource) {
+      throw new Error(
+        `Cannot sync generated edits for ${entry.path}: the selected skill source changed from ${previousSource} to ${nextSource ?? "none"}. Rebuild with the original hostname and overlay, or preserve the edits manually.`,
+      );
+    }
+  }
   console.log("\n🔄 Syncing modified files back to source directories...");
 
   for (const entry of drift) {
@@ -224,9 +239,13 @@ export async function syncBackModifiedFiles(
       const modifiedContent = await readFile(modifiedOutputPath, "utf-8");
       const reversedContent = reverseTemplateContent(modifiedContent, templateContext);
 
-      const finalContent = isUserSkillPath(sourcePath) && sourcePath.endsWith("SKILL.md")
+      let finalContent = isUserSkillPath(sourcePath) && sourcePath.endsWith("SKILL.md")
         ? removeDisableModelInvocation(reversedContent)
         : reversedContent;
+      if (/\/variants\/[^/]+\/SKILL\.md$/.test(sourcePath.replaceAll("\\", "/"))) {
+        const identity = parseSkillIdentity(await Bun.file(sourcePath).text(), sourcePath);
+        finalContent = updateSkillName(finalContent, identity.name);
+      }
 
       await writeFile(sourcePath, finalContent, "utf-8");
       console.log(`  - ✅ Synced ${entry.path} -> ${sourcePath}`);
@@ -247,6 +266,7 @@ async function confirmGeneratedOutputOverwrite(
   hasAutoConfirm: boolean,
   sourcePathByOutputPath: Map<string, string>,
   templateContext: Record<string, string>,
+  previousSourcePaths: Record<string, string> | undefined,
 ): Promise<void> {
   if (drift.length === 0) {
     return;
@@ -284,6 +304,7 @@ async function confirmGeneratedOutputOverwrite(
       nextOutputDir,
       sourcePathByOutputPath,
       templateContext,
+      previousSourcePaths,
     );
   }
 }
@@ -310,14 +331,22 @@ async function assertGeneratedOutputsAreSafeToReplace(
     hasAutoConfirm,
     sourcePathByOutputPath,
     templateContext,
+    manifest.sourcePaths,
   );
 }
 
 async function writeGeneratedOutputManifest(
   outputDir: string,
   managedEntries: Record<string, IGeneratedOutputManifestEntry>,
+  sourcePathByOutputPath: Map<string, string>,
+  stagingDir: string,
 ): Promise<void> {
   const manifest = createGeneratedOutputManifest(managedEntries);
+  manifest.sourcePaths = Object.fromEntries(
+    [...sourcePathByOutputPath].filter(([outputPath]) => outputPath.endsWith("/SKILL.md"))
+      .map(([outputPath, sourcePath]) => [relative(stagingDir, outputPath).replaceAll("\\", "/"), sourcePath])
+      .filter(([outputPath]) => managedEntries[outputPath]?.kind === "file"),
+  );
 
   await writeFile(
     join(outputDir, GENERATED_OUTPUT_MANIFEST_NAME),
@@ -332,6 +361,7 @@ export async function buildCommand(options: {
   registryPaths?: IRegistryPaths;
 }): Promise<void> {
   console.log("🚀 Building Unified Agent Outputs...");
+  const buildHostname = resolveBuildHostname(process.env.AI_REGISTRY_HOSTNAME, hostname());
   const { root, overlay, output, harnesses, profiles, skills, commands, temp } =
     options.registryPaths ?? getRegistryPaths();
   
@@ -360,10 +390,10 @@ export async function buildCommand(options: {
 
   const wrappedBuildSupport: IBuildSupport = {
     copyDirectoryWithTemplateVariables: (sourceDir, targetDir, templateContext) => {
-      return copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext, sourcePathByOutputPath);
+      return copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext, sourcePathByOutputPath, buildHostname);
     },
     copyPathWithTemplateVariables: (sourcePath, targetPath, templateContext) => {
-      return copyPathWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath);
+      return copyPathWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath, buildHostname);
     },
     mergeDirectory: (sourceDir, destinationDir, options) => {
       return mergeDirectory(sourceDir, destinationDir, options, sourcePathByOutputPath);
@@ -493,7 +523,7 @@ export async function buildCommand(options: {
     previousManifest: existingManifest,
     runtimeDirectoryPaths,
   });
-  await writeGeneratedOutputManifest(output, nextManagedEntries);
+  await writeGeneratedOutputManifest(output, nextManagedEntries, sourcePathByOutputPath, GENERATED_OUTPUT_STAGING_DIR);
   await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
 
   console.log("\n🎉 Unified configuration ready!");

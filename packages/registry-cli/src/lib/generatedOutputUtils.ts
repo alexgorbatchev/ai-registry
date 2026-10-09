@@ -35,6 +35,7 @@ export interface IGeneratedOutputManifest {
   version: number;
   generatedAt: string;
   entries: Record<string, IGeneratedOutputManifestEntry>;
+  sourcePaths?: Record<string, string>;
 }
 
 export interface IGeneratedOutputDrift {

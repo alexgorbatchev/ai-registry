@@ -5,6 +5,7 @@ import { existsSync } from "fs";
 
 import { syncBackModifiedFiles } from "../buildCommand";
 import type { IGeneratedOutputDrift } from "../../lib/generatedOutputUtils";
+import { copyDirectoryWithTemplateVariables } from "../../lib/harnessBuild";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "lib", "__tests__", ".tmp", "sync-back-tests");
 const createdDirectories: string[] = [];
@@ -30,6 +31,47 @@ afterAll(async () => {
 });
 
 describe("syncBackModifiedFiles", () => {
+  it("recovers user skill edits into the selected variant while preserving the default and other hosts", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const sourceDir = join(repositoryRoot, "skills/user/example");
+    const defaultPath = await writeTestFile(sourceDir, "SKILL.md", "---\nname: example\ndescription: Example\nauthor: upstream\n---\nDefault.\n");
+    const variantPath = await writeTestFile(sourceDir, "variants/workstation-a/SKILL.md", "---\nname: example\ndescription: Example\nauthor: upstream\n---\nHost A.\n");
+    const otherPath = await writeTestFile(sourceDir, "variants/workstation-b/SKILL.md", "Host B.\n");
+    const outputDir = join(repositoryRoot, ".output");
+    const nextOutputDir = join(repositoryRoot, ".tmp/staging");
+    const relativePath = "codex/default/skills/example/SKILL.md";
+    const sourcePaths = new Map<string, string>();
+    await copyDirectoryWithTemplateVariables(sourceDir, dirname(join(nextOutputDir, relativePath)), {}, sourcePaths, "workstation-a");
+    expect(sourcePaths.get(join(nextOutputDir, relativePath))).toBe(variantPath);
+    const editedContent = "---\ndisable-model-invocation: true\nname: upstream-example\ndescription: Example\nauthor: upstream\n---\nEdited host A.\n";
+    await writeTestFile(outputDir, relativePath, editedContent);
+
+    await syncBackModifiedFiles([{ path: relativePath, reason: "modified" }], outputDir, nextOutputDir, sourcePaths, {});
+
+    expect(await Bun.file(variantPath).text()).toBe("---\nname: example\ndescription: Example\nauthor: upstream\n---\nEdited host A.\n");
+    expect(await Bun.file(defaultPath).text()).toBe("---\nname: example\ndescription: Example\nauthor: upstream\n---\nDefault.\n");
+    expect(await Bun.file(otherPath).text()).toBe("Host B.\n");
+    expect(await Bun.file(join(nextOutputDir, relativePath)).text()).toBe(editedContent);
+  });
+
+  it("rejects recovery into a different source before writing any edits", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const outputDir = join(repositoryRoot, ".output");
+    const nextOutputDir = join(repositoryRoot, ".tmp/staging");
+    const relativePath = "codex/default/skills/example/SKILL.md";
+    const originalSource = await writeTestFile(repositoryRoot, "skills/agent/example/variants/workstation-a/SKILL.md", "Host A.\n");
+    const nextSource = await writeTestFile(repositoryRoot, "skills/agent/example/variants/workstation-b/SKILL.md", "Host B.\n");
+    const nextOutputPath = await writeTestFile(nextOutputDir, relativePath, "Host B.\n");
+    await writeTestFile(outputDir, relativePath, "Edited host A.\n");
+    await expect(syncBackModifiedFiles(
+      [{ path: relativePath, reason: "modified" }], outputDir, nextOutputDir,
+      new Map([[nextOutputPath, nextSource]]), {}, { [relativePath]: originalSource },
+    )).rejects.toThrow();
+    expect(await Bun.file(originalSource).text()).toBe("Host A.\n");
+    expect(await Bun.file(nextSource).text()).toBe("Host B.\n");
+    expect(await Bun.file(nextOutputPath).text()).toBe("Host B.\n");
+  });
+
   it("correctly syncs back modified files and reverses template tokens", async () => {
     const repositoryRoot = await createTestDirectory();
     const sourceDir = join(repositoryRoot, "skills");

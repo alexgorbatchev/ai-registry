@@ -3,30 +3,29 @@
 Read live GitHub state, not just the queue. Require all of the following:
 
 - The PR targets `main`; its head equals the locally committed, checked head.
-- The PR description contains the issue reference and current round's complete
-  passing evidence; no findings remain unresolved.
+- The PR description references its issue; no findings remain unresolved.
 - The expected bot's latest decisive native review is `APPROVED`, not dismissed,
   and its `commit_id` matches this exact checked head. Associate its review ID with
-  the current round's request and description using the queue's round/review
-  record; refresh review if that association is uncertain. The approval body is
-  empty by design, so do not require or infer a round from approval prose. An
+  the current base/head and request using the queue's review record; refresh review
+  if that association is uncertain. The approval body is empty by design. An
   earlier approval followed by a changes request is insufficient. Repository-required
   reviewers and thread resolution rules are also satisfied.
-- Required CI/status checks have completed successfully for that head. Check
-  repository protection/ruleset requirements directly; an absence of configured
-  checks does not waive the project's required local gate.
-- A fresh fetch still resolves remote `main` to the round's base SHA. That base
+- All applicable CI/status checks are present and have completed successfully for
+  the current PR revision, as defined in [checks and CI](checks-and-ci.md). Read
+  live results and repository protection/ruleset requirements directly; missing,
+  pending, stale, or failing CI blocks integration, even with an approval.
+- A fresh fetch still resolves remote `main` to the reviewed base SHA. That base
   is an ancestor of the approved head, and
   `git rev-list --min-parents=2 BASE..HEAD` contains no merge commits.
 - Source branch/worktree ownership is established, with no unowned staged changes,
   index locks, unfinished Git operations, or source changes outside the commit.
 
 If the base or head moved, rebase onto current `main`, rerun all required checks,
-publish another evidence round, and obtain another native approval. Resolve push
+push, wait for green CI, and obtain another native approval. Resolve push
 lease failures by inspecting the new remote work; never overwrite it blindly.
-Integrate one PR at a time. Each merge invalidates other pending rounds whose
-recorded base differs from the new `main`; mark them for refresh in the queue and
-on their PRs, following the scheduling reference.
+Integrate the current PR before starting the next issue. If resuming an older
+queue with multiple PRs, mark remaining stale bases for refresh and resume those
+PRs one at a time, following the scheduling reference.
 
 ## Fast-forward only
 
@@ -67,16 +66,16 @@ the reconciliation blocker; do not recreate, manually close, or rewrite the PR.
 Only after remote reachability and PR merged state are verified:
 
 1. Close the issue if closing references have not already done so. Comment with the
-   PR, landed SHA, outcome, and links to retained check evidence and native approval.
+   PR, landed SHA, outcome, and links to CI results and native approval.
    Mark the queue row done and unblock verified dependents.
-2. Read back the PR description and verify its folded evidence for every round.
-   Retain that description, PR conversation, and native reviews permanently.
+2. Retain the PR description, conversation, and native reviews. No copied CI logs,
+   evidence archive, or round history is required.
    Preserve `.tmp/github-issues.md` and other tickets' work.
 3. Verify the remote issue branch still points to the integrated head and has no
    active owner or another open PR using it. Delete only that owned branch, using
    an exact expected-SHA lease for the deletion; if it changed, preserve it and
    investigate. A missing branch is already cleaned up.
-4. Remove exact owned scratch files after their evidence is safely retained.
+4. Remove exact owned scratch files after integration and closure are verified.
    Inspect tracked, untracked, and ignored work before removing the issue worktree
    with `git worktree remove PATH`. Never force-remove a dirty worktree or discard
    unknown files. Delete the integrated local branch with `git branch -d BRANCH`

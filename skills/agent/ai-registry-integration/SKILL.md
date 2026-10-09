@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-10-07 21:00
+  last_modified: 2026-10-08 17:07
   status: current
 ---
 
@@ -75,8 +75,8 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 ## Add A Command
 
-- Maintain GitHub issue authoring, implementation/review/integration, and historical issue-merge repair together in `{{skills_dir}}/agent/github-fix-issues/`. Keep it harness-independent; do not recreate separate issue commands, issue skills, or harness overrides. Its bundled references define one implementer continuing eligible work during PR review, persistent scheduling, and integration gates.
-  Keep issue references and folded check evidence in the PR description. Reviewer operating instructions stay in the installed skill; PR comments carry findings and replies rather than logs or copied review contracts.
+- Maintain GitHub issue authoring, implementation/review/integration, and historical issue-merge repair together in `{{skills_dir}}/agent/github-fix-issues/`. Keep it harness-independent; do not recreate separate issue commands, issue skills, or harness overrides. Its bundled references define one issue at a time through merge and cleanup, persistent scheduling, and integration gates. Select by verified priority labels, highest first, then oldest within each group; without priority labels use oldest first. Resolve prerequisites before dependents.
+  Keep issue references and concise testing summaries in PR descriptions. CI is the completion record: push, watch until green, then request bot review; fix failures or findings and repeat CI/review before merging. Do not publish log transcripts, evidence packages, or round manifests. Reviewer operating instructions stay in the installed skill; PR comments carry findings, replies, and short status notices.
   Keep clean reviews to native approval without a body, comments, or summary; reviewer prose reports only actionable findings.
   Keep reviewer access automation bundled under that skill's `scripts/`, with its pinned dependency manifest registered as a root workspace and its interface documented in the skill. Link its development justfile from the root justfile. Exclude installed dependencies, local lockfiles, tests, and the development justfile through `.registry-ignore`; preserve configured identities outside reusable source.
 - Keep PR-writing guidance in the `github-pr` skill under `{{skills_dir}}/agent/github-pr/`; do not recreate a duplicate PR command.

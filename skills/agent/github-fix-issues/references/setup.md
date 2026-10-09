@@ -61,7 +61,10 @@ rate-limit, forbidden, and network errors never authorize a new invitation.
 
 It rechecks membership and the bot's write access, then lists every open issue
 oldest first, excluding PRs. This listing seeds queue inspection; it does not
-resolve prerequisites, inspect existing work, or replace `.tmp/github-issues.md`.
+resolve priority labels or prerequisites, inspect existing work, or replace
+`.tmp/github-issues.md`. Fetch labels and apply priority then age using the queue
+reference before selecting work; the helper's chronological inventory is not the
+final execution order.
 If a mutation succeeded before a later request failed, access may already exist;
 rerun after fixing the reported cause. Existing permissions are never escalated.
 
@@ -86,7 +89,8 @@ account. Do not have the implementing agent publish the reviewer's approval.
 Ensure the review agent has this installed skill, its bundled reviewer workflow,
 and the saved local reviewer configuration before handoff. Keep setup commands,
 token-variable details, and reviewer instructions out of the PR. Its description
-references the issue and contains the check evidence. A tool-launch message
+references the issue; verify live CI is green before requesting review. Do not
+include logs or evidence packages. A tool-launch message
 carries only the PR locator; all task-specific coordination remains on the PR.
 
 References: [collaborators](https://docs.github.com/en/rest/collaborators/collaborators),

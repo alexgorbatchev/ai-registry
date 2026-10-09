@@ -3,7 +3,7 @@
 Read these instructions from the installed skill; do not publish them on the PR.
 As the independent reviewer, read the PR description, its linked issue and issue
 comments for requirements, the PR conversation, review threads, native reviews,
-and the current round's evidence in the description. Communicate solely through
+and live CI results for the current PR revision. Communicate solely through
 the PR. Reuse that record and linked requirements after a restart; do not request
 a private implementer briefing or a pasted reviewer contract.
 
@@ -14,27 +14,27 @@ a private implementer briefing or a pasted reviewer contract.
    have installed its dependencies before handoff. It verifies the bot differs
    from the PR author. Use that verified identity for every comment and review;
    never approve through the author's account.
-2. Review the full diff at the manifest's base and head, with source context and
-   applicable repository instructions. Inspect changes since the prior round too,
+2. Read and record the live PR base/head, then review the full diff with source
+   context and applicable repository instructions. Inspect changes since the prior round too,
    but do not substitute that delta for checking the complete proposed result.
-   Verify live PR base/head still match the round. Treat a changed head or base as
-   stale and request refreshed evidence/review on the PR.
+   Verify live PR base/head still match the reviewed revision. Treat a changed
+   head or base as stale and require green CI and a fresh review on the PR.
 3. Do not run tests, builds, linters, typechecks, formatters, coverage, benchmarks,
    reproduction commands, package installs, repository scripts, or application
    code. Do not trigger CI or ask another agent to run checks on your behalf.
    Git diff/show, source/file reads, searches, GitHub inspection, the installed
    reviewer access helper, authentication,
-   comments, and native review submission are permitted. Use the supplied logs
-   to assess execution results; never claim to have executed them yourself.
-4. Verify the PR references the correct issue and its description contains the
-   round's manifest, every required check, command, exit status, tested revision,
-   and complete recorded output. Logs or manifests posted only in comments do not
-   satisfy the evidence requirement. Require final passing evidence for the
-   exact head and documented red/green evidence or the static-only rationale.
+   comments, and native review submission are permitted. Inspect CI results and
+   CI diagnostics as needed; never claim to have executed those checks yourself.
+4. Verify the PR references the correct issue and all applicable CI is green for
+   the exact PR revision, following [checks and CI](checks-and-ci.md). Missing,
+   pending, failed, cancelled, unexpectedly skipped, or stale checks prevent
+   approval. Do not require logs, round manifests, evidence bundles, or red/green
+   transcripts in the description or comments; GitHub's check results are the
+   completion record.
    Check that generated artifacts, docs, tests, and acceptance criteria match the
-   diff. Missing, truncated, unrelated, or stale evidence is a finding; request
-   correction in the PR description rather than running the check. Do not treat
-   prose claiming a regression failed or passed as its recorded output.
+   diff. Missing CI coverage or a stale result is actionable; request correction
+   on the PR rather than executing checks or accepting a prose success claim.
 5. Review for correctness, edge cases, regressions, security, data loss, semantic
    misuse, unsupported assumptions, maintainability, and project-rule violations
    within the diff and affected callers. Trace consequential decisions to cited
@@ -43,21 +43,21 @@ a private implementer briefing or a pasted reviewer contract.
    to the affected diff line or smallest relevant line range. Include severity,
    failing scenario, impact, and requested correction in the comment body. Do not
    substitute a PR conversation comment or review-body list containing paths and
-   line numbers for an inline thread. Put evidence gaps and other findings with
-   no code location in the Request changes body with their evidence reference;
+   line numbers for an inline thread. Put CI gaps and other findings with
+   no code location in the Request changes body with their source or check link;
    never invent a code anchor. Keep unresolved earlier findings in their existing
    threads and reference those threads in the new review rather than duplicating
    them. Ask only questions needed to resolve actionable issues.
    Keep feedback limited to those findings; omit diff recaps, review summaries,
    compliments, and check-assessment narration. Submit native **Request changes**
-   when any finding or evidence gap prevents sign-off; a comment alone does not
+   when any finding or CI gap prevents sign-off; a comment alone does not
    communicate the required review outcome.
-7. When every finding is resolved and all evidence requirements hold, submit
+7. When every finding is resolved and all CI requirements hold, submit
    native **Approve** against the exact reviewed head with no review body and no
    inline comments. Do not post a separate approval comment, summary, diff recap,
    evidence recap, assessment notice, or "no issues" message. The native approval
    is the entire clean-review response. Recheck the live PR immediately before
-   submission; all existing review and evidence gates still apply.
+   submission; all existing review and CI gates still apply.
 8. Read back the review and its native review comments to verify the author,
    submitted state, commit ID, and each intended file/line or range anchor.
    Do not send findings or approval through agent messages or final chat reports.

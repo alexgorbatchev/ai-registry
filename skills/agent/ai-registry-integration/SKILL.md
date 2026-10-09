@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-10-08 17:07
+  last_modified: 2026-10-09 06:15
   status: current
 ---
 
@@ -79,7 +79,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
   Keep issue references and concise testing summaries in PR descriptions. CI is the completion record: push, watch until green, then request bot review; fix failures or findings and repeat CI/review before merging. Do not publish log transcripts, evidence packages, or round manifests. Reviewer operating instructions stay in the installed skill; PR comments carry findings, replies, and short status notices.
   Keep clean reviews to native approval without a body, comments, or summary; reviewer prose reports only actionable findings.
   Keep reviewer access automation bundled under that skill's `scripts/`, with its pinned dependency manifest registered as a root workspace and its interface documented in the skill. Link its development justfile from the root justfile. Exclude installed dependencies, local lockfiles, tests, and the development justfile through `.registry-ignore`; preserve configured identities outside reusable source.
-- Keep PR-writing guidance in the `github-pr` skill under `{{skills_dir}}/agent/github-pr/`; do not recreate a duplicate PR command.
+- Keep PR-writing guidance in the `github-pr` skill under `{{skills_dir}}/agent/github-pr/`; do not recreate a duplicate PR command. PR descriptions, comments, and replies posted from the user's account use the account owner's first-person voice (`I`, `me`, `my`), with actions and approvals grounded in actual work and authorization. Do not refer to that account owner as `the user` or narrate an assistant intermediary. Separate bot reviews speak for the bot's identity.
 - Create the command under the commands_dir token.
 - Use commands for slash-command prompts, reusable task blueprints, and prompt templates.
 - Keep the command self-contained rather than relying on unstated repo context.

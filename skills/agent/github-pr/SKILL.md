@@ -6,7 +6,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-01 21:08
-  last_modified: 2026-10-01 21:18
+  last_modified: 2026-10-09 06:15
   status: current
 ---
 
@@ -23,7 +23,8 @@ metadata:
 
 ## Writing Rules
 
-- Write on behalf of the user. Never speak in first person in PR titles, descriptions, or comments: no `I`, `me`, `my`, `mine`, `we`, `us`, `our`, `ours`, or their contractions. Describe the change directly: `Fix expired-token retries`, not `I fixed expired-token retries`. Do not quote first-person prose to bypass this rule.
+- Write PR descriptions, comments, and replies posted from the user's account in first person as the account owner (`I`, `me`, `my`). This includes implementation updates, review replies, approval statements, and landing notices. Use `I approved landing this change` instead of `The user approved landing this change`. Keep titles as concise change summaries.
+- Ground first-person statements in actual work, check results, and authorization. A change of voice does not grant approval or justify inventing actions or decisions. Do not refer to the account owner as `the user`, `the requester`, or `the human`, or narrate an assistant acting as intermediary. A review posted by a separate bot speaks only for that bot's identity.
 - Keep the content concise and to the point. In the fallback body, use one to three sentences for Description, one line for Type of Change, and two compact bullets for Test Procedure: checks and risks. List related issue references without retelling the issues. Preserve required repository-template details without adding drawn-out explanations.
 - Explain the problem solved, why the changes were made, and the resulting behavior. Do not narrate the coding process, repeat the title, paste a commit log, or provide a file-by-file inventory.
 - Select the applicable Type of Change from: `Bug fix`, `New feature`, `Breaking change`, `Refactor`, `Cosmetic`, `Documentation`, or `Workflow`. List multiple types only when each describes a substantive part of the diff.
@@ -42,7 +43,7 @@ Replace every placeholder with verified information before presenting the draft.
 
 ## Description
 
-<What problem does this solve? Why were these changes made? What changes for users?>
+<Explain in first person what problem I addressed, why, and what behavior changed>
 
 ## Type of Change
 
@@ -50,7 +51,7 @@ Replace every placeholder with verified information before presenting the draft.
 
 ## Test Procedure
 
-- Checks: <Commands or manual steps and observed results; Not run with reason where applicable>
+- Checks: <Commands or manual steps I ran and observed results; Not run with reason where applicable>
 - Risks: <Affected behavior or compatibility that could break>
 ```
 

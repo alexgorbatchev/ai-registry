@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-10-08 17:07
+  last_modified: 2026-10-09 06:15
   status: current
 ---
 
@@ -51,6 +51,14 @@ record the blocker rather than self-approving.
   Use comments for findings, questions, replies, and short status notices.
   Do not exchange findings through agent messages, shared scratch
   files, or chat.
+- Write PR descriptions, comments, and replies posted from the user's account
+  in first person as the account owner (`I`, `me`, `my`). For an actual approval,
+  write `I approved landing this change`, never `The user approved landing this
+  change`. Do not refer to the account owner as `the user`, `the requester`, or
+  `the human`, or narrate an assistant acting as intermediary. Ground actions,
+  results, and approvals in verified work and authorization; wording does not
+  grant permission. The separate bot reviewer speaks for its own identity;
+  clean native approvals still contain no prose.
 - Continue within the user's authorized scope without repeatedly asking permission.
   Resolve implementation choices from inspected requirements, code, tests, and
   repository instructions. Record consequential choices and their sources on the
@@ -91,8 +99,8 @@ next issue.
    and keep requirements and acceptance criteria in that linked issue. Include a
    concise problem/result summary, change type, material decisions, risks, and
    testing summary. CI results stay in GitHub's checks, not copied logs. Do not
-   duplicate the issue body or add a reviewer briefing. Avoid first-person
-   narration. Reuse the matching open PR.
+   duplicate the issue body or add a reviewer briefing. Use the account owner's
+   first-person voice. Reuse the matching open PR.
    Keep drafts and logs in an owned `.tmp/` directory, never in committed files.
 6. **Push and wait for green CI.** Fetch `main`, rebase the issue branch onto it,
    resolve conflicts, and run all required checks on the resulting committed HEAD.

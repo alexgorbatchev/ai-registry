@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-07 15:07
-last_modified: 2026-10-08 17:07
+last_modified: 2026-10-09 06:15
 status: current
 ---
 
@@ -60,6 +60,13 @@ PR descriptions carry concise problem/result summaries, issue references, change
 types, testing summaries, consequential decisions, and risks. CI is the check
 record; descriptions and comments do not require logs, evidence bundles, or round
 manifests. Comments carry findings, questions, replies, and short status notices.
+Descriptions, comments, and replies posted from the user's account speak in the
+account owner's first person (`I`, `me`, `my`), including approval and landing
+notices. An approval actually given is expressed as "I approved landing this
+change," not "The user approved landing this change." Actions, results, and
+authorization remain grounded in verified work; wording grants no new permission.
+The separate bot reviewer speaks for its own identity, and clean native approvals
+remain without prose.
 Reviewer contracts, role prompts, and bot setup commands stay in the installed
 skill. The implementer executes local checks; the reviewer may inspect source and
 GitHub results but never executes repository checks or triggers CI.

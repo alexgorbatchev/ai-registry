@@ -117,7 +117,7 @@ To catch Rules of React violations (mutating props, calling hooks conditionally,
 
 ### Install
 ```bash
-bun add -D oxlint
+bun add -D oxlint oxfmt
 ```
 
 ### Configure `.oxlintrc.json`
@@ -136,14 +136,14 @@ bun add -D oxlint
 
 ---
 
-## 4. Unified Quality Check (`bun check`)
+## 4. Unified Quality Check (`bun run check`)
 
 Combine formatting (`oxfmt`), linting (`oxlint`), type checking (`tsc`), and tests into a fast, single command in `package.json`:
 
 ```json
 {
   "scripts": {
-    "check": "oxfmt --check && oxlint && tsc --noEmit && bun test --pass-with-no-tests",
+    "check": "oxfmt --check && oxlint --deny-warnings && tsc --noEmit && bun test",
     "fmt": "oxfmt",
     "build": "bun src/build/buildClient.ts",
     "dev": "bun --hot src/server/startServer.ts"

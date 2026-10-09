@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: '2026-10-08 16:45'
+  last_modified: '2026-10-09 17:29'
   status: current
 ---
 
@@ -176,5 +176,5 @@ can make per-folder estimates differ from the change in filesystem free space. R
 do not sum allocations and claim that amount was reclaimed. Unknown or failed checks are not evidence of safety.
 
 When modifying any command, argument, option, default, environment handling, output, or side effect, update this file
-in the same change, update `last_modified`, and run `just check` from the skill directory. Use tests in
+in the same change, update `last_modified`, and run `bun run check` from the skill directory. Use tests in
 [scripts/__tests__/cleanup.test.ts](scripts/__tests__/cleanup.test.ts) and keep test artifacts in the skill's `.tmp`.

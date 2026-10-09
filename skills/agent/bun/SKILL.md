@@ -4,7 +4,7 @@ description: Must use whenever Bun is used.
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-15 21:48
-  last_modified: 2026-10-07 22:20
+  last_modified: 2026-10-09 17:29
   status: current
 ---
 
@@ -17,6 +17,34 @@ Always use native, highly-optimized Bun APIs instead of falling back to Node.js 
 1. **Prioritize Bun Native**: Never import Node.js stdlib modules (like `fs`, `child_process`, `crypto`, `zlib`) or heavy npm packages (like `dotenv`, `bcrypt`, `uuid`, `better-sqlite3`, `tar`, `ioredis`) unless native Bun APIs do not support the task.
 2. **Directory Handling Exception**: `node:fs/promises` is approved for directories (`mkdir`, `readdir` with recursive globbing). For files, ALWAYS use `Bun.file` and `Bun.write`.
 3. **Use Progressive Disclosure**: Read the dedicated reference files below for detailed APIs, options, and advanced snippets rather than guessing or translating Node code.
+
+## Linting & Formatting
+
+Use **Oxlint** for JavaScript/TypeScript linting and **Oxfmt** for formatting in Bun projects. Install both as development dependencies:
+
+```sh
+bun add -D oxlint oxfmt
+```
+
+Commit `.oxlintrc.json` for lint rules and `.oxfmtrc.json` for formatting options. Preserve the project's existing formatting conventions when migrating. Replace superseded lint/format dependencies, configs, and scripts rather than running duplicate stacks.
+
+Expose separate write and check commands in `package.json`; keep CI checks read-only:
+
+```json
+{
+  "scripts": {
+    "lint": "oxlint --deny-warnings",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "fix": "oxlint --fix && oxfmt",
+    "check": "bun run fmt:check && bun run lint && tsc --noEmit && bun test"
+  }
+}
+```
+
+Scope these commands to the project's source and test directories when a repository contains unrelated assets or packages. Keep `tsc --noEmit` for type checking and `bun test` for behavioral tests alongside this stack.
+
+Check the official [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html) and [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html) docs before choosing rules or options. For React-specific lint rules, read [references/react-compiler.md](references/react-compiler.md).
 
 ---
 

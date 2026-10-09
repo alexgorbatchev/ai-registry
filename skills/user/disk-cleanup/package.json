@@ -7,8 +7,10 @@
     "run": "bun scripts/cleanup.ts",
     "run-ai": "AGENT=1 bun scripts/cleanup.ts",
     "check": "bun run typecheck && bun run lint && bun test scripts/__tests__",
-    "fix": "biome check --write scripts",
-    "lint": "biome check scripts",
+    "fix": "oxlint --fix scripts && oxfmt scripts",
+    "fmt": "oxfmt scripts",
+    "fmt:check": "oxfmt --check scripts",
+    "lint": "oxlint --deny-warnings scripts && bun run fmt:check",
     "test": "bun test scripts/__tests__",
     "typecheck": "tsc --noEmit"
   },
@@ -16,8 +18,9 @@
     "commander": "15.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.15",
     "@types/bun": "1.4.2",
+    "oxfmt": "0.72.0",
+    "oxlint": "1.87.0",
     "typescript": "7.0.2"
   }
 }

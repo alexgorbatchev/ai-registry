@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-10-09 06:15
+  last_modified: 2026-10-09 21:14
   status: current
 ---
 
@@ -27,7 +27,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - When checked-in guidance or generated text refers to repository paths, use template tokens instead of machine-specific absolute paths.
 - Put reusable assets under the directories referenced by the repo_root token: `skills/`, `commands/`, `profiles/`, or `harnesses/`.
 - Keep executable repo entrypoints under `packages/registry-cli/src/bin/` beneath the repo_root token and use dash-based filenames. Put imported TypeScript helper modules that are not direct entrypoints under `packages/registry-cli/src/lib/`.
-- Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `claude-*`, `codex-*`, `pi-*`, or `cll` wrappers) MUST NOT be checked into `packages/registry-cli/src/bin/` beneath the repo_root token. Generate them from `packages/registry-cli/src/bin/build.ts` into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
+- Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `claude-*`, `codex-*`, `pi-*`, or `cll` wrappers) MUST NOT be checked into `packages/registry-cli/src/bin/` beneath the repo_root token. Generate them through `packages/registry-cli/src/commands/buildCommand.ts` and its harness plugins into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
 - Put publishable standalone packages under `packages/<package-name>/` beneath the repo_root token.
 - Put vendored third-party code packages that need Bun workspace installs under `vendor/` beneath the repo_root token.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
@@ -70,7 +70,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
   - `references/` beneath the skill folder
   - `assets/` beneath the skill folder
 - Keep the body procedural and specific for another AI agent.
-- Validate every changed skill folder with `bun {{skills_dir}}/skill-writer/scripts/quick-validate.ts <skill-dir>` and fix every reported error before building.
+- Validate every changed skill folder with `bun {{skills_dir}}/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` and fix every reported error before building.
 - Run `bun run build` from the repo_root token after the skill change.
 
 ## Add A Command

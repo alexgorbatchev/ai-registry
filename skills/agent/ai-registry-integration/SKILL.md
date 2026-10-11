@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-10-09 21:14
+  last_modified: 2026-10-11 11:00
   status: current
 ---
 
@@ -30,6 +30,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `claude-*`, `codex-*`, `pi-*`, or `cll` wrappers) MUST NOT be checked into `packages/registry-cli/src/bin/` beneath the repo_root token. Generate them through `packages/registry-cli/src/commands/buildCommand.ts` and its harness plugins into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
 - Put publishable standalone packages under `packages/<package-name>/` beneath the repo_root token.
 - Put vendored third-party code packages that need Bun workspace installs under `vendor/` beneath the repo_root token.
+- Register bundled skill packages needed by repository-wide typechecking as root Bun workspaces so normal installs include their dependencies. Exclude installed dependencies, local lockfiles, and scratch directories from generated copies through the skill's `.registry-ignore`.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
 - Treat `.output/` beneath the repo_root token as generated output, not an editing surface. The registry manages only the generated files, directories, and symlinks recorded in `.output/manifest.json`; other harness-owned files under `.output/` are preserved across builds.
 - After modifying any file under `skills/`, `commands/`, `profiles/`, `harnesses/`, or `skills-lock.json` beneath the repo_root token, run `bun run build` from the repo_root token.

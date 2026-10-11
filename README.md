@@ -150,7 +150,7 @@ bun run bootstrap:smoke
 That command:
 
 - runs `bun install`
-- installs dependencies for all root workspaces declared in `package.json`, including `vendor/*`, `packages/*`, and the bundled GitHub reviewer helper
+- installs dependencies for all root workspaces declared in `package.json`, including `vendor/*`, `packages/*`, the bundled GitHub reviewer helper, and the disk-cleanup skill
 - installs the repo-local Git hooks from `.githooks`
 - builds the generated outputs
 - verifies the previous generated-output manifest before overwriting managed generated paths in `.output/`

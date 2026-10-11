@@ -112,7 +112,7 @@ Use only when true for the repository.
 ```md
 ## Boundaries
 - Always: run `pnpm --filter web test` after changing `apps/web/`
-- Ask first: database migrations, dependency additions, CI edits
+- Ask first: database migrations, CI edits
 - Never: publish releases automatically without explicit user authorization, modify `vendor/`, commit secrets, remove failing tests to get a green run
 ```
 

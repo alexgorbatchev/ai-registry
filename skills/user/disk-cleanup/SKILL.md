@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: '2026-10-09 17:29'
+  last_modified: '2026-10-11 11:00'
   status: current
 ---
 

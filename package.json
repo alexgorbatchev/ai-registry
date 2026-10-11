@@ -6,7 +6,8 @@
   "workspaces": [
     "vendor/*",
     "packages/*",
-    "skills/agent/github-fix-issues/scripts"
+    "skills/agent/github-fix-issues/scripts",
+    "skills/user/disk-cleanup"
   ],
   "scripts": {
     "build": "bun run typecheck && air-build",

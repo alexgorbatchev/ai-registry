@@ -72,6 +72,13 @@ Do not broaden or narrow scope without user's consent.
 
 Do not introduce any backwards compatibility layers unless explicitly asked to.
 
+# Private Internal Domains
+
+- The following domains are private internal domains: {{ env "DOTENV_AI_PRIVATE_DOMAINS" }}. Treat every listed domain, including its subdomains, as private internal information.
+- Never commit or push these domains to repositories hosted on `github.com`, including private repositories. This restriction covers file contents, generated artifacts, and commit messages.
+- Before committing or pushing, verify the destination host and inspect the staged changes or outgoing commits for these domains. For `github.com`, anonymize any references before proceeding; stop if anonymization would prevent completing the task. If the destination is unknown, stop before committing or pushing private-domain references.
+- Repositories hosted on `git.cvb.lol` may contain these private internal domains. This permission does not extend to any `github.com` remote of the same repository.
+
 # CONCURRENT AGENT ISOLATION & NON-INTERFERENCE DIRECTIVE
 
    1. MULTI-AGENT ENVIRONMENT AWARENESS

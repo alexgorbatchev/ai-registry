@@ -11,7 +11,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-09-30 14:33
+  last_modified: 2026-10-12 12:59
   status: current
 ---
 
@@ -25,18 +25,30 @@ metadata:
 6. **GitHub Releases Distribution Only**: Ship end users prebuilt binaries from GitHub Releases. Never require them to build from source, and never use the `gh` CLI in end-user instructions.
 7. **README Content Is Owned By `docs-writer`**: Do not write or restate README structure, section order, or tone rules here. Load the `docs-writer` skill and read its `references/readme.md` plus `references/readme-cli.md` before touching a CLI `README.md`.
 8. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
-9. **Embedded Agent Skill (`<cli> skill`)**: Every CLI must ship a top-level `skill` command that prints its embedded `SKILL.md` verbatim. Every agent-mode help screen must start with an alert directing agents to read `AGENT=1 <cli> skill` first. Apply the contract below when building or scaffolding CLI tools.
+9. **Agent Skill (`<cli> skill`)**: Every CLI must maintain its agent skill at `skills/<cli>/SKILL.md` in the repository root and ship a top-level `skill` command that prints the Skills CLI install command and the skill URL. Every agent-mode help screen must start with an alert directing agents to read `AGENT=1 <cli> skill` first. Apply the contract below when building or scaffolding CLI tools.
 
-### Embedded Skill Contract
+### Agent Skill Contract
 
-- **Command and output**: `<cli> skill` accepts no positional arguments or command-specific flags. Print the entire embedded `SKILL.md`, including frontmatter, to stdout with identical bytes in human and agent modes. Return output-write failures as errors. The command must work offline, without credentials or repository files at runtime; embed the maintained file in the distributed executable rather than reading it from disk or maintaining a second text copy.
+- **Skill location**: Keep the skill at `skills/<cli>/SKILL.md` at the repository root, with its `references/` files beside it. The Skills CLI discovers skills under the root `skills/` directory, so `npx skills add <owner>/<repo> --skill <cli>` installs it from there. Set the skill's frontmatter `name` to `<cli>`, because `--skill` selects by that name. In a monorepo the path stays at the repository root, never inside the CLI's package directory. Never embed `SKILL.md` in the executable, and never keep a second copy of it elsewhere in the repository.
+- **Command and output**: `<cli> skill` accepts no positional arguments or command-specific flags. Print exactly the text below to stdout, ending in one newline, with identical bytes in human and agent modes. Replace `<cli>` with the binary name, `<owner>/<repo>` with the GitHub repository, and `<branch>` with its default branch; change nothing else. Hold the text as a compiled-in constant: the command makes no network request and reads no repository files or credentials at runtime. Return output-write failures as errors.
+
+  ```
+  Install the <cli> skill using the Skills CLI:
+
+    npx skills add <owner>/<repo> --skill <cli>
+
+  Skill:
+
+    https://github.com/<owner>/<repo>/tree/<branch>/skills/<cli>
+  ```
+
 - **Agent help alert**: In `AGENT=1` and other supported truthy modes, prefix every help screen, including subcommand and generated-command help, with the line ``ALERT: Agents must read `AGENT=1 <cli> skill` before using this tool.`` Replace `<cli>` with the binary name and preserve the framework's help rendering after the alert. Human help and raw `--version` output retain their normal contracts.
 - **Complete operational reference**: Include all public commands, generated help/completion commands, positional arguments, flags, short aliases, types, defaults, accepted values, environment variables, output formats, errors, and side effects in `SKILL.md`. Explain effective defaults when a parser sentinel selects a runtime value. Include workflow examples so agents can operate from the skill without exploring per-command `--help`.
-- **Scope and wording**: Use frontmatter `description` only for routing to the CLI's usage skill. Write affirmative usage instructions and factual contracts in the body. Keep development instructions and negative prohibitions in the repository's `AGENTS.md`; the embedded skill is for operating the CLI.
+- **Scope and wording**: Use frontmatter `description` only for routing to the CLI's usage skill. Write affirmative usage instructions and factual contracts in the body. Keep development instructions and negative prohibitions in the repository's `AGENTS.md`; the skill is for operating the CLI.
 - **Maintenance**: Add an explicit rule to `AGENTS.md` requiring skill updates in the same change as any command, argument, option, default, environment, output, or side-effect change. Update `last_modified` and verify documented behavior against the implementation and pinned dependencies.
-- **Verification**: Test byte-for-byte command output in both modes, execution without repository files, rejected extra arguments, output failures, and the alert at the top of all help paths. Compare the printed reference with the live command tree and flag metadata so interface drift fails tests. Scaffold the file, command, alert, maintenance rule, and these tests together.
+- **Verification**: Test byte-for-byte command output in both modes, rejected extra arguments, output failures, and the alert at the top of all help paths. Assert that the `skills/<cli>` path in the printed URL holds a `SKILL.md` in the repository and that its frontmatter `name` equals the printed `--skill` value. Compare `skills/<cli>/SKILL.md` with the live command tree and flag metadata so interface drift fails tests. Scaffold the file, command, alert, maintenance rule, and these tests together.
 
-The `skill` command is the shared top-level metadata interface alongside the subject-first domain commands. Its verbatim Markdown output is an explicit exception to agent-mode table and whitespace restrictions.
+The `skill` command is the shared top-level metadata interface alongside the subject-first domain commands. Its fixed indented output is an explicit exception to agent-mode whitespace restrictions.
 
 ---
 
@@ -250,10 +262,11 @@ Before publishing or finalizing any CLI tool, verify:
 - [ ] Help screen output and command descriptions are trimmed by default to the active terminal width to prevent line wrapping.
 - [ ] Subcommand group help screens display their complete command subtree with aligned descriptions.
 - [ ] `AGENT=1` detection is implemented across all output pathways.
-- [ ] `<cli> skill` prints the embedded `SKILL.md` verbatim in both modes, offline and without repository files.
+- [ ] The agent skill lives at `skills/<cli>/SKILL.md` in the repository root, with no embedded or duplicate copy.
+- [ ] `<cli> skill` prints the Skills CLI install command and the skill URL, byte-identical in both modes, offline and without repository files.
 - [ ] Every agent help screen starts with the skill-reading alert; human help and raw version output preserve their contracts.
 - [ ] `SKILL.md` covers every public command and option, and `AGENTS.md` requires it to stay synchronized with the CLI.
-- [ ] Behavioral tests verify embedded skill output, help alerts, write failures, and documentation coverage of the live command interface.
+- [ ] Behavioral tests verify skill command output, the printed skill path, help alerts, write failures, and documentation coverage of the live command interface.
 - [ ] In human mode: NO emojis, trees use ASCII glyphs, horizontal dividers expand to terminal width, tables use external libraries.
 - [ ] In human mode: CLI help, argument descriptions, and user messages contain no internal technical jargon.
 - [ ] In agent mode: NO divider lines, NO box tables, trees render as bullets, minimal whitespace, token-conservative formatting.

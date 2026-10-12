@@ -26,6 +26,7 @@ metadata:
 7. **README Content Is Owned By `docs-writer`**: Do not write or restate README structure, section order, or tone rules here. Load the `docs-writer` skill and read its `references/readme.md` plus `references/readme-cli.md` before touching a CLI `README.md`.
 8. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
 9. **Agent Skill (`<cli> skill`)**: Every CLI must maintain its agent skill at `skills/<cli>/SKILL.md` in the repository root and ship a top-level `skill` command that prints the Skills CLI install command and the skill URL. Every agent-mode help screen must start with an alert directing agents to read `AGENT=1 <cli> skill` first. Apply the contract below when building or scaffolding CLI tools.
+10. **Home Directory Folding (`~/`)**: Every path written to stdout or stderr must show the user's home directory as `~`. When a path equals the home directory, print `~`; when it starts with the home directory followed by a path separator, replace that prefix with `~` and keep the rest unchanged (`/home/dev/projects/app` prints as `~/projects/app`). Match whole path segments only: with home `/home/dev`, `/home/developer/app` prints unchanged. Resolve the home directory through the platform's home-directory API, and route every printed path through one shared formatting helper, covering results, logs, warnings, error messages, and help text in both human and agent modes. Fold for display only: keep absolute paths for filesystem calls, subprocess arguments, and written files. Test the helper with the home directory itself, a nested path, a sibling directory sharing the prefix, and a path outside home.
 
 ### Agent Skill Contract
 
@@ -267,6 +268,7 @@ Before publishing or finalizing any CLI tool, verify:
 - [ ] Every agent help screen starts with the skill-reading alert; human help and raw version output preserve their contracts.
 - [ ] `SKILL.md` covers every public command and option, and `AGENTS.md` requires it to stay synchronized with the CLI.
 - [ ] Behavioral tests verify skill command output, the printed skill path, help alerts, write failures, and documentation coverage of the live command interface.
+- [ ] Every path printed to stdout or stderr folds the home directory to `~` in both modes, through one shared helper with segment-boundary tests.
 - [ ] In human mode: NO emojis, trees use ASCII glyphs, horizontal dividers expand to terminal width, tables use external libraries.
 - [ ] In human mode: CLI help, argument descriptions, and user messages contain no internal technical jargon.
 - [ ] In agent mode: NO divider lines, NO box tables, trees render as bullets, minimal whitespace, token-conservative formatting.

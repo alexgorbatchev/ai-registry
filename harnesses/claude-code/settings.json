@@ -5,6 +5,7 @@
     "pr": "",
     "sessionUrl": false
   },
+  "autoCompactWindow": 150000,
   "env": {
     "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "1000000"
   },

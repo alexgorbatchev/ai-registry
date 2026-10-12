@@ -1,5 +1,7 @@
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
+model_auto_compact_token_limit = 150000
+model_auto_compact_token_limit_scope = "total"
 model = "gpt-5.5"
 model_reasoning_effort = "high"
 

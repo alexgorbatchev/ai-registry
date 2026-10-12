@@ -45,8 +45,8 @@
     }
   },
   "enableSkillCommands": true,
-  "lastChangelogVersion": "1.0.4",
-  "hideThinkingBlock": false,
+  "lastChangelogVersion": "1.1.0",
+  "hideThinkingBlock": true,
   "defaultProvider": "litellm",
   "defaultModel": "gemini-3.8-flash",
   "defaultThinkingLevel": "high",

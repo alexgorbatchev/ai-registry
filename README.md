@@ -280,7 +280,7 @@ The Codex harness compiles the generated `default` profile into the shared Codex
 
 - each generated profile contributes its own home-level `AGENTS.md` from `profiles/<name>/profile.yaml`
 - the generated `default` profile contributes the shared command set and mutable `config.toml` symlink
-- `harnesses/codex/config.toml` seeds `{{repo_root}}/.tmp/codex/config.toml` when it is missing; subsequent builds preserve the existing mutable configuration, including local settings and trusted-project entries
+- `harnesses/codex/config.toml` overrides matching values in `{{repo_root}}/.tmp/codex/config.toml` on every build and bootstrap. Tables merge recursively, arrays are replaced, and values absent from the harness config survive, including local settings and trusted-project entries. Removing a harness key leaves its existing local value in place. Changed configurations are serialized as TOML, which rewrites formatting and removes comments; unchanged configurations retain their original text
 - each profile's `skills/` contains its selected skills, Codex-only harness skills, and copies of the default profile's selected commands as native skill bundles, with template tags resolved
 - command bundles preserve their Markdown instructions and description and disable implicit invocation through `agents/openai.yaml`; invoke `--commit-changed-files.md` as `$command-commit-changed-files` or select it through `/skills`
 - commands with an explicit YAML `name` use that skill name; otherwise names use `command-<filename>` with leading hyphens removed and repeated hyphens collapsed; default profile-local commands use `command-default-<filename>`

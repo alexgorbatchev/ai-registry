@@ -3,6 +3,7 @@ import { existsSync } from "fs";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, lstat, readFile, readdir, readlink, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
+import { parse } from "smol-toml";
 import { dirname, join } from "path";
 
 import plugin from "../../codex/build";
@@ -197,6 +198,43 @@ describe("Codex harness build plugin", () => {
       code: "ENOENT",
     });
     expect(await readFile(join(repositoryRoot, ".tmp", "codex", "config.toml"), "utf-8")).toBe("model = \"gpt-5.5\"\n");
+  });
+
+  it("reapplies harness values while preserving Codex-owned values on repeated builds", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const configPath = await writeTestFile(repositoryRoot, ".tmp/codex/config.toml", [
+      'model = "local-model"',
+      'local_only = "keep"',
+      '[features]',
+      'enabled = false',
+      'local_feature = true',
+      '[projects."/example/project"]',
+      'trust_level = "trusted"',
+    ].join("\n"));
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", [
+      'model = "registry-model"',
+      '[features]',
+      'enabled = true',
+    ].join("\n"));
+    const context = createProfileContext(repositoryRoot, "default", {
+      globalMatchedCommands: [], globalMatchedSkills: [], profileLocalCommands: [], profileLocalSkills: [],
+    });
+
+    await getStageProfile()(context);
+    expect(parse(await Bun.file(configPath).text())).toEqual({
+      model: "registry-model", local_only: "keep",
+      features: { enabled: true, local_feature: true },
+      projects: { "/example/project": { trust_level: "trusted" } },
+    });
+
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", 'model = "next-model"\n');
+    await rm(join(repositoryRoot, ".output"), { recursive: true, force: true });
+    await getStageProfile()(context);
+    expect(parse(await Bun.file(configPath).text())).toEqual({
+      model: "next-model", local_only: "keep",
+      features: { enabled: true, local_feature: true },
+      projects: { "/example/project": { trust_level: "trusted" } },
+    });
   });
 
   it("builds per-profile AGENTS.md and symlinks other shared non-default Codex files", async () => {

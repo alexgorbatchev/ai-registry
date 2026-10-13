@@ -2,6 +2,10 @@
 name: codex-config
 description: Configure Codex local clients, project `.codex/` layers, profiles, providers, approvals, permissions, hooks, MCP servers, and enterprise policy files. Use when the task involves `~/.codex/config.toml`, `.codex/config.toml`, `requirements.toml`, or explaining Codex configuration precedence and override behavior.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-09-28 13:58
+  last_modified: 2026-10-13 15:30
+  status: current
 ---
 
 # Codex Config

@@ -5,7 +5,7 @@ These files are source-of-truth inputs for generated Codex homes; `{{output_dir}
 
 ## Policy surfaces
 
-- `harnesses/codex/config.toml` seeds the managed mutable Codex config at `{{repo_root}}/.tmp/codex/config.toml` during `bun run build`.
+- `harnesses/codex/config.toml` overrides matching values in the mutable Codex config at `{{repo_root}}/.tmp/codex/config.toml` on every build and bootstrap. Tables merge recursively; arrays replace whole values. Keys absent from the harness config survive, including trusted-project entries; removing a harness key does not delete its local value. Changed files are serialized without comments; unchanged values preserve the original text.
 - `harnesses/codex/rules/*.rules` ships into the generated Codex home beside `config.toml`; use this for exec-policy command rules.
 - `requirements.toml` is for admin-managed policy constraints. Add it only when the requirement is an enforced policy boundary rather than a user default.
 - Project-local `.codex/config.toml` and `.codex/rules/` belong in the target project, not in this registry, unless this registry itself needs project-local behavior.

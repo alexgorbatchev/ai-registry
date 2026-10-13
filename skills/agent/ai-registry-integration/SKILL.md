@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-10-11 11:00
+  last_modified: 2026-10-13 15:30
   status: current
 ---
 
@@ -111,6 +111,8 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Check generated profile-local outputs when the selected targets write files inside that profile folder.
 
 ## Add Harness Overrides
+
+- When a harness keeps mutable configuration, implement source overrides in its build plugin: merge tables recursively, replace arrays, and preserve keys absent from source. Do not treat source changes as first-install-only seeds. Consult `{{repo_root}}/harnesses/AGENTS.md` for each harness's configuration contract.
 
 - Put harness-specific shipped files under `harnesses/<target>/` beneath the repo_root token.
 - Put unified harness-specific build logic in `packages/registry-cli/src/harnesses/<target>/build.ts` beneath the repo_root token for every generated harness target.

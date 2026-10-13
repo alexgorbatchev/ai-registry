@@ -22,6 +22,7 @@ import {
   updateSkillName,
 } from "../../lib/userSkillUtils";
 import { getCommandSkillName } from "./getCommandSkillName";
+import { mergeCodexConfig } from "./mergeCodexConfig";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
 const CODEX_MUTABLE_STATE_DIR_NAME = "codex";
@@ -60,21 +61,29 @@ async function renderCodexConfigSeed(context: IProfileBuildContext): Promise<str
   });
 }
 
-async function seedMutableCodexConfig(context: IProfileBuildContext): Promise<string> {
+async function syncMutableCodexConfig(context: IProfileBuildContext): Promise<string> {
   const mutableConfigPath = getMutableCodexConfigPath(context.templateContext.repo_root);
   const sourceConfigText = await renderCodexConfigSeed(context);
 
   await mkdir(getMutableCodexStateDir(context.templateContext.repo_root), { recursive: true });
   
-  if (!existsSync(mutableConfigPath)) {
-    await writeFile(mutableConfigPath, sourceConfigText, "utf-8");
+  if (existsSync(mutableConfigPath)) {
+    const existingText = await Bun.file(mutableConfigPath).text();
+    const mergedText = mergeCodexConfig(existingText, sourceConfigText);
+    if (mergedText !== existingText) {
+      await Bun.write(mutableConfigPath, mergedText);
+    }
+  } else {
+    // Validate the seed even when no mutable config exists yet.
+    mergeCodexConfig("", sourceConfigText);
+    await Bun.write(mutableConfigPath, sourceConfigText);
   }
 
   return mutableConfigPath;
 }
 
 async function stageMutableCodexState(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
-  const mutableConfigPath = await seedMutableCodexConfig(context);
+  const mutableConfigPath = await syncMutableCodexConfig(context);
 
   await mkdir(getMutableCodexStateDir(context.templateContext.repo_root), { recursive: true });
   await symlink(mutableConfigPath, join(profileOutputDir, "config.toml"));

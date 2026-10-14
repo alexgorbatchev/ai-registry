@@ -14,38 +14,3 @@ AGENT = "1"
 [features]
 goals = true
 
-[projects."/home/alex/development/ai/ai-registry"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/projects/keeper"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/projects/date-maker"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/homelab/manager"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/projects/date-maker-orig"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/projects/devhost"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/projects/devhost/.tmp/vscode-alex-toolbox"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/projects/dotfiles-installer"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/projects/enginedj"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/projects/go-tui"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/ai/mom-pop"]
-trust_level = "trusted"
-
-[projects."/home/alex/development/projects/keeper-tests"]
-trust_level = "trusted"

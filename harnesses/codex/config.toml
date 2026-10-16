@@ -9,6 +9,7 @@ external-agent-import-sync-enabled = false
 
 [tui]
 status_line = [
+  "thread-name",
   "model-with-reasoning",
   "current-dir",
   "context-window-size",

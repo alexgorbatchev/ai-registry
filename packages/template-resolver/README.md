@@ -1,29 +1,23 @@
 # @alexgorbatchev/template-resolver
 
-Recursive text-only template resolver for repository builds.
+Render trusted repository text with [EJS](https://ejs.co/docs/), retaining the original source filenames.
 
-Supported tags:
+```ts
+import { renderTemplate } from "@alexgorbatchev/template-resolver";
 
-- `{{ repo_root }}` style string variables
-- `{{ file_path }}` for the original source file path of the file being rendered
-- `{{ file_dir }}` for the original source file directory of the file being rendered
-- `{{ include "path/from/repo/root.txt" }}`
-- `{{ env "VAR_NAME" }}`
-- `{{ env "VAR_NAME" default "fallback" }}`
+const content = await renderTemplate({
+  content: 'Root: <%- repo_root %>\n<%- env("MODE", "development") %>',
+  sourcePath: "/repo/prompt.md",
+  repositoryRoot: "/repo",
+  variables: { repo_root: "/repo" },
+  environment: {},
+});
+```
 
-Escaping:
+Use `<%- value %>` for raw text, `<%= value %>` for HTML escaping, and `<% code %>` for JavaScript control flow. Emit a literal opening delimiter with `<%%`. Foreign curly-brace syntax remains unchanged.
 
-- a single backslash directly before a tag emits it literally and is consumed:
-  `\{{args}}` renders `{{args}}`
-- earlier backslashes pass through, so `\\{{args}}` renders `\{{args}}`
-- use this when text must document foreign templating syntax, such as justfile
-  interpolation or Go templates, that would otherwise look like a supported tag
-- render each file only once; a second pass resolves a tag whose escape the first
-  pass already consumed
+EJS resolves relative includes against the original source filename. Use `<%- include("/system/system.md") %>` for repository-root-relative inclusion. Resolved includes outside the repository fail. Nested includes retain the original `file_path` and `file_dir` locals.
 
-Design constraints:
+The `env(name, fallback?)` helper reads only the supplied environment. Missing values without a fallback throw; empty strings remain valid. Undefined locals, invalid JavaScript, and failed includes report EJS source context. Circular includes fail through EJS's recursion error.
 
-- repo-root-relative includes only
-- recursive include expansion with circular-include detection
-- no JavaScript execution
-- no loops, conditionals, filters, or custom helpers
+Render each file once. Templates execute JavaScript and must come from trusted sources.

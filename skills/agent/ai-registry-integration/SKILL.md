@@ -12,13 +12,14 @@ metadata:
 
 Treat this repository as the source of truth. Add things to the reusable source directories first, then rebuild generated outputs. Do not hand-edit the generated output directory under the repo_root token.
 
-## Template Tokens
+## EJS Templates
 
 - Use template tokens when checked-in guidance or generated text needs canonical repository paths that would otherwise be machine-specific.
-- For string-variable tokens, write the token name with the template resolver's variable syntax in source files. Available path tokens are `repo_root`, `overlay_dir`, `skills_dir`, `commands_dir`, `profiles_dir`, `output_dir`, `file_path`, and `file_dir`.
-- Use the `include` directive for repository-root-relative file inclusion.
-- Use the `env` directive to read environment variables, with an optional default value when the variable may be absent.
-- Escape a tag that must reach the agent literally by prefixing it with a single backslash, such as when a skill documents justfile or Go-template syntax. The backslash is consumed and the tag is emitted as written; double the backslash to emit a literal backslash before the tag.
+- Keep existing filenames and use native EJS raw output tags for path variables. Available path tokens are `repo_root`, `overlay_dir`, `skills_dir`, `commands_dir`, `profiles_dir`, `output_dir`, `file_path`, and `file_dir`.
+- Use native EJS include calls with a leading slash for repository-root-relative file inclusion; relative paths resolve against the source filename.
+- Use the env(name, fallback?) helper to read environment variables, with an optional fallback when the variable may be absent.
+- Use EJS literal opening delimiters when documenting EJS syntax. Foreign curly-brace syntax, including justfile and Go templates, passes through unchanged without backslash escaping. Render each file once.
+- Treat EJS templates as trusted JavaScript. Edit includes, expressions, and control flow at their source; sync-back reconstructs only canonical raw path-variable tags.
 - Prefer the most specific path token available. Use `skills_dir`, `commands_dir`, `profiles_dir`, and `output_dir` for those canonical folders. Use `repo_root` for canonical folders that do not have a dedicated token.
 
 ## Core Rules
@@ -56,7 +57,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 ## Add A Skill
 
-- Follow `{{skills_dir}}/AGENTS.md`: keep generic skills free of harness-specific instructions, including bundled files and conditional harness sections. Place harness-specific content under `harnesses/<target>/skills/agent/<skill-name>/` or `harnesses/<target>/skills/user/<skill-name>/` instead.
+- Follow `<%- skills_dir %>/AGENTS.md`: keep generic skills free of harness-specific instructions, including bundled files and conditional harness sections. Place harness-specific content under `harnesses/<target>/skills/agent/<skill-name>/` or `harnesses/<target>/skills/user/<skill-name>/` instead.
 - Create a folder under the skills_dir token for the new skill.
 - Put the main instructions in `SKILL.md` within that skill folder.
 - Start `SKILL.md` with YAML frontmatter containing `name`, `description`, `author: alexgorbatchev`, and a `metadata` block with `created_on`, `last_modified`, and `status`.
@@ -71,7 +72,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
   - `references/` beneath the skill folder
   - `assets/` beneath the skill folder
 - Keep the body procedural and specific for another AI agent.
-- Validate every changed skill folder with `bun {{skills_dir}}/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` and fix every reported error before building.
+- Validate every changed skill folder with `bun <%- skills_dir %>/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` and fix every reported error before building.
 - Run `bun run build` from the repo_root token after the skill change.
 
 ## Add Hostname Skill Variants
@@ -87,11 +88,11 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 ## Add A Command
 
-- Maintain GitHub issue authoring, implementation/review/integration, and historical issue-merge repair together in `{{skills_dir}}/agent/github-fix-issues/`. Keep it harness-independent; do not recreate separate issue commands, issue skills, or harness overrides. Its bundled references define one issue at a time through merge and cleanup, persistent scheduling, and integration gates. Select by verified priority labels, highest first, then oldest within each group; without priority labels use oldest first. Resolve prerequisites before dependents.
+- Maintain GitHub issue authoring, implementation/review/integration, and historical issue-merge repair together in `<%- skills_dir %>/agent/github-fix-issues/`. Keep it harness-independent; do not recreate separate issue commands, issue skills, or harness overrides. Its bundled references define one issue at a time through merge and cleanup, persistent scheduling, and integration gates. Select by verified priority labels, highest first, then oldest within each group; without priority labels use oldest first. Resolve prerequisites before dependents.
   Keep issue references and concise testing summaries in PR descriptions. CI is the completion record: push, watch until green, then request bot review; fix failures or findings and repeat CI/review before merging. Do not publish log transcripts, evidence packages, or round manifests. Reviewer operating instructions stay in the installed skill; PR comments carry findings, replies, and short status notices.
   Keep clean reviews to native approval without a body, comments, or summary; reviewer prose reports only actionable findings.
   Keep reviewer access automation bundled under that skill's `scripts/`, with its pinned dependency manifest registered as a root workspace and its interface documented in the skill. Link its development justfile from the root justfile. Exclude installed dependencies, local lockfiles, tests, and the development justfile through `.registry-ignore`; preserve configured identities outside reusable source.
-- Keep PR-writing and PR review-feedback guidance in the `github-pr` skill under `{{skills_dir}}/agent/github-pr/`, with one bundled reference per mode; do not recreate a duplicate PR command. PR descriptions, comments, and replies posted from the user's account use the account owner's first-person voice (`I`, `me`, `my`), with actions and approvals grounded in actual work and authorization. Do not refer to that account owner as `the user` or narrate an assistant intermediary. Separate bot reviews speak for the bot's identity.
+- Keep PR-writing and PR review-feedback guidance in the `github-pr` skill under `<%- skills_dir %>/agent/github-pr/`, with one bundled reference per mode; do not recreate a duplicate PR command. PR descriptions, comments, and replies posted from the user's account use the account owner's first-person voice (`I`, `me`, `my`), with actions and approvals grounded in actual work and authorization. Do not refer to that account owner as `the user` or narrate an assistant intermediary. Separate bot reviews speak for the bot's identity.
 - Create the command under the commands_dir token.
 - Use commands for slash-command prompts, reusable task blueprints, and prompt templates.
 - Keep the command self-contained rather than relying on unstated repo context.

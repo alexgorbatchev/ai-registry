@@ -9,16 +9,16 @@
     }
   },
   "plugin": [
-    "file://{{repo_root}}/vendor/opencode-context-inspector/src/index.ts"
+    "file://<%- repo_root %>/vendor/opencode-context-inspector/src/index.ts"
   ],
   "instructions": [
-    "{{repo_root}}/system/system.md"
+    "<%- repo_root %>/system/system.md"
   ],
   "mcp": {},
   "permission": {
     "question": "allow",
     "external_directory": {
-      "{{repo_root}}/**": "allow",
+      "<%- repo_root %>/**": "allow",
       "~/**": "allow"
     },
     "bash": {

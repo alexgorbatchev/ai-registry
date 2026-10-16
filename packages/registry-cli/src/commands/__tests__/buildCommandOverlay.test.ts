@@ -96,7 +96,7 @@ describe("buildCommand with overlay", () => {
 
   it("renders overlay command skills in every Codex profile without changing the source commands", async () => {
     const commandPath = join(overlayDir, "commands", "base-cmd.md");
-    const commandContent = "---\ndescription: Overlay review\n---\nReview {{file_path}} in {{repo_root}}. Keep \\{{args}} literal.\n";
+    const commandContent = "---\ndescription: Overlay review\n---\nReview <%- file_path %> in <%- repo_root %>. Keep {{args}} literal.\n";
     await Bun.write(commandPath, commandContent);
 
     await buildCommand({ hasAutoConfirm: true, registryPaths });

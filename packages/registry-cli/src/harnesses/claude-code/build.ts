@@ -230,7 +230,7 @@ function createLiteLLMHelper(): string {
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd -P)"
-generated_bin_dir="{{output_dir}}/bin"
+generated_bin_dir="<%- output_dir %>/bin"
 filtered_path=""
 
 IFS=':' read -r -a path_entries <<< "\${PATH:-}"
@@ -353,7 +353,7 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     // The default profile is reached through the `~/.claude` symlink that bootstrap
     // creates, so only non-default profiles need a launcher that overrides
     // CLAUDE_CONFIG_DIR. Nothing generated here shadows the real `claude` binary.
-    const profileConfigDir = `{{output_dir}}/${CLAUDE_CODE_OUTPUT_DIR_NAME}/${profileEntry.name}`;
+    const profileConfigDir = `<%- output_dir %>/${CLAUDE_CODE_OUTPUT_DIR_NAME}/${profileEntry.name}`;
     await context.buildSupport.writeBinScript(
       context.outputDir,
       `claude-${profileEntry.name}`,

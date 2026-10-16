@@ -4,7 +4,7 @@ description: Use when structuring, creating, or refactoring modular justfiles us
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-07 14:15
-  last_modified: 2026-10-07 14:15
+  last_modified: 2026-10-16 13:58
   status: current
 ---
 
@@ -85,10 +85,10 @@ By default, `just` sets the working directory of a submodule's recipes to the di
 
    [default]
    run *args:
-       bun tools/cli/src/cli.ts \{{ args }}
+       bun tools/cli/src/cli.ts {{ args }}
 
    run-ai *args:
-       AGENT=1 bun tools/cli/src/cli.ts \{{ args }}
+       AGENT=1 bun tools/cli/src/cli.ts {{ args }}
 
    check:
        bun tools/cli/src/cli.ts check
@@ -111,10 +111,10 @@ Every runnable submodule should provide standard lifecycle recipes matching CLI 
 # tools/dashboard/justfile
 [default]
 run *args:
-    bun scripts/serve.ts \{{ args }}
+    bun scripts/serve.ts {{ args }}
 
 run-ai *args:
-    AGENT=1 bun scripts/serve.ts \{{ args }}
+    AGENT=1 bun scripts/serve.ts {{ args }}
 
 check:
     bun run check
@@ -159,7 +159,7 @@ Use `*args` to pass arbitrary flags and parameters through to module recipes:
 ```justfile
 # Parent recipe delegating to module
 web-dev *args:
-    just web dev \{{ args }}
+    just web dev {{ args }}
 ```
 
 ## Verification & Formatting

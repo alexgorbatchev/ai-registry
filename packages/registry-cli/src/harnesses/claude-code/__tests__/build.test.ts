@@ -435,7 +435,7 @@ describe("Claude Code harness build", () => {
     expect((await readdir(binDir)).sort()).toEqual(["claude-designer", "cll"]);
 
     const helper = await readFile(join(binDir, "claude-designer"), "utf-8");
-    expect(helper).toContain('CLAUDE_CONFIG_DIR="{{output_dir}}/claude-code/designer" exec "$real_binary" "$@"');
+    expect(helper).toContain('CLAUDE_CONFIG_DIR="<%- output_dir %>/claude-code/designer" exec "$real_binary" "$@"');
     expect(helper).toContain("if command -v claude >/dev/null 2>&1; then");
 
     const cllHelper = await readFile(join(binDir, "cll"), "utf-8");

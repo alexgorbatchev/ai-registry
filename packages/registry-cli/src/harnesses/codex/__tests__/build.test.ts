@@ -314,7 +314,7 @@ describe("Codex harness build plugin", () => {
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd -P)"
-generated_bin_dir="{{output_dir}}/bin"
+generated_bin_dir="<%- output_dir %>/bin"
 filtered_path=""
 
 IFS=':' read -r -a path_entries <<< "\${PATH:-}"
@@ -360,7 +360,7 @@ if [ -z "$real_binary" ]; then
   exit 1
 fi
 
-CODEX_HOME="{{output_dir}}/codex/developer" exec "$real_binary" "$@"
+CODEX_HOME="<%- output_dir %>/codex/developer" exec "$real_binary" "$@"
 "
 `);
   });
@@ -522,7 +522,7 @@ CODEX_HOME="{{output_dir}}/codex/developer" exec "$real_binary" "$@"
   it("preserves original command provenance through template rendering and sync-back", async () => {
     const repositoryRoot = await createTestDirectory();
     const commandPath = await writeTestFile(repositoryRoot, "overlay/commands/review.md",
-      "---\ndescription: Review\n---\nInspect {{file_path}} under {{repo_root}}. Keep \\{{args}}.\n");
+      "---\ndescription: Review\n---\nInspect <%- file_path %> under <%- repo_root %>. Keep {{args}}.\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
     const sourcePathByOutputPath = new Map<string, string>();
     const defaultContext = createProfileContext(repositoryRoot, "default", {
@@ -550,7 +550,7 @@ CODEX_HOME="{{output_dir}}/codex/developer" exec "$real_binary" "$@"
     await syncBackModifiedFiles([{ path: relativePath, reason: "modified" }], editedOutputDir,
       unifiedContext.outputDir, sourcePathByOutputPath, unifiedContext.templateContext);
 
-    expect(await Bun.file(commandPath).text()).toBe("---\ndescription: Updated review\n---\nInspect changes under {{repo_root}}.\n");
+    expect(await Bun.file(commandPath).text()).toBe("---\ndescription: Updated review\n---\nInspect changes under <%- repo_root %>.\n");
   });
 
   it.each([

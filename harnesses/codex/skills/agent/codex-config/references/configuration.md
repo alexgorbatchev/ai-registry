@@ -13,8 +13,8 @@
 
 ## Primary sources
 
-- Checked-in Codex docs snapshot: `{{repo_root}}/harnesses/codex/docs/`
-- Main config entrypoint in the snapshot: `{{repo_root}}/harnesses/codex/docs/config.md`
+- Checked-in Codex docs snapshot: `<%- repo_root %>/harnesses/codex/docs/`
+- Main config entrypoint in the snapshot: `<%- repo_root %>/harnesses/codex/docs/config.md`
 - Related snapshot docs that materially affect config advice:
   - `authentication.md`
   - `sandbox.md`

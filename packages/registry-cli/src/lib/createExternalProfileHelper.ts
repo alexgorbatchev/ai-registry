@@ -7,7 +7,7 @@ export function createExternalProfileHelper(
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd -P)"
-generated_bin_dir="{{output_dir}}/bin"
+generated_bin_dir="<%- output_dir %>/bin"
 filtered_path=""
 
 IFS=':' read -r -a path_entries <<< "\${PATH:-}"

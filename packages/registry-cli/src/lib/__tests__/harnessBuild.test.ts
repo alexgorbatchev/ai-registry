@@ -53,7 +53,7 @@ describe("harnessBuild template rendering", () => {
     const sourcePath = await writeTestFile(
       repositoryRoot,
       "skills/gitea/AGENTS.md",
-      "To make changes you must edit files in `{{file_dir}}`.\n",
+      "To make changes you must edit files in `<%- file_dir %>`.\n",
     );
     const outputPath = join(
       repositoryRoot,
@@ -84,7 +84,7 @@ describe("harnessBuild template rendering", () => {
     const outputPath = await writeTestFile(
       repositoryRoot,
       ".tmp/generated-output-staging/bin/helper.sh",
-      "ROOT={{repo_root}}\n",
+      "ROOT=<%- repo_root %>\n",
     );
 
     await applyTemplateVariablesToGeneratedOutput(
@@ -122,9 +122,8 @@ describe("harnessBuild template rendering", () => {
     const sourceDir = join(repositoryRoot, "skills", "escaped-skill");
     const targetDir = join(repositoryRoot, "output", "skills", "escaped-skill");
 
-    // A justfile recipe documented inside a skill: the tag must reach the agent
-    // literally, which only works if the build renders the file a single time.
-    await writeTestFile(sourceDir, "SKILL.md", "run *args:\n    mytool \\{{args}}\n\nRoot is {{repo_root}}.");
+    // Escaped EJS must survive the final render without being evaluated again.
+    await writeTestFile(sourceDir, "SKILL.md", "run *args:\n    mytool {{args}}\n\nLiteral: <%%- missing %>. Root is <%- repo_root %>.");
 
     const templateContext: ITemplateContext = {
       repo_root: repositoryRoot,
@@ -138,7 +137,7 @@ describe("harnessBuild template rendering", () => {
     await applyTemplateVariablesToGeneratedOutput(targetDir, templateContext);
 
     expect(await readFile(join(targetDir, "SKILL.md"), "utf-8")).toBe(
-      `run *args:\n    mytool {{args}}\n\nRoot is ${repositoryRoot}.`,
+      `run *args:\n    mytool {{args}}\n\nLiteral: <%- missing %>. Root is ${repositoryRoot}.`,
     );
   });
 
@@ -148,8 +147,8 @@ describe("harnessBuild template rendering", () => {
     const sourceDir = join(repositoryRoot, "skills", "my-skill");
     const targetDir = join(repositoryRoot, "output", "skills", "my-skill");
 
-    await writeTestFile(sourceDir, "SKILL.md", "# Skill Title\n\nRoot is {{repo_root}}.");
-    await writeTestFile(sourceDir, "references/ref.md", "# Reference\n\nSkills live in {{skills_dir}}.");
+    await writeTestFile(sourceDir, "SKILL.md", "# Skill Title\n\nRoot is <%- repo_root %>.");
+    await writeTestFile(sourceDir, "references/ref.md", "# Reference\n\nSkills live in <%- skills_dir %>.");
 
     const templateContext: ITemplateContext = {
       repo_root: repositoryRoot,

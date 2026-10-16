@@ -1,44 +1,21 @@
 # Template Resolver Package
 
-This package implements the repository's build-time template resolver.
+This package renders trusted repository text with EJS, preserving source filenames.
 
-## Scope
+## Contracts
 
-- Keep this package text-only. Do not add JavaScript evaluation, loops, conditionals, filters, or custom helper execution.
-- Supported template forms are limited to:
-  - lower-snake-case string variables such as `{{repo_root}}`
-  - `{{file_path}}` for the absolute path to the original source file being rendered
-  - `{{file_dir}}` for the absolute directory of the original source file being rendered
-  - `{{include "path/from/repo/root.md"}}`
-  - `{{env "VAR_NAME"}}`
-  - `{{env "VAR_NAME" default "fallback"}}`
-  - a single leading backslash escapes any of the above, so `\{{args}}` renders `{{args}}` and `\\{{args}}` renders `\{{args}}`
-- Escaping consumes exactly one backslash, the one directly before `{{`. Earlier backslashes pass through untouched.
-- Callers must render a given file only once. Rendering twice consumes the escape on the first pass and then resolves the bare tag on the second.
-- Includes are always repository-root-relative.
-- Includes must support recursive expansion.
-- Circular includes, missing include files, unknown variables, invalid env names, and missing env vars without defaults must fail clearly.
-
-## Compatibility Boundaries
-
-- Preserve foreign templating syntax that this package does not own.
-- In particular, `${{ ... }}` expressions and non-owned `{{ ... }}` forms such as Go-template placeholders must remain literal unless this package explicitly supports them.
-- If you add a new supported template form, update both detection and tests in the same change.
-
-## Files
-
-- `src/index.ts`: package implementation and public API
-- `src/index.test.ts`: Bun test coverage for supported syntax and regression cases
-- `.tmp/`: package-local temporary test fixtures only
+- Use EJS's native renderer, delimiters, expressions, control flow, escaping, and include mechanism. Do not add a custom template parser or legacy syntax compatibility.
+- Pass the original source path as EJS's filename. Keep file_path and file_dir bound to that original file across nested includes.
+- Set root and views to the repository root. Use include("/system/system.md") for explicit repository-root-relative includes; relative includes follow EJS filename resolution.
+- Reject resolved include paths outside the repository root.
+- Expose env(name, fallback?) from the caller-supplied environment. Missing values without a fallback fail; empty strings remain valid.
+- Use raw output tags for plain text and paths. Escaped output tags retain native HTML escaping.
+- Render each file exactly once. Literal EJS opening delimiters use <%%.
+- Treat templates as trusted JavaScript code. Curly-brace syntax belongs to other tools and passes through unchanged.
+- Sync-back supports canonical raw path-variable tags only. Edit expressions, includes, and control flow at their source.
 
 ## Validation
 
-- Run `bun test` from `packages/template-resolver` after changing package code or tests.
-- Run `bun run build` from the repository root after changing resolver behavior, because the build pipeline is the main integration surface.
-- Any time code is changed such that results from running that code are changed, a test file must be changed as well.
-- Minimum 90% code coverage is required (the `scripts/` folder is excluded from this rule).
-
-## Editing Notes
-
-- Keep error messages specific enough to identify the failing source file and include chain.
-- Prefer adding regression tests for real-world syntax collisions before widening the matcher.
+- Run bun test packages/template-resolver and bun test packages/registry-cli from the repository root.
+- Run bun run build after resolver behavior changes and inspect generated outputs.
+- Change behavioral tests with code behavior; maintain at least 90% coverage.

@@ -148,7 +148,7 @@ async function generatePiHelpers(context: IUnifiedHarnessBuildContext, profiles:
       continue;
     }
 
-    const content = createExternalProfileHelper("pi", "PI_CODING_AGENT_DIR", `{{output_dir}}/pi/${profile}`);
+    const content = createExternalProfileHelper("pi", "PI_CODING_AGENT_DIR", `<%- output_dir %>/pi/${profile}`);
 
     await context.buildSupport.writeBinScript(context.outputDir, `pi-${profile}`, content);
   }

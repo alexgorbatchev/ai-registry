@@ -36,9 +36,9 @@ interface IExtractArguments {
 const DEFAULT_DATA_DIR = join(process.env.XDG_DATA_HOME ?? join(process.env.HOME ?? "", ".local", "share"), "opencode");
 const DEFAULT_DB_PATH = join(DEFAULT_DATA_DIR, "opencode.db");
 const DEFAULT_STORAGE_DIR = join(DEFAULT_DATA_DIR, "storage");
-const REPO_ROOT_PLACEHOLDER = "{{repo_root}}";
+const REPO_ROOT_PLACEHOLDER = "<%- repo_root %>";
 const RESOLVED_REPO_ROOT =
-  REPO_ROOT_PLACEHOLDER === "{{repo_root}}"
+  REPO_ROOT_PLACEHOLDER === "<%- repo_root %>"
     ? resolve(import.meta.dir, "..", "..", "..", "..", "..")
     : REPO_ROOT_PLACEHOLDER;
 const DEFAULT_OUTPUT_DIR = join(RESOLVED_REPO_ROOT, ".opencode-analysis");

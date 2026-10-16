@@ -1,10 +1,10 @@
 ---
 name: docs-writer
-description: Read, write, rewrite, reorganize, and archive project and internal documentation including README.md files for CLI tools and libraries, engineering designs, tickets, AGENTS guidelines, runbooks, and reference docs. Must be used whenever creating or updating a project README.md, or touching files in {{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}.
+description: Read, write, rewrite, reorganize, and archive project and internal documentation including README.md files for CLI tools and libraries, engineering designs, tickets, AGENTS guidelines, runbooks, and reference docs. Must be used whenever creating or updating a project README.md, or touching files in the project's internal documentation directory.
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-04 11:44
-  last_modified: 2026-10-16 13:48
+  last_modified: 2026-10-16 13:58
   status: current
 ---
 
@@ -37,17 +37,17 @@ status: current
 
 ## Default Directory Mapping
 
-*   **General Internal Docs & Reference Guides:** Write to `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/`.
-*   **Engineering Design Documents:** Write to `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/eng-designs/`.
-*   **Active Project/Wave Tickets:** Write to `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/tickets/`.
+*   **General Internal Docs & Reference Guides:** Write to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/`.
+*   **Engineering Design Documents:** Write to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/eng-designs/`.
+*   **Active Project/Wave Tickets:** Write to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/`.
 
 ---
 
 ## Archival and Transition Rules
 
--   **General Documents:** Move archived content to the nearest `archived/` subdirectory (e.g., `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/archived/` or `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/auth/archived/`) to keep active directories clean.
--   **Completed Engineering Designs:** When a design is fully implemented, promote/move the document to `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/references/` as a long-term reference.
--   **Closed Wave/Project Tickets:** Follow the specific ticket-archiving rules (transitioning frontmatter to `ticket_status: closed` and moving the file under `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/tickets/closed/`).
+-   **General Documents:** Move archived content to the nearest `archived/` subdirectory (e.g., `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/archived/` or `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/auth/archived/`) to keep active directories clean.
+-   **Completed Engineering Designs:** When a design is fully implemented, promote/move the document to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/references/` as a long-term reference.
+-   **Closed Wave/Project Tickets:** Follow the specific ticket-archiving rules (transitioning frontmatter to `ticket_status: closed` and moving the file under `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/closed/`).
 
 ---
 

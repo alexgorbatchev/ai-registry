@@ -31,6 +31,33 @@ afterAll(async () => {
 });
 
 describe("syncBackModifiedFiles", () => {
+  it.each([
+    '<%- include("/shared.md") %>',
+    '<% if (true) { %>content<% } %>',
+    '<%- env("VALUE") %>',
+    '<%%- repo_root %>',
+  ])("preserves EJS source and all outputs when recovery cannot reconstruct %s", async (template) => {
+    const repositoryRoot = await createTestDirectory();
+    const outputDir = join(repositoryRoot, "output");
+    const nextOutputDir = join(repositoryRoot, "staging");
+    const plainSource = await writeTestFile(repositoryRoot, "plain.md", "Original plain text");
+    const templateSource = await writeTestFile(repositoryRoot, "template.md", template);
+    const plainOutput = await writeTestFile(nextOutputDir, "plain.md", "Original plain text");
+    const templateOutput = await writeTestFile(nextOutputDir, "template.md", "Rendered template");
+    await writeTestFile(outputDir, "plain.md", "Edited plain text");
+    await writeTestFile(outputDir, "template.md", "Edited rendered text");
+
+    await expect(syncBackModifiedFiles(
+      [{ path: "plain.md", reason: "modified" }, { path: "template.md", reason: "modified" }],
+      outputDir, nextOutputDir,
+      new Map([[plainOutput, plainSource], [templateOutput, templateSource]]), {},
+    )).rejects.toThrow("cannot be reconstructed from rendered output");
+    expect(await Bun.file(plainSource).text()).toBe("Original plain text");
+    expect(await Bun.file(templateSource).text()).toBe(template);
+    expect(await Bun.file(plainOutput).text()).toBe("Original plain text");
+    expect(await Bun.file(templateOutput).text()).toBe("Rendered template");
+  });
+
   it("recovers user skill edits into the selected variant while preserving the default and other hosts", async () => {
     const repositoryRoot = await createTestDirectory();
     const sourceDir = join(repositoryRoot, "skills/user/example");
@@ -80,7 +107,7 @@ describe("syncBackModifiedFiles", () => {
 
     const sourceFileRelativePath = "my-skill/SKILL.md";
     const sourceFilePath = join(sourceDir, sourceFileRelativePath);
-    await writeTestFile(sourceDir, sourceFileRelativePath, "Original content with {{skills_dir}}");
+    await writeTestFile(sourceDir, sourceFileRelativePath, "Original content with <%- skills_dir %>");
 
     // Output dir has the modified file with absolute path resolved
     const outputRelativePath = "pi/default/skills/my-skill/SKILL.md";
@@ -113,7 +140,7 @@ describe("syncBackModifiedFiles", () => {
 
     // 1. Source file should have been updated with the reversed content
     const sourceContent = await readFile(sourceFilePath, "utf-8");
-    expect(sourceContent).toBe("Modified content with {{skills_dir}}");
+    expect(sourceContent).toBe("Modified content with <%- skills_dir %>");
 
     // 2. The staging file should have been updated with the modified file from outputDir
     const stagingContent = await readFile(nextOutputPath, "utf-8");

@@ -377,7 +377,7 @@ describe("Pi harness bootstrap targets", () => {
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd -P)"
-generated_bin_dir="{{output_dir}}/bin"
+generated_bin_dir="<%- output_dir %>/bin"
 filtered_path=""
 
 IFS=':' read -r -a path_entries <<< "\${PATH:-}"
@@ -423,7 +423,7 @@ if [ -z "$real_binary" ]; then
   exit 1
 fi
 
-PI_CODING_AGENT_DIR="{{output_dir}}/pi/developer" exec "$real_binary" "$@"
+PI_CODING_AGENT_DIR="<%- output_dir %>/pi/developer" exec "$real_binary" "$@"
 "
 `);
   });

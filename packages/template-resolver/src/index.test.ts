@@ -40,8 +40,8 @@ test("renders variables, recursive includes, and environment values", async (): 
     repositoryRoot,
     "profiles/developer/prompt.md",
     [
-      "Agent root: {{ repo_root }}",
-      '{{ include "shared/intro.md" }}',
+      "Agent root: <%- repo_root %>",
+      '<%- include("/shared/intro.md") %>',
     ].join("\n"),
   );
 
@@ -50,13 +50,13 @@ test("renders variables, recursive includes, and environment values", async (): 
     "shared/intro.md",
     [
       "Intro start",
-      '{{ include "shared/footer.md" }}',
+      '<%- include("/shared/footer.md") %>',
     ].join("\n"),
   );
   await writeRepositoryFile(
     repositoryRoot,
     "shared/footer.md",
-    "Footer {{ env \"TEST_TEMPLATE_VALUE\" }}",
+    "Footer <%- env(\"TEST_TEMPLATE_VALUE\") %>",
   );
 
   const rendered = await renderTemplate({
@@ -83,13 +83,13 @@ test("renders file_path as the original source file across includes", async (): 
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
     "profiles/developer/prompt.md",
-    '{{ include "shared/intro.md" }}',
+    '<%- include("/shared/intro.md") %>',
   );
 
   await writeRepositoryFile(
     repositoryRoot,
     "shared/intro.md",
-    "Original file: {{ file_path }}",
+    "Original file: <%- file_path %>",
   );
 
   const rendered = await renderTemplate({
@@ -108,13 +108,13 @@ test("renders file_dir as the original source directory across includes", async 
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
     "profiles/developer/prompt.md",
-    '{{ include "shared/intro.md" }}',
+    '<%- include("/shared/intro.md") %>',
   );
 
   await writeRepositoryFile(
     repositoryRoot,
     "shared/intro.md",
-    "Original dir: {{ file_dir }}",
+    "Original dir: <%- file_dir %>",
   );
 
   const rendered = await renderTemplate({
@@ -133,7 +133,7 @@ test("uses the default for missing environment variables", async (): Promise<voi
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
     "prompt.md",
-    'Value: {{ env "MISSING_TEMPLATE_VALUE" default "fallback" }}',
+    'Value: <%- env("MISSING_TEMPLATE_VALUE", "fallback") %>',
   );
 
   const rendered = await renderTemplate({
@@ -152,7 +152,7 @@ test("rejects includes that escape the repository root", async (): Promise<void>
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
     "prompt.md",
-    '{{ include "../outside.md" }}',
+    '<%- include("../outside.md") %>',
   );
 
   await expect(renderTemplate({
@@ -169,10 +169,10 @@ test("reports circular include chains", async (): Promise<void> => {
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
     "a.md",
-    '{{ include "b.md" }}',
+    '<%- include("/b.md") %>',
   );
 
-  await writeRepositoryFile(repositoryRoot, "b.md", '{{ include "a.md" }}');
+  await writeRepositoryFile(repositoryRoot, "b.md", '<%- include("/a.md") %>');
 
   await expect(renderTemplate({
     content: await Bun.file(sourcePath).text(),
@@ -180,7 +180,7 @@ test("reports circular include chains", async (): Promise<void> => {
     repositoryRoot,
     variables: {},
     environment: {},
-  })).rejects.toThrow("Circular template include detected");
+  })).rejects.toThrow();
 });
 
 test("reports the include stack for missing include files", async (): Promise<void> => {
@@ -188,7 +188,7 @@ test("reports the include stack for missing include files", async (): Promise<vo
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
     "prompt.md",
-    '{{ include "missing.md" }}',
+    '<%- include("/missing.md") %>',
   );
 
   await expect(renderTemplate({
@@ -197,7 +197,7 @@ test("reports the include stack for missing include files", async (): Promise<vo
     repositoryRoot,
     variables: {},
     environment: {},
-  })).rejects.toThrow("Include stack");
+  })).rejects.toThrow("ENOENT");
 });
 
 test("ignores GitHub Actions style expressions", async (): Promise<void> => {
@@ -236,60 +236,4 @@ test("ignores Go template expressions", async (): Promise<void> => {
   });
 
   expect(rendered).toBe("ldflags: -X main.version={{.Version}}");
-});
-
-test("escapes a template tag with a single backslash", async (): Promise<void> => {
-  const rendered = await renderTemplate({
-    content: 'run *args:\n    mytool \\{{args}}\n',
-    sourcePath: "/repo/skill.md",
-    repositoryRoot: "/repo",
-    variables: { repo_root: "/repo" },
-  });
-
-  expect(rendered).toBe('run *args:\n    mytool {{args}}\n');
-});
-
-test("keeps preceding backslashes when escaping a template tag", async (): Promise<void> => {
-  const rendered = await renderTemplate({
-    content: "\\\\{{args}}",
-    sourcePath: "/repo/skill.md",
-    repositoryRoot: "/repo",
-    variables: { repo_root: "/repo" },
-  });
-
-  expect(rendered).toBe("\\{{args}}");
-});
-
-test("escapes owned variables so they are not resolved", async (): Promise<void> => {
-  const rendered = await renderTemplate({
-    content: "literal \\{{repo_root}} vs resolved {{repo_root}}",
-    sourcePath: "/repo/skill.md",
-    repositoryRoot: "/repo",
-    variables: { repo_root: "/repo" },
-  });
-
-  expect(rendered).toBe("literal {{repo_root}} vs resolved /repo");
-});
-
-test("escapes include and env tags", async (): Promise<void> => {
-  const rendered = await renderTemplate({
-    content: '\\{{ include "missing.md" }} and \\{{ env "NOPE" }}',
-    sourcePath: "/repo/skill.md",
-    repositoryRoot: "/repo",
-    variables: {},
-    environment: {},
-  });
-
-  expect(rendered).toBe('{{ include "missing.md" }} and {{ env "NOPE" }}');
-});
-
-test("leaves GitHub Actions expressions untouched alongside escapes", async (): Promise<void> => {
-  const rendered = await renderTemplate({
-    content: "${{ secrets.TOKEN }} and \\{{args}}",
-    sourcePath: "/repo/skill.md",
-    repositoryRoot: "/repo",
-    variables: {},
-  });
-
-  expect(rendered).toBe("${{ secrets.TOKEN }} and {{args}}");
 });

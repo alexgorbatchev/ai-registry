@@ -4,14 +4,14 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: '2026-10-11 11:00'
+  last_modified: 2026-10-16 13:58
   status: current
 ---
 
 Use [scripts/cleanup.ts](scripts/cleanup.ts) to inspect disk usage and perform authorized cleanup.
 Require Bun, Git, and GNU `du`, `df`, and `rm`. Install this skill's locked dependencies with
 `bun install --frozen-lockfile` from the skill directory before invoking its scripts.
-Use `{{file_dir}}/scripts/cleanup.ts`; do not assume the working directory is the skill directory.
+Use `<%- file_dir %>/scripts/cleanup.ts`; do not assume the working directory is the skill directory.
 
 ## Inspect before selecting deletions
 
@@ -35,13 +35,13 @@ allocation, or status fields as unknown; do not substitute safe classifications 
 From the target root, use the following commands:
 
 ```sh
-AGENT=1 bun "{{file_dir}}/scripts/cleanup.ts" disk inspect --root . --depth 2
-AGENT=1 bun "{{file_dir}}/scripts/cleanup.ts" folders list --root . --size 1G --days 30
-AGENT=1 bun "{{file_dir}}/scripts/cleanup.ts" dependencies list --root . --days 30
-AGENT=1 bun "{{file_dir}}/scripts/cleanup.ts" dependencies remove --root . --days 30
-AGENT=1 bun "{{file_dir}}/scripts/cleanup.ts" paths remove project/.tmp/build-cache --root .
-AGENT=1 bun "{{file_dir}}/scripts/cleanup.ts" worktrees list --root .
-AGENT=1 bun "{{file_dir}}/scripts/cleanup.ts" worktrees remove project/.workspaces/review --root .
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" disk inspect --root . --depth 2
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" folders list --root . --size 1G --days 30
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" dependencies list --root . --days 30
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" dependencies remove --root . --days 30
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" paths remove project/.tmp/build-cache --root .
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" worktrees list --root .
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" worktrees remove project/.workspaces/review --root .
 ```
 
 Append `--execute` to an authorized removal command to mutate the filesystem. Without it, every removal previews.
@@ -128,7 +128,7 @@ than declaring completion. Trash cleanup currently requires this explicit workfl
 
 Include Docker when inspecting system-wide cleanup candidates. Check the current context and endpoint before
 attributing usage to the local filesystem: `docker context show`, `docker context inspect`, and
-`docker info --format '\{{.DockerRootDir}}'`. Report daemon unavailability rather than zero usage.
+`docker info --format '{{.DockerRootDir}}'`. Report daemon unavailability rather than zero usage.
 Run `docker system df` and `docker system df -v`, then inspect `docker ps -a` and container mounts.
 Report images, build cache, containers, and volumes separately; do not sum shared layers into a reclaimed-space claim.
 Review bind-mounted host data separately because container writable-layer size does not measure that data.

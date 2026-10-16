@@ -1,6 +1,6 @@
 # Storybook
 
-Treat this repository's Storybook guidance and lint rules as hard requirements for Storybook files. For review-only tasks, see `{{skills_dir}}/storybook-review/SKILL.md`.
+Treat this repository's Storybook guidance and lint rules as hard requirements for Storybook files. For review-only tasks, see `<%- skills_dir %>/storybook-review/SKILL.md`.
 
 ## Workflow
 

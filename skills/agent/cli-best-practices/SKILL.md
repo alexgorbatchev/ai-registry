@@ -11,7 +11,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-10-12 12:59
+  last_modified: 2026-10-16 13:58
   status: current
 ---
 
@@ -203,11 +203,11 @@ Every repository and CLI tool must use `just` with a `justfile` for workflow and
 ```justfile
 # Run in human-facing interactive mode
 run *args:
-    <command-to-run-binary> \{{args}}
+    <command-to-run-binary> {{args}}
 
 # Run in agent-facing token-conservative mode
 run-ai *args:
-    AGENT=1 <command-to-run-binary> \{{args}}
+    AGENT=1 <command-to-run-binary> {{args}}
 
 # Run test suite
 test:

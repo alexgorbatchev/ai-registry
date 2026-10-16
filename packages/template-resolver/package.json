@@ -17,6 +17,10 @@
   ],
   "devDependencies": {
     "@types/bun": "^1.2.12",
+    "@types/ejs": "^3.1.5",
     "typescript": "rc"
+  },
+  "dependencies": {
+    "ejs": "^7.0.1"
   }
 }

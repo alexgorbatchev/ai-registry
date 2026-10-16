@@ -147,17 +147,17 @@ async function generateAirHelpers(context: IUnifiedHarnessBuildContext): Promise
   const helpers = [
     {
       name: "air-opencode-conversation-extract",
-      scriptPath: "{{repo_root}}/harnesses/opencode/skills/agent/opencode-conversation-analysis/scripts/extract.ts",
+      scriptPath: "<%- repo_root %>/harnesses/opencode/skills/agent/opencode-conversation-analysis/scripts/extract.ts",
       envVar: "OPENCODE_CONVERSATION_EXTRACT_COMMAND",
     },
     {
       name: "air-opencode-session-analysis",
-      scriptPath: "{{repo_root}}/packages/opencode-session-analysis/src/cli.ts",
+      scriptPath: "<%- repo_root %>/packages/opencode-session-analysis/src/cli.ts",
       envVar: "OPENCODE_SESSION_ANALYSIS_COMMAND",
     },
     {
       name: "air-opencode-session-export",
-      scriptPath: "{{repo_root}}/harnesses/opencode/skills/agent/opencode-sessions/scripts/export.ts",
+      scriptPath: "<%- repo_root %>/harnesses/opencode/skills/agent/opencode-sessions/scripts/export.ts",
       envVar: "OPENCODE_SESSION_EXPORT_COMMAND",
     },
   ];

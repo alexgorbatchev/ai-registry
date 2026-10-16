@@ -64,23 +64,25 @@ This repository includes a custom local compiler (`packages/registry-cli/src/bin
 
 Generated harness outputs are compiled by plugins at `packages/registry-cli/src/harnesses/<target>/build.ts`. The root build statically imports those plugins and lets them stage per-profile artifacts plus finalize the generated harness output.
 
-Generated output files may use a small set of build-time template tags. `bun run build` scans generated text outputs recursively and resolves them wherever they appear. Unsupported tags, unknown variables, missing include files, circular includes, and missing environment variables all fail the build. Supported forms:
+Source files keep their filenames and use [EJS](https://ejs.co/docs/) syntax. `bun run build` renders generated text outputs exactly once. Templates support native JavaScript expressions and control flow; only trusted templates should be built. Unknown variables, invalid JavaScript, failed includes, and missing environment values without defaults fail the build. Use raw output tags for paths and plain text; `<%= value %>` performs HTML escaping. Use `<%%` to emit a literal opening delimiter. Foreign `{{...}}` syntax passes through unchanged. Available locals:
 
-- `{{repo_root}}`: Absolute path to the repository root during template expansion.
-- `{{overlay_dir}}`: Absolute path to the active private overlay directory, or empty string if none is configured.
-- `{{skills_dir}}`: Absolute path to the repository's `skills/` directory.
-- `{{commands_dir}}`: Absolute path to the repository's `commands/` directory.
-- `{{profiles_dir}}`: Absolute path to the repository's `profiles/` directory.
-- `{{output_dir}}`: Absolute path to the generated output root at `.output/`.
-- `{{file_path}}`: Absolute path to the original source file being rendered, even inside nested includes.
-- `{{file_dir}}`: Absolute path to the directory containing the original source file being rendered, even inside nested includes.
-- `{{include "path/from/repo/root.md"}}`: Inserts another file using a repository-root-relative path.
-- `{{env "VAR_NAME"}}`: Inserts the value of the named environment variable and fails the build if it is missing.
-- `{{env "VAR_NAME" default "fallback"}}`: Inserts the named environment variable, or the fallback value when the variable is unavailable.
+- `<%- repo_root %>`: Absolute path to the repository root during template expansion.
+- `<%- overlay_dir %>`: Absolute path to the active private overlay directory, or empty string if none is configured.
+- `<%- skills_dir %>`: Absolute path to the repository's `skills/` directory.
+- `<%- commands_dir %>`: Absolute path to the repository's `commands/` directory.
+- `<%- profiles_dir %>`: Absolute path to the repository's `profiles/` directory.
+- `<%- output_dir %>`: Absolute path to the generated output root at `.output/`.
+- `<%- file_path %>`: Absolute path to the original source file being rendered, even inside nested includes.
+- `<%- file_dir %>`: Absolute path to the directory containing the original source file being rendered, even inside nested includes.
+- `<%- include("/path/from/repo/root.md") %>`: Inserts another file using a repository-root-relative path.
+- `<%- env("VAR_NAME") %>`: Inserts the value of the named environment variable and fails the build if it is missing.
+- `<%- env("VAR_NAME", "fallback") %>`: Inserts the named environment variable, or the fallback value when the variable is unavailable.
 
 When the build stages files from `skills/`, `commands/`, or `harnesses/<target>/`, it also honors nested `.registry-ignore` files using `.gitignore`-style matching. Use those files to keep repo-local scratch assets, harness build scripts, or other non-shipping files out of generated outputs.
 
-When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `{{skills_dir}}/...`, `{{commands_dir}}/...`, `{{profiles_dir}}/...`, and `{{output_dir}}/...` for those canonical folders. Use `{{repo_root}}/...` for canonical folders that do not have a dedicated token, such as `{{repo_root}}/harnesses/...`, `{{repo_root}}/system/...`, `{{repo_root}}/vendor/...`, and `{{repo_root}}/packages/registry-cli/...`. Includes are always repository-root-relative, so `{{include "system/system.md"}}` resolves from the repo root no matter which source file contains it.
+When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `<%- skills_dir %>/...`, `<%- commands_dir %>/...`, `<%- profiles_dir %>/...`, and `<%- output_dir %>/...` for those canonical folders. Use `<%- repo_root %>/...` for canonical folders that do not have a dedicated token, such as `<%- repo_root %>/harnesses/...`, `<%- repo_root %>/system/...`, `<%- repo_root %>/vendor/...`, and `<%- repo_root %>/packages/registry-cli/...`. Relative includes resolve against the source file; a leading slash selects the repository root, so `<%- include("/system/system.md") %>` resolves from the repo root no matter which source file contains it. Resolved include paths outside the repository fail. Sync-back reconstructs canonical raw path-variable tags; edit expressions, includes, and control flow at their source.
+
+For Vim, the project-local `.exrc` assigns `filetype=ejs` to Markdown files in this repository. Enable local configuration with `set exrc` in your vimrc and load the repository's `.exrc` when prompted by your editor. EJS syntax highlighting requires an EJS syntax plugin; filetype detection alone does not install one. EditorConfig does not provide a standard filetype property.
 
 For the normal machine setup flow after cloning, run:
 
@@ -285,7 +287,7 @@ The build script generates unified final outputs in `.output/` for the targets t
 
 The build writes only final generated outputs into `.output/` and updates only the managed paths recorded in the manifest.
 
-For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://{{repo_root}}/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.
+For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://<%- repo_root %>/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.
 
 ### Using with Codex
 
@@ -293,7 +295,7 @@ The Codex harness compiles the generated `default` profile into the shared Codex
 
 - each generated profile contributes its own home-level `AGENTS.md` from `profiles/<name>/profile.yaml`
 - the generated `default` profile contributes the shared command set and mutable `config.toml` symlink
-- `harnesses/codex/config.toml` overrides matching values in `{{repo_root}}/.tmp/codex/config.toml` on every build and bootstrap. Tables merge recursively, arrays are replaced, and values absent from the harness config survive, including local settings and trusted-project entries. Removing a harness key leaves its existing local value in place. Changed configurations are serialized as TOML, which rewrites formatting and removes comments; unchanged configurations retain their original text
+- `harnesses/codex/config.toml` overrides matching values in `<%- repo_root %>/.tmp/codex/config.toml` on every build and bootstrap. Tables merge recursively, arrays are replaced, and values absent from the harness config survive, including local settings and trusted-project entries. Removing a harness key leaves its existing local value in place. Changed configurations are serialized as TOML, which rewrites formatting and removes comments; unchanged configurations retain their original text
 - each profile's `skills/` contains its selected skills, Codex-only harness skills, and copies of the default profile's selected commands as native skill bundles, with template tags resolved
 - command bundles preserve their Markdown instructions and description and disable implicit invocation through `agents/openai.yaml`; invoke `--commit-changed-files.md` as `$command-commit-changed-files` or select it through `/skills`
 - commands with an explicit YAML `name` use that skill name; otherwise names use `command-<filename>` with leading hyphens removed and repeated hyphens collapsed; default profile-local commands use `command-default-<filename>`

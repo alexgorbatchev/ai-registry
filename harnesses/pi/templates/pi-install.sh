@@ -7,9 +7,9 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-export PI_CODING_AGENT_DIR="{{repo_root}}/harnesses/pi"
+export PI_CODING_AGENT_DIR="<%- repo_root %>/harnesses/pi"
 
 pi install "$@"
 
 # Run build to update generated outputs
-cd "{{repo_root}}" && bun run build
+cd "<%- repo_root %>" && bun run build

@@ -25,16 +25,16 @@ export function reverseTemplateObject(
 }
 
 export function reverseTemplateContent(content: string, templateContext: ITemplateContext): string {
-  let result = content;
+  let result = content.replaceAll("<%", "<%%");
 
   const replacements: Array<{ path: string; token: string }> = [];
 
   const rawReplacements = [
-    { path: templateContext.skills_dir, token: "{{skills_dir}}" },
-    { path: templateContext.commands_dir, token: "{{commands_dir}}" },
-    { path: templateContext.profiles_dir, token: "{{profiles_dir}}" },
-    { path: templateContext.output_dir, token: "{{output_dir}}" },
-    { path: templateContext.repo_root, token: "{{repo_root}}" },
+    { path: templateContext.skills_dir, token: "<%- skills_dir %>" },
+    { path: templateContext.commands_dir, token: "<%- commands_dir %>" },
+    { path: templateContext.profiles_dir, token: "<%- profiles_dir %>" },
+    { path: templateContext.output_dir, token: "<%- output_dir %>" },
+    { path: templateContext.repo_root, token: "<%- repo_root %>" },
   ];
 
   for (const item of rawReplacements) {

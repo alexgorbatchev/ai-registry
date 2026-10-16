@@ -106,15 +106,15 @@ Weak:
 
 ## Shape The Output
 
-When writing a full report, default to `{{repo_root}}/wiki/research/<topic-slug>.md` unless the user explicitly asks for a different path.
+When writing a full report, default to `<%- repo_root %>/wiki/research/<topic-slug>.md` unless the user explicitly asks for a different path.
 
-Create `{{repo_root}}/wiki/research/` first if it does not already exist.
+Create `<%- repo_root %>/wiki/research/` first if it does not already exist.
 
 Generate `<topic-slug>` from the subject of the research using concise hyphen-case.
 
 Example:
 
-- `{{repo_root}}/wiki/research/ai-agent-harness-configuration.md`
+- `<%- repo_root %>/wiki/research/ai-agent-harness-configuration.md`
 
 Do not literally use `topic.md` as the filename unless the user explicitly insists on that exact basename.
 

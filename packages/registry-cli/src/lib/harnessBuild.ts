@@ -270,10 +270,7 @@ async function copyFileWithTemplateVariables(
 ): Promise<void> {
   await mkdir(dirname(targetPath), { recursive: true });
 
-  // Copy verbatim and let the single applyTemplateVariablesToGeneratedOutput pass
-  // render it. Rendering here as well would resolve the file twice, which silently
-  // consumes escape sequences like \{{args}} on the first pass and then resolves
-  // the bare tag on the second.
+  // Render only in the final pass so literal EJS delimiters survive unchanged.
   await copyFile(sourcePath, targetPath);
   registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
 }

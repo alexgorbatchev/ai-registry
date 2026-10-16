@@ -2,6 +2,10 @@
 name: opencode-conversation-analysis
 description: Analyze OpenCode conversation history to identify themes and patterns in user messages. Use when asked to analyze conversations, find themes, review how a user steers agents, or extract insights from session history.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-10-14 19:41
+  last_modified: 2026-10-16 13:58
+  status: current
 ---
 
 # Conversation Analysis
@@ -31,7 +35,7 @@ This script:
 - Extracts user messages from main sessions with metadata (session_id, title, timestamp, text)
 - Filters out messages < 10 characters
 - Chunks into ~320k char files (~80k tokens each)
-- Outputs to `{{repo_root}}/.opencode-analysis/chunk_*.jsonl`
+- Outputs to `<%- repo_root %>/.opencode-analysis/chunk_*.jsonl`
 
 Review the output summary to see how many chunks were created.
 
@@ -40,7 +44,7 @@ Review the output summary to see how many chunks were created.
 For each chunk file, spawn a `general` subagent with this prompt template:
 
 ```
-Read the file `{{repo_root}}/.opencode-analysis/chunk_N.jsonl` which contains user messages from coding sessions (JSONL format with fields: session_id, session_title, timestamp, text).
+Read the file `<%- repo_root %>/.opencode-analysis/chunk_N.jsonl` which contains user messages from coding sessions (JSONL format with fields: session_id, session_title, timestamp, text).
 
 Analyze these messages to identify recurring themes in how the user steers/guides AI coding assistants. Look for patterns like:
 - How they give feedback

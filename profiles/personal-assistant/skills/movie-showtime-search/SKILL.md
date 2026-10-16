@@ -2,6 +2,10 @@
 name: movie-showtime-search
 description: Find movie showtimes for a user-specified movie, date, time window, and geographic corridor, then return a theater-by-theater list with direct theater links and ticket links when available. Use when the user asks for nearby movie times, wants coverage across several neighboring cities, or needs browser automation because theater pages hide showtimes behind JavaScript or anti-bot flows. Do not use for reviews, plot summaries, or generic entertainment recommendations that do not require concrete showtime verification.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-04-24 15:18
+  last_modified: 2026-10-16 13:58
+  status: current
 ---
 
 # Movie Showtime Search
@@ -16,7 +20,7 @@ Prefer direct theater pages for exact times and ticket links. When static fetche
 - Capture the movie title, target date, time filter, and search geography.
 - If the user gives a corridor such as “from A to B”, keep that ordering in the final answer.
 - If the area is omitted, first reuse any location corridor already established earlier in the conversation.
-- If the conversation does not establish the area, use this profile-local default when it is not `__ASK_USER__`: `{{ env "PERSONAL_ASSISTANT_DEFAULT_MOVIE_AREA" default "__ASK_USER__" }}`.
+- If the conversation does not establish the area, use this profile-local default when it is not `__ASK_USER__`: `<%- env("PERSONAL_ASSISTANT_DEFAULT_MOVIE_AREA", "__ASK_USER__") %>`.
 - If the configured value is `__ASK_USER__`, ask the user for the location corridor instead of guessing.
 
 2. Enumerate candidate theaters before verifying times.

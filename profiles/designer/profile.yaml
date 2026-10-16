@@ -2,5 +2,5 @@ description: '[reg] designer'
 skills: ['*']
 commands: ['*']
 system_prompt: |
-  {{ include "system/system.md" }}
+  <%- include("/system/system.md") %>
 

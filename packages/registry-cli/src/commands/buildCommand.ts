@@ -217,6 +217,15 @@ export async function syncBackModifiedFiles(
         `Cannot sync generated edits for ${entry.path}: the selected skill source changed from ${previousSource} to ${nextSource ?? "none"}. Rebuild with the original hostname and overlay, or preserve the edits manually.`,
       );
     }
+    if (entry.reason === "modified" && nextSource) {
+      let sourceTemplate = await Bun.file(nextSource).text();
+      for (const variable of [...Object.keys(templateContext), "file_path", "file_dir"]) {
+        sourceTemplate = sourceTemplate.replaceAll(`<%- ${variable} %>`, "");
+      }
+      if (sourceTemplate.includes("<%")) {
+        throw new Error(`Cannot sync generated edits for ${entry.path}: edit the EJS template at ${nextSource} directly; expressions, includes, and control flow cannot be reconstructed from rendered output.`);
+      }
+    }
   }
   console.log("\n🔄 Syncing modified files back to source directories...");
 

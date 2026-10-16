@@ -83,7 +83,7 @@ describe("hostname skill variants", () => {
     await write("repo/system/common.md", "Common instructions.");
     const variantPath = await write(
       "repo/skills/agent/example/variants/workstation-a/SKILL.md",
-      skillContent("example", 'Machine instructions. {{include "system/common.md"}} Source: {{file_path}}. Literal: \\{{args}}.'),
+      skillContent("example", 'Machine instructions. <%- include("/system/common.md") %> Source: <%- file_path %>. Literal: {{args}}.'),
     );
 
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths });

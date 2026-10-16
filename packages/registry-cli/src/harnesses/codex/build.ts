@@ -292,7 +292,7 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     const content = createExternalProfileHelper(
       "codex",
       "CODEX_HOME",
-      `{{output_dir}}/${CODEX_OUTPUT_DIR_NAME}/${profileEntry.name}`,
+      `<%- output_dir %>/${CODEX_OUTPUT_DIR_NAME}/${profileEntry.name}`,
     );
     await context.buildSupport.writeBinScript(context.outputDir, `codex-${profileEntry.name}`, content);
   }

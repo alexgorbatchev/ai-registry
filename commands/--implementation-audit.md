@@ -122,7 +122,7 @@ For suspected issues that cannot be executed, cite the complete source path and 
 
 Recheck each proposed finding against requirements, source contracts, intentional design decisions, and available runtime evidence. Merge duplicate symptoms under their root cause. Keep recommendations separate from verified defects and unresolved hypotheses. Do not invent findings to justify distrust of the initial model.
 
-Write the report to the user's requested path, or otherwise to `{{ env "DOCS_INTERNAL_DIR" default "docs/internal" }}/audit/implementation-audit.md`. Read any existing report first; preserve user-authored content, retain stable finding IDs, and revalidate previous findings. A report for a different implementation must be preserved separately rather than silently overwritten.
+Write the report to the user's requested path, or otherwise to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/audit/implementation-audit.md`. Read any existing report first; preserve user-authored content, retain stable finding IDs, and revalidate previous findings. A report for a different implementation must be preserved separately rather than silently overwritten.
 
 Include:
 

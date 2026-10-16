@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-10-01 21:18
+  last_modified: 2026-10-16 13:48
   status: current
 ---
 
@@ -361,9 +361,11 @@ Write the YAML frontmatter with `name`, `description`, and `author`:
   - Keep that exception narrow. Do not make the base global skill describe project-local addenda, do not create multiple addenda for the same base skill in one project, and do not duplicate the global skill into the project just to add project-specific rules.
 - `author`: Use `alexgorbatchev` for skills maintained in this registry (but do not modify existing `author`).
 - `metadata`: **REQUIRED** for all skills in this repository to track history and lifecycle. It must contain:
-  - `created_on`: Creation date and time in `YYYY-MM-DD HH:MM` format. Set once on file creation.
-  - `last_modified`: Last modification date and time in `YYYY-MM-DD HH:MM` format. ALWAYS update this on every revision of the skill.
+  - `created_on`: Creation date and time in `YYYY-MM-DD HH:MM` format, using the user's local timezone. Set once on file creation.
+  - `last_modified`: Last modification date and time in `YYYY-MM-DD HH:MM` format, using the user's local timezone. ALWAYS update this on every revision of the skill.
   - `status`: Use `current` (active guidance) or `archived` (superseded reference).
+
+Before writing timestamps, verify the current time and timezone with a clock tool or system command. Use the user's stated timezone when supplied; otherwise verify the machine's configured local timezone. Do not default to UTC or copy a UTC tool result into these timezone-less fields. If the local timezone cannot be established, ask for it before writing timestamps. Preserve existing `created_on` values; do not convert historical timestamps whose timezone is unknown.
 
 **Example YAML Frontmatter:**
 ```yaml

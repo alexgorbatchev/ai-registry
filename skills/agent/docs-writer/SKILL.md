@@ -4,7 +4,7 @@ description: Read, write, rewrite, reorganize, and archive project and internal 
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-04 11:44
-  last_modified: 2026-10-11 11:00
+  last_modified: 2026-10-16 13:48
   status: current
 ---
 
@@ -28,7 +28,7 @@ status: current
 ---
 ```
 
-- **Timestamps:** Must use the strict `YYYY-MM-DD HH:MM` format. Set both to the current timestamp on file creation; update only `last_modified` when editing.
+- **Timestamps:** Must use the strict `YYYY-MM-DD HH:MM` format in the user's local timezone. Verify the current time and timezone with a clock tool or system command before writing. Use the user's stated timezone when supplied; otherwise verify the machine's configured local timezone. Do not default to UTC or copy a UTC tool result into these timezone-less fields. If the local timezone cannot be established, ask for it before writing timestamps. Set both to the current local timestamp on file creation; update only `last_modified` when editing. Preserve existing `created_on` values; do not convert historical timestamps whose timezone is unknown.
 - **Status Schema:** Use only `current` (active guidance) or `archived` (superseded historical reference). Do not invent other values unless explicitly requested.
 - **Protect Sensitive Data:** Never write secrets, raw tokens, credentials, or private internal hostnames into any document.
 - **Write for Readers:** Put purpose and target audience near the top. Keep procedures ordered, concrete, and copy-pasteable. Use clear headings for scannability.
@@ -85,7 +85,7 @@ Shared rules live only in `references/readme.md`. Never copy them into a variant
 ## Final Baseline Checklist
 
 -   [ ] Frontmatter starts with standard `created_on`, `last_modified`, and `status`.
--   [ ] All timestamps use the strict `YYYY-MM-DD HH:MM` format.
+-   [ ] New or updated timestamps use the strict `YYYY-MM-DD HH:MM` format and verified user-local time.
 -   [ ] The document is written in present tense and represents a maintained current-state reference.
 -   [ ] All facts and claims are grounded in repository code, config, or verified source docs.
 -   [ ] Stale, transitional, or changelog-like narration is completely removed.

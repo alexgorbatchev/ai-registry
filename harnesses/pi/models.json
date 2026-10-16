@@ -1,5 +1,12 @@
 {
   "providers": {
+    "litellm": {
+      "modelOverrides": {
+        "gemini-4-argon": {
+          "contextWindow": 1000000
+        }
+      }
+    },
     "google": {
       "models": [
         {

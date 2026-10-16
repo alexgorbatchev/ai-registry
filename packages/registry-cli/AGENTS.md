@@ -6,7 +6,7 @@ This package implements the repository build, bootstrap, and synchronization com
 
 - Dev / Build: `bun run build` from repository root
 - Test: `bun test packages/registry-cli`
-- Scheduled update: `bun run scheduled:update` from repository root; serialize scheduled runs with a scheduler lock.
+- Scheduled update: `bun run scheduled:update` from repository root; the entrypoint owns runtime directory creation, logging, and the native macOS/Linux lock for both manual and scheduled runs. Do not add an outer scheduler lock or invoke its internal worker directly.
 
 ## Boundaries & Quality Rules
 

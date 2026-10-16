@@ -2,12 +2,15 @@
 import { resolve } from "node:path";
 
 import { getErrorMessage } from "../lib/getErrorMessage";
-import { scheduledUpdate } from "../lib/scheduledUpdate";
+import { runLockedScheduledUpdate } from "../lib/runLockedScheduledUpdate";
 
-scheduledUpdate(resolve(import.meta.dir, "../../../.."), process.execPath)
+const repositoryRoot = resolve(import.meta.dir, "../../../..");
+
+runLockedScheduledUpdate(repositoryRoot, [process.execPath, resolve(import.meta.dir, "scheduled-update-worker.ts")])
   .then((result) => {
     const isAgent = ["1", "true", "yes"].includes(process.env.AGENT ?? "");
-    console.log(`${isAgent ? "OK:" : "[OK]"} scheduled update: ${result}`);
+    const message = result === "busy" ? "skipped (another run is active)" : "completed";
+    console.log(`${isAgent ? "OK:" : "[OK]"} scheduled update: ${message}; log: ${repositoryRoot}/.tmp/scheduled-update.log`);
   })
   .catch((error) => {
     console.error(getErrorMessage(error));

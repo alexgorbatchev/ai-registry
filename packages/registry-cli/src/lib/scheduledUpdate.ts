@@ -1,8 +1,10 @@
 import { mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+import { pullWithRebase } from "./pullWithRebase";
+import type { IScheduledUpdateRunner } from "./pullWithRebase";
+
 type IScheduledUpdateResult = "unchanged" | "bootstrapped";
-type IScheduledUpdateRunner = (cmd: string[], shouldCapture?: boolean) => Promise<string>;
 
 function createRunner(repositoryRoot: string, bunExecutable: string): IScheduledUpdateRunner {
   const env: NodeJS.ProcessEnv = {
@@ -32,13 +34,8 @@ export async function scheduledUpdate(
   bunExecutable: string,
   run: IScheduledUpdateRunner = createRunner(repositoryRoot, bunExecutable),
 ): Promise<IScheduledUpdateResult> {
-  const status = await run(["git", "status", "--porcelain", "--untracked-files=no"], true);
-  if (status) {
-    throw new Error("Tracked local changes exist. Commit or stash them before running the scheduled update.");
-  }
-
   const before = await run(["git", "rev-parse", "HEAD"], true);
-  await run(["git", "-c", "core.hooksPath=/dev/null", "pull", "--ff-only", "--no-rebase", "--no-autostash"]);
+  await pullWithRebase(repositoryRoot, before, run);
   const after = await run(["git", "rev-parse", "HEAD"], true);
   const pendingFile = Bun.file(join(repositoryRoot, ".tmp/scheduled-update-pending"));
   if (before === after && !(await pendingFile.exists())) {

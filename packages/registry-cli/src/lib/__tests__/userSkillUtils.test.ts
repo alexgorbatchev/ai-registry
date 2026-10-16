@@ -247,6 +247,14 @@ description: Triage issues.
   });
 
   describe("getOutputSkillName", () => {
+    it("lowercases mixed-case author prefixes for generated skill names", () => {
+      expect(getOutputSkillName("caveman", "JuliusBrussee")).toBe("juliusbrussee-caveman");
+      expect(getOutputSkillName("megacave", "JuliusBrussee")).toBe("juliusbrussee-megacave");
+      expect(getOutputSkillName("ultracave", "JuliusBrussee")).toBe("juliusbrussee-ultracave");
+      expect(getOutputSkillName("juliusbrussee-caveman", "JuliusBrussee")).toBe("juliusbrussee-caveman");
+      expect(getOutputSkillName("JuliusBrussee-caveman", "JuliusBrussee")).toBe("juliusbrussee-caveman");
+    });
+
     it("returns skill name unchanged when author is alexgorbatchev", () => {
       expect(getOutputSkillName("bun", "alexgorbatchev")).toBe("bun");
       expect(getOutputSkillName("git-commit", "alexgorbatchev")).toBe("git-commit");

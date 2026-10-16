@@ -70,10 +70,11 @@ export function getOutputSkillName(skillName: string, author?: string | null): s
   if (!author || author === "alexgorbatchev" || author === "agorbatchev") {
     return skillName;
   }
-  if (skillName.startsWith(`${author}-`)) {
-    return skillName;
+  const authorPrefix = `${author.toLowerCase()}-`;
+  if (skillName.toLowerCase().startsWith(authorPrefix)) {
+    return `${authorPrefix}${skillName.slice(authorPrefix.length)}`;
   }
-  return `${author}-${skillName}`;
+  return `${authorPrefix}${skillName}`;
 }
 
 export function updateSkillName(source: string, newName: string): string {

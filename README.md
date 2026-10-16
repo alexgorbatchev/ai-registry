@@ -167,17 +167,28 @@ After bootstrap configures `core.hooksPath`, future `git pull` operations rerun 
 
 ### Scheduled updates
 
-Run `bun run scheduled:update` to pull the current branch's configured upstream and run `bun run bootstrap -- -y` when the pull changes the checked-out commit. The pull is fast-forward only, rejects tracked local changes, and disables Git hooks for that command so bootstrap runs once. A failed bootstrap leaves `.tmp/scheduled-update-pending`, which makes the next successful pull retry bootstrap even without new commits. Failures return a nonzero exit status.
+The repository's `.cronrc` schedules updates every five minutes through `cron-person`. Run `just cron-enable` to validate, authorize, and install it; rerun this after editing `.cronrc`. The update script creates `.tmp`, appends output to `.tmp/scheduled-update.log`, and skips overlapping runs using native `lockf` on macOS or [`flock`](https://man7.org/linux/man-pages/man1/flock.1.html) on Linux. Every new log line starts with a timestamp in the process's local timezone formatted as `[YYYY-MM-DD HH:MM]`, for example `[2026-10-16 13:09]`. Manual runs use the same lock. The checkout must remain on `main` tracking `origin/main` to update from GitHub's main branch.
 
-The entrypoint at `packages/registry-cli/src/bin/scheduled-update.ts` resolves the repository from its own location, so it can also be invoked by absolute path from another working directory. It uses the running Bun executable for bootstrap and puts that executable's directory on the child processes' `PATH`.
+- `just cron-check`: validate this repository's `.cronrc`.
+- `just cron-status`: inspect this repository's authorization and tasks.
+- `just cron-show`: preview the managed crontab for all authorized directories.
+- `just cron-sync`: refresh the managed crontab without changing authorization.
+- `just cron-disable`: revoke this repository's authorization and remove its scheduled tasks.
+- `just cron-logs`: print the last 100 lines of scheduled-update output.
 
-For Linux cron, this example runs every 15 minutes and uses [`flock`](https://man7.org/linux/man-pages/man1/flock.1.html) to skip overlapping scheduled runs. Replace `/path/to/ai-registry` with the checkout location and `/path/to/bun` with the absolute executable path reported by `command -v bun`:
+Run `bun run scheduled:update` to pull the current branch's configured upstream and run `bun run bootstrap -- -y` when the pull changes the checked-out commit. The pull rebases local commits onto the upstream branch and suppresses Git hooks so bootstrap runs once. Tracked local edits are temporarily stashed and restored with their staged and unstaged state after the pull. Non-overlapping edits within an incoming file can be combined. If the rebase or stash restoration conflicts, the script restores the original HEAD and local edits and skips bootstrap. Untracked files stay in place; incoming files that would overwrite them block the update. A failed bootstrap leaves `.tmp/scheduled-update-pending`, which makes the next successful pull retry bootstrap even without new commits. Failures return a nonzero exit status, while an overlapping run exits successfully without doing work.
+
+An interrupted update or failed rollback leaves `.tmp/scheduled-update-recovery.json` and stops further updates. Inspect the recorded original HEAD, stash label, and saved stash (when recorded), then finish recovery before removing that file. Existing user stashes are preserved. Finish any existing Git merge, rebase, or cherry-pick before running the updater. Rebasing changes local commit IDs; the updater does not push them to GitHub.
+
+The entrypoint at `packages/registry-cli/src/bin/scheduled-update.ts` resolves the repository from its own location, so it can also be invoked by absolute path from another working directory. It runs `scheduled-update-worker.ts` under the lock, holding it through both pull and bootstrap. It uses the running Bun executable for bootstrap and puts that executable's directory on the child processes' `PATH`.
+
+For Linux cron without `cron-person`, replace `/path/to/ai-registry` with the checkout location and `/path/to/bun` with the absolute executable path reported by `command -v bun`. Locking and logging stay inside the script:
 
 ```cron
-*/15 * * * * cd /path/to/ai-registry && mkdir -p .tmp && flock -n -E 0 .tmp/scheduled-update.lock /path/to/bun run scheduled:update >> .tmp/scheduled-update.log 2>&1
+*/5 * * * * /path/to/bun /path/to/ai-registry/packages/registry-cli/src/bin/scheduled-update.ts
 ```
 
-Use the account whose harness configuration should be refreshed. Git must be on the scheduler's `PATH`, and upstream authentication must work without interactive prompts. The lock coordinates scheduled runs using that lock file; avoid editing or updating the same checkout concurrently. This script updates the registry checkout; it does not pull a private overlay repository.
+Use the account whose harness configuration should be refreshed. Git must be on the scheduler's `PATH`, and upstream authentication must work without interactive prompts. Linux also requires `flock`. The lock coordinates invocations of this script; it does not lock out editors or other Git commands. This script updates the registry checkout; it does not pull a private overlay repository.
 
 To compile the configurations, simply run:
 

@@ -1,0 +1,3 @@
+# Update this checkout every five minutes; bootstrap only after new commits or a failed bootstrap.
+# The script owns locking and writes output to .tmp/scheduled-update.log.
+*/5 * * * * export PATH="$HOME/.dotfiles/.generated/bin:$PATH"; bun run scheduled:update

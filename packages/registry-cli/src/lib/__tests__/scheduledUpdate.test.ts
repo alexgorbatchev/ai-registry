@@ -34,6 +34,7 @@ async function createRepository() {
   await run(testPath, ["git", "init", "--initial-branch=main", remotePath]);
   await run(remotePath, ["git", "config", "user.name", "Test Author"]);
   await run(remotePath, ["git", "config", "user.email", "test@example.invalid"]);
+  await run(remotePath, ["git", "config", "receive.denyCurrentBranch", "updateInstead"]);
   await Bun.write(join(remotePath, ".gitignore"), ".tmp/\n");
   await Bun.write(join(remotePath, "content.txt"), "initial\n");
   await Bun.write(join(remotePath, "local.txt"), "initial\n");
@@ -73,6 +74,7 @@ describe("scheduledUpdate", () => {
       "packages/registry-cli/src/lib/writeTimestampedOutput.ts",
       "packages/registry-cli/src/lib/scheduledUpdate.ts",
       "packages/registry-cli/src/lib/pullWithRebase.ts",
+      "packages/registry-cli/src/lib/pushScheduledCommits.ts",
       "packages/registry-cli/src/lib/getErrorMessage.ts",
     ]) {
       await Bun.write(join(repositoryPath, sourcePath), Bun.file(resolve(sourcePath)));
@@ -183,6 +185,7 @@ describe("scheduledUpdate", () => {
   it("rebases divergent local commits even when fast-forward-only pulls are configured", async () => {
     const { remotePath, repositoryPath } = await createRepository();
     await advanceRemote(remotePath);
+    const incoming = await run(remotePath, ["git", "rev-parse", "HEAD"]);
     await run(repositoryPath, ["git", "config", "pull.rebase", "true"]);
     await run(repositoryPath, ["git", "config", "pull.ff", "only"]);
     await run(repositoryPath, ["git", "config", "merge.autostash", "true"]);
@@ -194,9 +197,10 @@ describe("scheduledUpdate", () => {
     const hooksPath = join(repositoryPath, ".git/hooks");
     await Bun.write(join(hooksPath, "post-rewrite"), "#!/bin/sh\nmkdir -p .tmp\nprintf rewritten > .tmp/hook-ran\n");
     await chmod(join(hooksPath, "post-rewrite"), 0o755);
-    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
-    expect(await run(repositoryPath, ["git", "rev-parse", "HEAD^"])).toBe(
-      await run(remotePath, ["git", "rev-parse", "HEAD"]),
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-and-pushed");
+    expect(await run(repositoryPath, ["git", "rev-parse", "HEAD^"])).toBe(incoming);
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(
+      await run(repositoryPath, ["git", "rev-parse", "HEAD"]),
     );
     expect(await run(repositoryPath, ["git", "log", "-1", "--format=%s"])).toBe("local");
     expect(await run(repositoryPath, ["git", "rev-parse", "other-branch"])).toBe(before);
@@ -217,11 +221,183 @@ describe("scheduledUpdate", () => {
     const staged = await run(repositoryPath, ["git", "diff", "--cached"]);
     const unstaged = await run(repositoryPath, ["git", "diff"]);
     await advanceRemote(remotePath);
-    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-and-pushed");
     expect(await run(repositoryPath, ["git", "diff", "--cached"])).toBe(staged);
     expect(await run(repositoryPath, ["git", "diff"])).toBe(unstaged);
     expect(await run(repositoryPath, ["git", "stash", "list", "--format=%H"])).toBe(previousStash);
   });
+
+  it("pushes local commits without bootstrapping when the pull has no new commits", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "--allow-empty", "-m", "local"]);
+    await Bun.write(join(repositoryPath, "local.txt"), "uncommitted\n");
+    const head = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("pushed");
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(head);
+    expect(await Bun.file(join(repositoryPath, "local.txt")).text()).toBe("uncommitted\n");
+    expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).exists()).toBe(false);
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("unchanged");
+  });
+
+  it("skips pushing when there are no outgoing commits", async () => {
+    const { repositoryPath } = await createRepository();
+    const hookPath = join(repositoryPath, ".git/hooks/pre-push");
+    await Bun.write(hookPath, "#!/bin/sh\nprintf attempted > .tmp/push-attempted\nexit 1\n");
+    await chmod(hookPath, 0o755);
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("unchanged");
+    expect(await Bun.file(join(repositoryPath, ".tmp/push-attempted")).exists()).toBe(false);
+  });
+
+  it("retries a rejected push without repeating a successful bootstrap", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    const remoteBefore = await run(remotePath, ["git", "rev-parse", "HEAD"]);
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "--allow-empty", "-m", "local"]);
+    const hookPath = join(remotePath, ".git/hooks/pre-receive");
+    await Bun.write(hookPath, "#!/bin/sh\nexit 1\n");
+    await chmod(hookPath, 0o755);
+    await Bun.write(join(repositoryPath, ".tmp/scheduled-update-pending"), "retry bootstrap");
+    await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow("Command failed (exit code 1)");
+    const head = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(remoteBefore);
+    expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
+    expect(await Bun.file(join(repositoryPath, ".tmp/scheduled-update-pending")).exists()).toBe(false);
+    await Bun.file(hookPath).delete();
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("pushed");
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(head);
+    expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
+  });
+
+  it("does not push local commits until pending bootstrap succeeds", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    const remoteBefore = await run(remotePath, ["git", "rev-parse", "HEAD"]);
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "--allow-empty", "-m", "local"]);
+    await Bun.write(join(repositoryPath, ".tmp/scheduled-update-pending"), "retry bootstrap");
+    await Bun.write(join(repositoryPath, ".tmp/fail-bootstrap"), "fail");
+    await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow("Command failed (exit code 7)");
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(remoteBefore);
+    await Bun.file(join(repositoryPath, ".tmp/fail-bootstrap")).delete();
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-and-pushed");
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(
+      await run(repositoryPath, ["git", "rev-parse", "HEAD"]),
+    );
+  });
+
+  it("pushes only the upstream branch despite other push defaults and local tags", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    await run(repositoryPath, ["git", "branch", "-m", "work"]);
+    await run(repositoryPath, ["git", "remote", "rename", "origin", "publish"]);
+    await run(repositoryPath, ["git", "config", "remote.pushDefault", "nonexistent"]);
+    await run(repositoryPath, ["git", "config", "remote.publish.mirror", "true"]);
+    await run(repositoryPath, ["git", "config", "push.followTags", "true"]);
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "--allow-empty", "-m", "local"]);
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "tag", "-a", "local-tag", "-m", "local tag"]);
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("pushed");
+    expect(await run(remotePath, ["git", "rev-parse", "main"])).toBe(
+      await run(repositoryPath, ["git", "rev-parse", "work"]),
+    );
+    expect(await run(remotePath, ["git", "for-each-ref", "--format=%(refname)"])).toBe("refs/heads/main");
+  });
+
+  it("keeps both sides intact when the remote advances between pull and push", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "--allow-empty", "-m", "local"]);
+    const head = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
+    const hookPath = join(repositoryPath, ".git/hooks/pre-push");
+    await Bun.write(hookPath, `#!/bin/sh\ngit -C '${remotePath}' commit --allow-empty -m race\n`);
+    await chmod(hookPath, 0o755);
+    await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow("Command failed (exit code 1)");
+    expect(await run(repositoryPath, ["git", "rev-parse", "HEAD"])).toBe(head);
+    expect(await run(remotePath, ["git", "log", "-1", "--format=%s"])).toBe("race");
+    await Bun.file(hookPath).delete();
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-and-pushed");
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(
+      await run(repositoryPath, ["git", "rev-parse", "HEAD"]),
+    );
+  });
+
+  it.each([
+    "https://github.com/example/registry.git",
+    "git@github.com:example/registry.git",
+    "ssh://git@github.com/example/registry.git",
+    "ssh://git@ssh.github.com:443/example/registry.git",
+    "https://github.com/example/registry.git\nssh://git@example.invalid/registry.git",
+  ])("blocks private content in outgoing history to %s even when later removed", async (destination) => {
+    const { remotePath, repositoryPath } = await createRepository();
+    const remoteBefore = await run(remotePath, ["git", "rev-parse", "HEAD"]);
+    await Bun.write(join(repositoryPath, "private.txt"), ["internal", "cvb", "lol"].join("."));
+    await run(repositoryPath, ["git", "add", "private.txt"]);
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "-m", "add content"]);
+    await run(repositoryPath, ["git", "rm", "private.txt"]);
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "-m", "remove content"]);
+    const overrides = new Map([["git remote get-url --push --all origin", destination]]);
+    await expect(scheduledUpdate(repositoryPath, process.execPath, async (cmd) => (
+      overrides.get(cmd.join(" ")) ?? run(repositoryPath, cmd)
+    ))).rejects.toThrow(
+      "Push blocked: outgoing commits contain private internal domains. Anonymize them before retrying.",
+    );
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(remoteBefore);
+  });
+
+  it("blocks private domains in outgoing commit messages before pushing to GitHub", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    const remoteBefore = await run(remotePath, ["git", "rev-parse", "HEAD"]);
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "--allow-empty", "-m", ["INTERNAL", "ZXC", "LOL"].join(".")]);
+    const overrides = new Map([["git remote get-url --push --all origin", "https://github.com/example/registry.git"]]);
+    await expect(scheduledUpdate(repositoryPath, process.execPath, async (cmd) => (
+      overrides.get(cmd.join(" ")) ?? run(repositoryPath, cmd)
+    ))).rejects.toThrow(
+      "Push blocked: outgoing commits contain private internal domains. Anonymize them before retrying.",
+    );
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(remoteBefore);
+  });
+
+  it("allows public outgoing content after inspecting GitHub destinations", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "--allow-empty", "-m", "public content"]);
+    const overrides = new Map([["git remote get-url --push --all origin", "https://github.com/example/registry.git"]]);
+    expect(await scheduledUpdate(repositoryPath, process.execPath, async (cmd) => (
+      overrides.get(cmd.join(" ")) ?? run(repositoryPath, cmd)
+    ))).toBe("pushed");
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(
+      await run(repositoryPath, ["git", "rev-parse", "HEAD"]),
+    );
+  });
+
+  it("supports file URLs for an upstream remote", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    await run(repositoryPath, ["git", "remote", "set-url", "origin", `file://${remotePath}`]);
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "--allow-empty", "-m", "local"]);
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("pushed");
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(
+      await run(repositoryPath, ["git", "rev-parse", "HEAD"]),
+    );
+  });
+
+  it.each(["transport::unknown", "", "ftp://example.invalid/registry.git",
+    "https://github.com/example/registry.git\ntransport::unknown"])(
+    "refuses a push when a destination cannot be verified: %s", async (destination) => {
+      const { remotePath, repositoryPath } = await createRepository();
+      const remoteBefore = await run(remotePath, ["git", "rev-parse", "HEAD"]);
+      await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+        "commit", "--allow-empty", "-m", "local"]);
+      const overrides = new Map([["git remote get-url --push --all origin", destination]]);
+      await expect(scheduledUpdate(repositoryPath, process.execPath, async (cmd) => (
+        overrides.get(cmd.join(" ")) ?? run(repositoryPath, cmd)
+      ))).rejects.toThrow("Cannot determine the push destination; inspect the upstream remote before retrying.");
+      expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(remoteBefore);
+    },
+  );
 
   it("merges non-overlapping local and incoming edits within the same file", async () => {
     const { remotePath, repositoryPath } = await createRepository();

@@ -3,8 +3,9 @@ import { dirname, join } from "node:path";
 
 import { pullWithRebase } from "./pullWithRebase";
 import type { IScheduledUpdateRunner } from "./pullWithRebase";
+import { pushScheduledCommits } from "./pushScheduledCommits";
 
-type IScheduledUpdateResult = "unchanged" | "bootstrapped";
+type IScheduledUpdateResult = "unchanged" | "bootstrapped" | "pushed" | "bootstrapped-and-pushed";
 
 function createRunner(repositoryRoot: string, bunExecutable: string): IScheduledUpdateRunner {
   const env: NodeJS.ProcessEnv = {
@@ -38,13 +39,16 @@ export async function scheduledUpdate(
   await pullWithRebase(repositoryRoot, before, run);
   const after = await run(["git", "rev-parse", "HEAD"], true);
   const pendingFile = Bun.file(join(repositoryRoot, ".tmp/scheduled-update-pending"));
-  if (before === after && !(await pendingFile.exists())) {
-    return "unchanged";
+  const shouldBootstrap = before !== after || await pendingFile.exists();
+  if (shouldBootstrap) {
+    await mkdir(join(repositoryRoot, ".tmp"), { recursive: true });
+    await Bun.write(pendingFile, after);
+    await run([bunExecutable, "run", "bootstrap", "--", "-y"]);
+    await pendingFile.delete();
   }
-
-  await mkdir(join(repositoryRoot, ".tmp"), { recursive: true });
-  await Bun.write(pendingFile, after);
-  await run([bunExecutable, "run", "bootstrap", "--", "-y"]);
-  await pendingFile.delete();
-  return "bootstrapped";
+  const hasPushed = await pushScheduledCommits(run);
+  if (shouldBootstrap) {
+    return hasPushed ? "bootstrapped-and-pushed" : "bootstrapped";
+  }
+  return hasPushed ? "pushed" : "unchanged";
 }

@@ -19,8 +19,7 @@
     "question": "allow",
     "external_directory": {
       "{{repo_root}}/**": "allow",
-      "~/**": "allow",
-      "/home/alex/development/ai/ai-registry/**": "allow"
+      "~/**": "allow"
     },
     "bash": {
       "git checkout *": "ask",

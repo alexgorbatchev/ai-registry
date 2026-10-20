@@ -6,7 +6,7 @@ This package implements the repository build, bootstrap, and synchronization com
 
 - Dev / Build: `bun run build` from repository root
 - Test: `bun test packages/registry-cli`
-- Scheduled update: `bun run scheduled:update` from repository root; the entrypoint owns runtime directory creation, logging, and the native macOS/Linux lock for both manual and scheduled runs. Do not add an outer scheduler lock or invoke its internal worker directly.
+- Scheduled update: `bun run scheduled:update` from repository root; the entrypoint owns runtime directory creation, logging, and the native macOS/Linux lock for both manual and scheduled runs. Keep only the last 48 hours of timestamped output in `.tmp/scheduled-update.log`, pruning under the same lock as all log writes and worker execution. Do not add an outer scheduler lock or invoke its internal logger or worker directly. `AI_REGISTRY_SCHEDULED_WORKER` is internal launcher-to-logger transport, not user configuration.
 
 ## Boundaries & Quality Rules
 

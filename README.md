@@ -167,7 +167,7 @@ After bootstrap configures `core.hooksPath`, future `git pull` operations rerun 
 
 ### Scheduled updates
 
-The repository's `.cronrc` schedules updates every five minutes through `cron-person`. Run `just cron-enable` to validate, authorize, and install it; rerun this after editing `.cronrc`. The update script creates `.tmp`, appends output to `.tmp/scheduled-update.log`, and skips overlapping runs using native `lockf` on macOS or [`flock`](https://man7.org/linux/man-pages/man1/flock.1.html) on Linux. Every new log line starts with a timestamp in the process's local timezone formatted as `[YYYY-MM-DD HH:MM]`, for example `[2026-10-16 13:09]`. Manual runs use the same lock. The checkout must remain on `main` tracking `origin/main` to update from GitHub's main branch.
+The repository's `.cronrc` schedules updates every five minutes through `cron-person`. Run `just cron-enable` to validate, authorize, and install it; rerun this after editing `.cronrc`. The update script creates `.tmp`, appends output to `.tmp/scheduled-update.log`, and skips overlapping runs using native `lockf` on macOS or [`flock`](https://man7.org/linux/man-pages/man1/flock.1.html) on Linux. Every new log line starts with a timestamp in the process's local timezone formatted as `[YYYY-MM-DD HH:MM]`, for example `[2026-10-16 13:09]`. Each run prunes entries older than 48 hours at minute precision before appending output. Entries without this timestamp format are discarded. Manual runs use the same lock. The checkout must remain on `main` tracking `origin/main` to update from GitHub's main branch.
 
 - `just cron-check`: validate this repository's `.cronrc`.
 - `just cron-status`: inspect this repository's authorization and tasks.
@@ -182,7 +182,7 @@ After a successful pull and any required bootstrap, the updater pushes outgoing 
 
 An interrupted update or failed rollback leaves `.tmp/scheduled-update-recovery.json` and stops further updates. Inspect the recorded original HEAD, stash label, and saved stash (when recorded), then finish recovery before removing that file. Existing user stashes are preserved. Finish any existing Git merge, rebase, or cherry-pick before running the updater. Rebasing changes local commit IDs.
 
-The entrypoint at `packages/registry-cli/src/bin/scheduled-update.ts` resolves the repository from its own location, so it can also be invoked by absolute path from another working directory. It runs `scheduled-update-worker.ts` under the lock, holding it through pull, bootstrap, and push. It uses the running Bun executable for bootstrap and puts that executable's directory on the child processes' `PATH`.
+The entrypoint at `packages/registry-cli/src/bin/scheduled-update.ts` resolves the repository from its own location, so it can also be invoked by absolute path from another working directory. The lock covers log pruning, pull, bootstrap, push, and all log writes, including when the launcher is terminated while its worker continues running. It uses the running Bun executable for bootstrap and puts that executable's directory on the child processes' `PATH`.
 
 For Linux cron without `cron-person`, replace `/path/to/ai-registry` with the checkout location and `/path/to/bun` with the absolute executable path reported by `command -v bun`. Locking and logging stay inside the script:
 

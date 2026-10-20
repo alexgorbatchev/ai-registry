@@ -7,6 +7,13 @@
       "skillPath": "skills/caveman/SKILL.md",
       "computedHash": "71b600c88c8d1d36f18c4875db23b53c5d6cb9ba3195e19451d6b1bb67db07c4"
     },
+    "computer-use": {
+      "source": "stablyai/orca",
+      "ref": "c60a9b0a2a8d1aff2da94c2185a6dba238e65755",
+      "sourceType": "github",
+      "skillPath": "skills/computer-use/SKILL.md",
+      "computedHash": "1130dcb48ca8c1cf00e1c15242e95f0141cad5299b9fc2ebbcd2779c8c2f3194"
+    },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -31,6 +38,20 @@
       "sourceType": "github",
       "skillPath": "skills/megacave/SKILL.md",
       "computedHash": "60da384ce09cedf553e2b6dfe4669ffb4e53f34c3df8ce2c8012a32e06f8e187"
+    },
+    "orca-cli": {
+      "source": "stablyai/orca",
+      "ref": "c60a9b0a2a8d1aff2da94c2185a6dba238e65755",
+      "sourceType": "github",
+      "skillPath": "skills/orca-cli/SKILL.md",
+      "computedHash": "ccd717aed7b9866a059b0b31d9a009641a28f6db3201749943fbbb797af4a317"
+    },
+    "orca-orchestration": {
+      "source": "stablyai/orca",
+      "ref": "c60a9b0a2a8d1aff2da94c2185a6dba238e65755",
+      "sourceType": "github",
+      "skillPath": "skills/orchestration/SKILL.md",
+      "computedHash": "0dc04a0a354974eed5c15115fc6cb7461d7423e95a5b19ee995796cf1383e7ed"
     },
     "shadcn": {
       "source": "shadcn/ui",

@@ -2,12 +2,13 @@
 name: github-pr
 description: >-
   Use when preparing, writing, creating, or updating GitHub pull requests with
-  the gh CLI, including PR titles and descriptions, or when reviewing and
-  responding to review comments on a GitHub pull request.
+  the gh CLI, including PR titles and descriptions, attaching screenshots or
+  videos to PR descriptions and comments, or when reviewing and responding to
+  review comments on a GitHub pull request.
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-01 21:08
-  last_modified: 2026-10-20 11:09
+  last_modified: 2026-10-20 15:36
   status: current
 ---
 
@@ -17,6 +18,26 @@ Choose the mode from the request and follow its reference.
 | --- | --- |
 | Draft, create, or update a PR title or description | [Creating](references/creating.md) |
 | Review or respond to comments left on a PR | [Reviewing](references/reviewing.md) |
+
+## Attachments
+
+Attach images and videos with `gh`'s `--attach <path>[#alt text]` flag on `gh pr create`, `gh pr edit`, and `gh pr comment`. It uploads the file and writes the GitHub-hosted URL into the posted body. Do not upload through a browser, paste local paths, or hand-write asset URLs. If `--help` for the command does not list `--attach`, report that the installed `gh` lacks attachment support instead of using another upload route.
+
+To place media inline, reference each file in the body by the same path passed to `--attach`; `gh` rewrites those references to the uploaded URLs and appends any unreferenced attachment to the end of the body:
+
+```bash
+# .tmp/pr-body.md contains, among the prose:
+#   ![Error state after sign-in](.tmp/after.png)
+#
+#   ![](.tmp/demo.mp4)
+gh pr edit 123 --body-file .tmp/pr-body.md --attach .tmp/after.png --attach .tmp/demo.mp4
+```
+
+- `gh pr edit --attach` without a body flag keeps the existing description and appends the attachment. To place media inside an existing description, save the current body with `gh pr view <number> --json body --jq .body`, insert the references, and pass the file with `--body-file` plus the matching `--attach` flags.
+- Put a video reference alone in its own paragraph so it renders as a player; inside a sentence it renders as a link. Videos take no alt text.
+- `--attach` accepts only image and media files (PNG, GIF, JPEG, SVG, MP4, MOV, WebM), at most 50 per command and each file once. It requires push access to the repository. See [GitHub's attachment limits](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/attaching-files).
+- Uploads to public repositories are readable without authentication. Confirm that a screenshot contains no secrets, tokens, or private data before attaching it.
+- When some uploads fail, `gh` still posts the ones that succeeded and exits non-zero. Read the posted body before retrying so the retry does not duplicate attachments.
 
 ## Writing Rules
 

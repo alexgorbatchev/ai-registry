@@ -69,8 +69,11 @@ describe("scheduledUpdate", () => {
     const { remotePath, repositoryPath } = await createRepository();
     for (const sourcePath of [
       "packages/registry-cli/src/bin/scheduled-update.ts",
+      "packages/registry-cli/src/bin/scheduled-update-logger.ts",
       "packages/registry-cli/src/bin/scheduled-update-worker.ts",
       "packages/registry-cli/src/lib/runLockedScheduledUpdate.ts",
+      "packages/registry-cli/src/lib/runLoggedScheduledUpdate.ts",
+      "packages/registry-cli/src/lib/pruneScheduledUpdateLog.ts",
       "packages/registry-cli/src/lib/writeTimestampedOutput.ts",
       "packages/registry-cli/src/lib/scheduledUpdate.ts",
       "packages/registry-cli/src/lib/pullWithRebase.ts",
@@ -79,6 +82,7 @@ describe("scheduledUpdate", () => {
     ]) {
       await Bun.write(join(repositoryPath, sourcePath), Bun.file(resolve(sourcePath)));
     }
+    await Bun.write(join(repositoryPath, ".tmp/scheduled-update.log"), "[2000-01-01 00:00] expired\n");
     expect(await run(remotePath, [process.execPath, join(repositoryPath,
       "packages/registry-cli/src/bin/scheduled-update.ts")])).toBe(
       `[OK] scheduled update: completed; log: ${repositoryPath}/.tmp/scheduled-update.log`,

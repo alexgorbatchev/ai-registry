@@ -111,42 +111,68 @@ export default reactCompilerPlugin;
 
 ---
 
-## 3. Linting and Rules of React (`oxlint`)
+## 3. Required React Policy
 
-To catch Rules of React violations (mutating props, calling hooks conditionally, accessing refs in render) without ESLint overhead, use `oxlint`. Oxlint natively includes the 22 React Compiler validation rules under its `react` plugin.
+Every React project must use **`@alexgorbatchev/typescript-ai-policy`** through its shared Oxfmt and Oxlint config factories. Installing the dependency alone does not enable the policy. Read the [package documentation](https://github.com/alexgorbatchev/typescript-ai-policy#readme) and the installed package's peer dependencies before configuring it.
 
 ### Install
 ```bash
-bun add -D oxlint oxfmt
+bun add -D @alexgorbatchev/typescript-ai-policy oxlint oxfmt ts-unused
 ```
 
-### Configure `.oxlintrc.json`
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript"],
-  "categories": {
-    "correctness": "error"
-  },
-  "rules": {
-    "react/set-state-in-effect": "warn"
-  }
-}
+Record these as `package.json` devDependencies and commit the lockfile. Keep compatible TypeScript and Bun type dependencies installed as required by the project.
+
+### Configure `oxlint.config.ts`
+```ts
+import createOxlintConfig from "@alexgorbatchev/typescript-ai-policy/oxlint-config";
+
+export default createOxlintConfig();
 ```
+
+### Configure `oxfmt.config.ts`
+```ts
+import createOxfmtConfig from "@alexgorbatchev/typescript-ai-policy/oxfmt-config";
+
+export default createOxfmtConfig(() => ({}));
+```
+
+Replace superseded `.oxlintrc.json` and `.oxfmtrc.json` configurations after transferring applicable project settings through the factories. Consumer lint configuration is extension-only: do not override shared rules, replace the factories with copied rules, or use lint-disable comments to bypass policy findings. Configure only justified exclusions for generated or third-party files.
+
+### Use the shared configs in every formatting and lint recipe
+
+Replace the base skill's formatting and lint recipes with these; keep its `typecheck`, `unused`, and `test` recipes:
+
+```justfile
+fmt:
+    bun run --bun oxfmt --config oxfmt.config.ts .
+
+fmt-check:
+    bun run --bun oxfmt --config oxfmt.config.ts --check .
+
+lint:
+    bun run --bun oxlint --config oxlint.config.ts --deny-warnings .
+
+fix:
+    bun run --bun oxlint --config oxlint.config.ts --fix .
+    bun run --bun oxfmt --config oxfmt.config.ts .
+
+verify: fmt-check lint typecheck unused test
+```
+
+Run the tools under Bun to load the TypeScript config entrypoints. The formatting and lint checks above enforce the shared policy as part of `just verify`; do not maintain a second standalone lint/format stack.
 
 ---
 
-## 4. Unified Quality Check (`bun run check`)
+## 4. Development Tasks (`just verify`)
 
-Combine formatting (`oxfmt`), linting (`oxlint`), type checking (`tsc`), and tests into a fast, single command in `package.json`:
+Use the quality recipes from the Bun skill's **Linting & Formatting** section with the policy-backed replacements above. Run `just verify` to validate shared-policy formatting and lint, types, unused code, and tests. Keep these tasks in `justfile`; reserve `bun check` for Bun's native type checker.
 
-```json
-{
-  "scripts": {
-    "check": "oxfmt --check && oxlint --deny-warnings && tsc --noEmit && bun test",
-    "fmt": "oxfmt",
-    "build": "bun src/build/buildClient.ts",
-    "dev": "bun --hot src/server/startServer.ts"
-  }
-}
+Add build and development recipes that run the project's actual entrypoints directly. For a project using `src/build/buildClient.ts` and `src/server/startServer.ts`:
+
+```justfile
+build:
+    bun src/build/buildClient.ts
+
+dev:
+    bun --hot src/server/startServer.ts
 ```

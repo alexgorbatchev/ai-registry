@@ -4,11 +4,9 @@ description: Must use whenever Bun is used.
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-15 21:48
-  last_modified: 2026-10-09 17:29
+  last_modified: 2026-10-19 16:30
   status: current
 ---
-
-# Bun
 
 Always use native, highly-optimized Bun APIs instead of falling back to Node.js stdlib or heavy npm packages. Bun's standard library is written in Zig, runs natively, and is dramatically faster.
 
@@ -18,31 +16,60 @@ Always use native, highly-optimized Bun APIs instead of falling back to Node.js 
 2. **Directory Handling Exception**: `node:fs/promises` is approved for directories (`mkdir`, `readdir` with recursive globbing). For files, ALWAYS use `Bun.file` and `Bun.write`.
 3. **Use Progressive Disclosure**: Read the dedicated reference files below for detailed APIs, options, and advanced snippets rather than guessing or translating Node code.
 
+## Developer Workflows (`justfile`)
+
+Define development tasks in a `justfile`: running, development servers, builds, formatting, linting, type checking, tests, and aggregate verification. Invoke them with `just <recipe>` in local instructions and CI. Run Bun entrypoints and installed tools directly inside recipes; do not wrap or duplicate these tasks in `package.json` scripts. Keep package metadata, dependencies, workspaces, and required package-manager lifecycle hooks in `package.json`.
+
+Name aggregate validation `verify` and invoke it as `just verify`. Do not create a `check` recipe or a `package.json` `check` script for aggregate validation. [Bun's native `bun check`](https://bun.com/docs/runtime/check) performs TypeScript type checking; a package script named `check` overrides that command. Keep type checking as a separate `typecheck` recipe.
+
+When migrating existing workflows, move their commands into recipes, update callers and documentation, and remove superseded task scripts. In workspaces, put package-specific recipes in each package's `justfile`, register them with root `mod` declarations, and coordinate them through root recipes.
+
 ## Linting & Formatting
 
-Use **Oxlint** for JavaScript/TypeScript linting and **Oxfmt** for formatting in Bun projects. Install both as development dependencies:
+Use **Oxlint** for JavaScript/TypeScript linting, **Oxfmt** for formatting, and **ts-unused** for unused-code analysis in every Bun project. Declare all three in `package.json` development dependencies using:
 
 ```sh
-bun add -D oxlint oxfmt
+bun add -D oxlint oxfmt ts-unused
 ```
 
-Commit `.oxlintrc.json` for lint rules and `.oxfmtrc.json` for formatting options. Preserve the project's existing formatting conventions when migrating. Replace superseded lint/format dependencies, configs, and scripts rather than running duplicate stacks.
+Commit `package.json` and `bun.lock`, and run `bun install` when setting up the project. Invoke installed tool binaries with `bun run <tool>` inside recipes. Do not use `bun x`, `bunx`, or `--no-install` for these development tasks.
 
-Expose separate write and check commands in `package.json`; keep CI checks read-only:
+For React projects, also install **`@alexgorbatchev/typescript-ai-policy`** and use its shared config factories as described in [references/react-compiler.md](references/react-compiler.md#3-required-react-policy). This is mandatory for React projects. Use `oxlint.config.ts` and `oxfmt.config.ts` with those factories instead of standalone JSON configs. For other projects, commit `.oxlintrc.json` for lint rules and `.oxfmtrc.json` for formatting options. Preserve existing formatting conventions where the required shared policy permits them. Replace superseded lint/format dependencies, configs, and scripts rather than running duplicate stacks.
 
-```json
-{
-  "scripts": {
-    "lint": "oxlint --deny-warnings",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check",
-    "fix": "oxlint --fix && oxfmt",
-    "check": "bun run fmt:check && bun run lint && tsc --noEmit && bun test"
-  }
-}
+Expose separate write and validation recipes in `justfile`; keep `verify` and its dependencies read-only. This TypeScript example requires installed `typescript` and `@types/bun` development dependencies, a `tsconfig.json`, and behavioral tests:
+
+```justfile
+default:
+    @just --list
+
+fmt:
+    bun run oxfmt
+
+fmt-check:
+    bun run oxfmt --check
+
+lint:
+    bun run oxlint --deny-warnings
+
+fix:
+    bun run oxlint --fix
+    bun run oxfmt
+
+typecheck:
+    bun run tsc --noEmit
+
+unused:
+    bun run --bun ts-unused check tsconfig.json
+
+test:
+    bun test
+
+verify: fmt-check lint typecheck unused test
 ```
 
-Scope these commands to the project's source and test directories when a repository contains unrelated assets or packages. Keep `tsc --noEmit` for type checking and `bun test` for behavioral tests alongside this stack.
+Scope these commands to the project's source and test directories when a repository contains unrelated assets or packages. Keep `tsc --noEmit` for type checking and `bun test` for behavioral tests alongside this stack. Run `just fmt` or `just fix` to modify files; run `just verify` locally and in CI to validate them.
+
+Keep `unused` in `verify` for every Bun project. Point it at a `tsconfig.json` that includes the project's source; in workspaces, run it for each relevant package config. Use `unused.config.ts` with `defineConfig` from `ts-unused` when customization is needed. Enable `packageMode` for published library entrypoints, and limit exclusions to verified external consumers or generated files; do not suppress findings merely to make verification pass. Keep the mutating `ts-unused fix` command out of `verify`. Consult the [ts-unused documentation](https://github.com/alexgorbatchev/ts-unused#readme) before configuring analysis.
 
 Check the official [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html) and [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html) docs before choosing rules or options. For React-specific lint rules, read [references/react-compiler.md](references/react-compiler.md).
 
@@ -144,7 +171,7 @@ for await (const file of glob.scan(".")) {
 Open and read these reference files whenever your task involves the following domains:
 
 - **Bundler / Compilation / `Bun.build`**: Read [references/bundling.md](references/bundling.md). Includes options, custom loaders, virtual in-memory builds (`files`), env inlining, code splitting, and browser/bun targets.
-- **React Compiler Setup**: Read [references/react-compiler.md](references/react-compiler.md). Covers configuring Bun's native Rust React Compiler for production builds (`Bun.build`), dev-server static routing with `Bun.serve` (`bunfig.toml`), error resilience, and Oxlint validation.
+- **React Projects**: Read [references/react-compiler.md](references/react-compiler.md). Covers the mandatory TypeScript AI policy configs and verification, Bun's native Rust React Compiler for production builds (`Bun.build`), dev-server static routing with `Bun.serve` (`bunfig.toml`), and error resilience.
 - **S3 / R2 Bucket Storage (`S3Client`)**: Read [references/s3.md](references/s3.md). Covers file reading/writing, presigning URLs (PUT/GET), automatic streaming multipart uploads, and 302 download redirect responses.
 - **Redis & Valkey Client (`RedisClient`)**: Read [references/redis.md](references/redis.md). Covers automatic command pipelining, Pub/Sub channels (subscriber connections), key/hash/set basic operations, and connection options.
 - **Tar & Gzip Archives (`Bun.Archive`)**: Read [references/archive.md](references/archive.md). Covers creating archives from in-memory objects, recursive file extraction, file filtering via globbing, and native gzip/deflate/zstd compression.

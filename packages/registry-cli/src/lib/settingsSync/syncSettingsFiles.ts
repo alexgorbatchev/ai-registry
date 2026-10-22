@@ -112,7 +112,9 @@ export async function syncSettingsFiles(options: ISyncSettingsFilesOptions): Pro
     const writtenSourcePath = await syncSettingsFile(file, options);
     if (writtenSourcePath === null) continue;
 
-    if (sourceState === "clean") {
+    if (sourceState === "clean" && await options.sourceRepository.hasSecrets(writtenSourcePath)) {
+      console.warn(`  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: gitleaks found possible secrets.`);
+    } else if (sourceState === "clean") {
       committablePaths.push(writtenSourcePath);
     } else if (sourceState === "dirty") {
       console.warn(`  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: it already had uncommitted edits.`);

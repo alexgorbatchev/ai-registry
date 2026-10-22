@@ -1,6 +1,7 @@
 import { $ } from "bun";
 import { dirname, relative } from "path";
 
+import { runGitleaks } from "../runGitleaks";
 import type { ISettingsSourceRepository, SettingsSourceState } from "./types";
 
 const COMMIT_SUBJECT = "chore(settings): sync harness settings";
@@ -23,6 +24,9 @@ export function createGitSettingsSourceRepository(): ISettingsSourceRepository {
 
       const diff = await $`git diff --quiet HEAD -- ${sourcePath}`.cwd(repositoryRoot).quiet().nothrow();
       return diff.exitCode === 0 ? "clean" : "dirty";
+    },
+    async hasSecrets(sourcePath: string): Promise<boolean> {
+      return (await runGitleaks(["dir", sourcePath], dirname(sourcePath))) === "leaks";
     },
     async commit(sourcePaths: string[]): Promise<void> {
       const pathsByRepository = new Map<string, string[]>();

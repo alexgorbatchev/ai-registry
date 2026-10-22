@@ -31,7 +31,9 @@ function applyTomlChanges(text: string, changes: ISettingsChange[], filePath: st
   for (const change of changes) {
     setAtKeyPath(target, change.keyPath, change.value);
   }
-  return patch(text, target);
+  // Trailing commas in inline tables are TOML 1.1 only; keep new content readable by
+  // TOML 1.0 parsers even when the document already uses trailing commas in arrays.
+  return patch(text, target, { trailingComma: false });
 }
 
 // Edits JSON, JSONC, or (for `.toml` files) TOML text in place, so comments, key

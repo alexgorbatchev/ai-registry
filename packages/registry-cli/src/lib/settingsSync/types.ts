@@ -38,6 +38,8 @@ export type SettingsSourceState = "clean" | "dirty" | "unversioned";
 
 export interface ISettingsSourceRepository {
   getSourceState(sourcePath: string): Promise<SettingsSourceState>;
+  // Whether gitleaks finds possible secrets in the file; such changes are never committed.
+  hasSecrets(sourcePath: string): Promise<boolean>;
   commit(sourcePaths: string[]): Promise<void>;
 }
 

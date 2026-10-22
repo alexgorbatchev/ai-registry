@@ -64,6 +64,15 @@ describe("createGitSettingsSourceRepository", () => {
     expect((await $`git status --porcelain`.cwd(repositoryRoot).text()).trim()).toBe("M  harnesses/other.json");
   });
 
+  it("reports whether gitleaks finds possible secrets in a source file", async () => {
+    const repositoryRoot = await createRepository();
+    const repository = createGitSettingsSourceRepository();
+    await writeFile(join(repositoryRoot, "harnesses", "other.json"), `{ "awsKeyId": "${["AKIA", "IOSFODNN7EXAMPLQ"].join("")}" }\n`);
+
+    expect(await repository.hasSecrets(join(repositoryRoot, "harnesses", "settings.json"))).toBe(false);
+    expect(await repository.hasSecrets(join(repositoryRoot, "harnesses", "other.json"))).toBe(true);
+  });
+
   it("refuses to commit files outside a Git repository", async () => {
     const repository = createGitSettingsSourceRepository();
 

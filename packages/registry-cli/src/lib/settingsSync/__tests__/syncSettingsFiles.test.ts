@@ -51,11 +51,12 @@ async function createLayout(relativePath: string = JSONC_RELATIVE_PATH): Promise
   };
 }
 
-function createRecordingSourceRepository(sourceState: SettingsSourceState): IRecordingSourceRepository {
+function createRecordingSourceRepository(sourceState: SettingsSourceState, hasSecrets = false): IRecordingSourceRepository {
   const commits: string[][] = [];
   return {
     commits,
     getSourceState: async () => sourceState,
+    hasSecrets: async () => hasSecrets,
     commit: async (sourcePaths) => {
       commits.push(sourcePaths);
     },
@@ -186,6 +187,23 @@ describe("syncSettingsFiles", () => {
     expect(await readFile(layout.sourcePath, "utf-8")).toBe('{\n  "theme": "light"\n}\n');
     expect(warnSpy.mock.calls).toEqual([
       [`  - ⚠️ Left synced settings uncommitted in ${layout.sourcePath}: it already had uncommitted edits.`],
+    ]);
+  });
+
+  it("leaves harness edits uncommitted when gitleaks finds possible secrets in the source file", async () => {
+    const layout = await createLayout();
+    spyOn(console, "log").mockImplementation(() => {});
+    const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+    const sourceRepository = createRecordingSourceRepository("clean", true);
+    await writeSource(layout, '{\n  "theme": "dark"\n}\n');
+    await runSync(layout, sourceRepository);
+    await writeTestFile(layout.livePath, '{\n  "theme": "light"\n}\n');
+
+    await runSync(layout, sourceRepository);
+
+    expect(sourceRepository.commits).toEqual([]);
+    expect(warnSpy.mock.calls).toEqual([
+      [`  - ⚠️ Left synced settings uncommitted in ${layout.sourcePath}: gitleaks found possible secrets.`],
     ]);
   });
 

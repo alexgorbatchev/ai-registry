@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-10-16 16:33
+  last_modified: 2026-10-22 10:22
   status: current
 ---
 
@@ -111,13 +111,9 @@ check or running review is unfinished work, not a handoff to the next issue.
 4. **Implement in the issue worktree.** Branch from fetched `main` under
    `.workspaces/issue-NNN` with branch `fix/issue-NNN-slug`. Replace `NNN` with the
    issue number and `slug` with a short lowercase, hyphen-separated title fragment.
-   For changes to executable behavior, follow repository red/green rules: observe
-   the regression test fail, implement the fix, observe it pass, then temporarily
-   disable only the fix with tests enabled in an owned, isolated or disposable
-   worktree and confirm the test fails again. Restore it and rerun relevant checks;
-   preserve other actors' changes. For non-executable changes, use the relevant
-   validators; do not manufacture static-value tests. Commit only this ticket's
-   changes.
+   Follow the repository's testing rules. For non-executable changes, use the
+   relevant validators; do not manufacture static-value tests. Commit only this
+   ticket's changes.
 5. **Create or update the PR.** Push the issue branch and use `main` as its base.
    Use existing PR-publication authorization without asking for separate approval
    of the verified title and body. Honor draft-only limits and explicit requests

@@ -29,7 +29,7 @@ a private implementer briefing or a pasted reviewer contract.
 4. Verify the PR references the correct issue and all applicable CI is green for
    the exact PR revision, following [checks and CI](checks-and-ci.md). Missing,
    pending, failed, cancelled, unexpectedly skipped, or stale checks prevent
-   approval. Do not require logs, round manifests, evidence bundles, or red/green
+   approval. Do not require logs, round manifests, evidence bundles, or test
    transcripts in the description or comments; GitHub's check results are the
    completion record.
    Check that generated artifacts, docs, tests, and acceptance criteria match the

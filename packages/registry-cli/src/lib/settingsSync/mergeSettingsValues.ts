@@ -80,6 +80,19 @@ function mergeObjects(
   return merged;
 }
 
+// Drops parents that only held live-only keys, such as a `hooks` table holding just
+// `hooks.state`, unless the source already has them.
+function removeEmptiedParents(target: IJsonObject, keyPath: SettingsKeyPath, source: IJsonObject): void {
+  for (let length = keyPath.length - 1; length > 0; length -= 1) {
+    const parentPath = keyPath.slice(0, length);
+    const parent = getAtKeyPath(target, parentPath);
+    if (!isJsonObject(parent) || Object.keys(parent).length > 0 || getAtKeyPath(source, parentPath) !== undefined) {
+      return;
+    }
+    setAtKeyPath(target, parentPath, undefined);
+  }
+}
+
 // Three-way merge of a harness settings file. Keys changed on only one side since
 // the base take that side's value, so harness-made changes flow into the source
 // and source changes flow into the live file. When both sides changed the same
@@ -98,6 +111,7 @@ export function mergeSettingsValues(input: IMergeSettingsValuesInput): ISettings
     const liveOnlyValue = getAtKeyPath(input.live, keyPath);
     setAtKeyPath(liveValue, keyPath, liveOnlyValue !== undefined ? liveOnlyValue : getAtKeyPath(input.source, keyPath));
     setAtKeyPath(sourceValue, keyPath, getAtKeyPath(input.source, keyPath));
+    removeEmptiedParents(sourceValue, keyPath, input.source);
   }
 
   return {

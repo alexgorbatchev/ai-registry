@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "agentPushNotifEnabled": true,
   "attribution": {
     "commit": "",
     "pr": "",
@@ -151,9 +152,18 @@
             "type": "command"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "command": "codegraph prompt-hook",
+            "type": "command"
+          }
+        ]
       }
     ]
   },
+  "model": "opus",
   "modelSettings": {
     "claude-opus-5-5": {
       "effortLevel": "high"
@@ -164,5 +174,6 @@
     "command": "jq -r 'def yellow: \"\\u001b[33m\" + . + \"\\u001b[0m\"; def human: if . == null then \"--\" elif . >= 1000000 then ((. / 1000000 * 10 | round) / 10 | tostring) + \"m\" elif . >= 1000 then ((. / 1000 * 10 | round) / 10 | tostring) + \"k\" else tostring end; .rate_limits as $r | .context_window as $c | ($c.context_window_size | human | yellow) as $size | (if $c.current_usage == null then \"Context: \\(\"--\" | yellow) / \\($size)\" else $c.current_usage as $u | (($u.input_tokens // 0) + ($u.cache_creation_input_tokens // 0) + ($u.cache_read_input_tokens // 0) | human | yellow) as $used | \"Context: \\($used) / \\($size)\" end) as $context | [$context, ($r.five_hour.used_percentage | select(. != null) | \"5h: \\((round | tostring) + \"%\" | yellow)\"), ($r.seven_day.used_percentage | select(. != null) | \"7d: \\((round | tostring) + \"%\" | yellow)\")] | join(\" | \")'",
     "type": "command"
   },
+  "switchModelsOnFlag": true,
   "theme": "dark"
 }

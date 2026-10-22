@@ -68,7 +68,7 @@ interface IHelpResult {
 
 function runHelpAtPath(commandPath: string): IHelpResult {
   const result = spawnSync(commandPath, ["--help"], {
-    cwd: REPO_ROOT,
+    cwd: REPOSITORY_ROOT,
     encoding: "utf8",
   });
 

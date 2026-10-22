@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
-import { basename, join } from "path";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
+import { join } from "path";
 
 import { buildCommand } from "../buildCommand";
 import type { IRegistryPaths } from "../../lib/getRegistryPaths";
+import { copyRepositoryHarnesses } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-settings-sync-tests");
-const EXCLUDED_HARNESS_DIR_NAMES = new Set([".tmp", "docs"]);
 
 describe("buildCommand settings sync", () => {
   let tempDir: string;
@@ -17,11 +17,7 @@ describe("buildCommand settings sync", () => {
     tempDir = await mkdtemp(join(TEST_ROOT, "case-"));
     const repoRoot = join(tempDir, "repo");
 
-    // A private copy of the real harnesses, because the build writes harness edits back into them.
-    await cp(join(process.cwd(), "harnesses"), join(repoRoot, "harnesses"), {
-      recursive: true,
-      filter: (sourcePath) => !EXCLUDED_HARNESS_DIR_NAMES.has(basename(sourcePath)),
-    });
+    await copyRepositoryHarnesses(join(repoRoot, "harnesses"));
     await mkdir(join(repoRoot, "skills", "base-skill"), { recursive: true });
     await writeFile(join(repoRoot, "skills", "base-skill", "SKILL.md"), "---\nname: base-skill\n---\n# Base Skill\n");
     await mkdir(join(repoRoot, "commands"), { recursive: true });

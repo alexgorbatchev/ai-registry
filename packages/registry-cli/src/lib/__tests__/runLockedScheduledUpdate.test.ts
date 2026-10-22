@@ -3,12 +3,12 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { runLockedScheduledUpdate } from "../runLockedScheduledUpdate";
-import { readTimestampedLog } from "./helpers";
+import { REPOSITORY_ROOT, readTimestampedLog } from "./helpers";
 
 const testDirectories: string[] = [];
 
 async function createDirectory(): Promise<string> {
-  const parentPath = resolve(".tmp/scheduled-lock-tests");
+  const parentPath = resolve(REPOSITORY_ROOT, ".tmp/scheduled-lock-tests");
   await mkdir(parentPath, { recursive: true });
   const directory = await mkdtemp(join(parentPath, "checkout with 'quotes' "));
   testDirectories.push(directory);
@@ -93,7 +93,7 @@ describe("runLockedScheduledUpdate", () => {
       'while (!(await Bun.file(".tmp/release").exists())) await Bun.sleep(10);',
       'console.log("survived");',
     ].join("\n")];
-    const sourcePath = resolve("packages/registry-cli/src/lib/runLockedScheduledUpdate.ts");
+    const sourcePath = resolve(REPOSITORY_ROOT, "packages/registry-cli/src/lib/runLockedScheduledUpdate.ts");
     const launcher = Bun.spawn([process.execPath, "-e", [
       `import { runLockedScheduledUpdate } from ${JSON.stringify(sourcePath)};`,
       `await runLockedScheduledUpdate(${JSON.stringify(directory)}, ${JSON.stringify(workerCommand)});`,

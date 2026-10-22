@@ -30,16 +30,7 @@ const originalArgv = [...process.argv];
 const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
 const originalXdgDataHome = process.env.XDG_DATA_HOME;
 
-const TEST_ROOT = join(
-  process.cwd(),
-  "packages",
-  "registry-cli",
-  "src",
-  "harnesses",
-  "claude-code",
-  ".tmp",
-  "claude-code-build-tests",
-);
+const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "claude-code-build-tests");
 const TEST_XDG_DATA_HOME = join(TEST_ROOT, "xdg-data-home");
 
 let testDirectoryIndex = 0;

@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { runLoggedScheduledUpdate } from "../runLoggedScheduledUpdate";
-import { readTimestampedLog } from "./helpers";
+import { REPOSITORY_ROOT, readTimestampedLog } from "./helpers";
 
 const testDirectories: string[] = [];
 
@@ -15,7 +15,7 @@ afterEach(async () => {
 
 describe("runLoggedScheduledUpdate", () => {
   it.each([0, 1, 75])("prunes, logs both output streams and returns worker exit %d", async (exitCode) => {
-    const parentPath = resolve(".tmp/scheduled-logged-worker-tests");
+    const parentPath = resolve(REPOSITORY_ROOT, ".tmp/scheduled-logged-worker-tests");
     await mkdir(parentPath, { recursive: true });
     const directory = await mkdtemp(join(parentPath, "checkout "));
     testDirectories.push(directory);

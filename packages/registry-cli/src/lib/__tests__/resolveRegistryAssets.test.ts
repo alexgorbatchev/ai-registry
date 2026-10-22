@@ -14,8 +14,8 @@ describe("resolveRegistryAssets", () => {
   let overlayDir: string;
 
   beforeEach(async () => {
-    await mkdir(join(process.cwd(), ".tmp"), { recursive: true });
-    tempDir = await mkdtemp(join(process.cwd(), ".tmp", "registry-assets-test-"));
+    await mkdir(join(import.meta.dir, "..", ".tmp"), { recursive: true });
+    tempDir = await mkdtemp(join(import.meta.dir, "..", ".tmp", "registry-assets-test-"));
     baseDir = join(tempDir, "base");
     overlayDir = join(tempDir, "overlay");
     await mkdir(baseDir, { recursive: true });

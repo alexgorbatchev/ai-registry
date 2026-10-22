@@ -5,6 +5,7 @@ import { join } from "path";
 
 import { buildCommand } from "../buildCommand";
 import { type IRegistryPaths } from "../../lib/getRegistryPaths";
+import { copyRepositoryHarnesses } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-overlay-tests");
 
@@ -32,8 +33,7 @@ describe("buildCommand with overlay", () => {
       "description: default profile\nskills:\n  - '*'\ncommands:\n  - '*'\nsystem_prompt: 'Base prompt'\n",
     );
 
-    // Use real harnesses from repo
-    const realHarnessesDir = join(process.cwd(), "harnesses");
+    await copyRepositoryHarnesses(join(repoRoot, "harnesses"));
 
     // Overlay structure
     await mkdir(join(overlayDir, "skills", "work-skill"), { recursive: true });
@@ -51,7 +51,7 @@ describe("buildCommand with overlay", () => {
     registryPaths = {
       root: repoRoot,
       overlay: overlayDir,
-      harnesses: realHarnessesDir,
+      harnesses: join(repoRoot, "harnesses"),
       skills: join(repoRoot, "skills"),
       commands: join(repoRoot, "commands"),
       profiles: join(repoRoot, "profiles"),

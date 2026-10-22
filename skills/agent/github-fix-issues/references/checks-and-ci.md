@@ -3,7 +3,7 @@
 Read repository instructions, task definitions, CI workflows, and executable check
 scripts. Discover exact commands, working directories, required environments, and
 coverage thresholds. Run required local tests, lint, typecheck, build, and generated
-artifact checks; CI does not waive repository development or red/green rules.
+artifact checks; CI does not waive repository development rules.
 Never invent commands or thresholds. Keep diagnostics in owned `.tmp/` files when
 needed for debugging; no published transcript or evidence archive is required.
 Completion reports summarize the checks actually run, verified outcomes for the
@@ -30,12 +30,8 @@ current ticket. After rebase, reproduce failures on the new untouched base when
 needed to classify them. Missing access or an external outage is a blocker, not
 permission to invent a code repair.
 
-For changes to executable behavior, follow the repository's red/green and
-fail-again rules. Keep tests enabled when temporarily disabling only the fix in
-an owned, isolated or disposable worktree; verify the expected failure, restore
-the final implementation, and rerun relevant checks. Preserve other actors'
-changes. For non-executable changes, run applicable validators. Do not manufacture
-static-value tests or publish red/green transcripts as a review requirement.
+For non-executable changes, run existing validators. Do not manufacture
+static-value tests or publish test transcripts as a review requirement.
 
 Commit the intended final tree before the review gate. If checks generate tracked
 changes, commit those changes and rerun checks for the new SHA. Do not describe

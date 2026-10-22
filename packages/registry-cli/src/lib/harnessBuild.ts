@@ -17,6 +17,7 @@ import { basename, dirname, isAbsolute, join, relative } from "path";
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 import walk from "ignore-walk";
 import { resolveSkillVariant } from "./resolveSkillVariant";
+import type { ISyncedSettingsFileOptions } from "./settingsSync/types";
 import {
   getOutputSkillName,
   injectDisableModelInvocation,
@@ -67,6 +68,9 @@ export type IBuildSupport = {
   // lists, logs). The build materializes it so every generated profile can share
   // it, but it stays out of the manifest and is recreated, never removed, on sync.
   ensureRuntimeDirectory(dirPath: string): Promise<void>;
+  // Marks a staged settings file the harness edits at runtime. The build keeps it
+  // out of the manifest and reconciles it with its registry source on every run.
+  syncSettingsFile(filePath: string, options?: ISyncedSettingsFileOptions): void;
 };
 
 export type IProfileBuildContext = {

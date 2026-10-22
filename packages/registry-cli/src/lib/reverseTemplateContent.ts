@@ -1,26 +1,27 @@
 import { realpathSync, existsSync } from "fs";
 import type { ITemplateContext } from "./harnessBuild";
+import type { IJsonObject, JsonValue } from "./settingsSync/types";
 
 export function reverseTemplateObject(
-  obj: unknown,
+  obj: JsonValue,
   templateContext: ITemplateContext
-): unknown {
+): JsonValue {
   if (typeof obj === "string") {
     return reverseTemplateContent(obj, templateContext);
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(item => reverseTemplateObject(item, templateContext));
   }
-  
+
   if (typeof obj === "object" && obj !== null) {
-    const result: Record<string, unknown> = {};
+    const result: IJsonObject = {};
     for (const [key, value] of Object.entries(obj)) {
       result[key] = reverseTemplateObject(value, templateContext);
     }
     return result;
   }
-  
+
   return obj;
 }
 

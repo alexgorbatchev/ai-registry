@@ -77,7 +77,7 @@ describe("syncBackModifiedFiles", () => {
     const auth = await writeTestFile(outputDir, "auth.json", "runtime data");
 
     expect(await assertGeneratedOutputsAreSafeToReplace(
-      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, ["sessions"],
+      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, { runtimeDirectoryPaths: ["sessions"] },
     )).toBe(true);
     expect(await Bun.file(source).text()).toBe("harness edit");
     expect(await Bun.file(output).text()).toBe("harness edit");
@@ -88,7 +88,7 @@ describe("syncBackModifiedFiles", () => {
     // Simulate the fresh generation pass, without invoking build or bootstrap.
     await Bun.write(staged, Bun.file(source));
     expect(await assertGeneratedOutputsAreSafeToReplace(
-      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, ["sessions"], false,
+      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, { runtimeDirectoryPaths: ["sessions"] }, false,
     )).toBe(false);
   });
 

@@ -20,6 +20,10 @@ import {
   writeBinScript,
 } from "../../../lib/harnessBuild";
 import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
+import {
+  createSettingsSyncRegistry,
+  type ISettingsSyncRegistry,
+} from "../../../lib/settingsSync/createSettingsSyncRegistry";
 import plugin from "../build";
 
 const originalArgv = [...process.argv];
@@ -85,6 +89,7 @@ type IProfileContextOverrides = {
   profileLocalSkills?: string[];
   profileLocalCommands?: string[];
   runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry;
+  settingsSyncRegistry?: ISettingsSyncRegistry;
   systemPrompt?: string;
   tools?: Record<string, boolean>;
   permission?: Record<string, string | Record<string, string>>;
@@ -93,6 +98,7 @@ type IProfileContextOverrides = {
 function createBuildSupport(
   repositoryRoot: string,
   runtimeDirectoryRegistry: IRuntimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")),
+  settingsSyncRegistry: ISettingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output")),
 ): IBuildSupport {
   return {
     mergeDirectory,
@@ -101,6 +107,7 @@ function createBuildSupport(
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
     ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
+    syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 }
 
@@ -127,7 +134,7 @@ function createProfileContext(
     profileLocalCommands: overrides.profileLocalCommands ?? ["local.md"],
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot, overrides.runtimeDirectoryRegistry),
+    buildSupport: createBuildSupport(repositoryRoot, overrides.runtimeDirectoryRegistry, overrides.settingsSyncRegistry),
   };
 }
 
@@ -323,6 +330,24 @@ describe("Claude Code harness build", () => {
     await expect(getStageProfile()(createProfileContext(repositoryRoot, "default"))).rejects.toThrow(
       "Cannot move the Claude Code projects store",
     );
+  });
+
+  it("registers the default profile's settings.json for settings sync", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
+
+    const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", { settingsSyncRegistry }));
+    await getStageProfile()(createProfileContext(repositoryRoot, "developer", { settingsSyncRegistry }));
+
+    expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
+      { relativePath: "claude-code/default/settings.json", liveOnlyKeyPaths: [] },
+    ]);
   });
 
   it("stages non-default profiles with per-profile memory and skills", async () => {

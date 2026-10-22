@@ -13,9 +13,14 @@ import {
   writeBinScript,
   type IBuildSupport,
   type IProfileBuildContext,
+  type IUnifiedHarnessBuildContext,
   type ITemplateContext,
 } from "../../../lib/harnessBuild";
 import { createRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
+import {
+  createSettingsSyncRegistry,
+  type ISettingsSyncRegistry,
+} from "../../../lib/settingsSync/createSettingsSyncRegistry";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "opencode-build-tests");
 
@@ -41,14 +46,18 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
   };
 }
 
-function createBuildSupport(repositoryRoot: string): IBuildSupport {
+function createBuildSupport(
+  repositoryRoot: string,
+  settingsSyncRegistry: ISettingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output")),
+): IBuildSupport {
   return {
     mergeDirectory,
     stageProfileAssets,
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
-      ensureRuntimeDirectory: createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")).ensureRuntimeDirectory,
+    ensureRuntimeDirectory: createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")).ensureRuntimeDirectory,
+    syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 }
 
@@ -79,12 +88,15 @@ function getStageProfile(): NonNullable<typeof plugin.stageProfile> {
   return plugin.stageProfile;
 }
 
-function createUnifiedContext(repositoryRoot: string): import("../../../lib/harnessBuild").IUnifiedHarnessBuildContext {
+function createUnifiedContext(
+  repositoryRoot: string,
+  settingsSyncRegistry?: ISettingsSyncRegistry,
+): IUnifiedHarnessBuildContext {
   return {
     harnessDir: join(repositoryRoot, "harnesses", "opencode"),
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot),
+    buildSupport: createBuildSupport(repositoryRoot, settingsSyncRegistry),
   };
 }
 
@@ -174,6 +186,27 @@ describe("OpenCode harness build plugin", () => {
     const agentContent = await readFile(join(repositoryRoot, ".output", ".opencode-agents", "developer.md"), "utf-8");
     expect(agentContent).toContain("bash: true");
     expect(agentContent).toContain("bash: ask");
+  });
+
+  it("registers opencode.jsonc for settings sync", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/opencode/opencode.jsonc", '{\n  // shared config\n  "theme": "dark"\n}\n');
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
+
+    const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
+    await getStageProfile()(createProfileContext(repositoryRoot));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot, settingsSyncRegistry));
+
+    expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
+      {
+        relativePath: "opencode/opencode.jsonc",
+        liveOnlyKeyPaths: [
+          ["mcp", "*", "headers"],
+          ["mcp", "*", "environment"],
+        ],
+      },
+    ]);
   });
 
   it("stages skills as rendered copies in finalizeOutput", async () => {

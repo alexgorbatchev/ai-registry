@@ -29,6 +29,7 @@ import {
 
 const CLAUDE_CODE_OUTPUT_DIR_NAME = "claude-code";
 const MEMORY_FILE_NAME = "CLAUDE.md";
+const SETTINGS_FILE_NAME = "settings.json";
 const SKILLS_DIR_NAME = "skills";
 const DEFAULT_PROFILE_NAME = "default";
 
@@ -95,6 +96,12 @@ async function stageHarnessFiles(context: IProfileBuildContext, profileOutputDir
     profileOutputDir,
     context.templateContext,
   );
+
+  // Claude Code writes `/config`, `/model`, and installer changes back to this file.
+  const settingsPath = join(profileOutputDir, SETTINGS_FILE_NAME);
+  if (existsSync(settingsPath)) {
+    context.buildSupport.syncSettingsFile(settingsPath);
+  }
 }
 
 async function stageSharedRuntimeDirectories(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {

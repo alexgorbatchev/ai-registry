@@ -44,22 +44,22 @@ export interface IGeneratedOutputDrift {
   reason: "missing" | "modified";
 }
 
-export interface ICollectGeneratedOutputEntriesOptions {
+export interface IUnmanagedOutputPaths {
   // Output-relative directory paths that a harness tool owns at runtime. They and
   // everything under them are left out of the collected entries, so the manifest
   // never tracks them and their disappearance is never reported as drift.
   runtimeDirectoryPaths?: readonly string[];
+  // Output-relative settings files that the harness edits and the build reconciles
+  // with their registry source. They are neither tracked, reported, nor removed.
+  syncedFilePaths?: readonly string[];
 }
 
-export interface ISyncManagedGeneratedOutputsOptions {
+export interface ISyncManagedGeneratedOutputsOptions extends IUnmanagedOutputPaths {
   nextEntries: Record<string, IGeneratedOutputManifestEntry>;
   nextOutputDir: string;
   outputDir: string;
   previousManifest: IGeneratedOutputManifest | null;
   expectedCurrentEntries?: Record<string, IGeneratedOutputManifestEntry>;
-  // Runtime directories are ensured to exist after sync but are never removed,
-  // even when an older manifest still lists them as managed entries.
-  runtimeDirectoryPaths?: readonly string[];
 }
 
 // Registers the directories a harness build materializes only so that every
@@ -89,9 +89,14 @@ function shouldIgnoreGeneratedOutputPath(relativePath: string): boolean {
   );
 }
 
-function isRuntimeDirectoryPath(relativePath: string, runtimeDirectoryPaths: readonly string[]): boolean {
-  return runtimeDirectoryPaths.some(
-    (runtimeDirectoryPath) => relativePath === runtimeDirectoryPath || relativePath.startsWith(`${runtimeDirectoryPath}/`),
+function isUnmanagedPath(relativePath: string, unmanagedPaths: IUnmanagedOutputPaths): boolean {
+  const runtimeDirectoryPaths = unmanagedPaths.runtimeDirectoryPaths ?? [];
+  const syncedFilePaths = unmanagedPaths.syncedFilePaths ?? [];
+  return (
+    syncedFilePaths.includes(relativePath) ||
+    runtimeDirectoryPaths.some(
+      (runtimeDirectoryPath) => relativePath === runtimeDirectoryPath || relativePath.startsWith(`${runtimeDirectoryPath}/`),
+    )
   );
 }
 
@@ -234,14 +239,13 @@ export function createGeneratedOutputManifest(
 
 export async function collectGeneratedOutputEntries(
   rootDir: string,
-  options: ICollectGeneratedOutputEntriesOptions = {},
+  options: IUnmanagedOutputPaths = {},
   currentDir: string = rootDir,
 ): Promise<Record<string, IGeneratedOutputManifestEntry>> {
   if (!existsSync(currentDir)) {
     return {};
   }
 
-  const runtimeDirectoryPaths = options.runtimeDirectoryPaths ?? [];
   const collectedEntries: Record<string, IGeneratedOutputManifestEntry> = {};
   const directoryEntries = await readdir(currentDir, { withFileTypes: true });
   for (const directoryEntry of directoryEntries) {
@@ -252,7 +256,7 @@ export async function collectGeneratedOutputEntries(
       relativePath === GENERATED_OUTPUT_MANIFEST_NAME ||
       relativePath === LEGACY_GENERATED_OUTPUT_MANIFEST_NAME ||
       shouldIgnoreGeneratedOutputPath(relativePath) ||
-      isRuntimeDirectoryPath(relativePath, runtimeDirectoryPaths)
+      isUnmanagedPath(relativePath, options)
     ) {
       continue;
     }
@@ -305,22 +309,17 @@ function areManifestEntriesEqual(
   }
 }
 
-export interface IGetGeneratedOutputDriftOptions {
-  // Manifest entries under these paths are skipped: a manifest written before a
-  // directory became a runtime directory still lists it, and its absence is not drift.
-  runtimeDirectoryPaths?: readonly string[];
-}
-
+// Manifest entries under unmanaged paths are skipped: a manifest written before a
+// path became unmanaged still lists it, and its absence or change is not drift.
 export function getGeneratedOutputDrift(
   manifest: IGeneratedOutputManifest,
   currentEntries: Record<string, IGeneratedOutputManifestEntry>,
-  options: IGetGeneratedOutputDriftOptions = {},
+  options: IUnmanagedOutputPaths = {},
 ): IGeneratedOutputDrift[] {
-  const runtimeDirectoryPaths = options.runtimeDirectoryPaths ?? [];
   const drift: IGeneratedOutputDrift[] = [];
 
   for (const [relativePath, expectedEntry] of Object.entries(manifest.entries)) {
-    if (isRuntimeDirectoryPath(relativePath, runtimeDirectoryPaths)) {
+    if (isUnmanagedPath(relativePath, options)) {
       continue;
     }
 
@@ -338,18 +337,20 @@ export function getGeneratedOutputDrift(
   return drift.sort((leftEntry, rightEntry) => leftEntry.path.localeCompare(rightEntry.path));
 }
 
+// Unmanaged paths are never removed, even when an older manifest still lists them
+// as managed entries; runtime directories are also ensured to exist afterwards.
 export async function syncManagedGeneratedOutputs(
   options: ISyncManagedGeneratedOutputsOptions,
 ): Promise<void> {
   const runtimeDirectoryPaths = options.runtimeDirectoryPaths ?? [];
   if (options.expectedCurrentEntries) {
-    const currentEntries = await collectGeneratedOutputEntries(options.outputDir, { runtimeDirectoryPaths });
+    const currentEntries = await collectGeneratedOutputEntries(options.outputDir, options);
     const affectedPaths = new Set([
       ...Object.keys(options.previousManifest?.entries ?? {}),
       ...Object.keys(options.nextEntries),
     ]);
     for (const path of affectedPaths) {
-      if (isRuntimeDirectoryPath(path, runtimeDirectoryPaths)) continue;
+      if (isUnmanagedPath(path, options)) continue;
       const expected = options.expectedCurrentEntries[path];
       const current = currentEntries[path];
       const isUnchanged = expected === undefined ? current === undefined
@@ -367,7 +368,7 @@ export async function syncManagedGeneratedOutputs(
     );
 
     for (const previousPath of previousPaths) {
-      if (previousPath in options.nextEntries || isRuntimeDirectoryPath(previousPath, runtimeDirectoryPaths)) {
+      if (previousPath in options.nextEntries || isUnmanagedPath(previousPath, options)) {
         continue;
       }
 

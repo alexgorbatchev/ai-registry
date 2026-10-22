@@ -291,4 +291,57 @@ describe("generatedOutputUtils", () => {
       expect(existsSync(join(outputDir, "claude-code", "default", "todos"))).toBe(true);
     });
   });
+
+  describe("synced settings files", () => {
+    const syncedFilePaths = ["claude-code/default/settings.json"];
+
+    it("leaves synced settings files out of the collected entries", async () => {
+      const repositoryRoot = await createTestDirectory();
+      await writeTestFile(repositoryRoot, "claude-code/default/settings.json", "{}\n");
+      await writeTestFile(repositoryRoot, "claude-code/default/CLAUDE.md", "# Memory\n");
+
+      const entries = await collectGeneratedOutputEntries(repositoryRoot, { syncedFilePaths });
+
+      expect(Object.keys(entries)).toEqual(["claude-code", "claude-code/default", "claude-code/default/CLAUDE.md"]);
+    });
+
+    it("does not report drift when the harness edits a synced settings file an older manifest tracked", () => {
+      const manifest = createGeneratedOutputManifest({
+        "claude-code/default/settings.json": { kind: "file", checksum: "generated" },
+      });
+
+      const drift = getGeneratedOutputDrift(
+        manifest,
+        { "claude-code/default/settings.json": { kind: "file", checksum: "edited-by-harness" } },
+        { syncedFilePaths },
+      );
+
+      expect(drift).toEqual([]);
+    });
+
+    it("keeps a synced settings file that an older manifest still tracked as managed", async () => {
+      const repositoryRoot = await createTestDirectory();
+      const outputDir = join(repositoryRoot, ".output");
+      const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
+
+      await writeTestFile(repositoryRoot, ".output/claude-code/default/settings.json", '{ "model": "opus" }\n');
+      await writeTestFile(repositoryRoot, ".tmp/generated-output-staging/claude-code/default/settings.json", "{}\n");
+
+      await syncManagedGeneratedOutputs({
+        nextEntries: await collectGeneratedOutputEntries(stagingDir, { syncedFilePaths }),
+        nextOutputDir: stagingDir,
+        outputDir,
+        previousManifest: createGeneratedOutputManifest({
+          "claude-code": { kind: "directory" },
+          "claude-code/default": { kind: "directory" },
+          "claude-code/default/settings.json": { kind: "file", checksum: "generated" },
+        }),
+        syncedFilePaths,
+      });
+
+      expect(await readFile(join(outputDir, "claude-code", "default", "settings.json"), "utf-8")).toBe(
+        '{ "model": "opus" }\n',
+      );
+    });
+  });
 });

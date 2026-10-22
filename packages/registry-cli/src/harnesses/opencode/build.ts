@@ -20,6 +20,11 @@ import {
   updateSkillName,
 } from "../../lib/userSkillUtils";
 
+const CONFIG_FILE_NAME = "opencode.jsonc";
+const OPENCODE_LIVE_ONLY_KEY_PATHS = [
+  ["mcp", "*", "headers"],
+  ["mcp", "*", "environment"],
+];
 const AGENT_STAGING_DIR_NAME = ".opencode-agents";
 const COMMAND_STAGING_DIR_NAME = ".opencode-commands";
 const SKILL_STAGING_DIR_NAME = ".opencode-skills";
@@ -186,6 +191,12 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       visibleOutputDir,
       context.templateContext,
     );
+    // OpenCode's config updates and `mcp add` edit this file in place. MCP headers
+    // and environment can carry credentials, so they stay out of the registry.
+    const configPath = join(visibleOutputDir, CONFIG_FILE_NAME);
+    if (existsSync(configPath)) {
+      context.buildSupport.syncSettingsFile(configPath, { liveOnlyKeyPaths: OPENCODE_LIVE_ONLY_KEY_PATHS });
+    }
 
     await context.buildSupport.mergeDirectory(commandStagingDir, join(visibleOutputDir, "commands"), { move: true });
     await context.buildSupport.mergeDirectory(skillStagingDir, join(visibleOutputDir, "skills"), { move: true });

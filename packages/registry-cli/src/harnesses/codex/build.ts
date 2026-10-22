@@ -22,10 +22,8 @@ import {
   updateSkillName,
 } from "../../lib/userSkillUtils";
 import { getCommandSkillName } from "./getCommandSkillName";
-import { mergeCodexConfig } from "./mergeCodexConfig";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
-const CODEX_MUTABLE_STATE_DIR_NAME = "codex";
 const DEFAULT_PROFILE_NAME = "default";
 const COMMAND_SKILLS_STAGING_DIR_NAME = ".codex-command-skills";
 
@@ -33,60 +31,35 @@ const COMMAND_SKILLS_STAGING_DIR_NAME = ".codex-command-skills";
 // profile root so every generated profile shares them, then owned by Codex.
 const CODEX_RUNTIME_DIR_NAMES = [".tmp", "log", "sessions"];
 
+const CONFIG_FILE_NAME = "config.toml";
+
+// Codex keys that never reach the registry source: project trust levels, skill
+// toggles, and hook trust hashes keyed by absolute local paths; acknowledgement
+// notices Codex stamps itself; and MCP server fields that can hold credentials.
+const CODEX_LIVE_ONLY_KEY_PATHS = [
+  ["projects"],
+  ["notice"],
+  ["skills", "config"],
+  ["hooks", "state"],
+  ["mcp_servers", "*", "env"],
+  ["mcp_servers", "*", "http_headers"],
+];
+
 function getProfileOutputDir(outputDir: string, profileName: string): string {
   return join(outputDir, CODEX_OUTPUT_DIR_NAME, profileName);
 }
 
-function getMutableCodexStateDir(repositoryRoot: string): string {
-  return join(repositoryRoot, ".tmp", CODEX_MUTABLE_STATE_DIR_NAME);
-}
-
-function getMutableCodexConfigPath(repositoryRoot: string): string {
-  return join(getMutableCodexStateDir(repositoryRoot), "config.toml");
-}
-
-async function renderCodexConfigSeed(context: IProfileBuildContext): Promise<string> {
-  const sourceConfigPath = join(context.harnessDir, "config.toml");
+// Codex saves `/model`, MCP, and feature changes into this file; the build syncs
+// them back into `harnesses/codex/config.toml`.
+async function stageCodexConfig(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
+  const sourceConfigPath = join(context.harnessDir, CONFIG_FILE_NAME);
   if (!existsSync(sourceConfigPath)) {
-    throw new Error(`Codex harness config seed does not exist: ${sourceConfigPath}`);
+    throw new Error(`Codex harness config does not exist: ${sourceConfigPath}`);
   }
 
-  const sourceConfigText = await readFile(sourceConfigPath, "utf-8");
-  return renderTemplate({
-    content: sourceConfigText,
-    sourcePath: sourceConfigPath,
-    repositoryRoot: context.templateContext.repo_root,
-    variables: context.templateContext,
-    environment: process.env,
-  });
-}
-
-async function syncMutableCodexConfig(context: IProfileBuildContext): Promise<string> {
-  const mutableConfigPath = getMutableCodexConfigPath(context.templateContext.repo_root);
-  const sourceConfigText = await renderCodexConfigSeed(context);
-
-  await mkdir(getMutableCodexStateDir(context.templateContext.repo_root), { recursive: true });
-  
-  if (existsSync(mutableConfigPath)) {
-    const existingText = await Bun.file(mutableConfigPath).text();
-    const mergedText = mergeCodexConfig(existingText, sourceConfigText);
-    if (mergedText !== existingText) {
-      await Bun.write(mutableConfigPath, mergedText);
-    }
-  } else {
-    // Validate the seed even when no mutable config exists yet.
-    mergeCodexConfig("", sourceConfigText);
-    await Bun.write(mutableConfigPath, sourceConfigText);
-  }
-
-  return mutableConfigPath;
-}
-
-async function stageMutableCodexState(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
-  const mutableConfigPath = await syncMutableCodexConfig(context);
-
-  await mkdir(getMutableCodexStateDir(context.templateContext.repo_root), { recursive: true });
-  await symlink(mutableConfigPath, join(profileOutputDir, "config.toml"));
+  const configPath = join(profileOutputDir, CONFIG_FILE_NAME);
+  await context.buildSupport.copyPathWithTemplateVariables(sourceConfigPath, configPath, context.templateContext);
+  context.buildSupport.syncSettingsFile(configPath, { liveOnlyKeyPaths: CODEX_LIVE_ONLY_KEY_PATHS });
 }
 
 async function stageHarnessRules(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
@@ -222,7 +195,7 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
     for (const runtimeDirName of CODEX_RUNTIME_DIR_NAMES) {
       await context.buildSupport.ensureRuntimeDirectory(join(profileOutputDir, runtimeDirName));
     }
-    await stageMutableCodexState(context, profileOutputDir);
+    await stageCodexConfig(context, profileOutputDir);
     await stageHarnessRules(context, profileOutputDir);
     await stageHarnessLocalSkills(context, skillsDir);
 

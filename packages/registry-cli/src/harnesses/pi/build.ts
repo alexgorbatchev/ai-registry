@@ -209,6 +209,11 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
           join(visibleProfileDir, "settings.json"),
           context.templateContext,
         );
+        // Pi saves model, theme, and thinking-level choices here and stamps the
+        // last-seen version after every update; only the preferences sync back.
+        context.buildSupport.syncSettingsFile(join(visibleProfileDir, "settings.json"), {
+          liveOnlyKeyPaths: [["lastChangelogVersion"]],
+        });
         const masterModelsPath = join(context.harnessDir, "models.json");
         if (existsSync(masterModelsPath)) {
           await context.buildSupport.copyPathWithTemplateVariables(

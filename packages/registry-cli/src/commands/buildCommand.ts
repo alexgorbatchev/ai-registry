@@ -39,12 +39,20 @@ import {
   type IGeneratedOutputDrift,
   type IGeneratedOutputManifest,
   type IGeneratedOutputManifestEntry,
+  type IUnmanagedOutputPaths,
   syncManagedGeneratedOutputs,
 } from "../lib/generatedOutputUtils";
 import { reverseTemplateContent } from "../lib/reverseTemplateContent";
 import { isUserSkillPath, removeDisableModelInvocation, updateSkillName } from "../lib/userSkillUtils";
 import { resolveBuildHostname } from "../lib/resolveBuildHostname";
 import { parseSkillIdentity } from "../lib/resolveSkillVariant";
+import { createSettingsSyncRegistry } from "../lib/settingsSync/createSettingsSyncRegistry";
+import { createGitSettingsSourceRepository } from "../lib/settingsSync/createGitSettingsSourceRepository";
+import {
+  type ISyncSettingsFilesOptions,
+  syncSettingsFiles,
+  validateStagedSettingsFiles,
+} from "../lib/settingsSync/syncSettingsFiles";
 
 // Statically import harness plugins
 import claudeCodePlugin from "../harnesses/claude-code/build";
@@ -303,15 +311,15 @@ export async function assertGeneratedOutputsAreSafeToReplace(
   nextOutputDir: string,
   sourcePathByOutputPath: Map<string, string>,
   templateContext: Record<string, string>,
-  runtimeDirectoryPaths: readonly string[],
+  unmanagedPaths: IUnmanagedOutputPaths,
   canRecoverEdits = true,
 ): Promise<boolean> {
   if (!manifest) {
     return false;
   }
 
-  const currentEntries = await collectGeneratedOutputEntries(outputDir, { runtimeDirectoryPaths });
-  const drift = getGeneratedOutputDrift(manifest, currentEntries, { runtimeDirectoryPaths });
+  const currentEntries = await collectGeneratedOutputEntries(outputDir, unmanagedPaths);
+  const drift = getGeneratedOutputDrift(manifest, currentEntries, unmanagedPaths);
   return syncBackModifiedFiles(
     drift,
     outputDir,
@@ -393,6 +401,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   const sourceChecksums = new Map<string, string>();
   const sourcePathByOutputPath = Object.assign(new Map<string, string>(), { sourceChecksums });
   const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(GENERATED_OUTPUT_STAGING_DIR);
+  const settingsSyncRegistry = createSettingsSyncRegistry(GENERATED_OUTPUT_STAGING_DIR);
 
   const wrappedBuildSupport: IBuildSupport = {
     copyDirectoryWithTemplateVariables: (sourceDir, targetDir, templateContext) => {
@@ -407,6 +416,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     stageProfileAssets,
     writeBinScript,
     ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
+    syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 
   const overlayProfilesDir = overlay ? join(overlay, "profiles") : null;
@@ -508,14 +518,28 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   await applyTemplateVariablesToGeneratedOutput(GENERATED_OUTPUT_STAGING_DIR, TEMPLATE_CONTEXT, sourcePathByOutputPath);
   console.log("   ✅ Successfully compiled unified outputs!");
 
-  const runtimeDirectoryPaths = runtimeDirectoryRegistry.getRuntimeDirectoryPaths();
+  const syncedSettingsFiles = settingsSyncRegistry.getSyncedSettingsFiles();
+  const unmanagedPaths: IUnmanagedOutputPaths = {
+    runtimeDirectoryPaths: runtimeDirectoryRegistry.getRuntimeDirectoryPaths(),
+    syncedFilePaths: syncedSettingsFiles.map((file) => file.relativePath),
+  };
+  const settingsSyncOptions: ISyncSettingsFilesOptions = {
+    syncedSettingsFiles,
+    stagingDir: GENERATED_OUTPUT_STAGING_DIR,
+    outputDir: output,
+    stateDir: join(temp, "settings-sync"),
+    sourcePathByOutputPath,
+    templateContext: TEMPLATE_CONTEXT,
+    sourceRepository: createGitSettingsSourceRepository(),
+  };
+  await validateStagedSettingsFiles(settingsSyncOptions);
   for (const [sourcePath, checksum] of sourceChecksums) {
     const currentChecksum = new Bun.CryptoHasher("sha256").update(await Bun.file(sourcePath).bytes()).digest("hex");
     if (currentChecksum !== checksum) {
       throw new Error(`Source changed while staging generated outputs: ${sourcePath}`);
     }
   }
-  const expectedCurrentEntries = await collectGeneratedOutputEntries(output, { runtimeDirectoryPaths });
+  const expectedCurrentEntries = await collectGeneratedOutputEntries(output, unmanagedPaths);
 
   const hasRecoveredEdits = await assertGeneratedOutputsAreSafeToReplace(
     existingManifest,
@@ -523,7 +547,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     GENERATED_OUTPUT_STAGING_DIR,
     sourcePathByOutputPath,
     TEMPLATE_CONTEXT,
-    runtimeDirectoryPaths,
+    unmanagedPaths,
     canRecoverEdits,
   );
 
@@ -532,16 +556,17 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     return;
   }
 
-  const nextManagedEntries = await collectGeneratedOutputEntries(GENERATED_OUTPUT_STAGING_DIR, { runtimeDirectoryPaths });
+  const nextManagedEntries = await collectGeneratedOutputEntries(GENERATED_OUTPUT_STAGING_DIR, unmanagedPaths);
 
   await syncManagedGeneratedOutputs({
     nextEntries: nextManagedEntries,
     nextOutputDir: GENERATED_OUTPUT_STAGING_DIR,
     outputDir: output,
     previousManifest: existingManifest,
-    runtimeDirectoryPaths,
+    ...unmanagedPaths,
     expectedCurrentEntries,
   });
+  await syncSettingsFiles(settingsSyncOptions);
   await writeGeneratedOutputManifest(output, nextManagedEntries, sourcePathByOutputPath, GENERATED_OUTPUT_STAGING_DIR, sourceChecksums);
   await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
 

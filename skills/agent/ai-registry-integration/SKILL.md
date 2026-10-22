@@ -132,7 +132,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 ## Add Harness Overrides
 
-- When a harness keeps mutable configuration, implement source overrides in its build plugin: merge tables recursively, replace arrays, and preserve keys absent from source. Do not treat source changes as first-install-only seeds. Consult `<%- repo_root %>/harnesses/AGENTS.md` for each harness's configuration contract.
+- When a harness edits a JSON, JSONC, or TOML settings file at runtime, register the staged file with `context.buildSupport.syncSettingsFile(...)` in its build plugin, passing `liveOnlyKeyPaths` (`*` matches any key) for keys the tool stamps on its own, entries keyed by local paths, and fields that can hold credentials. The build syncs harness edits back into the source, commits them, and applies source edits to the live file instead of reporting drift. Do not treat source changes as first-install-only seeds. Consult `<%- repo_root %>/harnesses/AGENTS.md` for each harness's configuration contract.
 
 - Put harness-specific shipped files under `harnesses/<target>/` beneath the repo_root token.
 - Put unified harness-specific build logic in `packages/registry-cli/src/harnesses/<target>/build.ts` beneath the repo_root token for every generated harness target.

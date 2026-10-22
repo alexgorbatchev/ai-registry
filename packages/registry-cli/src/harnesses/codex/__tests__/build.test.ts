@@ -3,7 +3,6 @@ import { existsSync } from "fs";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, lstat, readFile, readdir, readlink, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
-import { parse } from "smol-toml";
 import { dirname, join } from "path";
 
 import plugin from "../../codex/build";
@@ -20,6 +19,10 @@ import {
   type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
 import { collectGeneratedOutputEntries, createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
+import {
+  createSettingsSyncRegistry,
+  type ISettingsSyncRegistry,
+} from "../../../lib/settingsSync/createSettingsSyncRegistry";
 import { syncBackModifiedFiles } from "../../../commands/buildCommand";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "codex-build-tests");
@@ -32,6 +35,7 @@ type IProfileContextOverrides = {
   profileLocalSkills?: string[];
   profileLocalCommands?: string[];
   runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry;
+  settingsSyncRegistry?: ISettingsSyncRegistry;
   sourcePathByOutputPath?: Map<string, string>;
   systemPrompt?: string;
 };
@@ -62,6 +66,7 @@ function createBuildSupport(
   repositoryRoot: string,
   runtimeDirectoryRegistry: IRuntimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")),
   sourcePathByOutputPath?: Map<string, string>,
+  settingsSyncRegistry: ISettingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output")),
 ): IBuildSupport {
   return {
     mergeDirectory: (sourceDir, targetDir, options) => mergeDirectory(sourceDir, targetDir, options, sourcePathByOutputPath),
@@ -71,7 +76,8 @@ function createBuildSupport(
       copyDirectoryWithTemplateVariables(sourceDir, targetDir, context, sourcePathByOutputPath),
     copyPathWithTemplateVariables: (sourcePath, targetPath, context) =>
       copyPathWithTemplateVariables(sourcePath, targetPath, context, sourcePathByOutputPath),
-      ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
+    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
+    syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 }
 
@@ -96,7 +102,12 @@ function createProfileContext(
     profileLocalCommands: overrides.profileLocalCommands ?? ["local.md"],
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot, overrides.runtimeDirectoryRegistry, overrides.sourcePathByOutputPath),
+    buildSupport: createBuildSupport(
+      repositoryRoot,
+      overrides.runtimeDirectoryRegistry,
+      overrides.sourcePathByOutputPath,
+      overrides.settingsSyncRegistry,
+    ),
   };
 }
 
@@ -191,50 +202,47 @@ describe("Codex harness build plugin", () => {
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "rules", "default.rules"), "utf-8")).toBe(
       "prefix_rule(pattern = [\"git\", \"reset\"], decision = \"forbidden\")\n",
     );
-    expect(await readlink(join(repositoryRoot, ".output", "codex", "default", "config.toml"))).toBe(
-      join(repositoryRoot, ".tmp", "codex", "config.toml"),
+    expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "config.toml"), "utf-8")).toBe(
+      "model = \"gpt-5.5\"\n",
     );
     await expect(lstat(join(repositoryRoot, ".output", "codex", "default", "auth.json"))).rejects.toMatchObject({
       code: "ENOENT",
     });
-    expect(await readFile(join(repositoryRoot, ".tmp", "codex", "config.toml"), "utf-8")).toBe("model = \"gpt-5.5\"\n");
   });
 
-  it("reapplies harness values while preserving Codex-owned values on repeated builds", async () => {
+  it("registers config.toml for settings sync with local paths, notices, hook trust, and MCP credentials kept live-only", async () => {
     const repositoryRoot = await createTestDirectory();
-    const configPath = await writeTestFile(repositoryRoot, ".tmp/codex/config.toml", [
-      'model = "local-model"',
-      'local_only = "keep"',
-      '[features]',
-      'enabled = false',
-      'local_feature = true',
-      '[projects."/example/project"]',
-      'trust_level = "trusted"',
-    ].join("\n"));
-    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", [
-      'model = "registry-model"',
-      '[features]',
-      'enabled = true',
-    ].join("\n"));
-    const context = createProfileContext(repositoryRoot, "default", {
+    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
+    const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
+
+    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
       globalMatchedCommands: [], globalMatchedSkills: [], profileLocalCommands: [], profileLocalSkills: [],
-    });
+      settingsSyncRegistry,
+    }));
 
-    await getStageProfile()(context);
-    expect(parse(await Bun.file(configPath).text())).toEqual({
-      model: "registry-model", local_only: "keep",
-      features: { enabled: true, local_feature: true },
-      projects: { "/example/project": { trust_level: "trusted" } },
-    });
+    expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
+      {
+        relativePath: "codex/default/config.toml",
+        liveOnlyKeyPaths: [
+          ["projects"],
+          ["notice"],
+          ["skills", "config"],
+          ["hooks", "state"],
+          ["mcp_servers", "*", "env"],
+          ["mcp_servers", "*", "http_headers"],
+        ],
+      },
+    ]);
+  });
 
-    await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", 'model = "next-model"\n');
-    await rm(join(repositoryRoot, ".output"), { recursive: true, force: true });
-    await getStageProfile()(context);
-    expect(parse(await Bun.file(configPath).text())).toEqual({
-      model: "next-model", local_only: "keep",
-      features: { enabled: true, local_feature: true },
-      projects: { "/example/project": { trust_level: "trusted" } },
-    });
+  it("fails staging when the harness config is missing", async () => {
+    const repositoryRoot = await createTestDirectory();
+
+    await expect(
+      getStageProfile()(createProfileContext(repositoryRoot, "default", {
+        globalMatchedCommands: [], globalMatchedSkills: [], profileLocalCommands: [], profileLocalSkills: [],
+      })),
+    ).rejects.toThrow(`Codex harness config does not exist: ${join(repositoryRoot, "harnesses", "codex", "config.toml")}`);
   });
 
   it("builds per-profile AGENTS.md and symlinks other shared non-default Codex files", async () => {

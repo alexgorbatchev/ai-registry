@@ -18,6 +18,10 @@ import {
   type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
 import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
+import {
+  createSettingsSyncRegistry,
+  type ISettingsSyncRegistry,
+} from "../../../lib/settingsSync/createSettingsSyncRegistry";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "pi-build-tests");
 const originalArgv: string[] = [...process.argv];
@@ -57,6 +61,7 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
 function createBuildSupport(
   repositoryRoot: string,
   runtimeDirectoryRegistry: IRuntimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")),
+  settingsSyncRegistry: ISettingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output")),
 ): IBuildSupport {
   return {
     mergeDirectory,
@@ -64,19 +69,21 @@ function createBuildSupport(
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
-      ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
+    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
+    syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 }
 
 function createUnifiedContext(
   repositoryRoot: string,
   runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry,
+  settingsSyncRegistry?: ISettingsSyncRegistry,
 ): IUnifiedHarnessBuildContext {
   return {
     harnessDir: join(repositoryRoot, "harnesses", "pi"),
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot, runtimeDirectoryRegistry),
+    buildSupport: createBuildSupport(repositoryRoot, runtimeDirectoryRegistry, settingsSyncRegistry),
   };
 }
 
@@ -289,6 +296,26 @@ describe("Pi harness bootstrap targets", () => {
 
     expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isDirectory()).toBe(true);
     expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).toEqual(["pi/default/sessions"]);
+  });
+
+  it("registers the shared Pi settings.json for settings sync with the version stamp kept live-only", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default local command.\n");
+    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
+    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+
+    const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
+    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot, undefined, settingsSyncRegistry));
+
+    expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
+      { relativePath: "pi/default/settings.json", liveOnlyKeyPaths: [["lastChangelogVersion"]] },
+    ]);
   });
 
   it("builds per-profile APPEND_SYSTEM.md and symlinks other shared Pi files", async () => {

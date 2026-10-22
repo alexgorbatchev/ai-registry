@@ -19,6 +19,19 @@ describe("reverseTemplateContent", () => {
     expect(processed).toBe('{\n  "plugin": ["file://<%- repo_root %>/vendor/my-plugin"],\n  "skills": ["<%- skills_dir %>/git"]\n}');
   });
 
+  it("reverses every string inside a JSON value and leaves other values unchanged", () => {
+    const reversed = reverseTemplateObject(
+      { plugin: ["file:///path/to/repo/vendor/a.ts"], nested: { skills: "/path/to/repo/skills/git", enabled: true, count: 2 }, none: null },
+      mockContext,
+    );
+
+    expect(reversed).toEqual({
+      plugin: ["file://<%- repo_root %>/vendor/a.ts"],
+      nested: { skills: "<%- skills_dir %>/git", enabled: true, count: 2 },
+      none: null,
+    });
+  });
+
   it("handles both forward and backward slashes for paths", () => {
     const rawContent = `path1 = "/path/to/repo/skills/git"\npath2 = "\\path\\to\\repo\\skills\\git"\n`;
     const processed = reverseTemplateContent(rawContent, mockContext);

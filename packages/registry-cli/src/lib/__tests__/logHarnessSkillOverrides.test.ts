@@ -44,6 +44,7 @@ function createUnifiedContext(
       copyDirectoryWithTemplateVariables: async () => {},
       copyPathWithTemplateVariables: async () => {},
       ensureRuntimeDirectory: async () => {},
+      syncSettingsFile: () => {},
     },
   };
 }

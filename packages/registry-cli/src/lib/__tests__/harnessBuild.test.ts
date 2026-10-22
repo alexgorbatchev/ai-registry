@@ -244,6 +244,7 @@ describe("harnessBuild template rendering", () => {
       stageProfileAssets: async () => {},
       writeBinScript: async () => {},
       ensureRuntimeDirectory: async () => {},
+      syncSettingsFile: () => {},
     };
 
     const context: IProfileBuildContext = {
@@ -309,6 +310,7 @@ describe("harnessBuild template rendering", () => {
       stageProfileAssets: async () => {},
       writeBinScript: async () => {},
       ensureRuntimeDirectory: async () => {},
+      syncSettingsFile: () => {},
     };
 
     const context: IProfileBuildContext = {
@@ -381,6 +383,7 @@ describe("harnessBuild template rendering", () => {
       stageProfileAssets: async () => {},
       writeBinScript: async () => {},
       ensureRuntimeDirectory: async () => {},
+      syncSettingsFile: () => {},
     };
 
     const context: IProfileBuildContext = {

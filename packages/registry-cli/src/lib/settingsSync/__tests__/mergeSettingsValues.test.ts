@@ -190,6 +190,18 @@ describe("mergeSettingsValues", () => {
     });
   });
 
+  it("does not leave empty parents in the source when they only held live-only keys", () => {
+    const result = mergeSettingsValues({
+      base: {},
+      live: { hooks: { state: { "/local/hooks.json": { enabled: true } } }, skills: {} },
+      source: { skills: {} },
+      liveOnlyKeyPaths: [["hooks", "state"], ["skills", "config"]],
+    });
+
+    expect(result.sourceValue).toEqual({ skills: {} });
+    expect(result.liveValue).toEqual({ hooks: { state: { "/local/hooks.json": { enabled: true } } }, skills: {} });
+  });
+
   it("does not report conflicts under live-only keys", () => {
     const result = mergeSettingsValues({
       base: { lastChangelogVersion: "1.0.0" },

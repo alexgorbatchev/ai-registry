@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { resolve } from "node:path";
 
 import { writeTimestampedOutput } from "../writeTimestampedOutput";
+import { REPOSITORY_ROOT } from "./helpers";
 
 describe("writeTimestampedOutput", () => {
   it.each([
@@ -10,7 +11,7 @@ describe("writeTimestampedOutput", () => {
     ["Asia/Tokyo", "2026-10-16T20:09:07Z", "2026-10-17 05:09"],
     ["UTC", "2026-01-02T00:03:59Z", "2026-01-02 00:03"],
   ])("formats human dates using the process timezone %s at %s", async (timezone, instant, expected) => {
-    const sourcePath = resolve("packages/registry-cli/src/lib/writeTimestampedOutput.ts");
+    const sourcePath = resolve(REPOSITORY_ROOT, "packages/registry-cli/src/lib/writeTimestampedOutput.ts");
     const script = [
       `import { writeTimestampedOutput } from ${JSON.stringify(sourcePath)};`,
       'await writeTimestampedOutput(new Blob(["message\\n"]).stream(),',

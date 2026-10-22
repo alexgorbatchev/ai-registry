@@ -6,6 +6,7 @@ import { hostname } from "node:os";
 import { buildCommand } from "../buildCommand";
 import type { IRegistryPaths } from "../../lib/getRegistryPaths";
 import type { IGeneratedOutputManifest } from "../../lib/generatedOutputUtils";
+import { REPOSITORY_ROOT } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "../../../../../.tmp/build-hostname-tests");
 
@@ -66,7 +67,7 @@ describe("hostname skill variants", () => {
     await write("repo/harnesses/codex/config.toml", "model = 'test'\n");
     await write("repo/harnesses/pi/settings.json", "{}\n");
     for (const filename of ["pi-install.sh", "pi-uninstall.sh", "pi-update.sh"]) {
-      await write(`repo/harnesses/pi/templates/${filename}`, await Bun.file(join(process.cwd(), "harnesses/pi/templates", filename)).text());
+      await write(`repo/harnesses/pi/templates/${filename}`, await Bun.file(join(REPOSITORY_ROOT, "harnesses/pi/templates", filename)).text());
     }
   });
 

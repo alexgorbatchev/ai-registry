@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, chmod } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { scheduledUpdate } from "../scheduledUpdate";
-import { readTimestampedLog } from "./helpers";
+import { REPOSITORY_ROOT, readTimestampedLog } from "./helpers";
 
 const testDirectories: string[] = [];
 
@@ -25,7 +25,7 @@ async function run(cwd: string, cmd: string[]): Promise<string> {
 }
 
 async function createRepository() {
-  const parentPath = resolve(".tmp/scheduled-update-tests");
+  const parentPath = resolve(REPOSITORY_ROOT, ".tmp/scheduled-update-tests");
   await mkdir(parentPath, { recursive: true });
   const testPath = await mkdtemp(join(parentPath, "run-"));
   testDirectories.push(testPath);
@@ -80,7 +80,7 @@ describe("scheduledUpdate", () => {
       "packages/registry-cli/src/lib/pushScheduledCommits.ts",
       "packages/registry-cli/src/lib/getErrorMessage.ts",
     ]) {
-      await Bun.write(join(repositoryPath, sourcePath), Bun.file(resolve(sourcePath)));
+      await Bun.write(join(repositoryPath, sourcePath), Bun.file(resolve(REPOSITORY_ROOT, sourcePath)));
     }
     await Bun.write(join(repositoryPath, ".tmp/scheduled-update.log"), "[2000-01-01 00:00] expired\n");
     expect(await run(remotePath, [process.execPath, join(repositoryPath,

@@ -3,11 +3,12 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { pruneScheduledUpdateLog } from "../pruneScheduledUpdateLog";
+import { REPOSITORY_ROOT } from "./helpers";
 
 const testDirectories: string[] = [];
 
 async function createLogPath(): Promise<string> {
-  const parentPath = resolve(".tmp/scheduled-log-tests");
+  const parentPath = resolve(REPOSITORY_ROOT, ".tmp/scheduled-log-tests");
   await mkdir(parentPath, { recursive: true });
   const directory = await mkdtemp(join(parentPath, "logs with 'quotes' "));
   testDirectories.push(directory);
@@ -27,7 +28,7 @@ describe("pruneScheduledUpdateLog", () => {
   ])("retains 48 elapsed hours across daylight-saving changes at %s", async (instant, expired, retained) => {
     const logPath = await createLogPath();
     await Bun.write(logPath, `[${expired}] expired\n[${retained}] retained\n`);
-    const sourcePath = resolve("packages/registry-cli/src/lib/pruneScheduledUpdateLog.ts");
+    const sourcePath = resolve(REPOSITORY_ROOT, "packages/registry-cli/src/lib/pruneScheduledUpdateLog.ts");
     const subprocess = Bun.spawn([process.execPath, "-e", [
       `import { pruneScheduledUpdateLog } from ${JSON.stringify(sourcePath)};`,
       `await pruneScheduledUpdateLog(${JSON.stringify(logPath)}, new Date(${JSON.stringify(instant)}));`,

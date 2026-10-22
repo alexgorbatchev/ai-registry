@@ -1,6 +1,6 @@
 import { afterAll, afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { existsSync } from "fs";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
+import { chmod, lstat, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from "fs/promises";
 import { basename, dirname, join } from "path";
 
 import type { ITemplateContext } from "../../harnessBuild";
@@ -205,6 +205,36 @@ describe("syncSettingsFiles", () => {
     expect(warnSpy.mock.calls).toEqual([
       [`  - ⚠️ Left synced settings uncommitted in ${layout.sourcePath}: gitleaks found possible secrets.`],
     ]);
+  });
+
+  it("replaces a live settings symlink from an earlier layout with a regular file", async () => {
+    const layout = await createLayout(TOML_RELATIVE_PATH);
+    spyOn(console, "log").mockImplementation(() => {});
+    const legacyPath = join(layout.rootDir, ".tmp", "codex", "config.toml");
+    await writeSource(layout, 'model = "gpt-5"\n');
+    await writeTestFile(legacyPath, 'model = "gpt-6"\n');
+    await chmod(legacyPath, 0o600);
+    await mkdir(dirname(layout.livePath), { recursive: true });
+    await symlink(legacyPath, layout.livePath);
+
+    await runSync(layout);
+
+    expect((await lstat(layout.livePath)).isSymbolicLink()).toBe(false);
+    expect((await stat(layout.livePath)).mode & 0o777).toBe(0o600);
+    expect(await readFile(layout.livePath, "utf-8")).toBe('model = "gpt-6"\n');
+    expect(await readFile(layout.sourcePath, "utf-8")).toBe('model = "gpt-6"\n');
+  });
+
+  it("installs the settings fresh when the live file is a dangling symlink", async () => {
+    const layout = await createLayout();
+    await writeSource(layout, '{\n  "theme": "dark"\n}\n');
+    await mkdir(dirname(layout.livePath), { recursive: true });
+    await symlink(join(layout.rootDir, "missing.jsonc"), layout.livePath);
+
+    await runSync(layout);
+
+    expect((await lstat(layout.livePath)).isSymbolicLink()).toBe(false);
+    expect(await readFile(layout.livePath, "utf-8")).toBe('{\n  "theme": "dark"\n}\n');
   });
 
   it("syncs TOML settings, keeping comments and live-only tables out of the source", async () => {

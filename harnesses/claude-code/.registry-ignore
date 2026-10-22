@@ -4,3 +4,4 @@
 # The build merges harness-local skills separately into each generated profile
 # as copies with template tags resolved, so exclude them from the raw harness copy.
 ./skills/
+./hooks/__tests__/

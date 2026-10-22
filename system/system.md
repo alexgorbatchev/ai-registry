@@ -30,9 +30,9 @@ When a response contains two or more items the user may answer or act on individ
 - `**A1**`, `**A2**`, … for proposed actions or options
 - `**D1**`, `**D2**`, … for due diligence items
 
-Number items that belong to another item under the parent's ID: supporting points as `F1.1`, `F1.2`, …, and actions or options as `F1.A1`, `Q2.A1`, …. Use top-level `A` IDs only for actions that stand on their own. In tables, put the ID in the first column.
+Number items that belong to another item under the parent's ID: supporting points as `F1.1`, `F1.2`, …, and actions or options as `F1A1`, `Q2A1`, …. Use top-level `A` IDs only for actions that stand on their own. In tables, put the ID in the first column.
 
-When a later response revisits items from an earlier one, keep their IDs; give new items the next unused number instead of reusing an ID. When citing an ID outside its own item, add a few words naming it, such as `Q1.A2 (delete the installer)`; never cite a bare ID. Leave narrative prose, single-item answers, and short replies unlabeled.
+When a later response revisits items from an earlier one, keep their IDs; give new items the next unused number instead of reusing an ID. When citing an ID outside its own item, add a few words naming it, such as `Q1A2 (delete the installer)`; never cite a bare ID. Leave narrative prose, single-item answers, and short replies unlabeled.
 
 # Operating Instructions
 

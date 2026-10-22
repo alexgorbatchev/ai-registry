@@ -27,7 +27,7 @@
    - **F1.1** {point with evidence}
 
    **Recommended action:**
-   - **F1.A1** {what to do or reply}
+   - **F1A1** {what to do or reply}
 
    ---
    ```
@@ -35,7 +35,7 @@
    Do not reply to a comment that needs code changes, design work, or another action; reply once that action is taken, describing what was done. When a comment needs no action beyond answering it, write the proposed reply right away under that action as a reply card that mirrors the comment card: a single-level blockquote starting with the bold handle of the account that will post it (from `gh api user --jq .login`) and `· reply`, then the reply text, following the Writing Rules in SKILL.md.
 
    ```markdown
-   - **F1.A1** Reply; no code change needed:
+   - **F1A1** Reply; no code change needed:
 
      > **@{login}** · reply
      > {reply text}
@@ -46,7 +46,7 @@
 
    Close with `**Issues no reviewer raised**` and one `- **D1** …` bullet per issue.
 6. Wait for the user's direction before replying, resolving threads, or changing code. When the user approves an action that needs code changes or other work, queue it and move on to the next comment; start queued work only after every comment and every issue reviewers did not raise has been reviewed, then confirm the full queue before starting.
-7. When the user's message names a reply action ID such as `F2.A1`, post that reply without asking again: use the proposed text, or the user's corrections when given. Write the body to `.tmp/pr-<number>/reply-<ID>.md` and pass it with `-F body=@<file>`.
+7. When the user's message names a reply action ID such as `F2A1`, post that reply without asking again: use the proposed text, or the user's corrections when given. Write the body to `.tmp/pr-<number>/reply-<ID>.md` and pass it with `-F body=@<file>`.
    - Inline review comment: `POST repos/{owner}/{repo}/pulls/{number}/comments/{comment_id}/replies`. Reply to the thread's top-level comment; GitHub rejects replies to replies.
    - Conversation comment: `POST repos/{owner}/{repo}/issues/{number}/comments`, quoting the comment being answered.
 8. A posted reply closes the comment it answers: remove the account owner's `eyes` reaction from that comment. List its reactions, then delete the owner's `eyes` reaction with `DELETE repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}` (or `issues/comments/...` for conversation comments). Expect `204`, and report the posted reply's link.

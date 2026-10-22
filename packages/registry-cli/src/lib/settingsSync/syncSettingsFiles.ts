@@ -1,5 +1,5 @@
 import { existsSync } from "fs";
-import { mkdir } from "fs/promises";
+import { chmod, lstat, mkdir, rm, stat } from "fs/promises";
 import { dirname, join } from "path";
 
 import type { ITemplateContext } from "../harnessBuild";
@@ -40,6 +40,23 @@ function getSourcePath(file: ISyncedSettingsFile, options: ISyncSettingsFilesOpt
   return sourcePath;
 }
 
+// Earlier layouts linked some live settings files (Codex `config.toml`) to state
+// outside the generated output. A synced file must be a regular file, so a link is
+// replaced by a copy of what it points to, keeping its permissions; a dangling link
+// is removed so the file is installed fresh.
+async function replaceSymlinkWithFile(livePath: string): Promise<void> {
+  const linkStats = await lstat(livePath).catch(() => null);
+  if (!linkStats?.isSymbolicLink()) return;
+
+  const targetStats = await stat(livePath).catch(() => null);
+  const content = targetStats ? await Bun.file(livePath).bytes() : null;
+  await rm(livePath);
+  if (targetStats && content) {
+    await Bun.write(livePath, content);
+    await chmod(livePath, targetStats.mode);
+  }
+}
+
 // Returns the registry source path when the sync wrote harness changes into it.
 async function syncSettingsFile(file: ISyncedSettingsFile, options: ISyncSettingsFilesOptions): Promise<string | null> {
   const sourcePath = getSourcePath(file, options);
@@ -51,6 +68,7 @@ async function syncSettingsFile(file: ISyncedSettingsFile, options: ISyncSetting
   const source = parseSettingsText(renderedSourceText, sourcePath);
 
   await mkdir(dirname(basePath), { recursive: true });
+  await replaceSymlinkWithFile(livePath);
 
   if (!existsSync(livePath)) {
     await mkdir(dirname(livePath), { recursive: true });

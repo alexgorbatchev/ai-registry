@@ -1,11 +1,10 @@
-import { mkdir } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 
 import { pullWithRebase } from "./pullWithRebase";
 import type { IScheduledUpdateRunner } from "./pullWithRebase";
 import { pushScheduledCommits } from "./pushScheduledCommits";
 
-type IScheduledUpdateResult = "unchanged" | "bootstrapped" | "pushed" | "bootstrapped-and-pushed";
+type IScheduledUpdateResult = "bootstrapped" | "bootstrapped-and-pushed";
 
 function createRunner(repositoryRoot: string, bunExecutable: string): IScheduledUpdateRunner {
   const env: NodeJS.ProcessEnv = {
@@ -37,18 +36,9 @@ export async function scheduledUpdate(
 ): Promise<IScheduledUpdateResult> {
   const before = await run(["git", "rev-parse", "HEAD"], true);
   await pullWithRebase(repositoryRoot, before, run);
-  const after = await run(["git", "rev-parse", "HEAD"], true);
-  const pendingFile = Bun.file(join(repositoryRoot, ".tmp/scheduled-update-pending"));
-  const shouldBootstrap = before !== after || await pendingFile.exists();
-  if (shouldBootstrap) {
-    await mkdir(join(repositoryRoot, ".tmp"), { recursive: true });
-    await Bun.write(pendingFile, after);
-    await run([bunExecutable, "run", "bootstrap", "--", "-y"]);
-    await pendingFile.delete();
-  }
+  // Bootstrap on every run, not only after incoming commits: the build also syncs
+  // settings the harnesses changed on this machine and commits them for the push.
+  await run([bunExecutable, "run", "bootstrap", "--", "-y"]);
   const hasPushed = await pushScheduledCommits(run);
-  if (shouldBootstrap) {
-    return hasPushed ? "bootstrapped-and-pushed" : "bootstrapped";
-  }
-  return hasPushed ? "pushed" : "unchanged";
+  return hasPushed ? "bootstrapped-and-pushed" : "bootstrapped";
 }

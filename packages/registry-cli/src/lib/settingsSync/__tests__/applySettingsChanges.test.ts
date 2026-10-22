@@ -57,6 +57,14 @@ describe("applySettingsChanges", () => {
     expect(applySettingsChanges("# keep\nmodel = 'x'\n", [], "config.toml")).toBe("# keep\nmodel = 'x'\n");
   });
 
+  it("writes new TOML inline tables without TOML 1.1 trailing commas", () => {
+    const text = ["[tui]", "status_line = [", '  "a",', "]", ""].join("\n");
+
+    const nextText = applySettingsChanges(text, [{ keyPath: ["tui", "counts"], value: { model: 4 } }], "config.toml");
+
+    expect(nextText).toBe(["[tui]", "status_line = [", '  "a",', "]", "counts = { model = 4 }", ""].join("\n"));
+  });
+
   it("edits TOML in place and keeps comments", () => {
     const text = ['# shared defaults', 'model = "gpt-5"', "", "[features]", "# experimental", "goals = true", ""].join("\n");
 

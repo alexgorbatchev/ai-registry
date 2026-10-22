@@ -228,6 +228,7 @@ describe("Codex harness build plugin", () => {
           ["notice"],
           ["skills", "config"],
           ["hooks", "state"],
+          ["tui", "model_availability_nux"],
           ["mcp_servers", "*", "env"],
           ["mcp_servers", "*", "http_headers"],
         ],

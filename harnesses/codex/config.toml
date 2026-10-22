@@ -20,7 +20,6 @@ status_line = [
   "weekly-limit",
 ]
 screen_reader_detection_done = true
-model_availability_nux = { "gpt-6.1-sol" = 4, }
 
 [shell_environment_policy.set]
 AGENT = "1"

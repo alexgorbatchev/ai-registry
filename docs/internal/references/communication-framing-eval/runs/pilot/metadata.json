@@ -1,0 +1,93 @@
+{
+  "runId": "pilot",
+  "startedDate": "2026-10-16",
+  "runtime": "collaboration.spawn_agent",
+  "parentHistory": "fork_turns=none for generation and judging",
+  "model": "Inherited parent model; runtime describes parent as GPT-6",
+  "modelSnapshot": null,
+  "provider": null,
+  "temperature": null,
+  "seed": null,
+  "reasoningEffort": null,
+  "finishReason": null,
+  "usage": null,
+  "unavailableFieldsReason": "Collaboration API does not return these fields. No values inferred from defaults.",
+  "overrides": "No model or reasoning overrides supplied.",
+  "sharedInstructions": "Platform system/developer instructions remain active; task-style instruction is not an isolated raw system message. Parent user conversation excluded by fork_turns=none.",
+  "responseCapture": "First three generation workers returned JSON in final messages, then saved the exact same JSON in a follow-up persistence turn. Remaining workers save before finalizing. No response regeneration requested.",
+  "workers": [
+    {
+      "jobId": "v1-neutral-r1",
+      "agent": "sample_a1"
+    },
+    {
+      "jobId": "v1-adhd-r1",
+      "agent": "sample_b1"
+    },
+    {
+      "jobId": "v1-adhd-r2",
+      "agent": "sample_b2"
+    },
+    {
+      "jobId": "v1-neutral-r2",
+      "agent": "sample_a2"
+    },
+    {
+      "jobId": "v2-adhd-r1",
+      "agent": "holdout_b1"
+    },
+    {
+      "jobId": "v2-neutral-r1",
+      "agent": "holdout_a1"
+    },
+    {
+      "jobId": "v2-neutral-r2",
+      "agent": "holdout_a2"
+    },
+    {
+      "jobId": "v2-adhd-r2",
+      "agent": "holdout_b2"
+    }
+  ],
+  "generationOrder": [
+    "v1-neutral-r1",
+    "v1-adhd-r1",
+    "v1-adhd-r2",
+    "v1-neutral-r2",
+    "v2-adhd-r1",
+    "v2-neutral-r1",
+    "v2-neutral-r2",
+    "v2-adhd-r2"
+  ],
+  "notes": [
+    "Cases within each worker share a generation context. The two repetitions are two fresh workers per arm.",
+    "The generator's assigned job has no acceptance criteria or alternative arm prompt.",
+    "All case contents are synthetic; no external commands are executed.",
+    "All four development jobs and all ten cases were frozen before first generation.",
+    "Arm start order is counterbalanced across phases; simultaneous workers can finish in a different order.",
+    "Development graders initially disagreed on diagnostic-request cardinality. A label-blind literal-criterion audit is preserved separately.",
+    "V2 shared rules frozen after development grading and before holdout generation. No further prompt changes planned."
+  ],
+  "judges": [
+    {
+      "phase": "development",
+      "agent": "judge_development"
+    },
+    {
+      "phase": "development",
+      "agent": "judge_development_check",
+      "audit": "Original all-pass interpretation of one-input acceptance corrected in separate review file; original retained."
+    },
+    {
+      "phase": "holdout",
+      "agent": "judge_holdout"
+    },
+    {
+      "phase": "holdout",
+      "agent": "judge_holdout_check"
+    }
+  ],
+  "methodAuditor": "audit_method",
+  "generationLimits": null,
+  "generationLimitsUnavailableReason": "Collaboration API exposes no max-token, context-limit, or truncation settings for these agent calls; none were supplied or inferred."
+}

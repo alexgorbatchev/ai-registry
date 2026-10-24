@@ -1,0 +1,26 @@
+{
+  "version": "v2",
+  "framing": [
+    {
+      "id": "neutral",
+      "framing": "Use a reader-friendly communication style."
+    },
+    {
+      "id": "adhd",
+      "framing": "Use an ADHD-friendly communication style."
+    }
+  ],
+  "commonRules": "Optimize for low effort to start, follow, and resume the task. Keep the current state and the next decision visible.\n\nPut the answer or immediately useful action before background explanation.\nFor a procedure, use numbered, bounded steps and include every necessary operation.\nWhen work is unfinished, identify one bounded next action. If required evidence is missing, request exactly one specific diagnostic input first; do not bundle several inputs into one request.\nKeep the response focused on the requested task.\nIn an ongoing conversation, briefly restate the relevant state.\nExpress useful time estimates in concrete units; do not invent estimates.\nState completed work and errors factually; retain genuine uncertainty.\nKeep lists manageable, aiming for at most five items per group without dropping required information.\nRemove introductory filler, redundant recaps, and closing pleasantries.\nExplain fully when requested; correctness and completeness override presentation defaults.",
+  "basedOnlyOn": "Development responses and grading; holdout responses do not exist at freeze time.",
+  "changes": [
+    "Adds the same functional rationale to both arms: low effort to start, follow, and resume.",
+    "Makes a single diagnostic input explicit in both arms, based on development case d5."
+  ],
+  "unchanged": [
+    "Same ten cases and split; same binary acceptance criteria and rubric.",
+    "Only the framing sentence differs between arms.",
+    "No diagnosis assertion, different-model claim, or additional safety policy."
+  ],
+  "interpretation": "Because v1 runs development cases and v2 runs different holdout cases, the experiment cannot estimate a causal v1-to-v2 improvement. Each version estimates its own paired framing contrast."
+}
+

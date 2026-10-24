@@ -1,0 +1,20 @@
+{
+  "responses": [
+    {
+      "caseId": "h1",
+      "text": "No—R-8 is not ready for production. Compilation passed and all 42 unit tests passed, but the staging payment check returned 503. The cause remains unknown, and production rollout is prohibited until that check passes.\n\nNext action: provide `payment-check.log` for diagnosis."
+    },
+    {
+      "caseId": "h2",
+      "text": "Sandbox restore checklist—never target production.\n\nBefore restoring:\n\n1. Pause sandbox workers.\n2. Run `vault inspect restore-7`.\n3. Verify that the manifest says `sandbox`. Otherwise, stop.\n\nRestore and finish:\n\n4. Run `vault restore restore-7 --sandbox`.\n5. Run `vault verify --sandbox`.\n6. Resume sandbox workers only if verification passes. Otherwise, leave them paused.\n7. Record restore identifier `restore-7` and the verification result in the run log."
+    },
+    {
+      "caseId": "h3",
+      "text": "Choose TextMap: it preserves both decimal precision and timezone offsets while remaining readable. Its trade-off is files twice the size of Packed.\n\n| Format | Decimal precision | Timezone offsets | Readability and trade-off | Recommendation |\n|---|---|---|---|---|\n| TextMap | Preserved | Preserved | Readable; twice the size of Packed | Best fit for fidelity and recipient readability |\n| Packed | Preserved | Preserved | Opaque; requires the supplied viewer; half the size of TextMap | Choose if smaller files outweigh readability |\n| CSV | Preserved | Lost | Readable, but loses required timezone information | Does not meet the requirement |\n\nNo setup commands were supplied."
+    },
+    {
+      "caseId": "h4",
+      "text": "The client sends its last revision to determine whether it needs a replacement snapshot.\n\nA revision is an opaque string: treat it as an identifier. The client sends the revision associated with its last snapshot.\n\nIf the revision is unchanged, the response contains no changes. If it has changed, the response contains a complete replacement snapshot. The client must replace its local snapshot with that snapshot rather than merge them.\n\nIf the revision is unknown, the client requires a fresh full snapshot.\n\nIllustrative examples—all revision strings and snapshot contents below are invented:\n\n- **Unchanged:** The client sends `rev-a`; the revision is unchanged. The response contains no changes, so the client keeps its local snapshot.\n- **Changed:** The client sends `rev-a`; the revision has changed. Its local snapshot is `{\"items\":[\"old\"]}` and the complete replacement is `{\"items\":[\"new\"]}`. The client replaces the local snapshot with `{\"items\":[\"new\"]}`; it does not retain `old`.\n- **Unknown:** The client sends `rev-unknown`; that revision is unknown. The client requires a fresh full snapshot and uses it to replace its local snapshot."
+    }
+  ]
+}

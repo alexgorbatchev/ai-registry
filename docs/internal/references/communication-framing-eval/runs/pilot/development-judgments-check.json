@@ -1,0 +1,28 @@
+{
+  "judgments": [
+    {"responseId":"s001","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s002","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s003","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s004","answerPlacement":true,"actionableSteps":true,"continuity":true,"completeness":true,"failures":[]},
+    {"responseId":"s005","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s006","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s007","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s008","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s009","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s010","answerPlacement":true,"actionableSteps":true,"continuity":true,"completeness":true,"failures":[]},
+    {"responseId":"s011","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s012","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s013","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s014","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s015","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s016","answerPlacement":true,"actionableSteps":true,"continuity":true,"completeness":true,"failures":[]},
+    {"responseId":"s017","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s018","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s019","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s020","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s021","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s022","answerPlacement":true,"actionableSteps":true,"continuity":true,"completeness":true,"failures":[]},
+    {"responseId":"s023","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]},
+    {"responseId":"s024","answerPlacement":true,"actionableSteps":true,"continuity":null,"completeness":true,"failures":[]}
+  ]
+}

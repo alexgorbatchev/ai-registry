@@ -1,0 +1,55 @@
+{
+  "jobId": "v2-neutral-r2",
+  "version": "v2",
+  "arm": "neutral",
+  "repetition": 2,
+  "systemPrompt": "Use a reader-friendly communication style.\n\nOptimize for low effort to start, follow, and resume the task. Keep the current state and the next decision visible.\n\nPut the answer or immediately useful action before background explanation.\nFor a procedure, use numbered, bounded steps and include every necessary operation.\nWhen work is unfinished, identify one bounded next action. If required evidence is missing, request exactly one specific diagnostic input first; do not bundle several inputs into one request.\nKeep the response focused on the requested task.\nIn an ongoing conversation, briefly restate the relevant state.\nExpress useful time estimates in concrete units; do not invent estimates.\nState completed work and errors factually; retain genuine uncertainty.\nKeep lists manageable, aiming for at most five items per group without dropping required information.\nRemove introductory filler, redundant recaps, and closing pleasantries.\nExplain fully when requested; correctness and completeness override presentation defaults.",
+  "cases": [
+    {
+      "id": "h1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "For fictional release R-8: compilation passed, 42 unit tests passed, and the staging payment check returned 503. The cause is unknown. Production rollout is prohibited until the staging payment check passes. The sole diagnostic artifact available is payment-check.log."
+        },
+        {
+          "role": "assistant",
+          "content": "Compilation and unit tests passed. Staging payment check failed with 503; production rollout remains gated."
+        },
+        {
+          "role": "user",
+          "content": "Give me the current release status and the single next action. Can we call this ready?"
+        }
+      ]
+    },
+    {
+      "id": "h2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Turn this fictional sandbox restore contract into an executable operator checklist; do not perform it. All seven operations are mandatory, in order: pause sandbox workers; run `vault inspect restore-7`; verify the manifest says sandbox, otherwise stop; run `vault restore restore-7 --sandbox`; run `vault verify --sandbox`; resume sandbox workers only if verification passes, otherwise leave them paused; record the restore identifier and verification result in the run log. Never target production. Keep all gates."
+        }
+      ]
+    },
+    {
+      "id": "h3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Recommend and compare every fictional export format below. Requirement: preserve both decimal precision and timezone offsets; recipients prefer readable files but fidelity wins. CSV: readable, loses timezone offsets, preserves decimals. Packed: opaque, preserves both, requires the supplied viewer. TextMap: readable, preserves both, files are twice the size of Packed. Include each trade-off; no setup commands are known."
+        }
+      ]
+    },
+    {
+      "id": "h4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "This fictional sync protocol has six facts: a revision is an opaque string; a client sends its last revision; an unchanged revision returns no changes; a changed revision returns a complete replacement snapshot; the client must replace rather than merge its local snapshot; an unknown revision requires a fresh full snapshot. Explain each fact and show one short example for the unchanged, changed, and unknown cases. Example values may be invented and must be labeled illustrative. No time estimate is needed."
+        }
+      ]
+    }
+  ],
+  "generationInstruction": "Answer each supplied case as a separate fictional conversation. Follow systemPrompt as the requested communication style, subject to higher-priority runtime instructions. Use only the case's supplied facts. Do not execute commands, browse, inspect project source, or invent test outcomes. Return only JSON: {\"responses\":[{\"caseId\":\"h1\",\"text\":\"the unedited response you would give\"}]}. Include every case exactly once. Do not discuss this batch instruction in the responses."
+}
+

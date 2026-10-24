@@ -1,0 +1,144 @@
+{
+  "judgments": [
+    {
+      "responseId": "t001",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t002",
+      "answerPlacement": true,
+      "actionableSteps": false,
+      "continuity": true,
+      "completeness": false,
+      "failures": [
+        "actionableSteps: 'Next action: provide `payment-check.log` for diagnosis' requests provision of the artifact instead of identifying inspection of payment-check.log as the required single diagnostic action.",
+        "completeness: The required inspection of payment-check.log is omitted; the supplied next action is only to provide it."
+      ]
+    },
+    {
+      "responseId": "t003",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t004",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t005",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t006",
+      "answerPlacement": true,
+      "actionableSteps": false,
+      "continuity": true,
+      "completeness": false,
+      "failures": [
+        "actionableSteps: 'Single next action: provide `payment-check.log` for diagnosis' requests provision of the artifact instead of identifying inspection of payment-check.log as the required single diagnostic action.",
+        "completeness: The required inspection of payment-check.log is omitted; the supplied next action is only to provide it."
+      ]
+    },
+    {
+      "responseId": "t007",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t008",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t009",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t010",
+      "answerPlacement": true,
+      "actionableSteps": false,
+      "continuity": true,
+      "completeness": false,
+      "failures": [
+        "actionableSteps: 'Single next action: provide `payment-check.log` for diagnosis' requests provision of the artifact instead of identifying inspection of payment-check.log as the required single diagnostic action.",
+        "completeness: The required inspection of payment-check.log is omitted; the supplied next action is only to provide it."
+      ]
+    },
+    {
+      "responseId": "t011",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t012",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t013",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t014",
+      "answerPlacement": true,
+      "actionableSteps": false,
+      "continuity": true,
+      "completeness": false,
+      "failures": [
+        "actionableSteps: 'Single next action: provide `payment-check.log` for diagnosis' requests provision of the artifact instead of identifying inspection of payment-check.log as the required single diagnostic action.",
+        "completeness: The required inspection of payment-check.log is omitted; the supplied next action is only to provide it."
+      ]
+    },
+    {
+      "responseId": "t015",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "t016",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    }
+  ]
+}

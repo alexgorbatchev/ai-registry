@@ -1,0 +1,467 @@
+{
+  "rubric": {
+    "schemaVersion": 1,
+    "criteria": {
+      "answerPlacement": "Pass if the first substantive content directly answers the latest question or gives the applicable action. Short labels/headings/code fences alone are not failures.",
+      "actionableSteps": "Pass if the response supplies the case's concrete usable next step, procedure, decision, or requested explanatory example. Explanations and comparisons do not require invented chores or numbering.",
+      "continuity": "Evaluate only cases with non-null continuity acceptance. Pass only if current state and unresolved gates are preserved without resetting completed work or claiming unfinished work succeeded.",
+      "completeness": "Pass only if every requirement in the case acceptance is covered and no material invented fact or conflicting instruction is added."
+    },
+    "gradingInstructions": "Grade each response independently against all case acceptance conditions. Binary pass/fail per applicable criterion; continuity is null when not applicable. Include a short evidence quotation or concrete omission for each failed criterion. Do not infer correctness from length or formatting alone. Do not grade against imagined author preferences. Do not provide numerical prompt quality scores.",
+    "outputShape": {
+      "judgments": [
+        {
+          "responseId": "opaque-id",
+          "answerPlacement": true,
+          "actionableSteps": true,
+          "continuity": null,
+          "completeness": true,
+          "failures": []
+        }
+      ]
+    }
+  },
+  "instruction": "Evaluate each response independently. Do not inspect files other than this input. Save only judgments with responseId, four criteria booleans (continuity null when not applicable), and failures with concrete omissions or short quotations. Do not guess hidden treatment labels.",
+  "responses": [
+    {
+      "responseId": "s001",
+      "caseId": "d6",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Explain all seven rules of this fictional queue, and why each matters. Facts: capacity is 100 jobs; jobs beyond capacity are rejected rather than silently dropped; a running job has a 30-second lease; workers renew the lease every 10 seconds; an expired lease makes the job available again; handlers must be idempotent because a job can run twice; only explicit acknowledgement removes a job. Explain the relationship between renewal, expiry, duplicate runs, and acknowledgement. Also, a separate dashboard color change is planned, but that is irrelevant here."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with a substantive explanation of queue behavior, without announcing the explanation.",
+        "actionableSteps": "Explains the renewal/expiry/idempotency/acknowledgement relationship usefully; does not invent operational tasks.",
+        "continuity": null,
+        "completeness": "Covers all seven facts and why each matters, with no dashboard tangent or invented exactly-once guarantee."
+      },
+      "text": "The queue uses renewable leases to make abandoned jobs available again. Because a job can run twice, handlers must be idempotent; only explicit acknowledgement removes a job.\n\nCapacity and execution:\n\n1. **Capacity is 100 jobs.** This defines the queue’s limit.\n2. **Jobs beyond capacity are rejected.** They are not silently dropped, so exceeding the limit produces an explicit rejection.\n3. **A running job has a 30-second lease.** Its claim on the job is time-limited.\n4. **Workers renew the lease every 10 seconds.** Renewal keeps the claim active while the worker runs the job; without renewal, the lease can expire.\n\nRecovery and removal:\n\n5. **An expired lease makes the job available again.** This allows another execution when the previous lease is no longer active. Expiry makes the job available; it does not remove it.\n6. **Handlers must be idempotent because a job can run twice.** Repeating the job must not produce unintended additional effects. Lease expiry can make a previously running job available for another run.\n7. **Only explicit acknowledgement removes a job.** Renewal maintains the lease, and expiry makes the job available again. Neither removes it; acknowledgement is the removal operation."
+    },
+    {
+      "responseId": "s002",
+      "caseId": "d1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "In this fictional project, `forge test auth` runs the authentication tests. I only need the command. What do I run?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "The first meaningful content is the exact command forge test auth.",
+        "actionableSteps": "Provides the exact runnable command without extra prerequisites.",
+        "continuity": null,
+        "completeness": "Includes the command, invents no flags, and adds no unrelated instructions."
+      },
+      "text": "`forge test auth`"
+    },
+    {
+      "responseId": "s003",
+      "caseId": "d2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write the operator procedure from this fictional import contract. Required order: (1) pause writes, (2) export a snapshot using `ledger snapshot`, (3) validate the input with `ledger validate batch.csv`, (4) import with `ledger import batch.csv`, (5) compare imported row count with the validated row count, (6) resume writes only if they match. If validation fails, do not import; if counts differ, keep writes paused and investigate. Include every requirement. Do not execute anything."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with pause writes or a direct directive to follow the procedure, without background preamble.",
+        "actionableSteps": "Gives numbered bounded actions in the required order with both failure branches.",
+        "continuity": null,
+        "completeness": "Preserves all six operations, both commands, snapshot command, count comparison, and both stop conditions."
+      },
+      "text": "1. Pause writes.\n2. Export a snapshot with `ledger snapshot`.\n3. Validate the input with `ledger validate batch.csv`. If validation fails, do not import.\n4. After validation succeeds, import with `ledger import batch.csv`.\n5. Compare the imported row count with the validated row count. If they differ, keep writes paused and investigate.\n6. Resume writes only if the counts match."
+    },
+    {
+      "responseId": "s004",
+      "caseId": "d3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "We are fixing fictional checkout bug C-17. The patch is already applied. Unit tests passed. The staging integration check has not run because the staging fixture identifier is missing. Do not deploy until that check passes."
+        },
+        {
+          "role": "assistant",
+          "content": "Patch applied; unit tests passed. Staging integration remains blocked on the fixture identifier."
+        },
+        {
+          "role": "user",
+          "content": "Back after lunch. Where were we, and what do you need from me?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with the actual status or the missing staging fixture identifier.",
+        "actionableSteps": "Asks specifically for the staging fixture identifier, without asking the user to redo the patch or unit tests.",
+        "continuity": "Retains patch applied, unit tests passed, integration not run, and deployment gate.",
+        "completeness": "States the blocker and does not claim integration or deployment succeeded."
+      },
+      "text": "C-17’s patch is applied, and unit tests passed. The staging integration check has not run because the staging fixture identifier is missing. Deployment must wait until that check passes.\n\nPlease send the staging fixture identifier so the integration check can run."
+    },
+    {
+      "responseId": "s005",
+      "caseId": "d4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Compare these fictional backup options and recommend one. I need restore within 20 minutes and can spend up to 15 credits monthly. A: 10 credits/month, 12-minute restore, manual daily backup. B: 14 credits/month, 8-minute restore, automatic hourly backup. C: 6 credits/month, 45-minute restore, automatic daily backup. Show all three options and their trade-offs. Do not invent other properties."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "First substantive sentence recommends B.",
+        "actionableSteps": "Makes a clear choice justified against both constraints; no invented setup instructions.",
+        "continuity": null,
+        "completeness": "Covers all three options with costs, restore times, backup frequency/automation, and C's restore constraint failure."
+      },
+      "text": "Choose **B**: it meets your 20-minute restore limit and 15-credit monthly budget, with an 8-minute restore and automatic hourly backups.\n\n| Option | Monthly cost | Restore time | Backup | Trade-off |\n|---|---:|---:|---|---|\n| A | 10 credits | 12 minutes | Manual daily | Meets both limits and costs 4 credits less than B, but requires manual backups and backs up less frequently. |\n| B | 14 credits | 8 minutes | Automatic hourly | Meets both limits; fastest restore and most frequent backups, at the highest cost. |\n| C | 6 credits | 45 minutes | Automatic daily | Cheapest, but exceeds your restore limit by 25 minutes. |"
+    },
+    {
+      "responseId": "s006",
+      "caseId": "d5",
+      "messages": [
+        {
+          "role": "user",
+          "content": "My fictional invoice importer failed. I have not supplied the error output, input file, or importer code. Tell me exactly which line to change."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately states the missing evidence or asks for the first error message; no fabricated fix.",
+        "actionableSteps": "Requests one concrete diagnostic input, such as the error output, that can advance diagnosis.",
+        "continuity": null,
+        "completeness": "Acknowledges that the line and cause cannot be established; does not invent a file, line, command, or cause."
+      },
+      "text": "I can’t identify the line to change without evidence of the failure. Send the error output, failing input file, and importer code so I can locate the cause."
+    },
+    {
+      "responseId": "s007",
+      "caseId": "d6",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Explain all seven rules of this fictional queue, and why each matters. Facts: capacity is 100 jobs; jobs beyond capacity are rejected rather than silently dropped; a running job has a 30-second lease; workers renew the lease every 10 seconds; an expired lease makes the job available again; handlers must be idempotent because a job can run twice; only explicit acknowledgement removes a job. Explain the relationship between renewal, expiry, duplicate runs, and acknowledgement. Also, a separate dashboard color change is planned, but that is irrelevant here."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with a substantive explanation of queue behavior, without announcing the explanation.",
+        "actionableSteps": "Explains the renewal/expiry/idempotency/acknowledgement relationship usefully; does not invent operational tasks.",
+        "continuity": null,
+        "completeness": "Covers all seven facts and why each matters, with no dashboard tangent or invented exactly-once guarantee."
+      },
+      "text": "The queue retains a job until explicit acknowledgement; a lease controls when another worker can take it.\n\n1. **Capacity is 100 jobs.** This sets the queue’s limit.\n2. **Jobs beyond capacity are rejected.** Rejection makes the capacity failure visible instead of silently losing jobs.\n3. **A running job has a 30-second lease.** The lease limits how long a worker can hold a job without renewal.\n4. **Workers renew every 10 seconds.** Renewal keeps the lease active while work continues, with renewals scheduled more frequently than the 30-second lease duration.\n5. **An expired lease makes the job available again.** Expiry lets another worker take a job whose lease was not maintained. It does not remove the job.\n6. **Handlers must be idempotent because a job can run twice.** Repeating a job must not produce additional unintended effects. Lease expiry and reassignment can lead to a second run even if the first run already did work.\n7. **Only explicit acknowledgement removes a job.** Renewal maintains the lease, and expiry makes the job available again; neither removes it. Completing the handler’s work without acknowledgement leaves the job subject to another run after lease expiry."
+    },
+    {
+      "responseId": "s008",
+      "caseId": "d1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "In this fictional project, `forge test auth` runs the authentication tests. I only need the command. What do I run?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "The first meaningful content is the exact command forge test auth.",
+        "actionableSteps": "Provides the exact runnable command without extra prerequisites.",
+        "continuity": null,
+        "completeness": "Includes the command, invents no flags, and adds no unrelated instructions."
+      },
+      "text": "`forge test auth`"
+    },
+    {
+      "responseId": "s009",
+      "caseId": "d2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write the operator procedure from this fictional import contract. Required order: (1) pause writes, (2) export a snapshot using `ledger snapshot`, (3) validate the input with `ledger validate batch.csv`, (4) import with `ledger import batch.csv`, (5) compare imported row count with the validated row count, (6) resume writes only if they match. If validation fails, do not import; if counts differ, keep writes paused and investigate. Include every requirement. Do not execute anything."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with pause writes or a direct directive to follow the procedure, without background preamble.",
+        "actionableSteps": "Gives numbered bounded actions in the required order with both failure branches.",
+        "continuity": null,
+        "completeness": "Preserves all six operations, both commands, snapshot command, count comparison, and both stop conditions."
+      },
+      "text": "1. Pause writes.\n2. Export a snapshot using `ledger snapshot`.\n3. Validate the input using `ledger validate batch.csv`. If validation fails, do not import; keep writes paused and investigate the validation failure.\n4. If validation succeeds, import using `ledger import batch.csv`.\n5. Compare the imported row count with the validated row count. Resume writes only if they match. If counts differ, keep writes paused and investigate."
+    },
+    {
+      "responseId": "s010",
+      "caseId": "d3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "We are fixing fictional checkout bug C-17. The patch is already applied. Unit tests passed. The staging integration check has not run because the staging fixture identifier is missing. Do not deploy until that check passes."
+        },
+        {
+          "role": "assistant",
+          "content": "Patch applied; unit tests passed. Staging integration remains blocked on the fixture identifier."
+        },
+        {
+          "role": "user",
+          "content": "Back after lunch. Where were we, and what do you need from me?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with the actual status or the missing staging fixture identifier.",
+        "actionableSteps": "Asks specifically for the staging fixture identifier, without asking the user to redo the patch or unit tests.",
+        "continuity": "Retains patch applied, unit tests passed, integration not run, and deployment gate.",
+        "completeness": "States the blocker and does not claim integration or deployment succeeded."
+      },
+      "text": "C-17’s patch is applied and unit tests passed. The staging integration check has not run because the staging fixture identifier is missing; deployment must wait until that check passes.\n\nSend the staging fixture identifier so the integration check can run."
+    },
+    {
+      "responseId": "s011",
+      "caseId": "d4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Compare these fictional backup options and recommend one. I need restore within 20 minutes and can spend up to 15 credits monthly. A: 10 credits/month, 12-minute restore, manual daily backup. B: 14 credits/month, 8-minute restore, automatic hourly backup. C: 6 credits/month, 45-minute restore, automatic daily backup. Show all three options and their trade-offs. Do not invent other properties."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "First substantive sentence recommends B.",
+        "actionableSteps": "Makes a clear choice justified against both constraints; no invented setup instructions.",
+        "continuity": null,
+        "completeness": "Covers all three options with costs, restore times, backup frequency/automation, and C's restore constraint failure."
+      },
+      "text": "Choose B: it costs 14 credits/month, restores in 8 minutes, and provides automatic hourly backups. It meets both your 15-credit budget and 20-minute restore requirement.\n\n| Option | Monthly cost | Restore time | Backup | Trade-off |\n|---|---:|---:|---|---|\n| A | 10 credits | 12 minutes | Manual daily | Meets both limits and costs 4 credits less than B, but requires manual backups and restores more slowly. |\n| B | 14 credits | 8 minutes | Automatic hourly | Highest cost, but fastest restore and most frequent backups. Meets both limits. |\n| C | 6 credits | 45 minutes | Automatic daily | Lowest cost, but exceeds your restore limit by 25 minutes. |"
+    },
+    {
+      "responseId": "s012",
+      "caseId": "d5",
+      "messages": [
+        {
+          "role": "user",
+          "content": "My fictional invoice importer failed. I have not supplied the error output, input file, or importer code. Tell me exactly which line to change."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately states the missing evidence or asks for the first error message; no fabricated fix.",
+        "actionableSteps": "Requests one concrete diagnostic input, such as the error output, that can advance diagnosis.",
+        "continuity": null,
+        "completeness": "Acknowledges that the line and cause cannot be established; does not invent a file, line, command, or cause."
+      },
+      "text": "I can’t identify an exact line to change without the error output, input file, and importer code.\n\nNext action: send the error output, including any reported file and line number."
+    },
+    {
+      "responseId": "s013",
+      "caseId": "d6",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Explain all seven rules of this fictional queue, and why each matters. Facts: capacity is 100 jobs; jobs beyond capacity are rejected rather than silently dropped; a running job has a 30-second lease; workers renew the lease every 10 seconds; an expired lease makes the job available again; handlers must be idempotent because a job can run twice; only explicit acknowledgement removes a job. Explain the relationship between renewal, expiry, duplicate runs, and acknowledgement. Also, a separate dashboard color change is planned, but that is irrelevant here."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with a substantive explanation of queue behavior, without announcing the explanation.",
+        "actionableSteps": "Explains the renewal/expiry/idempotency/acknowledgement relationship usefully; does not invent operational tasks.",
+        "continuity": null,
+        "completeness": "Covers all seven facts and why each matters, with no dashboard tangent or invented exactly-once guarantee."
+      },
+      "text": "The queue holds up to 100 jobs. Leases control when a job becomes available again; only explicit acknowledgement removes it.\n\n1. **Capacity is 100 jobs.** This sets the queue’s maximum job count.\n2. **Jobs beyond capacity are rejected.** Rejection makes the failure explicit instead of silently dropping work.\n3. **A running job has a 30-second lease.** This gives the job a limited period before it becomes available again unless the lease is renewed.\n4. **Workers renew leases every 10 seconds.** Renewal keeps the lease active while the worker processes the job.\n5. **An expired lease makes the job available again.** Work can be picked up again when its lease is no longer maintained, but this also permits another run of the same job.\n6. **Handlers must be idempotent because a job can run twice.** Repeating a job must not repeat its effects incorrectly. Lease expiry and renewed availability are why handlers must tolerate duplicate runs.\n7. **Only explicit acknowledgement removes a job.** Renewal maintains the lease; expiry restores availability. Neither removes the job. Acknowledgement is the separate action that removes it."
+    },
+    {
+      "responseId": "s014",
+      "caseId": "d1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "In this fictional project, `forge test auth` runs the authentication tests. I only need the command. What do I run?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "The first meaningful content is the exact command forge test auth.",
+        "actionableSteps": "Provides the exact runnable command without extra prerequisites.",
+        "continuity": null,
+        "completeness": "Includes the command, invents no flags, and adds no unrelated instructions."
+      },
+      "text": "`forge test auth`"
+    },
+    {
+      "responseId": "s015",
+      "caseId": "d2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write the operator procedure from this fictional import contract. Required order: (1) pause writes, (2) export a snapshot using `ledger snapshot`, (3) validate the input with `ledger validate batch.csv`, (4) import with `ledger import batch.csv`, (5) compare imported row count with the validated row count, (6) resume writes only if they match. If validation fails, do not import; if counts differ, keep writes paused and investigate. Include every requirement. Do not execute anything."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with pause writes or a direct directive to follow the procedure, without background preamble.",
+        "actionableSteps": "Gives numbered bounded actions in the required order with both failure branches.",
+        "continuity": null,
+        "completeness": "Preserves all six operations, both commands, snapshot command, count comparison, and both stop conditions."
+      },
+      "text": "1. Pause writes.\n2. Export a snapshot with `ledger snapshot`.\n3. Validate the input with `ledger validate batch.csv`. If validation fails, do not import. Keep writes paused and investigate the validation failure.\n4. After validation passes, import with `ledger import batch.csv`.\n5. Compare the imported row count with the validated row count. Resume writes only if they match. If they differ, keep writes paused and investigate."
+    },
+    {
+      "responseId": "s016",
+      "caseId": "d3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "We are fixing fictional checkout bug C-17. The patch is already applied. Unit tests passed. The staging integration check has not run because the staging fixture identifier is missing. Do not deploy until that check passes."
+        },
+        {
+          "role": "assistant",
+          "content": "Patch applied; unit tests passed. Staging integration remains blocked on the fixture identifier."
+        },
+        {
+          "role": "user",
+          "content": "Back after lunch. Where were we, and what do you need from me?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with the actual status or the missing staging fixture identifier.",
+        "actionableSteps": "Asks specifically for the staging fixture identifier, without asking the user to redo the patch or unit tests.",
+        "continuity": "Retains patch applied, unit tests passed, integration not run, and deployment gate.",
+        "completeness": "States the blocker and does not claim integration or deployment succeeded."
+      },
+      "text": "C-17’s patch is applied and unit tests passed. The staging integration check has not run because the staging fixture identifier is missing. Deployment must wait until that check passes.\n\nPlease provide the staging fixture identifier so the integration check can run."
+    },
+    {
+      "responseId": "s017",
+      "caseId": "d4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Compare these fictional backup options and recommend one. I need restore within 20 minutes and can spend up to 15 credits monthly. A: 10 credits/month, 12-minute restore, manual daily backup. B: 14 credits/month, 8-minute restore, automatic hourly backup. C: 6 credits/month, 45-minute restore, automatic daily backup. Show all three options and their trade-offs. Do not invent other properties."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "First substantive sentence recommends B.",
+        "actionableSteps": "Makes a clear choice justified against both constraints; no invented setup instructions.",
+        "continuity": null,
+        "completeness": "Covers all three options with costs, restore times, backup frequency/automation, and C's restore constraint failure."
+      },
+      "text": "Choose B: it meets your 20-minute restore limit and 15-credit monthly budget, with an 8-minute restore and automatic hourly backups.\n\n| Option | Monthly cost | Restore time | Backup | Trade-off |\n| --- | --- | --- | --- | --- |\n| A | 10 credits | 12 minutes | Manual daily | Meets both limits and costs less than B, but requires manual backups and backs up less frequently. |\n| B | 14 credits | 8 minutes | Automatic hourly | Meets both limits, restores fastest, and backs up most frequently; costs the most. |\n| C | 6 credits | 45 minutes | Automatic daily | Costs the least and backs up automatically, but exceeds your restore limit. |"
+    },
+    {
+      "responseId": "s018",
+      "caseId": "d5",
+      "messages": [
+        {
+          "role": "user",
+          "content": "My fictional invoice importer failed. I have not supplied the error output, input file, or importer code. Tell me exactly which line to change."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately states the missing evidence or asks for the first error message; no fabricated fix.",
+        "actionableSteps": "Requests one concrete diagnostic input, such as the error output, that can advance diagnosis.",
+        "continuity": null,
+        "completeness": "Acknowledges that the line and cause cannot be established; does not invent a file, line, command, or cause."
+      },
+      "text": "I can’t identify the line to change without the error output, input file, and importer code. Send those three items so I can trace the failure and identify the required change."
+    },
+    {
+      "responseId": "s019",
+      "caseId": "d6",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Explain all seven rules of this fictional queue, and why each matters. Facts: capacity is 100 jobs; jobs beyond capacity are rejected rather than silently dropped; a running job has a 30-second lease; workers renew the lease every 10 seconds; an expired lease makes the job available again; handlers must be idempotent because a job can run twice; only explicit acknowledgement removes a job. Explain the relationship between renewal, expiry, duplicate runs, and acknowledgement. Also, a separate dashboard color change is planned, but that is irrelevant here."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with a substantive explanation of queue behavior, without announcing the explanation.",
+        "actionableSteps": "Explains the renewal/expiry/idempotency/acknowledgement relationship usefully; does not invent operational tasks.",
+        "continuity": null,
+        "completeness": "Covers all seven facts and why each matters, with no dashboard tangent or invented exactly-once guarantee."
+      },
+      "text": "The queue uses renewable leases to make unfinished jobs available again, and explicit acknowledgement to remove them. Handlers must tolerate duplicate runs.\n\n1. **Capacity is 100 jobs.** This bounds how many jobs the queue can hold.\n2. **Jobs beyond capacity are rejected.** Rejection makes failed admission visible instead of silently losing jobs.\n3. **A running job has a 30-second lease.** The lease limits how long it can remain leased without renewal.\n4. **Workers renew every 10 seconds.** Renewal keeps the lease active while work continues, with renewal scheduled before its 30-second expiry.\n5. **An expired lease makes the job available again.** This allows another attempt when the current worker stops renewing.\n6. **Handlers must be idempotent because a job can run twice.** Repeating a job must not produce an additional unintended effect.\n7. **Only explicit acknowledgement removes a job.** Running a handler or renewing its lease does not remove the job.\n\nRenewal keeps a running job leased. If renewal stops and the lease expires, the job becomes available again—even if the earlier attempt already produced an effect. That creates the possibility of duplicate runs, which idempotent handlers must handle. Explicit acknowledgement is the removal step; lease expiry is a retry opportunity, not removal."
+    },
+    {
+      "responseId": "s020",
+      "caseId": "d1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "In this fictional project, `forge test auth` runs the authentication tests. I only need the command. What do I run?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "The first meaningful content is the exact command forge test auth.",
+        "actionableSteps": "Provides the exact runnable command without extra prerequisites.",
+        "continuity": null,
+        "completeness": "Includes the command, invents no flags, and adds no unrelated instructions."
+      },
+      "text": "`forge test auth`"
+    },
+    {
+      "responseId": "s021",
+      "caseId": "d2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write the operator procedure from this fictional import contract. Required order: (1) pause writes, (2) export a snapshot using `ledger snapshot`, (3) validate the input with `ledger validate batch.csv`, (4) import with `ledger import batch.csv`, (5) compare imported row count with the validated row count, (6) resume writes only if they match. If validation fails, do not import; if counts differ, keep writes paused and investigate. Include every requirement. Do not execute anything."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with pause writes or a direct directive to follow the procedure, without background preamble.",
+        "actionableSteps": "Gives numbered bounded actions in the required order with both failure branches.",
+        "continuity": null,
+        "completeness": "Preserves all six operations, both commands, snapshot command, count comparison, and both stop conditions."
+      },
+      "text": "1. Pause writes.\n2. Export a snapshot using `ledger snapshot`.\n3. Validate the input using `ledger validate batch.csv`. If validation fails, stop; do not import. Retain the validated row count for comparison.\n4. Import using `ledger import batch.csv`.\n5. Compare the imported row count with the validated row count.\n6. Resume writes only if the counts match. If they differ, keep writes paused and investigate."
+    },
+    {
+      "responseId": "s022",
+      "caseId": "d3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "We are fixing fictional checkout bug C-17. The patch is already applied. Unit tests passed. The staging integration check has not run because the staging fixture identifier is missing. Do not deploy until that check passes."
+        },
+        {
+          "role": "assistant",
+          "content": "Patch applied; unit tests passed. Staging integration remains blocked on the fixture identifier."
+        },
+        {
+          "role": "user",
+          "content": "Back after lunch. Where were we, and what do you need from me?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with the actual status or the missing staging fixture identifier.",
+        "actionableSteps": "Asks specifically for the staging fixture identifier, without asking the user to redo the patch or unit tests.",
+        "continuity": "Retains patch applied, unit tests passed, integration not run, and deployment gate.",
+        "completeness": "States the blocker and does not claim integration or deployment succeeded."
+      },
+      "text": "C-17’s patch is applied, and unit tests passed. The staging integration check has not run because the staging fixture identifier is missing. Deployment must wait until that check passes.\n\nSend me the staging fixture identifier so we can run the integration check."
+    },
+    {
+      "responseId": "s023",
+      "caseId": "d4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Compare these fictional backup options and recommend one. I need restore within 20 minutes and can spend up to 15 credits monthly. A: 10 credits/month, 12-minute restore, manual daily backup. B: 14 credits/month, 8-minute restore, automatic hourly backup. C: 6 credits/month, 45-minute restore, automatic daily backup. Show all three options and their trade-offs. Do not invent other properties."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "First substantive sentence recommends B.",
+        "actionableSteps": "Makes a clear choice justified against both constraints; no invented setup instructions.",
+        "continuity": null,
+        "completeness": "Covers all three options with costs, restore times, backup frequency/automation, and C's restore constraint failure."
+      },
+      "text": "Choose B: at 14 credits/month, it meets your 15-credit budget and restores in 8 minutes, within your 20-minute limit. It also provides automatic hourly backups.\n\n| Option | Monthly cost | Restore time | Backup schedule | Trade-off |\n|---|---:|---:|---|---|\n| A | 10 credits | 12 minutes | Manual daily | Meets both limits and costs 4 credits less than B, but requires manual backups and restores more slowly. |\n| B | 14 credits | 8 minutes | Automatic hourly | Meets both limits; costs the most, with the fastest restore and most frequent backups listed. |\n| C | 6 credits | 45 minutes | Automatic daily | Cheapest, but exceeds your restore limit by 25 minutes. |"
+    },
+    {
+      "responseId": "s024",
+      "caseId": "d5",
+      "messages": [
+        {
+          "role": "user",
+          "content": "My fictional invoice importer failed. I have not supplied the error output, input file, or importer code. Tell me exactly which line to change."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately states the missing evidence or asks for the first error message; no fabricated fix.",
+        "actionableSteps": "Requests one concrete diagnostic input, such as the error output, that can advance diagnosis.",
+        "continuity": null,
+        "completeness": "Acknowledges that the line and cause cannot be established; does not invent a file, line, command, or cause."
+      },
+      "text": "I can’t identify a line to change without the error output, input file, and importer code. Send those three items so the failure can be traced to a specific line."
+    }
+  ]
+}

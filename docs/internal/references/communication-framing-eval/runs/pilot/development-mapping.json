@@ -1,0 +1,242 @@
+[
+  {
+    "responseId": "s001",
+    "jobId": "v1-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d6",
+    "characters": 1219,
+    "words": 191
+  },
+  {
+    "responseId": "s002",
+    "jobId": "v1-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d1",
+    "characters": 17,
+    "words": 3
+  },
+  {
+    "responseId": "s003",
+    "jobId": "v1-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d2",
+    "characters": 381,
+    "words": 60
+  },
+  {
+    "responseId": "s004",
+    "jobId": "v1-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d3",
+    "characters": 264,
+    "words": 41
+  },
+  {
+    "responseId": "s005",
+    "jobId": "v1-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d4",
+    "characters": 623,
+    "words": 114
+  },
+  {
+    "responseId": "s006",
+    "jobId": "v1-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d5",
+    "characters": 156,
+    "words": 28
+  },
+  {
+    "responseId": "s007",
+    "jobId": "v1-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d6",
+    "characters": 1193,
+    "words": 191
+  },
+  {
+    "responseId": "s008",
+    "jobId": "v1-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d1",
+    "characters": 17,
+    "words": 3
+  },
+  {
+    "responseId": "s009",
+    "jobId": "v1-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d2",
+    "characters": 433,
+    "words": 66
+  },
+  {
+    "responseId": "s010",
+    "jobId": "v1-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d3",
+    "characters": 256,
+    "words": 40
+  },
+  {
+    "responseId": "s011",
+    "jobId": "v1-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d4",
+    "characters": 652,
+    "words": 118
+  },
+  {
+    "responseId": "s012",
+    "jobId": "v1-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d5",
+    "characters": 179,
+    "words": 30
+  },
+  {
+    "responseId": "s013",
+    "jobId": "v1-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d6",
+    "characters": 1137,
+    "words": 181
+  },
+  {
+    "responseId": "s014",
+    "jobId": "v1-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d1",
+    "characters": 17,
+    "words": 3
+  },
+  {
+    "responseId": "s015",
+    "jobId": "v1-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d2",
+    "characters": 429,
+    "words": 66
+  },
+  {
+    "responseId": "s016",
+    "jobId": "v1-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d3",
+    "characters": 266,
+    "words": 41
+  },
+  {
+    "responseId": "s017",
+    "jobId": "v1-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d4",
+    "characters": 637,
+    "words": 125
+  },
+  {
+    "responseId": "s018",
+    "jobId": "v1-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d5",
+    "characters": 176,
+    "words": 31
+  },
+  {
+    "responseId": "s019",
+    "jobId": "v1-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d6",
+    "characters": 1318,
+    "words": 203
+  },
+  {
+    "responseId": "s020",
+    "jobId": "v1-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d1",
+    "characters": 17,
+    "words": 3
+  },
+  {
+    "responseId": "s021",
+    "jobId": "v1-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d2",
+    "characters": 410,
+    "words": 65
+  },
+  {
+    "responseId": "s022",
+    "jobId": "v1-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v1",
+    "caseId": "d3",
+    "characters": 263,
+    "words": 42
+  },
+  {
+    "responseId": "s023",
+    "jobId": "v1-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d4",
+    "characters": 663,
+    "words": 121
+  },
+  {
+    "responseId": "s024",
+    "jobId": "v1-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v1",
+    "caseId": "d5",
+    "characters": 162,
+    "words": 30
+  }
+]

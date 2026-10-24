@@ -1,0 +1,20 @@
+{
+  "responses": [
+    {
+      "caseId": "h1",
+      "text": "No. R-8 is not ready for production. Compilation and all 42 unit tests passed, but the staging payment check returned 503. The cause is unknown, and production rollout is prohibited until that check passes.\n\nSingle next action: provide `payment-check.log` for diagnosis."
+    },
+    {
+      "caseId": "h2",
+      "text": "Sandbox only. Never target production.\n\nPrepare:\n1. Pause sandbox workers.\n2. Run `vault inspect restore-7`.\n3. Verify that the manifest says sandbox. If it does not, stop; do not run the restore.\n\nRestore and finish:\n4. Run `vault restore restore-7 --sandbox`.\n5. Run `vault verify --sandbox`.\n6. Resume sandbox workers only if verification passes. Otherwise, leave them paused.\n7. Record the restore identifier (`restore-7`) and verification result in the run log."
+    },
+    {
+      "caseId": "h3",
+      "text": "Choose **TextMap**: it preserves decimal precision and timezone offsets while staying readable. Its cost is files twice the size of Packed.\n\n| Format | Decimal precision | Timezone offsets | Readability and trade-off |\n| --- | --- | --- | --- |\n| TextMap | Preserved | Preserved | Readable; files are twice the size of Packed. Best fit. |\n| Packed | Preserved | Preserved | Opaque; requires the supplied viewer. Smaller than TextMap. |\n| CSV | Preserved | Lost | Readable, but fails the timezone-offset requirement. |\n\nPacked also meets the fidelity requirement if smaller files outweigh readability and the viewer requirement. No setup commands are supplied."
+    },
+    {
+      "caseId": "h4",
+      "text": "Use the revision to decide whether the local snapshot stays or is replaced.\n\n1. A revision is an opaque string: treat it as an identifier without interpreting its contents. The client sends its last revision.\n2. If that revision is unchanged, the response contains no changes. The local snapshot stays as it is.\n3. If the revision has changed, the response contains a complete replacement snapshot. The client must replace its local snapshot, rather than merge the new data into it.\n4. If the revision is unknown, the client needs a fresh full snapshot.\n\nIllustrative examples—all revision strings and snapshot contents below are invented:\n\n- **Unchanged:** The client sends `rev-a`, which is still current. The response has no changes; the client's snapshot remains `[A]`.\n- **Changed:** The client sends `rev-a`, but the current revision is `rev-b`. The response supplies the complete snapshot `[B]`. The client replaces `[A]` with `[B]`; it must not merge them into `[A, B]`.\n- **Unknown:** The client sends `rev-old`, which is unknown. It requires a fresh full snapshot, illustrated by `[C]`, to replace its local snapshot."
+    }
+  ]
+}

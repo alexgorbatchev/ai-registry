@@ -1,0 +1,28 @@
+{
+  "reviews": [
+    {
+      "responseId": "s006",
+      "originalActionableSteps": true,
+      "reviewedActionableSteps": false,
+      "rationale": "The original judgment treated 'one concrete diagnostic input' as at least one. Against the case's exact one-input acceptance, 'Send the error output, failing input file, and importer code' requests three separate diagnostic artifacts together rather than selecting one concrete next input. The artifacts are relevant, but their relevance does not satisfy the specified request size."
+    },
+    {
+      "responseId": "s012",
+      "originalActionableSteps": true,
+      "reviewedActionableSteps": true,
+      "rationale": "Although the opening identifies three missing artifacts, the actual next-action request is 'send the error output, including any reported file and line number.' That selects one concrete diagnostic input. Any reported file and line number are details within that error output, not requests for the input file or importer code."
+    },
+    {
+      "responseId": "s018",
+      "originalActionableSteps": true,
+      "reviewedActionableSteps": false,
+      "rationale": "The original judgment treated 'one concrete diagnostic input' as at least one. 'Send those three items' explicitly requests the error output, input file, and importer code together. It does not select the one concrete diagnostic input specified by the case acceptance, even though all three could help diagnosis."
+    },
+    {
+      "responseId": "s024",
+      "originalActionableSteps": true,
+      "reviewedActionableSteps": false,
+      "rationale": "The original judgment treated 'one concrete diagnostic input' as at least one. 'Send those three items' explicitly bundles the error output, input file, and importer code into the next request. Against the exact one-input acceptance, this asks for three inputs rather than choosing one that can advance diagnosis."
+    }
+  ]
+}

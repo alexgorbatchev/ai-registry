@@ -77,7 +77,7 @@ await Bun.build({
   outdir: "./dist",
   // 1. Inline env variables automatically (converts process.env.URL to literal string)
   env: "inline", // Or "disable" | prefix like "ACME_PUBLIC_*"
-  
+
   // 2. Define global identifiers to replace at build time
   define: {
     PRODUCTION: "true",
@@ -150,4 +150,3 @@ await Bun.build({
 });
 ```
 For complete setup across production builds, dev server static routing (`Bun.serve`), error resilience, and Oxlint rules, see [react-compiler.md](react-compiler.md).
-

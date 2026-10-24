@@ -22,7 +22,7 @@ await Bun.write("project.tar", archive);
 
 // 2. Write compressed tar.gz to disk (using compression options)
 const gzippedArchive = new Archive(
-  { "hello.txt": "Hello!" }, 
+  { "hello.txt": "Hello!" },
   { compress: "gzip", level: 9 } // gzip level 1-12 (default: 6)
 );
 await Bun.write("project.tar.gz", gzippedArchive);

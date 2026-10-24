@@ -137,19 +137,23 @@ describe("OpenCode harness build plugin", () => {
 
     await getStageProfile()(createProfileContext(repositoryRoot));
 
-    expect(await readFile(join(repositoryRoot, ".output", ".opencode-agents", "developer.md"), "utf-8")).toBe([
-      "---",
-      "description: Developer profile",
-      "mode: primary",
-      "permission: ",
-      "  skill: ",
-      "    \"*\": deny",
-      "    opencode-*: allow",
-      "    shared-skill: allow",
-      "    local-skill: allow",
-      "---",
-      "Follow the repo guidance.",
-    ].join("\n"));
+    const agentContent = await readFile(join(repositoryRoot, ".output", ".opencode-agents", "developer.md"), "utf-8");
+    const [prefix, frontmatter, body] = agentContent.split("---\n");
+    assert(frontmatter);
+    expect(prefix).toBe("");
+    expect(Bun.YAML.parse(frontmatter)).toEqual({
+      description: "Developer profile",
+      mode: "primary",
+      permission: {
+        skill: {
+          "*": "deny",
+          "opencode-*": "allow",
+          "shared-skill": "allow",
+          "local-skill": "allow",
+        },
+      },
+    });
+    expect(body).toBe("Follow the repo guidance.");
   });
 
   it("handles custom manifest tools and permissions", async () => {

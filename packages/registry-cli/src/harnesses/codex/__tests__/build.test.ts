@@ -19,7 +19,7 @@ import {
   type ITemplateContext,
   type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
-import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
+import { collectGeneratedOutputEntries, createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
 import { syncBackModifiedFiles } from "../../../commands/buildCommand";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "codex-build-tests");
@@ -545,10 +545,13 @@ CODEX_HOME="<%- output_dir %>/codex/developer" exec "$real_binary" "$@"
     expect(await Bun.file(outputPath).text())
       .toBe(`---\ndescription: Review\n---\nInspect ${commandPath} under ${repositoryRoot}. Keep {{args}}.\n`);
     const editedOutputDir = join(repositoryRoot, ".tmp", "edited-output");
+    const baseline = await collectGeneratedOutputEntries(unifiedContext.outputDir);
+    const sourceChecksum = new Bun.CryptoHasher("sha256").update(await Bun.file(commandPath).text()).digest("hex");
     await writeTestFile(editedOutputDir, relativePath, `---\ndescription: Updated review\n---\nInspect changes under ${repositoryRoot}.\n`);
 
     await syncBackModifiedFiles([{ path: relativePath, reason: "modified" }], editedOutputDir,
-      unifiedContext.outputDir, sourcePathByOutputPath, unifiedContext.templateContext);
+      unifiedContext.outputDir, sourcePathByOutputPath, unifiedContext.templateContext,
+      { [relativePath]: commandPath }, baseline, { [relativePath]: sourceChecksum });
 
     expect(await Bun.file(commandPath).text()).toBe("---\ndescription: Updated review\n---\nInspect changes under <%- repo_root %>.\n");
   });

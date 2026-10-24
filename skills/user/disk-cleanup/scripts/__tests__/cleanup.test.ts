@@ -2,6 +2,8 @@ import { afterEach, beforeEach, expect, test } from 'bun:test';
 import { lstat, mkdir, symlink, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { cli, createRepository, createRoot, disposeRoot, git } from './helpers';
+import { assessDisk } from '../assessDisk';
+import { runInspectionCommand } from '../runInspectionCommand';
 
 let rootPath: string;
 beforeEach(async () => {
@@ -222,6 +224,85 @@ test('disk inspection measures an existing fixture without altering it', async (
   expect(result.exitCode).toBe(0);
   expect(JSON.parse(result.stdout)).toMatchObject({ root: rootPath, folders: [{ path: rootPath }] });
   expect(await Bun.file(join(rootPath, 'file.txt')).text()).toBe('keep\n');
+});
+
+test('disk assessment includes deep project artifacts alongside caches and all inspection sections', async () => {
+  const repositoryPath = await createRepository(rootPath, 'development/project');
+  const artifactPath = join(repositoryPath, 'build/deep/target/artifact.bin');
+  await mkdir(join(repositoryPath, 'build/deep/target'), { recursive: true });
+  await mkdir(join(rootPath, '.cache/compiler'), { recursive: true });
+  await Bun.write(artifactPath, Buffer.alloc(128 * 1024));
+  await Bun.write(join(rootPath, '.cache/compiler/cache.bin'), Buffer.alloc(64 * 1024));
+  const result = cli(rootPath, ['disk', 'assess', '--root', rootPath, '--size', '32K']);
+  const report = JSON.parse(result.stdout);
+  expect(report.sections.map((section: { name: string }) => section.name)).toEqual([
+    'filesystem',
+    'overview',
+    'largePaths',
+    'dependencies',
+    'worktrees',
+    'staleFolders',
+    'docker',
+  ]);
+  expect(report.sections[2].data).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ path: artifactPath, bytes: 128 * 1024 }),
+      expect.objectContaining({ path: join(rootPath, '.cache/compiler/cache.bin'), bytes: 64 * 1024 }),
+    ]),
+  );
+  expect(report.sections[3].data.dependencies[0].path).toBe(join(repositoryPath, 'node_modules'));
+  expect(await Bun.file(artifactPath).size).toBe(128 * 1024);
+});
+
+test('disk assessment retains successful sections when Git inspection fails', async () => {
+  await mkdir(join(rootPath, 'broken'), { recursive: true });
+  await Bun.write(join(rootPath, 'broken/.git'), 'gitdir: missing-worktree-metadata\n');
+  await Bun.write(join(rootPath, 'keep.txt'), 'keep\n');
+  const result = cli(rootPath, ['disk', 'assess', '--root', rootPath, '--size', '1B']);
+  expect(result.exitCode).toBe(1);
+  const report = JSON.parse(result.stdout);
+  expect(report.isComplete).toBe(false);
+  expect(report.sections[0].isComplete).toBe(true);
+  expect(report.sections[1].data).toEqual(expect.arrayContaining([expect.objectContaining({ path: rootPath })]));
+  expect(report.sections[4].isComplete).toBe(false);
+  expect(await Bun.file(join(rootPath, 'keep.txt')).text()).toBe('keep\n');
+});
+
+test('disk assessment waits for slow sections and preserves partial du output on failure', async () => {
+  const started = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  let hasFinished = false;
+  const assessment = assessDisk(rootPath, 1, 30, async (args) => {
+    if (args.includes('--max-depth=3')) {
+      started.resolve();
+      await release.promise;
+      return { stdout: `4096\t${rootPath}\0`, stderr: 'unreadable child', exitCode: 1 };
+    }
+    return runInspectionCommand(args);
+  }).then((report) => {
+    hasFinished = true;
+    return report;
+  });
+  await started.promise;
+  expect(hasFinished).toBe(false);
+  release.resolve();
+  const report = await assessment;
+  expect(report.isComplete).toBe(false);
+  expect(report.sections[1]).toEqual({
+    name: 'overview',
+    isComplete: false,
+    data: [{ bytes: 4096, path: rootPath }],
+    errors: ['du exited 1: unreadable child'],
+  });
+  expect(report.sections.map((section) => section.name)).toEqual([
+    'filesystem',
+    'overview',
+    'largePaths',
+    'dependencies',
+    'worktrees',
+    'staleFolders',
+    'docker',
+  ]);
 });
 
 test('folders list detects folders exceeding size and staleness thresholds', async () => {

@@ -41,6 +41,7 @@ export async function removeTargets(
   options: RunOptions,
   actions: Action[],
   validate: (action: Action) => Promise<void>,
+  afterRemove?: (action: Action) => Promise<void>,
 ): Promise<unknown> {
   assertDisjoint(
     options.root,
@@ -92,6 +93,7 @@ export async function removeTargets(
       }
       await ensureAbsent(action.path);
       removed.push(action.path);
+      await afterRemove?.(action);
       await persist();
     }
   } catch (error) {

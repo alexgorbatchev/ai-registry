@@ -4,7 +4,7 @@ description: REQUIRED when diagnosing, troubleshooting, or debugging Pi Coding A
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-23 13:50
-  last_modified: 2026-08-23 13:50
+  last_modified: 2026-10-14 14:54
   status: current
 ---
 
@@ -25,14 +25,11 @@ Follow this triage sequence to isolate the root cause before editing configurati
 Execute these commands to gather ground-truth diagnostic evidence:
 
 ```bash
-# 1. Verify active environment variables
-env | grep -E 'PI_|LITELLM_|OPENAI_|GOOGLE_|ANTHROPIC_'
-
-# 2. Inspect active settings and credentials
+# 1. Inspect active settings and credentials
 cat ~/.pi/agent/settings.json
 cat ~/.pi/agent/auth.json
 
-# 3. Inspect cached model store and base URLs
+# 2. Inspect cached model store and base URLs
 node -e '
   const fs = require("fs");
   const path = process.env.HOME + "/.pi/agent/models-store.json";
@@ -45,9 +42,12 @@ node -e '
   } else console.log("No models-store.json found.");
 '
 
-# 4. Find session JSONL logs for the current workspace
-find ~/.pi/agent/sessions/ .output/pi/default/sessions/ -name "*.jsonl" -mmin -60 2>/dev/null
 ```
+
+Inspect relevant active environment variables and locate recent `.jsonl` session
+logs for the current workspace under `~/.pi/agent/sessions/` or
+`.output/pi/default/sessions/` using tools suited to the task. Redact credential
+values before displaying diagnostics.
 
 ---
 
@@ -80,7 +80,7 @@ For deep provider mechanics and auth schema details, see [references/providers-a
 ## Extension & MCP Debugging
 
 1. **Inspecting External Extensions:**
-   - Do NOT run system-wide `find` or `grep` across local `node_modules` or `~/.pi` when diagnosing extension issues.
+   - Scope local inspection to the relevant extension and its configured locations rather than scanning unrelated system directories.
    - Retrieve package metadata from `https://pi.dev/packages/<package-name>`.
    - Use `fetch_content` to read raw GitHub source files (e.g. `https://raw.githubusercontent.com/<owner>/<repo>/main/src/...`).
 
@@ -112,9 +112,8 @@ For detailed extension lifecycle and MCP troubleshooting, see [references/extens
    - Filenames follow `<timestamp>_<session-uuid>.jsonl`.
 
 2. **Analyzing Session Errors:**
-   ```bash
-   grep -i '"errorMessage"' <session-file.jsonl>
-   ```
+   Inspect `errorMessage` fields in the selected session transcript using tools
+   suited to the task.
 
 3. **Mid-Session Provider Switching Cross-Contamination:**
    - Switching providers mid-session (e.g. `google` -> `litellm`) carries previous assistant messages formatted with the old provider's metadata (`textSignature`).

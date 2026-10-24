@@ -36,6 +36,7 @@ export interface IGeneratedOutputManifest {
   generatedAt: string;
   entries: Record<string, IGeneratedOutputManifestEntry>;
   sourcePaths?: Record<string, string>;
+  sourceChecksums?: Record<string, string>;
 }
 
 export interface IGeneratedOutputDrift {
@@ -55,6 +56,7 @@ export interface ISyncManagedGeneratedOutputsOptions {
   nextOutputDir: string;
   outputDir: string;
   previousManifest: IGeneratedOutputManifest | null;
+  expectedCurrentEntries?: Record<string, IGeneratedOutputManifestEntry>;
   // Runtime directories are ensured to exist after sync but are never removed,
   // even when an older manifest still lists them as managed entries.
   runtimeDirectoryPaths?: readonly string[];
@@ -340,6 +342,23 @@ export async function syncManagedGeneratedOutputs(
   options: ISyncManagedGeneratedOutputsOptions,
 ): Promise<void> {
   const runtimeDirectoryPaths = options.runtimeDirectoryPaths ?? [];
+  if (options.expectedCurrentEntries) {
+    const currentEntries = await collectGeneratedOutputEntries(options.outputDir, { runtimeDirectoryPaths });
+    const affectedPaths = new Set([
+      ...Object.keys(options.previousManifest?.entries ?? {}),
+      ...Object.keys(options.nextEntries),
+    ]);
+    for (const path of affectedPaths) {
+      if (isRuntimeDirectoryPath(path, runtimeDirectoryPaths)) continue;
+      const expected = options.expectedCurrentEntries[path];
+      const current = currentEntries[path];
+      const isUnchanged = expected === undefined ? current === undefined
+        : current !== undefined && areManifestEntriesEqual(expected, current);
+      if (!isUnchanged) {
+        throw new Error(`Output application suspended: ${path} changed after recovery preflight. Preserve its edits and retry reconciliation.`);
+      }
+    }
+  }
   await mkdir(options.outputDir, { recursive: true });
 
   if (options.previousManifest) {

@@ -26,7 +26,7 @@ Analyze user messages from OpenCode sessions to identify recurring themes, commu
 ### Step 1: Run Extraction
 
 ```bash
-bun ~/.agents/skills/opencode-conversation-analysis/scripts/extract.ts
+bun "<%- file_dir %>/scripts/extract.ts" --output-dir "<%- repo_root %>/.tmp/opencode-analysis"
 ```
 
 This script:
@@ -35,7 +35,9 @@ This script:
 - Extracts user messages from main sessions with metadata (session_id, title, timestamp, text)
 - Filters out messages < 10 characters
 - Chunks into ~320k char files (~80k tokens each)
-- Outputs to `<%- repo_root %>/.opencode-analysis/chunk_*.jsonl`
+- Outputs to `<%- repo_root %>/.tmp/opencode-analysis/chunk_*.jsonl`
+
+Pass the explicit output directory for this workflow. The extractor replaces its own prior chunks there on each run; preserve unrelated files. Leave artifacts in older output locations in place unless their ownership and retention requirements permit cleanup.
 
 Review the output summary to see how many chunks were created.
 
@@ -44,7 +46,7 @@ Review the output summary to see how many chunks were created.
 For each chunk file, spawn a `general` subagent with this prompt template:
 
 ```
-Read the file `<%- repo_root %>/.opencode-analysis/chunk_N.jsonl` which contains user messages from coding sessions (JSONL format with fields: session_id, session_title, timestamp, text).
+Read the file `<%- repo_root %>/.tmp/opencode-analysis/chunk_N.jsonl` which contains user messages from coding sessions (JSONL format with fields: session_id, session_title, timestamp, text).
 
 Analyze these messages to identify recurring themes in how the user steers/guides AI coding assistants. Look for patterns like:
 - How they give feedback

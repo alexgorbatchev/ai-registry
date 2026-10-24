@@ -4,11 +4,11 @@ description: Use when operating or testing interactive terminal applications, in
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-08 13:49
-  last_modified: 2026-10-08 13:49
+  last_modified: 2026-10-16 20:03
   status: current
 ---
 
-Check `termctrl --version` and `termctrl <command> --help` for the installed interface. Use [Terminal Control documentation](https://github.com/anomalyco/terminal-control) for additional capabilities. If the binary is missing, report that dependency before attempting terminal control.
+Check `termctrl --version` and `termctrl <command> --help` for the installed interface. Use [Terminal Control documentation](https://github.com/anomalyco/terminal-control) for additional capabilities. If the binary is missing or a required operation is unsupported, inspect available authorized alternatives. Use an alternative only when its verified capabilities satisfy the same required interaction and evidence, and the request does not explicitly require termctrl or a particular session. Report the method actually used and its limitations; command logs alone cannot substitute for required rendered-screen or visual verification. If no suitable alternative is available, record the missing capability and exact input or provisioning needed, suspend only dependent checks or actions under the blocker protocol, and continue independent authorized work. Do not claim an unrun check passed or take over another owner's terminal session.
 
 ## Choose the session lifecycle
 
@@ -60,4 +60,4 @@ termctrl video .tmp/termctrl/demo.termctrl --out .tmp/termctrl/demo.mp4
 
 Create the `done` marker after verifying the desired screen during the live session. Video export requires `ffmpeg`; consult `video --help` for marker-based edit plans and pointer overlays. Recordings retain terminal output and input; avoid recording secrets and inspect artifacts before sharing.
 
-Report the observed outcome, artifact paths, and any failed wait or unsupported operation. Do not claim a workflow passed solely because the commands ran.
+Report the observed outcome, method used, artifact paths, and any failed wait, unsupported operation, or deferred required check. Distinguish completed checks from checks awaiting a tool, session, or access. Do not claim a workflow passed solely because commands ran, or declare completion while required verification remains deferred.

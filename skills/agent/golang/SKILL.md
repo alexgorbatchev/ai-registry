@@ -8,7 +8,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-10-15 16:16
+  last_modified: 2026-10-16 10:02
   status: current
 ---
 
@@ -23,7 +23,7 @@ Read the matching file when the task goes beyond writing code:
 - [references/setup.md](references/setup.md) — **Binding project rules** (Go version, `go-scaffold`, `bin/` output, `just`, Cobra + `cobra-help-tree/v2`, `any-llm-go`, `--version` contract, XDG paths, module `tool` directives) plus setup, `justfile`, Cobra, and `.gitignore` templates. Read before starting, restructuring, building, or releasing a project.
 - [references/github-ci-cd-releases.md](references/github-ci-cd-releases.md) — GitHub Actions CI, tagged releases, GoReleaser config, and binary version metadata.
 - [references/go-release-notes.md](references/go-release-notes.md) — Language and tooling changes in Go 1.23+, released after the model training cutoff. Read when choosing between a newer and an older idiom, raising the `go` line, or relying on a recent `go` subcommand or analyzer.
-- [references/disk-usage.md](references/disk-usage.md) — **5 GB combined build/temporary storage ceiling**, immediate scratch cleanup, cache ownership, and verification. Read before builds, tests, coverage, profiling, or storage cleanup.
+- [references/disk-usage.md](references/disk-usage.md) — **5 GB task-owned artifact budget**, shared/global cache exclusions, immediate scratch cleanup, and ownership checks. Read before builds, tests, coverage, profiling, or storage cleanup.
 
 ---
 

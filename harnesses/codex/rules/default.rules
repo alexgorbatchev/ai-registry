@@ -1,21 +1,36 @@
 prefix_rule(
-    pattern = ["git", "checkout"],
+    pattern = ["git", "checkout", ["-f", "--force", "-B", "--ours", "--theirs", "--"]],
     decision = "forbidden",
-    justification = "Use a non-mutating git inspection command, or ask the user to run checkout explicitly.",
+    justification = "This checkout form can discard file changes or replace an existing branch. Preserve the work; routine branch switching and creation remain available after ownership checks.",
     match = [
-        "git checkout main",
+        "git checkout -f main",
+        "git checkout --force main",
+        "git checkout -B feature/example main",
+        "git checkout --ours package.json",
+        "git checkout --theirs package.json",
         "git checkout -- package.json",
+    ],
+    not_match = [
+        "git checkout main",
         "git checkout -b feature/example",
+        "git checkout --track -b feature/example origin/main",
     ],
 )
 
 prefix_rule(
-    pattern = ["git", "reset"],
+    pattern = ["git", "reset", ["--hard", "--soft", "--mixed", "--merge", "--keep"]],
     decision = "forbidden",
-    justification = "Use non-destructive git inspection commands instead; reset rewrites worktree, index, or history state.",
+    justification = "Explicit reset modes can rewrite branch history or discard work. Preserve the state; path-scoped unstaging of owned files remains available after ownership checks.",
     match = [
         "git reset --hard HEAD",
-        "git reset HEAD~1",
+        "git reset --soft HEAD~1",
+        "git reset --mixed HEAD~1",
+        "git reset --merge HEAD~1",
+        "git reset --keep HEAD~1",
+    ],
+    not_match = [
         "git reset -- package.json",
+        "git reset HEAD -- package.json",
+        "git reset --pathspec-from-file=owned-paths.txt",
     ],
 )

@@ -94,7 +94,7 @@ Do not mock whole modules. Inject collaborators and stub the injected dependency
 - **DO NOT** delete or skip tests to make them pass
 - **DO NOT** write tests for testing helpers
 - **DO NOT** write tests that only verify static constants, raw configs, or hardcoded values (e.g., asserting a global configuration object equals its definition). However, if a constant is returned as part of a function call or dynamic logic, verify it as part of that behavioral check.
-- **DO NOT** pipe CLI test commands through `grep`
+- **DO NOT** filter CLI test output in a way that hides failures or loses the test command's exit status.
 - **DO NOT** use conditional logic (`if`, `else`, `switch`, ternary)
 - **DO NOT** use partial string matches (`toContain`, `toMatch`)
 - **DO NOT** export from test files

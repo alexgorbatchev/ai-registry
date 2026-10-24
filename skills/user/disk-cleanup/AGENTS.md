@@ -1,6 +1,6 @@
 ---
 created_on: '2026-10-05 07:24'
-last_modified: '2026-10-09 17:29'
+last_modified: '2026-10-18 15:22'
 status: current
 ---
 
@@ -21,7 +21,7 @@ container because execution logs live there; reject deletions that would remove 
 Keep worktree deletion in native Git and preserve tracked files, ignored files, branch/tag reachability, and locks.
 Do not replace failed Git inspection with an inactivity guess or add `--force` to make removal pass.
 
-Record new user instructions in the most appropriate `AGENTS.md`; ask before changing conflicting instructions.
+Automatically record explicit standing user instructions, such as “always do X” or “never do Y,” in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save them. Update an existing rule in place when the user clearly changes it. Keep one-task directions, progress, and session data out of policy files. Ask only when the intended policy scope or resolution of a material conflict is unclear.
 For runtime-changing code outside `scripts/`, change a test file and maintain 90% coverage. This coverage rule
 excludes `scripts/`; its deletion behavior must still have real behavioral tests.
 Use existing user authorization for cleanup. Request missing authorization after presenting exact deletion targets.

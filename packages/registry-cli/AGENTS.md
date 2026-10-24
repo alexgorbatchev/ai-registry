@@ -10,6 +10,5 @@ This package implements the repository build, bootstrap, and synchronization com
 
 ## Boundaries & Quality Rules
 
-- Any time code is changed such that results from running that code are changed, a test file must be changed as well.
-- Minimum 90% code coverage is required (the `scripts/` folder is excluded from this rule).
+- For executable behavior changes, add or update meaningful behavioral tests and apply the root [testing and coverage policy](../../AGENTS.md#development-workflow): at least 90% line coverage and 90% function coverage across this package's non-test source, including unexecuted files and excluding `scripts/` directories. Document and configure the command, source scope, metrics, and exclusions; handle blocking baseline failures under the prerequisite-repair policy. Do not weaken gates or make token test edits.
 - Always verify generated harness outputs in `.output/` after changing build or harness logic.

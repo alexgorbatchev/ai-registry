@@ -20,12 +20,13 @@ Read live GitHub state, not just the queue. Require all of the following:
 - Source branch/worktree ownership is established, with no unowned staged changes,
   index locks, unfinished Git operations, or source changes outside the commit.
 
-If the base or head moved, rebase onto current `main`, rerun all required checks,
+Before publication, if the base or head moved, rebase onto current `main`, rerun all required checks,
 push, wait for green CI, and obtain another native approval. Resolve push
 lease failures by inspecting the new remote work; never overwrite it blindly.
-Integrate the current PR before starting the next issue. If resuming an older
-queue with multiple PRs, mark remaining stale bases for refresh and resume those
-PRs one at a time, following the scheduling reference.
+Integrate the current PR before starting the next issue unless a verified blocker
+suspends it under the scheduling reference. Suspension never waives integration
+gates. For a queue with multiple retained PRs, mark stale bases for refresh and
+resume eligible PRs one at a time, following that reference.
 
 ## Fast-forward only
 
@@ -54,16 +55,39 @@ already integrated. Do not use force, squash, rebase-and-merge, an administrator
 bypass, or altered branch protection. If repository policy prevents direct
 fast-forward publication, record the blocker and retain the PR/worktree.
 
-Fetch again and verify the approved head is reachable from remote `main`. Read
-the PR's native state until it reports `MERGED`; a closed PR is not proof of merge.
-GitHub can mark indirectly integrated PRs merged, so verify policy gates before
-the push rather than relying on that state to prove they were satisfied. If the
-head landed but GitHub has not marked the PR merged, preserve artifacts and record
-the reconciliation blocker; do not recreate, manually close, or rewrite the PR.
+## Reconcile publication before closure
+
+After publication, fetch and verify that remote main contains the approved
+commit. Persist the published head, observed remote main SHA, PR head and native
+state, first observation time, reconciliation deadline, and next poll time in
+the queue. Follow a documented repository reconciliation window and polling
+interval; when none exists, poll every 15 seconds for up to 120 seconds.
+Restarting the agent does not reset that window.
+
+Require the PR's native state to be MERGED before closure and artifact cleanup;
+a closed PR alone is insufficient. Verify policy gates before publication rather
+than relying on the merged flag to prove compliance. If the window expires,
+refresh remote main's containment of the published commit and native PR state.
+When remote main still contains the approved commit but the PR is still not
+MERGED, record the missing native state and exact unblock condition as a
+reconciliation blocker, preserve the issue and its artifacts, and continue
+independent authorized work under the blocker protocol. Do not mark the issue
+complete, manually close or recreate the PR, rewrite commits, or repeat
+publication solely to force the merged flag.
+
+At selection boundaries, recheck suspended reconciliation from the saved
+publication record. Resume closure and cleanup after confirming that remote
+main contains the published commit and that the PR has the expected head and
+native MERGED state. Use the existing fetch/API results when current; do not add
+a separate connectivity check. Investigate changed heads or a published commit
+missing from remote main without assuming integration succeeded. This
+reconciliation window applies only after verified publication; it does not
+limit ordinary pending CI or running review.
 
 ## Closure and artifact cleanup
 
-Only after remote reachability and PR merged state are verified:
+Only after remote main contains the published commit and the expected PR head
+and native MERGED state are verified:
 
 1. Close the issue if closing references have not already done so. Comment with the
    PR, landed SHA, outcome, and links to CI results and native approval.

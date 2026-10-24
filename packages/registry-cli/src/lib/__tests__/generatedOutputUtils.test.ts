@@ -36,6 +36,44 @@ afterAll(async () => {
 });
 
 describe("generatedOutputUtils", () => {
+  it("preserves edits arriving after recovery preflight", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const outputDir = join(repositoryRoot, "output");
+    const stagingDir = join(repositoryRoot, "staging");
+    const outputPath = await writeTestFile(outputDir, "settings.json", "original");
+    const session = await writeTestFile(outputDir, "sessions/active.jsonl", "session data");
+    const runtimeDirectoryPaths = ["sessions"];
+    const expectedCurrentEntries = await collectGeneratedOutputEntries(outputDir, { runtimeDirectoryPaths });
+    const previousManifest = createGeneratedOutputManifest(expectedCurrentEntries);
+    await writeTestFile(stagingDir, "settings.json", "source update");
+    await Bun.write(outputPath, "new harness edit");
+
+    await expect(syncManagedGeneratedOutputs({
+      nextEntries: await collectGeneratedOutputEntries(stagingDir), nextOutputDir: stagingDir,
+      outputDir, previousManifest, expectedCurrentEntries, runtimeDirectoryPaths,
+    })).rejects.toThrow("Output application suspended: settings.json changed after recovery preflight. Preserve its edits and retry reconciliation.");
+    expect(await Bun.file(outputPath).text()).toBe("new harness edit");
+    expect(await Bun.file(session).text()).toBe("session data");
+  });
+
+  it("applies an unchanged preflight while preserving newer runtime data", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const outputDir = join(repositoryRoot, "output");
+    const stagingDir = join(repositoryRoot, "staging");
+    const outputPath = await writeTestFile(outputDir, "settings.json", "original");
+    const session = await writeTestFile(outputDir, "sessions/active.jsonl", "session data");
+    const runtimeDirectoryPaths = ["sessions"];
+    const expectedCurrentEntries = await collectGeneratedOutputEntries(outputDir, { runtimeDirectoryPaths });
+    await writeTestFile(stagingDir, "settings.json", "source update");
+    await Bun.write(session, "new session data");
+    await syncManagedGeneratedOutputs({
+      nextEntries: await collectGeneratedOutputEntries(stagingDir), nextOutputDir: stagingDir,
+      outputDir, previousManifest: createGeneratedOutputManifest(expectedCurrentEntries),
+      expectedCurrentEntries, runtimeDirectoryPaths,
+    });
+    expect(await Bun.file(outputPath).text()).toBe("source update");
+    expect(await Bun.file(session).text()).toBe("new session data");
+  });
   it("collects managed files, directories, and symlinks from generated output", async () => {
     const repositoryRoot = await createTestDirectory();
     const outputDir = join(repositoryRoot, ".output");

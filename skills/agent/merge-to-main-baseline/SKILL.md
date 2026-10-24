@@ -4,11 +4,13 @@ description: Use whenever merging code to main/master branches.
 author: alexgorbatchev
 metadata:
   created_on: 2026-05-30 12:46
-  last_modified: 2026-10-08 14:03
+  last_modified: 2026-10-24 10:52
   status: current
 ---
 
 Default to a linear history when integrating a branch into `main` or `master`, unless the repository rules or user explicitly require a merge commit.
+
+Determine applicable checks from the actual changes and current user instructions. When landing an instruction-maintenance task, newly specified but unimplemented enforcement is follow-up work, not an implicit prerequisite to the merge. Run existing applicable checks and report missing enforcement without claiming compliance; do not weaken existing gates or bypass failing checks. A user-deferred generation or installation step does not by itself prohibit source integration. Continue authorized prerequisite repairs and independent verification before escalating a genuine blocker. Do not request fresh merge approval when existing authorization covers the prepared changes.
 
 1. Fetch the target branch, record its fetched remote tip and local tip, and inspect `git status`, `git worktree list`, and the exact commits to land. Local-only commits are not by themselves a reason to stop. Do not integrate unrelated commits or touch unowned changes.
 2. Choose the integration target:

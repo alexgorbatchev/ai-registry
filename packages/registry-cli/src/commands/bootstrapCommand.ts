@@ -238,7 +238,7 @@ export async function bootstrapCommand(): Promise<void> {
     cmd: hasAutoConfirmFlag() ? ["bun", "run", "build", "--", "-y"] : ["bun", "run", "build"],
     cwd: root,
     description: "build generated outputs",
-    failureHint: "If generated outputs drifted and you want to overwrite them, rerun `bun bootstrap -- -y`.",
+    failureHint: "Generated edits are recovered automatically when safe. Resolve any reported source conflict, unsupported recovery, or save failure before retrying; -y does not discard edits.",
   });
 
   const bootstrapTargets = await getBootstrapTargets(output);

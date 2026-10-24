@@ -4,7 +4,7 @@ description: Create, inspect, edit, and publish GitHub releases with the `gh rel
 author: alexgorbatchev
 metadata:
   created_on: 2026-05-04 13:11
-  last_modified: 2026-08-16 08:20
+  last_modified: 2026-10-24 09:56
   status: current
 ---
 
@@ -41,7 +41,7 @@ Use this decision rule:
 - **Release exists and needs content changes?** → use `gh release edit`
 - **Tag exists but release does not?** → use `gh release create --verify-tag`
 - **Need to add assets after release creation?** → use `gh release upload`
-- **Need to replace an existing asset?** → stop and confirm before `--clobber`
+- **Need to replace an existing asset?** → verify that existing explicit authorization covers the repository, release, asset, replacement file, and deletion risk before using `--clobber`. Ask only for missing authorization or unresolved replacement details.
 
 ## Inspect First
 
@@ -59,7 +59,7 @@ For create flows, also verify the tag exists remotely before relying on it:
 git ls-remote --tags origin <tag>
 ```
 
-If the user expects a release from a tag that does not exist remotely, stop and clarify whether the tag should be created and pushed first. Do not silently let `gh release create` invent the tag from the default branch unless that behavior is explicitly desired.
+If the release tag does not exist remotely, check whether existing authorization covers creating and pushing that tag and identifies its target commit unambiguously. When it does, create and push the tag within that authorization, then verify the remote tag resolves to the intended commit before creating the release. Otherwise, prepare the release notes and assets, record the missing authorization or target decision, and suspend only tag publication and dependent release creation. Continue independent authorized work. Do not silently create a tag from the default branch or replace an existing tag.
 
 ## Create A Release
 
@@ -122,9 +122,9 @@ gh release upload v1.2.3 "dist/tool-linux-x64.tar.gz#Linux x64 tarball"
 
 If an asset of the same name already exists:
 
-- prefer stopping and asking the user what should replace it
-- warn that `--clobber` deletes the old asset before uploading the replacement
-- use `--clobber` only with explicit approval
+- Verify the replacement file and the exact remote asset before mutation.
+- Honor existing explicit approval covering this replacement and its deletion risk; do not request the same approval again.
+- If approval or replacement details are missing, prepare the replacement and suspend only the affected upload. Report the exact missing decision and continue independent authorized work.
 
 ## Write Release Notes From Shipped Changes
 

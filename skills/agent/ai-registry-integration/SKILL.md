@@ -4,13 +4,15 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-10-20 11:01
+  last_modified: 2026-10-24 10:52
   status: current
 ---
 
 # AI Registry Integration
 
 Treat this repository as the source of truth. Add things to the reusable source directories first, then rebuild generated outputs. Do not hand-edit the generated output directory under the repo_root token.
+
+Maintain the registry interactively with agent assistance. Reusable guidance may support unattended workflows in other repositories without requiring an unattended workflow for registry maintenance.
 
 ## EJS Templates
 
@@ -24,7 +26,16 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 ## Core Rules
 
+- Automatically record explicit standing user instructions in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save them. Update superseded wording in place; keep one-task directions and session history out of policy files. Ask only when the intended scope or resolution of a material conflict is unclear.
+- Let models choose search and code-navigation tools according to the task and available capabilities. Do not add mandatory search-tool ordering or tool-specific stop rules.
+- Keep dependency investigation and library integration within the authorized task's required capabilities. Follow the shared library guidance in `system/system.md` beneath the repo_root token.
+- Apply red/green and isolated test-sensitivity checks to changes in executable behavior; use applicable validators for non-executable changes. Preserve other actors' changes, following the shared testing guidance in `system/system.md` beneath the repo_root token.
+- Keep instruction-maintenance tasks, including their commits and merges, within their authorized scope. Record newly specified but unimplemented enforcement as follow-up work rather than making its implementation a prerequisite. Run existing checks applicable to the actual changes, preserve existing gates and behavior-change testing requirements, and report missing enforcement without claiming compliance. A user-deferred generation or application step suspends only that step and its actual dependents; continue independent validation and authorized source integration.
+- For executable behavior changes, add or update meaningful behavioral tests and follow the root `AGENTS.md` testing and coverage policy beneath the repo_root token: at least 90% line and 90% function coverage across each affected first-party package's non-test source, including unexecuted files and excluding `scripts/` directories. Document and configure the command, source scope, metrics, and exclusions; reproduce blocking baseline failures on the untouched base and use the existing prerequisite-repair policy. Do not weaken gates or make token test edits.
+- Preserve other actors' changes, index state, locks, and refs. Suspend only conflicting operations; continue independent authorized work in an owned, isolated worktree when safe. Staged-file age does not authorize takeover or a whole-worker halt. Record and recheck ownership blockers under the shared guidance in `system/system.md` beneath the repo_root token.
+- Permit routine branch and path-scoped index operations needed for authorized tasks in owned worktrees after ownership and state checks. Keep destructive Git operations subject to explicit authorization and executable guards. Command permissions do not establish ownership; apply the shared requirements to equivalent syntax without bypassing restrictions.
 - Keep new content anonymized and reusable. Do not introduce private company names, internal URLs, secrets, or personal details.
+- Use `prompt-writer` whenever generating, writing, or revising AI agent instructions in any artifact. `skill-writer` adds skill-bundle conventions and validation; `docs-writer` owns project documentation structure and maintenance.
 - When checked-in guidance or generated text refers to repository paths, use template tokens instead of machine-specific absolute paths.
 - Put reusable assets under the directories referenced by the repo_root token: `skills/`, `commands/`, `profiles/`, or `harnesses/`.
 - Keep executable repo entrypoints under `packages/registry-cli/src/bin/` beneath the repo_root token and use dash-based filenames. Put imported TypeScript helper modules that are not direct entrypoints under `packages/registry-cli/src/lib/`.
@@ -33,7 +44,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Put vendored third-party code packages that need Bun workspace installs under `vendor/` beneath the repo_root token.
 - Register bundled skill packages needed by repository-wide typechecking as root Bun workspaces so normal installs include their dependencies. Exclude installed dependencies, local lockfiles, and scratch directories from generated copies through the skill's `.registry-ignore`.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
-- Treat `.output/` beneath the repo_root token as generated output, not an editing surface. The registry manages only the generated files, directories, and symlinks recorded in `.output/manifest.json`; other harness-owned files under `.output/` are preserved across builds.
+- Make intentional registry edits in source; treat subsequent harness-written changes in `.output/` beneath the repo_root token as expected. Automatically recover supported generated edits into their mapped source only when the generated baseline, source fingerprint, and exact reversal establish that source changes will not be overwritten, then regenerate all affected outputs. Preserve both versions and suspend dependent output application on source conflicts, unsupported recovery, or save failures. Reconcile existing drift without source fingerprints into source before establishing a fresh baseline. Do not request confirmation or investigate ownership merely because a harness changed a generated file; `-y` does not bypass reconciliation. Preserve all session/runtime data and unmanaged harness-owned files.
 - After modifying any file under `skills/`, `commands/`, `profiles/`, `harnesses/`, or `skills-lock.json` beneath the repo_root token, run `bun run build` from the repo_root token.
 - If a change alters repo structure, build architecture, or workflow contracts, update `AGENTS.md` and `README.md` beneath the repo_root token in the same change.
 - **USE SOURCE REFERENCE FIRST:** When diagnosing harness issues, analyzing behavioral contracts, or updating configurations, ALWAYS consult the local checked-out harness source code under the respective `harnesses/<target>/.tmp/<target>-source/` folder first. Never guess, assume, or rely on memory. If the source is not yet checked out on disk, run that harness's `./harnesses/<target>/fetch-source.sh` script first to pull it down.
@@ -53,7 +64,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Configure the overlay path in `.env` (which is git-ignored): `AI_REGISTRY_OVERLAY=/path/to/private-ai-registry`.
 - The overlay repository should mirror standard registry folders: `skills/`, `commands/`, and `profiles/`.
 - During `bun run build`, assets from the overlay are merged with public assets. On collision, overlay assets take precedence over public base assets.
-- If generated files from the overlay are edited in `.output/`, drift resolution syncs changes back to the overlay repository.
+- Apply the same safe recovery checks to overlay-backed generated files. Recover supported edits to the mapped overlay source; preserve both versions and suspend application on conflicts or unsupported recovery.
 
 ## Add A Skill
 
@@ -62,7 +73,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
 - Put the main instructions in `SKILL.md` within that skill folder.
 - Start `SKILL.md` with YAML frontmatter containing `name`, `description`, `author: alexgorbatchev`, and a `metadata` block with `created_on`, `last_modified`, and `status`.
 - Write `description` using positive trigger conditions only. Keep negative triggers and exclusions in the skill body, never in the description.
-- Keep base skills self-contained. Project-local `<base-skill>-addendum` skills are the narrow exception and may depend on the matching base skill.
+- Keep base skills self-contained. Project-local `<base-skill>-addendum` skills may depend on the matching base skill. Matt Pocock's explicitly user-invoked workflows may depend on other bundled user skills; keep those dependencies available.
 - For project-specific overrides to an existing skill, use a project-local addendum skill named `<base-skill>-addendum` instead of copying the full global skill into the project.
 - Write the addendum description so routing can discover the dependency through `name` and `description` alone: `If <base-skill> skill is used, this skill must be used as well.`
 - Put only the project-specific delta in the addendum body. When project-specific guidance conflicts with the base skill, the addendum supersedes the base skill for that project.
@@ -72,6 +83,7 @@ Treat this repository as the source of truth. Add things to the reusable source 
   - `references/` beneath the skill folder
   - `assets/` beneath the skill folder
 - Keep the body procedural and specific for another AI agent.
+- Review agent instructions with concrete acceptance checks and at most two review-and-fix rounds, following `<%- skills_dir %>/AGENTS.md`; do not require numerical quality scores or waive unresolved blockers.
 - Validate every changed skill folder with `bun <%- skills_dir %>/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` and fix every reported error before building.
 - Run `bun run build` from the repo_root token after the skill change.
 
@@ -88,9 +100,16 @@ Treat this repository as the source of truth. Add things to the reusable source 
 
 ## Add A Command
 
-- Maintain GitHub issue authoring, implementation/review/integration, and historical issue-merge repair together in `<%- skills_dir %>/agent/github-fix-issues/`. Keep it harness-independent; do not recreate separate issue commands, issue skills, or harness overrides. Its bundled references define one issue at a time through merge and cleanup, persistent scheduling, and integration gates. Select by verified priority labels, highest first, then oldest within each group; without priority labels use oldest first. Resolve prerequisites before dependents.
+- Maintain GitHub issue authoring, implementation/review/integration, and historical issue-merge repair together in `<%- skills_dir %>/agent/github-fix-issues/`. Keep it harness-independent; do not recreate separate issue commands, issue skills, or harness overrides. Its bundled references define one active issue at a time through merge and cleanup, persistent scheduling, and integration gates. For a verified blocker, record evidence, the unblock condition, and resume state; preserve artifacts, suspend affected dependents, and select the next independent issue within the authorized queue. Recheck suspended work at selection boundaries and refresh cleared tickets before restoring eligibility. Pending CI or a running review keeps the current issue active. Select by verified priority labels, highest first, then oldest within each group; without priority labels use oldest first. Resolve prerequisites before dependents.
+  Recover acceptance criteria from verified issue discussion, specifications, tests, and documented behavior; a missing structured section alone does not block work, and tests or current behavior alone do not establish the desired change. Resolve priority ambiguity from verified guidance. Unresolved material requirements or label ranks suspend only affected issues and dependents; record the question and unblock condition and continue independent authorized work. Do not invent behavior or ranks, or alter labels to bypass ambiguity.
+  Follow the issue skill's queue ownership and restart contract. Record task/worker identity, owned checkout/worktree paths, and any scheduler-provided lease reference; verify ownership before queue writes or resumed mutations. Timestamps and lease expiry alone never authorize takeover. Checkpointing does not dispatch workers: use only an authorized, configured scheduler interface, record verified acceptance, or preserve state and report the exact redispatch requirement. Never invent leases, dispatch, or unattended resumption; reconcile live ownership, Git, issue/PR, CI, review, and publication state on restart.
   Keep issue references and concise testing summaries in PR descriptions. CI is the completion record: push, watch until green, then request bot review; fix failures or findings and repeat CI/review before merging. Do not publish log transcripts, evidence packages, or round manifests. Reviewer operating instructions stay in the installed skill; PR comments carry findings, replies, and short status notices.
   Keep clean reviews to native approval without a body, comments, or summary; reviewer prose reports only actionable findings.
+  Check CI readiness before implementation and follow the issue skill's checks reference for failure classification and infrastructure retries. Persist the revision, attempt count, evidence locators, and next retry time across restarts; pending CI or review does not consume the retry budget. Missing configuration follows the bounded prerequisite policy; exhausted retries with continuing infrastructure-failure evidence suspend only dependent work without waiving checks.
+  Follow the issue skill's setup readiness checks before implementation: tools, repository/remote identity, implementer authentication, configured distinct reviewer and token availability, access, and protection compatibility. Keep the workflow main-only; never silently substitute another integration branch. Persist non-secret findings and exact missing requirements; suspend only dependent actions, preserve prepared work, and recheck prerequisites before resuming and at review/integration gates. Do not dump credentials, change default authentication, bypass protections, or escalate existing permissions.
+  Completion reports give concise verified check results and material limitations, with native CI links or existing local log paths where applicable. Retain raw logs in the execution system; local logs do not replace required CI.
+  After publication, follow the issue skill's integration reference for a persisted reconciliation window: repository policy or 15-second polls for up to 120 seconds. Save publication state, first observation, deadline, and next poll across restarts. Closure and cleanup require remote main to contain the published commit and the PR to have its expected head and native MERGED state. Missing native state after the window suspends affected work without marking completion or repeating publication solely to force the merged flag. Reuse current fetch/API results without a separate connectivity check; this window does not limit ordinary pending CI or running review.
+  Existing task authorization covers the smallest same-repository baseline repair needed to unblock required checks after reproducing the failure on the untouched base. Keep it in its own prerequisite ticket and change set through the same checks, review, and integration gates; honor explicit exclusions and other owners' changes. Compatibility layers require explicit authorization, including removal and verification for temporary layers; migration approval alone does not grant it.
   Keep reviewer access automation bundled under that skill's `scripts/`, with its pinned dependency manifest registered as a root workspace and its interface documented in the skill. Link its development justfile from the root justfile. Exclude installed dependencies, local lockfiles, tests, and the development justfile through `.registry-ignore`; preserve configured identities outside reusable source.
 - Keep PR-writing and PR review-feedback guidance in the `github-pr` skill under `<%- skills_dir %>/agent/github-pr/`, with one bundled reference per mode; do not recreate a duplicate PR command. PR descriptions, comments, and replies posted from the user's account use the account owner's first-person voice (`I`, `me`, `my`), with actions and approvals grounded in actual work and authorization. Do not refer to that account owner as `the user` or narrate an assistant intermediary. Separate bot reviews speak for the bot's identity.
 - Create the command under the commands_dir token.
@@ -146,6 +165,8 @@ Treat this repository as the source of truth. Add things to the reusable source 
 ## Vendor An External Skill
 
 - Vendored skills live under the skills_dir token.
+- Preserve third-party-authored skill content. Keep local policies in registry-owned guidance and record unresolved upstream findings instead of rewriting those bundles.
+- Place every skill authored by `mattpocock` under `skills/user/`, including newly added skills. After vendoring, move an incorrectly classified bundle there before rebuilding. Existing user bundles retain their classification during updates.
 - Track the vendored source in `skills-lock.json` beneath the repo_root token.
 - Add a third-party skill with `bun run skills:add 'npx skills add <source> --skill <skill-name>'` from the repo_root token.
 - Do not use plain `npx skills add ...` for vendoring into this repo; the wrapper enforces the repo's canonical destination and flags.

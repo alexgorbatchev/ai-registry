@@ -26,6 +26,19 @@ describe("reverseTemplateContent", () => {
     expect(processed).toBe(`path1 = "<%- skills_dir %>/git"\npath2 = "<%- skills_dir %>\\git"\n`);
   });
 
+  it("round trips overlay and source-file paths through the template renderer", async () => {
+    const context: ITemplateContext = {
+      ...mockContext, overlay_dir: "/path/to/overlay",
+      file_path: "/path/to/repo/skills/example/SKILL.md",
+      file_dir: "/path/to/repo/skills/example",
+    };
+    const original = "/path/to/overlay /path/to/repo/skills/example/SKILL.md /path/to/repo/skills/example";
+    const recovered = reverseTemplateContent(original, context);
+    expect(recovered).toBe("<%- overlay_dir %> <%- file_path %> <%- file_dir %>");
+    expect(await renderTemplate({ content: recovered, sourcePath: context.file_path,
+      repositoryRoot: context.repo_root, variables: context })).toBe(original);
+  });
+
   it("replaces more specific paths before less specific paths (ordering safety)", () => {
     const rawContent = "repo = \"/path/to/repo\"\nskills = \"/path/to/repo/skills\"\n";
     const processed = reverseTemplateContent(rawContent, mockContext);

@@ -3,11 +3,62 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import plugin from "../../harnesses/opencode/build";
+import {
+  applyTemplateVariablesToGeneratedOutput,
+  copyDirectoryWithTemplateVariables,
+  copyPathWithTemplateVariables,
+  mergeDirectory,
+  stageProfileAssets,
+  writeBinScript,
+  type IUnifiedHarnessBuildContext,
+} from "../../lib/harnessBuild";
+import { createRuntimeDirectoryRegistry } from "../../lib/generatedOutputUtils";
 
 const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..", "..");
-const SCRIPTS_DIR = resolve(REPO_ROOT, ".output", "bin");
 const TMP_DIR = resolve(REPO_ROOT, ".tmp");
+let fixtureDirectory: string;
+let scriptsDirectory: string;
+
+beforeAll(async () => {
+  mkdirSync(TMP_DIR, { recursive: true });
+  fixtureDirectory = mkdtempSync(resolve(TMP_DIR, "air-opencode-fixture-"));
+  const outputDir = resolve(fixtureDirectory, "output");
+  scriptsDirectory = resolve(outputDir, "bin");
+  const context: IUnifiedHarnessBuildContext = {
+    harnessDir: resolve(fixtureDirectory, "harness"),
+    outputDir,
+    templateContext: { repo_root: REPO_ROOT },
+    buildSupport: {
+      copyDirectoryWithTemplateVariables,
+      copyPathWithTemplateVariables,
+      mergeDirectory,
+      stageProfileAssets,
+      writeBinScript,
+      ensureRuntimeDirectory: createRuntimeDirectoryRegistry(outputDir).ensureRuntimeDirectory,
+    },
+  };
+  mkdirSync(context.harnessDir, { recursive: true });
+  assert(plugin.stageProfile);
+  assert(plugin.finalizeOutput);
+  await plugin.stageProfile({
+    ...context,
+    profileName: "default",
+    profileDir: resolve(fixtureDirectory, "profile"),
+    manifest: {},
+    globalMatchedSkills: [],
+    globalMatchedCommands: [],
+    profileLocalSkills: [],
+    profileLocalCommands: [],
+  });
+  await plugin.finalizeOutput(context);
+  await applyTemplateVariablesToGeneratedOutput(outputDir, context.templateContext);
+});
+
+afterAll(() => {
+  rmSync(fixtureDirectory, { force: true, recursive: true });
+});
 
 interface IHelpResult {
   exitCode: number | null;
@@ -31,7 +82,7 @@ function runHelpAtPath(commandPath: string): IHelpResult {
 }
 
 function runHelp(commandName: string): IHelpResult {
-  return runHelpAtPath(resolve(SCRIPTS_DIR, commandName));
+  return runHelpAtPath(resolve(scriptsDirectory, commandName));
 }
 
 function runHelpViaSymlink(commandName: string): IHelpResult {
@@ -39,7 +90,7 @@ function runHelpViaSymlink(commandName: string): IHelpResult {
   const tempDir = mkdtempSync(resolve(TMP_DIR, "air-opencode-wrapper-"));
   const symlinkPath = resolve(tempDir, commandName);
 
-  symlinkSync(resolve(SCRIPTS_DIR, commandName), symlinkPath);
+  symlinkSync(resolve(scriptsDirectory, commandName), symlinkPath);
 
   try {
     return runHelpAtPath(symlinkPath);

@@ -8,7 +8,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-15 21:48
-  last_modified: 2026-05-06 18:53
+  last_modified: 2026-10-14 14:54
   status: current
 ---
 
@@ -41,7 +41,7 @@ Arguments:
 1. Identify `repository_url`, `branch`, and required scope (`.` for full repo or `path/to/dir` for partial).
 2. Choose a deterministic destination folder under the current project's `.tmp/` directory (for example `.tmp/gitsnip/<repo>/<branch>/<scope>`).
 3. Run `gitsnip` with explicit flags.
-4. Inspect downloaded content with `ls`, `find`, `grep`, and `read`.
+4. Inspect downloaded content using search and reading tools suited to the task.
 5. Remove temporary downloads when done unless they are needed for follow-up work.
 
 ## Examples

@@ -5,13 +5,13 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-20 14:15
-  last_modified: 2026-08-20 14:25
+  last_modified: 2026-10-16 09:45
   status: current
 ---
 
 ## Core Execution & Subagent Strategy
 
-When executing a rapid local demo or practice problem under tight time constraints:
+When executing an explicitly requested rapid local demo or practice problem:
 
 1. **Role Division & Single-Editor Rule**:
    - The parent orchestrator is the **lead and only file editor**.
@@ -21,10 +21,12 @@ When executing a rapid local demo or practice problem under tight time constrain
    - **Subagent 1 (Cases Agent)**: At start, spawn a read-only `reviewer` subagent in parallel to analyze requirements and output at most 6 critical acceptance and edge cases.
    - **Subagent 2 (Test & Black-Box Checker)**: As soon as the application is runnable, spawn a second read-only `reviewer` subagent to execute `bun test` and black-box HTTP requests, reporting **only blocking failures**.
 
-3. **Time-Boxed Cadence**:
-   - Stop feature work after 15 minutes.
-   - Spend the final 5 minutes running end-to-end verification and fixing bugs.
-   - Take every shortcut possible to achieve a fully functional, working demo on time.
+3. **Acceptance Checks and Optional Timebox**:
+   - Define the requested demo scope and concrete acceptance checks before implementation. Build the agreed scope and complete the required tests and end-to-end verification before reporting completion.
+   - Apply a timebox only when the user explicitly requests one. A request for a quick demo alone does not set a deadline; without a requested timebox, continue until the agreed scope and required checks are complete or a verified blocker prevents dependent work.
+   - For a requested timebox, reserve time for verification within the stated budget. Do not weaken correctness, required checks, or scope to meet the deadline.
+   - When the timebox expires, stop new implementation and preserve source changes, runtime data, and verification state. Report completed acceptance checks, unfinished work, failed or unrun checks, and the next action needed to resume. Do not claim incomplete or unverified work is complete or production-ready.
+   - If required context or a check is unavailable, record the blocker, attempted recovery, affected work, and exact input or external change needed to resume. Suspend only dependent work and continue independent work within existing authorization and any remaining requested timebox.
 
 ---
 
@@ -58,4 +60,4 @@ When executing a rapid local demo or practice problem under tight time constrain
 
 3. **Final Delivery Format**:
    - Provide start and test commands.
-   - State a 1-10 completion score explaining the score and any known gaps.
+   - Summarize verified acceptance-check results and known gaps. Identify unfinished work, blockers, failed or unrun checks, and the next action needed to resume; do not assign a completion score.

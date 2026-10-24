@@ -15,7 +15,6 @@ Profile manifests in this directory assemble reusable global assets plus profile
 
 ## Boundaries
 - Always: run `bun run build` after editing any profile manifest or profile-local asset in this directory.
-- Ask first: changing profile manifest semantics, moving a local skill into `skills/`, or altering OpenCode permission generation.
 - Never: assume a wildcard skill entry exposes one profile's local skills to another profile, or add profile-specific content to global `skills/` just to bypass isolation.
 
 ## References

@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "bun:test";
-import { lstat, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
+import { chmod, lstat, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { existsSync } from "fs";
@@ -45,6 +45,39 @@ describe("harnessBuild template rendering", () => {
     for (const createdDirectory of createdDirectories) {
       await rm(createdDirectory, { recursive: true, force: true });
     }
+  });
+
+  it("captures the exact source fingerprint while preserving copied bytes and executable mode", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const sourcePath = await writeTestFile(repositoryRoot, "helper.sh", "#!/bin/sh\nprintf 'ready\\n'\n");
+    await chmod(sourcePath, 0o755);
+    const outputPath = join(repositoryRoot, "staging", "helper.sh");
+    const sourceChecksums = new Map<string, string>();
+    const sourcePaths = Object.assign(new Map<string, string>(), { sourceChecksums });
+
+    await copyPathWithTemplateVariables(sourcePath, outputPath, {}, sourcePaths);
+
+    const copiedBytes = await Bun.file(outputPath).bytes();
+    expect(copiedBytes).toEqual(await Bun.file(sourcePath).bytes());
+    expect((await lstat(outputPath)).mode & 0o777).toBe(0o755);
+    expect(sourceChecksums.get(sourcePath)).toBe(new Bun.CryptoHasher("sha256").update(copiedBytes).digest("hex"));
+    expect(sourcePaths.get(outputPath)).toBe(sourcePath);
+  });
+
+  it("rejects source changes between harness copies without overwriting either copy", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const sourcePath = await writeTestFile(repositoryRoot, "settings.json", "original");
+    const firstOutput = join(repositoryRoot, "staging", "first.json");
+    const secondOutput = await writeTestFile(repositoryRoot, "staging/second.json", "previous copy");
+    const sourcePaths = Object.assign(new Map<string, string>(), { sourceChecksums: new Map<string, string>() });
+    await copyPathWithTemplateVariables(sourcePath, firstOutput, {}, sourcePaths);
+    await Bun.write(sourcePath, "concurrent source edit");
+
+    await expect(copyPathWithTemplateVariables(sourcePath, secondOutput, {}, sourcePaths))
+      .rejects.toThrow(`Source changed while staging generated outputs: ${sourcePath}`);
+    expect(await Bun.file(firstOutput).text()).toBe("original");
+    expect(await Bun.file(secondOutput).text()).toBe("previous copy");
+    expect(await Bun.file(sourcePath).text()).toBe("concurrent source edit");
   });
 
   it("renders file_dir in copied generated files from the original source path", async () => {

@@ -34,6 +34,9 @@ export function reverseTemplateContent(content: string, templateContext: ITempla
     { path: templateContext.commands_dir, token: "<%- commands_dir %>" },
     { path: templateContext.profiles_dir, token: "<%- profiles_dir %>" },
     { path: templateContext.output_dir, token: "<%- output_dir %>" },
+    { path: templateContext.overlay_dir, token: "<%- overlay_dir %>" },
+    { path: templateContext.file_path, token: "<%- file_path %>" },
+    { path: templateContext.file_dir, token: "<%- file_dir %>" },
     { path: templateContext.repo_root, token: "<%- repo_root %>" },
   ];
 

@@ -1,10 +1,15 @@
 ## Repository and local state
 
 Resolve the repository, GitHub host, publishing remote, and primary checkout from
-the actual Git configuration and GitHub metadata. Verify the remote has `main`;
-do not silently substitute another base when the requested branch is unavailable.
+the actual Git configuration and GitHub metadata. Use main as this workflow's
+integration branch. Verify it exists on the publishing remote before
+implementation. If unavailable, record the missing branch and required input as
+a blocker; do not silently choose another branch.
 Read root and applicable nested repository instructions, check definitions, CI,
 and commit conventions before provisioning work.
+Inspect applicable workflows, trigger conditions, and required CI access before
+implementation. Follow the checks reference for readiness, bounded prerequisite
+repairs, failure classification, and persisted infrastructure retry state.
 
 Inventory the primary checkout's status, worktrees, local and remote refs, and
 existing PRs. Never overwrite, reset, stash, or stage another owner's changes.
@@ -17,6 +22,20 @@ Record repository identity, remote, primary path, `main` SHA, and chosen command
 in the queue. Check the repository's protection/ruleset requirements before work:
 the exact reviewed commits must be publishable to `main` by fast-forward. Do not
 disable protections or use an administrator bypass to satisfy this workflow.
+
+## Readiness before implementation
+
+Before implementation, check required tools, repository and publishing-remote
+identity, implementer authentication, configured reviewer identity and token
+availability, distinct implementer/reviewer identities, required access, and
+compatibility between the integration policy and repository protections. Follow
+the bundled setup and access helper; do not dump credentials, change the default
+authenticated account, bypass protections, or escalate existing permissions.
+Record non-secret readiness findings and exact missing requirements in the
+persistent queue. Missing prerequisites suspend only dependent actions; preserve
+prepared work and continue independent authorized preparation or eligible issue
+work under the scheduling and blocker protocols. Recheck affected prerequisites
+before resuming and at their existing review and integration gates.
 
 ## Separate reviewer identity
 

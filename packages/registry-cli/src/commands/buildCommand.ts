@@ -1,14 +1,15 @@
 import {
-  copyFile,
+  lstat,
+  chmod,
   mkdir,
-  readdir,
+  mkdtemp,
   readFile,
+  rename,
   rm,
   writeFile,
 } from "fs/promises";
-import { join, relative } from "path";
+import { dirname, join, relative } from "path";
 import { hostname } from "node:os";
-import { stdin, stdout } from "process";
 import { globby } from "globby";
 import { existsSync } from "fs";
 
@@ -40,7 +41,6 @@ import {
   type IGeneratedOutputManifestEntry,
   syncManagedGeneratedOutputs,
 } from "../lib/generatedOutputUtils";
-import { promptForYesNo, promptForOverwriteDecision } from "../lib/promptForYesNo";
 import { reverseTemplateContent } from "../lib/reverseTemplateContent";
 import { isUserSkillPath, removeDisableModelInvocation, updateSkillName } from "../lib/userSkillUtils";
 import { resolveBuildHostname } from "../lib/resolveBuildHostname";
@@ -97,11 +97,13 @@ function isGeneratedOutputManifest(
   const generatedAt = getObjectValue(value, "generatedAt");
   const entries = getObjectValue(value, "entries");
   const sourcePaths = getObjectValue(value, "sourcePaths");
+  const sourceChecksums = getObjectValue(value, "sourceChecksums");
   return (
     version === GENERATED_OUTPUT_MANIFEST_VERSION &&
     typeof generatedAt === "string" &&
     isGeneratedOutputManifestEntryRecord(entries) &&
-    (sourcePaths === undefined || isStringRecord(sourcePaths))
+    (sourcePaths === undefined || isStringRecord(sourcePaths)) &&
+    (sourceChecksums === undefined || isStringRecord(sourceChecksums))
   );
 }
 
@@ -166,41 +168,6 @@ async function readGeneratedOutputManifest(outputDir: string): Promise<IGenerate
   throw new Error(`Invalid generated output manifest: ${manifestPath}`);
 }
 
-async function getFileDiff(
-  oldPath: string,
-  newPath: string,
-): Promise<string> {
-  try {
-    const process = Bun.spawn(["git", "diff", "--no-index", "--color=always", oldPath, newPath]);
-    const output = await new Response(process.stdout).text();
-    return output;
-  } catch (error) {
-    return `Could not generate diff: ${error}`;
-  }
-}
-
-async function formatGeneratedOutputDrift(
-  drift: IGeneratedOutputDrift[],
-  outputDir: string,
-  nextOutputDir: string,
-): Promise<string> {
-  const fileLabel = drift.length === 1 ? "file" : "files";
-  const sections = await Promise.all(
-    drift.map(async (entry) => {
-      let message = `  - ${entry.path} (${entry.reason})`;
-      if (entry.reason === "modified") {
-        const oldPath = join(outputDir, entry.path);
-        const newPath = join(nextOutputDir, entry.path);
-        const diff = await getFileDiff(oldPath, newPath);
-        message += `\n${diff.split('\n').map(line => `    ${line}`).join('\n')}`;
-      }
-      return message;
-    }),
-  );
-
-  return `\n⚠️ Detected external changes in generated outputs (${drift.length} ${fileLabel}):\n${sections.join("\n")}`;
-}
-
 export async function syncBackModifiedFiles(
   drift: IGeneratedOutputDrift[],
   outputDir: string,
@@ -208,17 +175,40 @@ export async function syncBackModifiedFiles(
   sourcePathByOutputPath: Map<string, string>,
   templateContext: Record<string, string>,
   previousSourcePaths: Record<string, string> = {},
-): Promise<void> {
+  previousEntries: Record<string, IGeneratedOutputManifestEntry> = {},
+  previousSourceChecksums: Record<string, string> = {},
+  saveSource: (path: string, content: string, originalContent: string) => Promise<void> = saveRecoveredSource,
+  canRecoverEdits = true,
+): Promise<boolean> {
+  const stagedEntries = await collectGeneratedOutputEntries(nextOutputDir);
+  const recoveryBySource = new Map<string, IGeneratedEditRecovery>();
   for (const entry of drift) {
+    if (entry.reason !== "modified") continue;
+    const nextOutputPath = join(nextOutputDir, entry.path);
     const previousSource = previousSourcePaths[entry.path];
-    const nextSource = sourcePathByOutputPath.get(join(nextOutputDir, entry.path));
-    if (entry.reason === "modified" && previousSource !== undefined && previousSource !== nextSource) {
+    const nextSource = sourcePathByOutputPath.get(nextOutputPath);
+    if (previousSource !== undefined && previousSource !== nextSource) {
       throw new Error(
         `Cannot sync generated edits for ${entry.path}: the selected skill source changed from ${previousSource} to ${nextSource ?? "none"}. Rebuild with the original hostname and overlay, or preserve the edits manually.`,
       );
     }
-    if (entry.reason === "modified" && nextSource) {
-      let sourceTemplate = await Bun.file(nextSource).text();
+    if (!nextSource) {
+      throw new Error(`Cannot recover ${entry.path}: no mapped source. Preserve the generated edit and resolve its source mapping before retrying.`);
+    }
+    const modifiedOutputPath = join(outputDir, entry.path);
+    const filePaths = [nextSource, nextOutputPath, modifiedOutputPath];
+    for (const path of filePaths) {
+      if (!(await lstat(path)).isFile()) {
+        throw new Error(`Cannot recover ${entry.path}: ${path} is not a regular file. Preserve both versions and resolve the file type before retrying.`);
+      }
+    }
+    const decoder = new TextDecoder("utf-8", { fatal: true });
+    const originalSource = decoder.decode(await Bun.file(nextSource).bytes());
+    const stagedContent = decoder.decode(await Bun.file(nextOutputPath).bytes());
+    const modifiedContent = decoder.decode(await Bun.file(modifiedOutputPath).bytes());
+    if (modifiedContent === stagedContent) continue;
+    {
+      let sourceTemplate = originalSource;
       for (const variable of [...Object.keys(templateContext), "file_path", "file_dir"]) {
         sourceTemplate = sourceTemplate.replaceAll(`<%- ${variable} %>`, "");
       }
@@ -226,121 +216,113 @@ export async function syncBackModifiedFiles(
         throw new Error(`Cannot sync generated edits for ${entry.path}: edit the EJS template at ${nextSource} directly; expressions, includes, and control flow cannot be reconstructed from rendered output.`);
       }
     }
-  }
-  console.log("\n🔄 Syncing modified files back to source directories...");
-
-  for (const entry of drift) {
-    if (entry.reason !== "modified") {
-      console.log(`  - Skipping non-modified entry: ${entry.path} (${entry.reason})`);
-      continue;
+    const baseline = previousEntries[entry.path];
+    const stagedEntry = stagedEntries[entry.path];
+    if (baseline?.kind !== "file" || stagedEntry?.kind !== "file") {
+      throw new Error(`Cannot recover ${entry.path}: no verified file baseline. Preserve the generated edit and restore or reconcile the manifest before retrying.`);
     }
-
-    const nextOutputPath = join(nextOutputDir, entry.path);
-    const sourcePath = sourcePathByOutputPath.get(nextOutputPath);
-
-    if (!sourcePath) {
-      console.warn(`  - ⚠️ Cannot sync back ${entry.path}: No original source file found.`);
-      continue;
+    if (baseline.checksum !== stagedEntry.checksum) {
+      throw new Error(`Cannot recover ${entry.path}: source ${nextSource} and generated output both changed. Preserve both versions and reconcile their edits before retrying.`);
     }
-
-    try {
-      const modifiedOutputPath = join(outputDir, entry.path);
-      const modifiedContent = await readFile(modifiedOutputPath, "utf-8");
-      const reversedContent = reverseTemplateContent(modifiedContent, templateContext);
-
-      let finalContent = isUserSkillPath(sourcePath) && sourcePath.endsWith("SKILL.md")
-        ? removeDisableModelInvocation(reversedContent)
-        : reversedContent;
-      if (/\/variants\/[^/]+\/SKILL\.md$/.test(sourcePath.replaceAll("\\", "/"))) {
-        const identity = parseSkillIdentity(await Bun.file(sourcePath).text(), sourcePath);
-        finalContent = updateSkillName(finalContent, identity.name);
+    const previousSourceChecksum = previousSourceChecksums[entry.path];
+    if (previousSourceChecksum === undefined) {
+      throw new Error(`Cannot recover ${entry.path}: no source fingerprint in the manifest. Preserve the generated edit and reconcile it into source before establishing a fresh baseline.`);
+    }
+    const sourceChecksum = new Bun.CryptoHasher("sha256").update(originalSource).digest("hex");
+    if (sourceChecksum !== previousSourceChecksum) {
+      throw new Error(`Cannot recover ${entry.path}: source ${nextSource} changed since generation. Preserve both versions and reconcile their edits before retrying.`);
+    }
+    const context: Record<string, string> = { ...templateContext, file_path: nextSource, file_dir: dirname(nextSource) };
+    const reverseContent = (content: string, variables: Record<string, string> = context): string => {
+      let recovered = reverseTemplateContent(content, variables);
+      if (isUserSkillPath(nextSource) && nextSource.endsWith("SKILL.md")) {
+        recovered = removeDisableModelInvocation(recovered);
       }
-
-      await writeFile(sourcePath, finalContent, "utf-8");
-      console.log(`  - ✅ Synced ${entry.path} -> ${sourcePath}`);
-
-      // Now copy the modified file from outputDir to nextOutputDir so the current build
-      // stages this updated version and correctly updates the manifest checksum!
-      await copyFile(modifiedOutputPath, nextOutputPath);
+      if (nextSource.endsWith("SKILL.md") && originalSource.startsWith("---")) {
+        recovered = updateSkillName(recovered, parseSkillIdentity(originalSource, nextSource).name);
+      }
+      return recovered;
+    };
+    const originalVariables = Object.fromEntries(
+      Object.entries(context).filter(([name]) => originalSource.includes(`<%- ${name} %>`)),
+    );
+    if (originalSource.includes("\0") || modifiedContent.includes("\0") || reverseContent(stagedContent, originalVariables) !== originalSource) {
+      throw new Error(`Cannot recover ${entry.path}: generated transformations cannot be reversed exactly into ${nextSource}. Preserve both versions and edit the source directly.`);
+    }
+    const recoveredContent = reverseContent(modifiedContent);
+    const previousRecovery = recoveryBySource.get(nextSource);
+    if (previousRecovery && previousRecovery.recoveredContent !== recoveredContent) {
+      throw new Error(`Cannot recover ${entry.path}: harness copies ${previousRecovery.outputPath} and ${entry.path} contain conflicting edits for ${nextSource}. Preserve both copies and reconcile them before retrying.`);
+    }
+    recoveryBySource.set(nextSource, { sourcePath: nextSource, originalSource, recoveredContent, outputPath: entry.path });
+  }
+  if (recoveryBySource.size > 0 && !canRecoverEdits) {
+    throw new Error("Generated files changed again during regeneration. Output application is suspended; preserve the edits and retry after reconciliation.");
+  }
+  for (const recovery of recoveryBySource.values()) {
+    if (await Bun.file(recovery.sourcePath).text() !== recovery.originalSource) {
+      throw new Error(`Cannot recover ${recovery.outputPath}: source ${recovery.sourcePath} changed during recovery. Preserve both versions and retry after reconciliation.`);
+    }
+    try {
+      await saveSource(recovery.sourcePath, recovery.recoveredContent, recovery.originalSource);
     } catch (error) {
-      console.error(`  - ❌ Failed to sync back ${entry.path}: ${error}`);
+      throw new Error(`Cannot save recovered edit for ${recovery.outputPath} to ${recovery.sourcePath}; generated output is preserved. Resolve the save failure before retrying.`, { cause: error });
     }
   }
+  return recoveryBySource.size > 0;
 }
 
-async function confirmGeneratedOutputOverwrite(
-  drift: IGeneratedOutputDrift[],
-  outputDir: string,
-  nextOutputDir: string,
-  hasAutoConfirm: boolean,
-  sourcePathByOutputPath: Map<string, string>,
-  templateContext: Record<string, string>,
-  previousSourcePaths: Record<string, string> | undefined,
-): Promise<void> {
-  if (drift.length === 0) {
-    return;
-  }
+interface IGeneratedEditRecovery {
+  sourcePath: string;
+  originalSource: string;
+  recoveredContent: string;
+  outputPath: string;
+}
 
-  const driftMessage = await formatGeneratedOutputDrift(drift, outputDir, nextOutputDir);
-  console.error(driftMessage);
-
-  if (hasAutoConfirm) {
-    console.error("\nAuto-confirm enabled via -y/--yes. Overwriting generated files.");
-    return;
-  }
-
-  if (!stdin.isTTY || !stdout.isTTY) {
-    throw new Error(
-      "Build cancelled. Generated outputs changed outside the build and no interactive terminal is available to confirm overwrite. Rerun with -y/--yes to overwrite them.",
-    );
-  }
-
-  const decision = await promptForOverwriteDecision({
-    message: "\nProceed and overwrite these generated files?",
-    interruptMessage: "Build cancelled by Ctrl+C. Generated outputs were modified outside the build.",
-  });
-
-  if (decision === "no") {
-    throw new Error(
-      "Build cancelled. Generated outputs were modified outside the build.",
-    );
-  }
-
-  if (decision === "sync") {
-    await syncBackModifiedFiles(
-      drift,
-      outputDir,
-      nextOutputDir,
-      sourcePathByOutputPath,
-      templateContext,
-      previousSourcePaths,
-    );
+async function saveRecoveredSource(sourcePath: string, content: string, originalContent: string): Promise<void> {
+  const scratchDir = join(dirname(sourcePath), ".tmp");
+  await mkdir(scratchDir, { recursive: true });
+  const recoveryDir = await mkdtemp(join(scratchDir, "generated-edit-"));
+  const recoveryPath = join(recoveryDir, "source");
+  try {
+    await Bun.write(recoveryPath, content);
+    const sourceStat = await lstat(sourcePath);
+    if (!sourceStat.isFile() || await Bun.file(sourcePath).text() !== originalContent) {
+      throw new Error(`Source changed while preparing recovery: ${sourcePath}`);
+    }
+    await chmod(recoveryPath, sourceStat.mode);
+    await rename(recoveryPath, sourcePath);
+  } finally {
+    await rm(recoveryDir, { recursive: true, force: true });
   }
 }
 
-async function assertGeneratedOutputsAreSafeToReplace(
+export async function assertGeneratedOutputsAreSafeToReplace(
   manifest: IGeneratedOutputManifest | null,
   outputDir: string,
   nextOutputDir: string,
-  hasAutoConfirm: boolean,
   sourcePathByOutputPath: Map<string, string>,
   templateContext: Record<string, string>,
   runtimeDirectoryPaths: readonly string[],
-): Promise<void> {
+  canRecoverEdits = true,
+): Promise<boolean> {
   if (!manifest) {
-    return;
+    return false;
   }
 
   const currentEntries = await collectGeneratedOutputEntries(outputDir, { runtimeDirectoryPaths });
   const drift = getGeneratedOutputDrift(manifest, currentEntries, { runtimeDirectoryPaths });
-  await confirmGeneratedOutputOverwrite(
+  return syncBackModifiedFiles(
     drift,
     outputDir,
     nextOutputDir,
-    hasAutoConfirm,
     sourcePathByOutputPath,
     templateContext,
     manifest.sourcePaths,
+    manifest.entries,
+    manifest.sourceChecksums,
+    undefined,
+    canRecoverEdits,
   );
 }
 
@@ -349,12 +331,20 @@ async function writeGeneratedOutputManifest(
   managedEntries: Record<string, IGeneratedOutputManifestEntry>,
   sourcePathByOutputPath: Map<string, string>,
   stagingDir: string,
+  sourceChecksums: Map<string, string>,
 ): Promise<void> {
   const manifest = createGeneratedOutputManifest(managedEntries);
-  manifest.sourcePaths = Object.fromEntries(
-    [...sourcePathByOutputPath].filter(([outputPath]) => outputPath.endsWith("/SKILL.md"))
+  const sourcePaths: Record<string, string> = Object.fromEntries(
+    [...sourcePathByOutputPath]
       .map(([outputPath, sourcePath]) => [relative(stagingDir, outputPath).replaceAll("\\", "/"), sourcePath])
       .filter(([outputPath]) => managedEntries[outputPath]?.kind === "file"),
+  );
+  manifest.sourcePaths = sourcePaths;
+  manifest.sourceChecksums = Object.fromEntries(
+    Object.entries(sourcePaths).flatMap(([path, sourcePath]) => {
+      const checksum = sourceChecksums.get(sourcePath);
+      return checksum === undefined ? [] : [[path, checksum]];
+    }),
   );
 
   await writeFile(
@@ -365,10 +355,16 @@ async function writeGeneratedOutputManifest(
   await rm(join(outputDir, LEGACY_GENERATED_OUTPUT_MANIFEST_NAME), { force: true });
 }
 
-export async function buildCommand(options: {
+export async function buildCommand(options: IBuildOptions): Promise<void> {
+  await buildOutputs(options, true);
+}
+
+interface IBuildOptions {
   hasAutoConfirm: boolean;
   registryPaths?: IRegistryPaths;
-}): Promise<void> {
+}
+
+async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): Promise<void> {
   console.log("🚀 Building Unified Agent Outputs...");
   const buildHostname = resolveBuildHostname(process.env.AI_REGISTRY_HOSTNAME, hostname());
   const { root, overlay, output, harnesses, profiles, skills, commands, temp } =
@@ -394,7 +390,8 @@ export async function buildCommand(options: {
 
   await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
   await mkdir(GENERATED_OUTPUT_STAGING_DIR, { recursive: true });
-  const sourcePathByOutputPath = new Map<string, string>();
+  const sourceChecksums = new Map<string, string>();
+  const sourcePathByOutputPath = Object.assign(new Map<string, string>(), { sourceChecksums });
   const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(GENERATED_OUTPUT_STAGING_DIR);
 
   const wrappedBuildSupport: IBuildSupport = {
@@ -512,16 +509,28 @@ export async function buildCommand(options: {
   console.log("   ✅ Successfully compiled unified outputs!");
 
   const runtimeDirectoryPaths = runtimeDirectoryRegistry.getRuntimeDirectoryPaths();
+  for (const [sourcePath, checksum] of sourceChecksums) {
+    const currentChecksum = new Bun.CryptoHasher("sha256").update(await Bun.file(sourcePath).bytes()).digest("hex");
+    if (currentChecksum !== checksum) {
+      throw new Error(`Source changed while staging generated outputs: ${sourcePath}`);
+    }
+  }
+  const expectedCurrentEntries = await collectGeneratedOutputEntries(output, { runtimeDirectoryPaths });
 
-  await assertGeneratedOutputsAreSafeToReplace(
+  const hasRecoveredEdits = await assertGeneratedOutputsAreSafeToReplace(
     existingManifest,
     output,
     GENERATED_OUTPUT_STAGING_DIR,
-    options.hasAutoConfirm,
     sourcePathByOutputPath,
     TEMPLATE_CONTEXT,
     runtimeDirectoryPaths,
+    canRecoverEdits,
   );
+
+  if (hasRecoveredEdits) {
+    await buildOutputs(options, false);
+    return;
+  }
 
   const nextManagedEntries = await collectGeneratedOutputEntries(GENERATED_OUTPUT_STAGING_DIR, { runtimeDirectoryPaths });
 
@@ -531,8 +540,9 @@ export async function buildCommand(options: {
     outputDir: output,
     previousManifest: existingManifest,
     runtimeDirectoryPaths,
+    expectedCurrentEntries,
   });
-  await writeGeneratedOutputManifest(output, nextManagedEntries, sourcePathByOutputPath, GENERATED_OUTPUT_STAGING_DIR);
+  await writeGeneratedOutputManifest(output, nextManagedEntries, sourcePathByOutputPath, GENERATED_OUTPUT_STAGING_DIR, sourceChecksums);
   await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
 
   console.log("\n🎉 Unified configuration ready!");

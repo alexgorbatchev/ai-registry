@@ -4,7 +4,7 @@ description: Create and manage Gitea repositories and inspect Gitea Actions usin
 author: alexgorbatchev
 metadata:
   created_on: 2026-05-06 11:40
-  last_modified: 2026-05-06 18:53
+  last_modified: 2026-10-16 16:42
   status: current
 ---
 # gitea
@@ -46,15 +46,17 @@ Rules:
 
 ## Authentication
 
-Prefer existing git credentials instead of asking the user for tokens first.
+Use existing configured Tea authentication or the credential-store entry for the
+verified target host. Capture credential-helper output inside a private process
+context; never emit the full output, passwords, or tokens into tool results,
+logs, or reports. If authentication is missing or invalid, record the named
+requirement and suspend only remote-dependent actions. Continue authorized local
+preparation and independent work under the blocker protocol. Request the missing
+access through the approved configuration channel; never ask for secrets in chat
+or invent credentials.
 
-```bash
-printf 'protocol=https\nhost=<gitea-host>\n\n' | git credential fill
-```
-
-Extract `username` and `password` from that result and use them for Gitea API calls.
-
-If credentials are missing or invalid, stop and ask the user.
+For the API examples below, derive `user` and `pass` from the captured `username`
+and `password` fields within that private process context.
 
 ## Gitea Actions CI Inspection
 
@@ -135,7 +137,14 @@ https://<gitea-host>/<owner>/<repo>.git
 Rules:
 - If `origin` is absent, add it.
 - If `origin` already points to the same URL, keep it.
-- If `origin` points somewhere else, stop and ask before replacing it.
+
+If origin points elsewhere, inspect the current remote, ownership, and requested
+destination. An explicit instruction or standing grant to replace that specified
+remote authorizes the operation without another confirmation. Verify the intended
+destination and preserve unrelated remotes. If replacement is not authorized or
+the destination remains ambiguous, preserve origin, record the conflict and
+required decision, and suspend only the remote mutation and dependent publication.
+Do not infer replacement permission from a request to publish alone.
 
 ## Pre-Push Safety Check
 
@@ -149,8 +158,15 @@ git ls-files | awk -F/ '{print $1}' | sort | uniq -c | sort -nr | head
 If the repository contains generated outputs, secrets, browser profiles, huge media, or multi-GB git objects:
 - do not blindly push
 - inspect the largest tracked blobs
-- explain the issue to the user
-- ask before any destructive cleanup or history rewrite
+
+Inspect the publication risk and report the concrete finding without exposing
+secrets. Before destructive cleanup or history rewriting, verify the exact
+affected paths or refs, ownership, and authorization. Use an existing explicit
+grant for those operations without asking again. Otherwise preserve the
+repository, prepare the reviewable repair, and suspend only the destructive
+action and dependent publication pending the missing authorization. Never delete
+session data or another owner's work, and never treat publication approval as
+permission to rewrite history.
 
 Useful inspection command:
 

@@ -22,8 +22,28 @@
       "~/**": "allow"
     },
     "bash": {
-      "git checkout *": "ask",
-      "git reset *": "ask"
+      "git checkout -f*": "deny",
+      "git checkout * -f*": "deny",
+      "git checkout --force*": "deny",
+      "git checkout * --force*": "deny",
+      "git checkout -B*": "deny",
+      "git checkout * -B*": "deny",
+      "git checkout --ours*": "deny",
+      "git checkout * --ours*": "deny",
+      "git checkout --theirs*": "deny",
+      "git checkout * --theirs*": "deny",
+      "git checkout -- *": "deny",
+      "git checkout * -- *": "deny",
+      "git reset --hard*": "deny",
+      "git reset * --hard*": "deny",
+      "git reset --soft*": "deny",
+      "git reset * --soft*": "deny",
+      "git reset --mixed*": "deny",
+      "git reset * --mixed*": "deny",
+      "git reset --merge*": "deny",
+      "git reset * --merge*": "deny",
+      "git reset --keep*": "deny",
+      "git reset * --keep*": "deny"
     }
   },
   "disabled_providers": [],

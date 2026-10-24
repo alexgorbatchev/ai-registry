@@ -29,7 +29,9 @@ const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
 
 export type ITemplateContext = Record<string, string>;
 
-type ISourcePathByOutputPath = Map<string, string>;
+interface ISourcePathByOutputPath extends Map<string, string> {
+  sourceChecksums?: Map<string, string>;
+}
 
 export type IProfileManifest = {
   description?: string;
@@ -271,7 +273,15 @@ async function copyFileWithTemplateVariables(
   await mkdir(dirname(targetPath), { recursive: true });
 
   // Render only in the final pass so literal EJS delimiters survive unchanged.
-  await copyFile(sourcePath, targetPath);
+  const sourceContent = await Bun.file(sourcePath).bytes();
+  const checksum = new Bun.CryptoHasher("sha256").update(sourceContent).digest("hex");
+  const previousChecksum = sourcePathByOutputPath?.sourceChecksums?.get(sourcePath);
+  if (previousChecksum !== undefined && previousChecksum !== checksum) {
+    throw new Error(`Source changed while staging generated outputs: ${sourcePath}`);
+  }
+  await Bun.write(targetPath, sourceContent);
+  await chmod(targetPath, (await lstat(sourcePath)).mode);
+  sourcePathByOutputPath?.sourceChecksums?.set(sourcePath, checksum);
   registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
 }
 

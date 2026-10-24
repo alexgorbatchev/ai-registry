@@ -34,7 +34,7 @@ Identify inputs, outputs, invariants, side effects, supported modes, failure beh
 
 ## 2. Map and inspect the complete execution paths
 
-Read relevant source in full context, not only changed lines. Use repository navigation tools or `rg` to trace symbols and references. Account for each target file, module, entry point, and supported mode in an inspection inventory. Include generated output when it is the artifact users execute, while tracing its source of truth.
+Read relevant source in full context, not only changed lines. Trace symbols and references using tools appropriate to the task. Account for each target file, module, entry point, and supported mode in an inspection inventory. Include generated output when it is the artifact users execute, while tracing its source of truth.
 
 For each user-visible capability, trace the path from entry point through validation, authorization, dispatch, core logic, dependencies, persistence, and returned or rendered result. Inspect startup and shutdown paths as well as steady-state operation.
 

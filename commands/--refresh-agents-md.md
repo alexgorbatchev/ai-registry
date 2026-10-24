@@ -9,9 +9,9 @@ Fully rewrite each file using the docs-writer "Full Rewrite of Existing Agent In
 ## Step 1: Load Latest Skill Guidelines & Discover Files
 
 1. Load and read the `docs-writer` skill and its reference guidance:
-   - Read `skills/docs-writer/SKILL.md`
-   - Read `skills/docs-writer/references/agents.md`
-   - Read `skills/docs-writer/assets/agents-templates.md`
+   - Read `<%- skills_dir %>/agent/docs-writer/SKILL.md`
+   - Read `<%- skills_dir %>/agent/docs-writer/references/agents.md`
+   - Read `<%- skills_dir %>/agent/docs-writer/assets/agents-templates.md`
 2. Discover all existing `AGENTS.md` (and legacy `AGENT.md` or `agents.md`) files across the repository:
    - Root `AGENTS.md`
    - All nested `**/AGENTS.md` files in packages, apps, harnesses, or subdirectories

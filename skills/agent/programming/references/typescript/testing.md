@@ -1,0 +1,190 @@
+# TypeScript Testing
+
+Mandatory testing guidelines for TypeScript projects using Bun's test runner.
+
+## Test Organization
+
+**Before writing tests:**
+
+- Review adjacent tests in the same `__tests__` directory for patterns and conventions
+- Check existing fixtures and shared testing helpers before creating new ones
+- Reuse existing testing helpers (mocks, factories, utilities) before creating new ones
+- Only create new fixtures or helpers when existing ones do not meet the test requirements
+
+**File naming and location:**
+
+- Test files: `*.test.ts` or `*.test.tsx` in a `__tests__` directory **directly adjacent to the code being tested**
+- Shared fixtures: a single local `./fixtures` entrypoint per test area using `fixtures.ts`, `fixtures.tsx`, or `fixtures/`
+- Fixture exports: `fixture_<lowerCamelCase>` for constant fixtures and `factory_<lowerCamelCase>` for factories
+
+The `__tests__/` area is reserved for `*.test.ts[x]`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/` only.
+
+**Colocation rule:** The `__tests__` directory must be a sibling of the source file(s) it tests. Each directory containing source files should have its own `__tests__` directory.
+
+Example structure:
+
+```
+packages/shell-emissions/src/
+├── index.ts
+├── blocks/
+│   ├── BlockBuilder.ts
+│   └── __tests__/
+│       └── BlockBuilder.test.ts
+├── emissions/
+│   ├── factories.ts
+│   ├── guards.ts
+│   └── __tests__/
+│       ├── factories.test.ts
+│       ├── guards.test.ts
+│       └── fixtures.ts
+└── renderer/
+    ├── BlockRenderer.ts
+    └── __tests__/
+        └── BlockRenderer.test.ts
+```
+
+**Key principle:** Navigate from the source file to its test by going into the adjacent `__tests__` directory. Tests for `blocks/BlockBuilder.ts` go in `blocks/__tests__/BlockBuilder.test.ts`, not in a top-level `src/__tests__/` directory.
+
+## Critical Rules
+
+### No Conditional Logic in Tests
+
+**Never use `if`, `else`, `switch`, or ternary operators in tests.** Conditionals create code paths that may skip assertions, leading to false positives.
+
+```typescript
+// ❌ BAD: If condition is false, expect() never runs
+if (!result.success) {
+  expect(result.message).toBe('failed');
+}
+
+// ✅ GOOD: assert() narrows type AND guarantees execution
+import assert from 'node:assert';
+assert(!result.success);
+expect(result.message).toBe('failed');
+```
+
+Use `assert()` from `node:assert` for type narrowing without conditional execution.
+
+### Exact String Matching
+
+**Always verify complete string content.** Partial matches with `toContain()` or `toMatch()` can miss unexpected content.
+
+```typescript
+// ❌ BAD: May contain extra unwanted content
+expect(result.message).toContain('Installation failed');
+expect(result.message).toMatch(/failed/);
+
+// ✅ GOOD: Verifies exact output
+expect(result.message).toMatchInlineSnapshot(`"Installation failed"`);
+expect(result.message).toBe('Installation failed');
+```
+
+Use `toMatchInlineSnapshot()` for multi-line strings or complex output.
+
+### No Manual Throws
+
+Do not use `throw new Error(...)` as an ad-hoc failure path inside committed tests. Use matchers, `assert(...)`, or `assert.fail(...)` instead.
+
+### No Module Mocking
+
+Do not mock whole modules. Inject collaborators and stub the injected dependency instead.
+
+## Strict Prohibitions
+
+- **DO NOT** delete or skip tests to make them pass
+- **DO NOT** write tests for testing helpers
+- **DO NOT** write tests that only verify static constants, raw configs, or hardcoded values (e.g., asserting a global configuration object equals its definition). However, if a constant is returned as part of a function call or dynamic logic, verify it as part of that behavioral check.
+- **DO NOT** filter CLI test output in a way that hides failures or loses the test command's exit status.
+- **DO NOT** use conditional logic (`if`, `else`, `switch`, ternary)
+- **DO NOT** use partial string matches (`toContain`, `toMatch`)
+- **DO NOT** export from test files
+- **DO NOT** import runtime code from `__tests__/` into non-test modules
+
+## Fixture Rules
+
+- Keep shared fixture exports behind the local `./fixtures` entrypoint.
+- Give fixture exports explicit concrete types imported from outside the fixture file.
+- Do not declare local interfaces, type aliases, or enums inside fixture files.
+- Do not declare `fixture_...` or `factory_...` bindings inline inside consumer tests.
+- Import fixtures with named imports from `./fixtures` and do not alias those bindings.
+
+## Test Structure Best Practices
+
+**Arrange-Act-Assert pattern:**
+
+```typescript
+describe('myFunction', () => {
+  it('should return success when input is valid', () => {
+    // Arrange
+    const input = 'test';
+
+    // Act
+    const result = myFunction(input);
+
+    // Assert
+    assert(result.success);
+    expect(result.value).toBe('test');
+  });
+});
+```
+
+**Type narrowing with assertions:**
+
+```typescript
+// For union types, use assert to narrow before accessing properties
+type Result = { success: true; value: string; } | { success: false; error: string; };
+
+const result: Result = functionUnderTest();
+
+// Narrow the type
+assert(result.success);
+
+// Now TypeScript knows result.value exists
+expect(result.value).toBe('expected');
+```
+
+## Common Testing Patterns
+
+**Snapshot testing for formatted output:**
+
+```typescript
+expect(formattedOutput).toMatchInlineSnapshot(`
+  "line 1
+  line 2
+  line 3"
+`);
+```
+
+**Testing error cases:**
+
+```typescript
+it('should throw when input is invalid', () => {
+  expect(() => myFunction(null)).toThrow('Invalid input');
+});
+```
+
+**Array and object testing:**
+
+```typescript
+// Exact match
+expect(result).toEqual({ id: 1, name: 'test' });
+
+// Partial match (when needed)
+expect(result).toMatchObject({ name: 'test' });
+```
+
+## Running Tests
+
+For Bun projects, use the commands below. For other runtimes, use the project's configured equivalents for these checks.
+
+- Single test file: `bun test [file]`
+- All tests: `bun test`
+- Update snapshots: `bun test --update-snapshots`
+- Lint: `bun lint`
+
+**Task completion requires:**
+
+- All tests passing
+- Type checking passing (`bun typecheck`)
+- Linting passing (`bun lint`)
+- Code formatted (`bun fix`)

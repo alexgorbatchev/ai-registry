@@ -18,4 +18,4 @@ This package renders trusted repository text with EJS, preserving source filenam
 
 - Run bun test packages/template-resolver and bun test packages/registry-cli from the repository root.
 - Run bun run build after resolver behavior changes and inspect generated outputs.
-- Change behavioral tests with code behavior; maintain at least 90% coverage.
+- For executable behavior changes, add or update meaningful behavioral tests and apply the root [testing and coverage policy](../../AGENTS.md#development-workflow): at least 90% line coverage and 90% function coverage across this package's non-test source, including unexecuted files and excluding `scripts/` directories. Document and configure the command, source scope, metrics, and exclusions; handle blocking baseline failures under the prerequisite-repair policy. Do not weaken gates or make token test edits.

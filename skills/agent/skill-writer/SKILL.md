@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-10-16 13:48
+  last_modified: 2026-10-24 10:17
   status: current
 ---
 
@@ -67,7 +67,7 @@ Think of the agent as exploring a path: a narrow bridge with cliffs needs specif
 Skills must be portable and reusable across different environments, machines, and projects. 
 
 **Never include local references or hardcoded absolute paths** in your skill files (`SKILL.md`, scripts, references, etc.).
-- Avoid paths like `/Users/alex/development/...` or `C:\Users\...`.
+- Avoid paths like `/Users/<user>/development/...` or `C:\Users\...`.
 - Use relative paths, or environment variables, or parameterize paths so they are evaluated at runtime by the agent.
 - When referring to other files within the skill itself, always use paths relative to the skill directory (e.g., `scripts/my_script.ts` or `references/docs.md`). 
 
@@ -118,7 +118,7 @@ Documentation and reference material intended to be loaded as needed into contex
 - **Use cases**: Database schemas, API documentation, domain knowledge, company policies, detailed workflow guides
 - **Service setup**: Installation, configuration, and infrastructure setup details must be written to `references/setup.md` - this keeps SKILL.md focused on workflows while preserving setup documentation for reference
 - **Benefits**: Keeps SKILL.md lean, loaded only when the agent determines it's needed
-- **Best practice**: If files are large (>10k words), include grep search patterns in SKILL.md
+- **Best practice**: If files are large (>10k words), include useful search patterns in SKILL.md without prescribing a search tool.
 - **Avoid duplication**: Information should live in either SKILL.md or references files, not both. Prefer references files for detailed information unless it's truly core to the skill—this keeps SKILL.md lean while making information discoverable without hogging the context window. Keep only essential procedural instructions and workflow guidance in SKILL.md; move detailed reference material, schemas, and examples to references files.
 
 ##### Assets (`assets/`)
@@ -309,29 +309,20 @@ Added scripts must be tested by actually running them to ensure there are no bug
 
 **Writing Guidelines:** Always use imperative/infinitive form.
 
-#### Self-review to 10/10
+#### Review for Agent Execution
 
-Do not stop at the first draft that seems acceptable. Self-review the skill against an explicit quality bar, correct weaknesses, and repeat until the result would reasonably score **10/10** against the rubric below.
+Write for another AI agent. Review and fix at most twice using this checklist:
 
-**Mandatory Watertightness Audit:** Before finalizing skill instructions, consult the `prompt-writer` skill and apply its $W = 10 \times P \times (1 - L) \times C$ audit. If $W < 9.0$, identify and close logical loopholes, imprecise constraints, or weak behavioral coupling until $W \ge 9.0$. Put negative guardrails in the body only; never add negative triggers to `description` to improve an audit score.
+- **Trigger:** Does the description identify when to load the skill using positive conditions, with exclusions in the body?
+- **Action:** Are the steps, task boundaries, required inputs, and completion checks explicit?
+- **Resources:** Do bundled links resolve, and are scripts and references necessary and usable?
+- **Consistency:** Do frontmatter, instructions, scripts, and examples agree?
+- **Blocked work:** Does the skill define what to record and what independent authorized work can continue when a required input or check is unavailable?
+- **Conciseness:** Can repeated or irrelevant text be removed without losing a required rule?
 
-Use a bounded review loop:
+Walk through a normal invocation, missing required context, and an out-of-scope request. Confirm the expected agent action for each; distinguish this review from executed script or workflow checks.
 
-1. Draft the smallest correct version of the skill.
-2. Review it critically against the rubric.
-3. Fix the highest-impact problems first.
-4. Repeat until every rubric item passes cleanly or an external constraint prevents further improvement.
-
-Treat **10/10** as meaning the skill is clear, correctly scoped, concise, internally consistent, and ready for another agent to use without avoidable confusion. Do not chase perfection through meaningless rewrites; stop only when additional edits no longer improve correctness, clarity, triggering, or usability.
-
-Review rubric:
-
-- **Triggering quality**: Does the `description` identify the intended actions and artifacts using only positive trigger conditions, with exclusions confined to the body?
-- **Workflow quality**: Are the steps concrete, ordered, and actionable instead of vague advice?
-- **Resource quality**: Are scripts, references, and assets present only when they materially improve reliability or reuse?
-- **Conciseness**: Is every section earning its token cost, with bulky details moved into references when appropriate?
-- **Consistency**: Do frontmatter, body instructions, scripts, and examples agree with each other?
-- **Usability**: Could another agent execute the skill successfully without guessing missing context?
+Finish when the checklist and required validation pass. If a required item still fails after two rounds, record the specific blocker and preserve the draft without claiming completion; continue independent authorized work. Do not assign quality scores or keep rewriting for stylistic perfection. Keep negative guardrails in the body, not in the description.
 
 ##### Frontmatter
 

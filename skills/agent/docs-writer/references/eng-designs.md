@@ -49,7 +49,7 @@ Produce docs that another engineer can implement without design interpretation. 
 - Do not mix current baseline facts with target-state requirements.
 - Do not keep stale assumptions after the codebase changes.
 - Do not preserve ambiguity just because an earlier doc was vague.
-- If a critical product or architecture decision is still unresolved, stop and get that decision instead of encoding multiple alternatives.
+- Make routine implementation choices within the authorized requirements and established architecture. If a material product or architecture decision remains unresolved, record the exact question and suspend only the sections and dependent work requiring that decision. Continue independent authorized work without inventing the missing requirement.
 
 ## Make the doc implementation-ready
 

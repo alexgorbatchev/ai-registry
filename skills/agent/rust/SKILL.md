@@ -4,7 +4,7 @@ description: Use when writing, reviewing, refactoring, testing, or releasing Rus
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-14 10:37
-  last_modified: 2026-10-15 16:18
+  last_modified: 2026-10-16 10:02
   status: current
 ---
 
@@ -14,11 +14,11 @@ Read these references when the task reaches their domain:
 
 - [Setup](references/setup.md): package layout, toolchains, dependencies, Cargo features, and CLI projects.
 - [Testing and releases](references/testing-and-releases.md): verification commands, CI, coverage, packaging, and publishing.
-- [Disk usage](references/disk-usage.md): **5 GB combined build/temporary storage ceiling**, immediate scratch cleanup, profile tuning, and safe retention. Read this before builds, tests, coverage, profile changes, or artifact cleanup.
+- [Disk usage](references/disk-usage.md): **5 GB task-owned artifact budget**, shared/global cache exclusions, immediate scratch cleanup, profile tuning, and safe retention. Read this before builds, tests, coverage, profile changes, or artifact cleanup.
 
 Keep incremental compilation enabled for active development. A disk-space request does not authorize disabling it or discarding active development caches. Apply storage changes only within the requested scope.
 
-Keep combined project build and temporary storage at or below **5 GB (5,000,000,000 allocated bytes)** and remove task-owned temporary files immediately after their last consumer finishes, including on failure or cancellation. If required active artifacts cannot fit safely, stop new builds and report the measured blocker; preserving incremental state does not waive the ceiling.
+Keep the current task's own artifacts at or below **5 GB (5,000,000,000 allocated bytes)** as defined in the disk-usage reference. Exclude shared/global caches, pre-existing artifacts, dependencies, other tasks' outputs, and runtime data. A shared cache's total size alone never blocks task work or authorizes cleanup. Remove task-owned temporary files after their last consumer finishes; pause only operations that would increase an exhausted task budget, preserving active incremental state and continuing independent authorized work.
 
 ## Names and domain boundaries
 

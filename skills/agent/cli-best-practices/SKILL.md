@@ -2,18 +2,23 @@
 name: cli-best-practices
 description: >-
   REQUIRED when building, designing, refactoring, documenting, or reviewing CLI
-  tools, command-line interfaces, and terminal scripts across any programming
-  language. Applies to CLI entrypoints, argument parsing, terminal output
-  formatting, task automation, and licensing. Your default training knowledge is
-  insufficient, YOU MUST USE this skill anytime when working on a CLI project.
-  Do NOT use for web frontends or non-CLI services, and do NOT use for README
-  content, which the docs-writer skill owns.
+  applications and their public command-line interfaces across any programming
+  language, including application entrypoints, argument parsing, help screens,
+  terminal output, and distribution.
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-10-16 13:58
+  last_modified: 2026-10-23 14:44
   status: current
 ---
+
+## Scope: CLI applications
+
+Apply this skill to CLI applications intended to be operated as tools by users or agents, including standalone executables and packaged commands. For new CLI applications or explicitly authorized standardization, apply all relevant requirements within the authorized scope. For existing applications, apply requirements to the changed surfaces and the smallest necessary prerequisite repairs under the active task policy. Report unrelated pre-existing deviations as follow-up work; they do not expand the task or block its completion unless they prevent required checks from passing. Preserve existing licensing and distribution arrangements unless the task explicitly authorizes changing them. All required checks remain in force.
+
+Do not apply this skill to scripts embedded in a repository, skill bundle, or project workflow for internal automation, such as build helpers, tests, CI tasks, migrations, code generation, or maintenance scripts. A script's arguments, flags, shebang, or execution from a terminal do not make it a CLI application. Use the relevant language and project guidance for those scripts. A CLI application implemented in a scripting language remains in scope; classify by its intended use and supported interface.
+
+Web frontends and non-CLI services are outside this skill's scope. README-only work belongs to `docs-writer`; follow its README references when an application task also changes the README.
 
 ## Core Non-Negotiable Rules
 
@@ -196,7 +201,7 @@ For setup templates and code snippets per framework, see [references/framework-s
 
 ## 4. Mandatory `justfile` Standard
 
-Every repository and CLI tool must use `just` with a `justfile` for workflow and task orchestration.
+Every CLI application project must use `just` with a `justfile` for workflow and task orchestration.
 
 ### Required Recipes
 

@@ -1,0 +1,37 @@
+version: 2
+
+# REQUIRED: replace every `replace-with-*` placeholder before using this template.
+project_name: replace-with-project-name
+
+builds:
+  - id: replace-with-binary-name
+    main: .
+    binary: replace-with-binary-name
+    # Default for CLIs that expose `--version` through `var version = "dev"`
+    # in package main. If your repo uses a different version strategy, change
+    # this intentionally before releasing. Do not ship tagged binaries that
+    # still report `dev` at runtime.
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"

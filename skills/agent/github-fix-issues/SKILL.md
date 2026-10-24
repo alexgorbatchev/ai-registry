@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-22 14:38
-  last_modified: 2026-10-09 06:15
+  last_modified: 2026-10-16 16:33
   status: current
 ---
 
@@ -21,8 +21,12 @@ normal issue work does not authorize rewriting published history.
 | Review a ticket's PR | [Reviewer workflow](references/reviewer.md); read requirements from the issue linked by the PR |
 | Remove historical issue-integration merges | [History repair](references/history-repair.md) |
 
-Run the bundled reviewer helper during [setup](references/setup.md) to verify bot
-access, automatically invite/accept when needed, and list open issues oldest first.
+Before implementation, follow [setup](references/setup.md) to check repository,
+tool, authentication, reviewer, access, and protection readiness. This workflow
+uses `main`; do not silently choose another integration branch. Run the bundled
+reviewer helper during setup to verify bot access, automatically invite/accept
+when needed, and list open issues oldest first. Record missing prerequisites and
+suspend only dependent actions under the scheduling and blocker protocols.
 
 Keep the workflow independent of any agent harness. Use its available mechanism
 to start an independent reviewer for the current PR; do not require a particular tool name, agent
@@ -33,8 +37,10 @@ record the blocker rather than self-approving.
 
 - The implementing agent owns queue preparation, edits, checks, commits, PRs,
   integration, and cleanup. Do not delegate implementation or run parallel ticket
-  workers. Complete one ticket through CI, review, integration, and cleanup before
-  starting another. Stay on that ticket while CI or review is pending.
+  workers. Keep one ticket active through CI, review, integration, and cleanup.
+  Stay on it while CI or review is pending. For a verified blocker, record and
+  suspend it and its dependents, then select the next independent ticket within
+  the authorized queue using the scheduling reference. Preserve suspended work.
 - Pair with one review agent per ticket and reuse it for subsequent rounds. After
   a restart, replace an unavailable reviewer using the PR's complete record.
   Keep only one ticket active in the implementation/CI/review/integration loop.
@@ -62,39 +68,61 @@ record the blocker rather than self-approving.
 - Continue within the user's authorized scope without repeatedly asking permission.
   Resolve implementation choices from inspected requirements, code, tests, and
   repository instructions. Record consequential choices and their sources on the
-  PR. Missing acceptance criteria are blockers, not permission to invent behavior.
+  PR. Establish acceptance criteria from verified issue discussion, referenced
+  specifications, tests, and documented behavior; a missing structured acceptance
+  section alone is not a blocker. Do not infer desired changes from existing
+  behavior or tests alone. If a material requirement remains missing or
+  contradictory, record the unresolved question and unblock condition, suspend
+  the affected issue and its dependents, and continue the next independent
+  authorized issue. Do not invent product behavior.
 
 ## Implementation loop
 
-Follow [scheduling](references/scheduling.md) to finish the current issue before
-selecting another. Watch CI, then bot review, then integrate; repeat on failures
-or findings. A pending check or review is unfinished work, not a handoff to the
-next issue.
+Follow [scheduling](references/scheduling.md) to finish the active issue or suspend
+it for a verified blocker before selecting another authorized independent issue.
+Watch CI, then bot review, then integrate; repeat on failures or findings. A pending
+check or running review is unfinished work, not a handoff to the next issue.
 
 1. **Prepare or resume the queue.** Maintain `.tmp/github-issues.md` in the primary
-   checkout using the queue reference. Resume active work first; otherwise select
+   checkout using the queue reference. Verify queue ownership before writes or
+   resumed mutations; record task/worker identity, owned paths, and any supplied
+   scheduler lease. Checkpointing does not dispatch a worker: record verified
+   scheduler acceptance or the exact redispatch requirement. Resume active work
+   first; otherwise select
    by priority, then oldest creation time, resolving prerequisites first. Check
    existing branches, worktrees, and PRs before creating anything. Resume matching
    inactive work; preserve other owners' work.
 2. **Establish requirements and checks.** Read the ticket, comments, governing
    specifications, repository instructions, relevant code, and tests. Record a
    checklist with source citations. Discover exact check commands and thresholds
-   using [checks and CI](references/checks-and-ci.md). Verify required
-   checks on untouched, fetched `main` before changing code.
+   using [checks and CI](references/checks-and-ci.md). Before changing code,
+   inspect applicable CI workflows, trigger conditions, and required access;
+   resolve missing configuration under the bounded prerequisite-repair policy.
+   Verify required checks on untouched, fetched `main`.
 3. **Repair a failing baseline first.** Create or reuse a prerequisite ticket for
-   failures already present on untouched `main`. Record the dependency, suspend
-   the dependent ticket, and complete the repair with this same PR/check/review
-   loop. Never waive a failing required check. If the failure is missing access
+   failures reproduced on untouched `main` that block required checks. Existing
+   task authorization covers the smallest necessary same-repository repair;
+   honor explicit exclusions, repository boundaries, and other owners' changes.
+   Record the dependency, suspend the dependent ticket, and complete the repair
+   in its own change set with this same PR/check/review/integration loop. This
+   authority does not permit unrelated improvements or compatibility layers.
+   Never weaken or waive a failing required check. If the failure is missing access
    or an external outage, record a blocker rather than inventing a code repair.
 4. **Implement in the issue worktree.** Branch from fetched `main` under
    `.workspaces/issue-NNN` with branch `fix/issue-NNN-slug`. Replace `NNN` with the
    issue number and `slug` with a short lowercase, hyphen-separated title fragment.
-   Follow repository red/green rules: observe the regression test fail, implement
-   the fix, observe it pass, then temporarily disable only the fix and confirm the
-   test fails again. Restore it and rerun. For non-executable changes, explain why
-   a reproduction test is inapplicable and use the relevant validators; do not
-   manufacture static-value tests. Commit only this ticket's changes.
+   For changes to executable behavior, follow repository red/green rules: observe
+   the regression test fail, implement the fix, observe it pass, then temporarily
+   disable only the fix with tests enabled in an owned, isolated or disposable
+   worktree and confirm the test fails again. Restore it and rerun relevant checks;
+   preserve other actors' changes. For non-executable changes, use the relevant
+   validators; do not manufacture static-value tests. Commit only this ticket's
+   changes.
 5. **Create or update the PR.** Push the issue branch and use `main` as its base.
+   Use existing PR-publication authorization without asking for separate approval
+   of the verified title and body. Honor draft-only limits and explicit requests
+   for content review; require separate authorization for integration, release,
+   or deployment when those actions are outside the granted scope.
    Follow the repository PR template. Reference the actual ticket with `Fixes #NNN`
    and keep requirements and acceptance criteria in that linked issue. Include a
    concise problem/result summary, change type, material decisions, risks, and
@@ -105,7 +133,9 @@ next issue.
 6. **Push and wait for green CI.** Fetch `main`, rebase the issue branch onto it,
    resolve conflicts, and run all required checks on the resulting committed HEAD.
    Publish the branch and verify the remote PR head equals the committed SHA.
-   Watch CI using the checks reference. Fix failures, commit, push, and watch again
+   Watch CI using the checks reference, including its failure classification and
+   persisted infrastructure retry policy; a restart does not reset that budget.
+   Fix code failures, commit, push, and watch again
    until every applicable check succeeds for the current PR revision. Missing or
    pending checks do not authorize review. Remain on this issue throughout.
    A push after rebase uses an exact lease against the previously verified issue
@@ -132,14 +162,21 @@ next issue.
    Do not treat silence, a plain comment, or an old approval as sign-off.
 9. **Integrate and clean up.** Follow [integration](references/integration.md).
    Preserve the approved commits with fast-forward-only integration into `main`.
-   A changed base or head invalidates the round: rebase, rerun checks, and obtain
-   another native approval. Verify remote integration and PR merged state before
-   closing the issue and deleting owned artifacts. Preserve the PR, native reviews,
+   Before publication, a changed base or head invalidates the round: rebase,
+   rerun checks, and obtain another native approval. After publication, follow
+   the integration reference's persisted reconciliation window; do not reset it
+   on restart or repeat publication solely to force the merged flag. Confirm
+   remote main contains the published commit and the PR has the expected head
+   and native MERGED state before closing the issue and deleting owned artifacts.
+   Preserve the PR, native reviews,
    and persistent queue across cleanup and restarts; no log archive is required.
 10. **Continue the queue.** Refresh affected dependencies and blockers after each
-    transition. Select another issue only after the current one is verified merged
-    and its cleanup is completed or explicitly recorded as deferred. A blocker in
-    the active PR stops the run; report it rather than switching to another ticket.
+    transition. Select another issue after the current one is verified merged
+    and cleanup is completed or explicitly recorded as deferred, or after a
+    verified blocker suspends it under the scheduling reference. Keep only one
+    issue active. Hold affected dependents, preserve suspended work, and continue
+    only independent issues within the authorized queue. Recheck blockers before
+    selection and refresh cleared tickets before resuming their existing work.
     Report ticket/PR links, landed SHAs, CI and approval links, cleanup results,
     and exact blockers; never describe blocked work as done.
 

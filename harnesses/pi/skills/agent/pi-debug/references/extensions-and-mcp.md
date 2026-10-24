@@ -25,7 +25,7 @@ Pi extensions are registered in `~/.pi/agent/settings.json` under `packages`:
 
 When troubleshooting or analyzing external Pi extensions (`npm:<package-name>`):
 
-1. **Do NOT run broad local disk searches:** Do not execute `find` or `grep` across `/tmp`, `node_modules`, or system directories.
+1. **Scope local inspection:** Inspect the relevant extension and its configured locations rather than scanning unrelated system directories. Choose search tools according to the task.
 2. **Consult `pi.dev` Registry:** Look up extension metadata and canonical repository links at:
    `https://pi.dev/packages/<package-name>`
 3. **Fetch Source Files directly from GitHub:**

@@ -5,13 +5,13 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-28 10:39
-  last_modified: 2026-09-28 10:43
+  last_modified: 2026-10-16 17:14
   status: current
 ---
 
 ## Core Tool: `agent-print-session`
 
-Use `agent-print-session` to inspect, filter, summarize, and dump session transcripts from prior agent runs. The CLI supports two agent harnesses: `pi` and `claude`.
+Use `agent-print-session` for supported Pi and Claude Code transcripts after verifying the installed command and its help. If that reader is unavailable or cannot read the transcript, use an available reader whose support for the actual format is verified against local source, documentation, or command help, or recover sufficient continuation context from verified durable task state. Do not invent command flags, transcript schemas, adapters, or missing decisions. If required context remains unavailable, record the missing input and suspend only dependent work under the blocker protocol. Continue independent authorized work.
 
 Command syntax:
 ```bash
@@ -63,20 +63,13 @@ When the user specifies a session ID or transcript path, pass it directly. When 
 ### Pi Coding Agent Sessions
 Default search path: `~/.pi/agent/sessions/` (or directory set by `PI_SESSIONS_DIR`).
 Transcripts are stored in project-scoped subdirectories named `--<escaped-cwd>--/`:
-```bash
-# List recent Pi sessions for the current repository
-ls -lt ~/.pi/agent/sessions/--$(echo -n "$PWD" | tr '/' '-')--/ 2>/dev/null | head -n 5
-
-# Or search all recent Pi sessions
-ls -lt ~/.pi/agent/sessions/*/*.jsonl 2>/dev/null | head -n 5
-```
+locate recent `.jsonl` transcripts for the current repository, ordered by
+modification time. Choose an available discovery tool suited to the task.
 
 ### Claude Code Sessions
 Default search paths: `~/.claude/projects/` and `~/.claude/sessions/` (or `CLAUDE_PROJECTS_DIR`, `CLAUDE_SESSIONS_DIR`).
-```bash
-# List recent Claude sessions
-find ~/.claude/projects ~/.claude/sessions -name "*.jsonl" -type f -exec ls -lt {} + 2>/dev/null | head -n 5
-```
+Locate recent `.jsonl` transcript files within those directories, ordered by
+modification time, using an available discovery tool suited to the task.
 
 ---
 
@@ -85,10 +78,10 @@ find ~/.claude/projects ~/.claude/sessions -name "*.jsonl" -type f -exec ls -lt 
 When taking over a session from another agent, execute the following phased workflow:
 
 ### Phase 1: Identify Harness and Target
-Determine if the prior agent ran under `pi` or `claude`. Obtain the session ID or `.jsonl` path from user instructions or discovery commands above.
+Identify the prior harness and requested session from verified task state or transcript metadata. Obtain the session ID or transcript path from the request or scoped discovery. Use the following `agent-print-session` phases only for supported Pi or Claude Code transcripts. For another harness or an unavailable reader, use the verified reader or durable-state fallback above and recover the same required context before dependent actions.
 
 ### Phase 2: Triage with Handoff
-Run `handoff` first to extract key metadata without filling context:
+When using `agent-print-session`, run `handoff` first to extract key metadata without filling context:
 ```bash
 agent-print-session <pi|claude> handoff <session-id-or-path>
 ```
@@ -121,8 +114,8 @@ agent-print-session <pi|claude> print <session-id-or-path> --all
 Never assume transcript logs reflect the current reality on disk:
 1. Check `git status` and `git diff` to verify uncommitted changes.
 2. Verify that files referenced in `--files` actually exist on disk and contain the expected modifications.
-3. Check for leftover scratch files, orphan background processes, or locks.
-4. Run project test or build commands to verify whether the codebase is currently green or broken.
+3. Inspect relevant scratch files, background processes, and locks without removing or taking over unowned state. Preserve session transcripts and runtime data; continuation does not authorize cleanup.
+4. Reuse prior check results only when their source revision, checked scope, environment, and outcome remain applicable. Run the required checks affected by subsequent changes or unresolved failures; do not rerun the entire suite or build merely because a session resumed. Honor explicit user limits, including paused builds. Record deferred checks and material verification limits without claiming they passed.
 
 ### Phase 6: Resume Execution
 1. Formulate a concise summary of what was accomplished and what remains incomplete.

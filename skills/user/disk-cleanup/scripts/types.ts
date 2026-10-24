@@ -52,3 +52,31 @@ export type FolderOptions = {
   depth?: number;
   prune: boolean;
 };
+export type RustArtifactKind = 'tmp' | 'coverage' | 'target';
+export type RustOptions = RunOptions & { idle: number; artifacts: RustArtifactKind[] };
+export type RustRemovalOptions = RunOptions & {
+  projects: string[];
+  artifacts: RustArtifactKind[];
+  idleMs: number;
+};
+export type RustArtifact = { kind: RustArtifactKind; path: string; exists: boolean; bytes: number | null };
+export type RustProject = {
+  path: string;
+  eligible: boolean;
+  reason: string;
+  error: string | null;
+  latestActivityMs: number | null;
+  pids: number[];
+  processWarnings: string[];
+  artifacts: RustArtifact[];
+};
+export type PreservedArtifact = { path: string; reason: string };
+export type ArtifactSelection = { actions: Action[]; preserved: PreservedArtifact[] };
+export type ProcessInspection = { pids: number[]; warnings: string[] };
+export type InspectionCommandResult = { stdout: string; stderr: string; exitCode: number };
+export type InspectionRunner = (args: string[]) => Promise<InspectionCommandResult>;
+export type AssessmentOptions = { root: string; size: string; days: number };
+export type AssessmentTask = { name: string; inspect: () => Promise<AssessmentSection> };
+export type AssessmentSection = { name: string; isComplete: boolean; data: unknown; errors: string[] };
+export type DiskAssessment = { root: string; isComplete: boolean; sections: AssessmentSection[] };
+export type RustActivity = { latestActivityMs: number; pids: number[]; processWarnings: string[] };

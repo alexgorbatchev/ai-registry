@@ -85,12 +85,18 @@ export function formatBytes(bytes: number): string {
   return `${bytes} B`;
 }
 
-export async function inspectStaleFolders(options: FolderOptions): Promise<StaleFolder[]> {
+export async function inspectStaleFolders(
+  options: FolderOptions,
+  onError: (path: string, error: unknown) => void = (_path, error) => {
+    throw error;
+  },
+): Promise<StaleFolder[]> {
   const minSizeBytes = parseSizeToBytes(options.size);
   const limiter = new ConcurrencyLimiter(96);
   const currentTimeMs = Date.now();
   const dayInMs = 24 * 60 * 60 * 1000;
   const stalenessThresholdMs = options.days * dayInMs;
+  const rootDevice = (await stat(options.root)).dev;
 
   async function inspectDirectory(currentPath: string, currentDepth: number): Promise<DirectorySummary> {
     let accumulatedSize = 0;
@@ -100,8 +106,12 @@ export async function inspectStaleFolders(options: FolderOptions): Promise<Stale
 
     let dirEntries: Dirent[] = [];
     try {
+      if ((await limiter.run(() => stat(currentPath))).dev !== rootDevice) {
+        return { bytes: 0, latestMtimeMs: 0, latestAtimeMs: 0, staleMatches: [] };
+      }
       dirEntries = await limiter.run(() => readdir(currentPath, { withFileTypes: true }));
-    } catch {
+    } catch (error) {
+      onError(currentPath, error);
       return {
         bytes: 0,
         latestMtimeMs: 0,
@@ -135,7 +145,8 @@ export async function inspectStaleFolders(options: FolderOptions): Promise<Stale
                 mtime: fileStats.mtimeMs,
                 atime: fileStats.atimeMs,
               };
-            } catch {
+            } catch (error) {
+              onError(entryFullPath, error);
               return null;
             }
           }),

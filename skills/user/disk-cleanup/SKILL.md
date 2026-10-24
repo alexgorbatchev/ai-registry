@@ -12,12 +12,20 @@ Use [scripts/cleanup.ts](scripts/cleanup.ts) to inspect disk usage and perform a
 Require Bun, Git, and GNU `du`, `df`, and `rm`. Install this skill's locked dependencies with
 `bun install --frozen-lockfile` from the skill directory before invoking its scripts.
 Use `<%- file_dir %>/scripts/cleanup.ts`; do not assume the working directory is the skill directory.
+Rust commands also require an installed Cargo toolchain and Unix `lsof`.
 
 ## Inspect before selecting deletions
 
 1. Identify the user's target root, default to $HOME. Pass it explicitly as `--root`; the default is the working directory.
-2. Measure allocated space with `disk inspect` and discover large stale directories across the target root with `folders list`. Report filesystem capacity and the largest paths.
+2. Run `disk assess --root <target>` for a general disk-space request. Await its final JSON and process exit;
+   resume every yielded tool call until it finishes. This command collects filesystem capacity, a three-level
+   overview, files and directories of at least 1G at every depth, dependencies, worktrees, stale folders, and Docker.
+   Report the largest paths across the entire selected root, including development projects and hidden directories.
+   Do not end the assessment or ask about deletion based on an early cache result while any inspection is pending.
+   When `isComplete` is false, report successful results together with each failed section and its errors;
+   never present incomplete coverage as a full assessment. Report nested directory totals without adding them together.
 3. Use `dependencies list` for inactivity decisions and `worktrees list` for workspace registration and file status.
+   For Rust builds, use `rust list` and the [Rust cleanup workflow](references/rust-cleanup.md).
 4. Match proposed targets to the user's authorized paths or cleanup rule. An inspection request authorizes no deletion.
 5. Run the corresponding removal command without `--execute` to review its current targets. Add `--execute` only
    within existing user authorization; ask for missing authorization after presenting the concrete preview.
@@ -36,9 +44,12 @@ From the target root, use the following commands:
 
 ```sh
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" disk inspect --root . --depth 2
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" disk assess --root .
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" folders list --root . --size 1G --days 30
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" dependencies list --root . --days 30
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" dependencies remove --root . --days 30
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" rust list --root . --idle 30m
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" rust remove project --root . --idle 30m --artifacts tmp,target
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" paths remove project/.tmp/build-cache --root .
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" worktrees list --root .
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" worktrees remove project/.workspaces/review --root .
@@ -51,10 +62,13 @@ Read [scripts/inventory.ts](scripts/inventory.ts) when changing activity classif
 
 | Command | Arguments and options | Behavior |
 |---|---|---|
+| `disk assess` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30` | Await all inspection sections and emit one combined report. Scan large allocated files and folders at every depth. `--size` also sets the stale-folder threshold; `--days` controls dependency and stale-folder inactivity. No deletion or log files. |
 | `disk inspect` | `--root <directory>` default `.`, `--depth <levels>` default `2` | Return filesystem capacity and directory allocations, sorted largest first. |
 | `folders list` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--time <mode>` default `either`, `--depth <levels>`, `--no-prune` | Return directories exceeding size and staleness thresholds with access/modification timestamps, pruning nested matching children by default. |
 | `dependencies list` | `--root <directory>` default `.`, `--days <count>` default `30` | Return each discovered outermost `node_modules` folder, owner, allocation, latest activity, eligibility, and reason. |
 | `dependencies remove` | Same options plus `--execute` default false | Preview or delete all eligible folders under the selected root. |
+| `rust list` | `--root <directory>` default `.`, `--idle <duration>` default `30m` | Inspect direct child Cargo projects; return activity, process IDs, warnings, eligibility, and separate `.tmp`, coverage, and target allocations. Coverage is included in the target total. Inspection errors return exit code `1`. |
+| `rust remove <projects...>` | Exact direct child projects; `--root` and `--idle` as above; required `--artifacts <kinds>`; `--execute` default false | Preview or remove explicitly selected `tmp`, `coverage`, and/or `target` artifacts in idle projects. Preserve active projects and protected contents. Recheck before every removal. |
 | `paths remove <paths...>` | One or more exact paths; `--root <directory>` default `.`, `--execute` default false | Preview or delete reviewed artifacts beneath `.tmp`, `.cache`, `node_modules`, `target`, or `dist`. |
 | `worktrees list` | `--root <directory>` default `.` | Return linked worktrees and `.workspaces` entries, allocations, branches/HEADs, locks, registration, status counts, and inspection errors. Partial scans return exit code `1`. |
 | `worktrees remove <paths...>` | One or more exact paths; `--root <directory>` default `.`, `--execute` default false | Preview or remove validated registered linked worktrees through Git. |
@@ -62,6 +76,8 @@ Read [scripts/inventory.ts](scripts/inventory.ts) when changing activity classif
 | `help [command]` | One immediate subcommand name, or `-h`/`--help` on any command | Show commands and options. Use a group's `help` to select its child. No completion or version command is provided. |
 
 Require positive integers for `--days` and `--depth`. Interpret relative removal paths relative to `--root`.
+For `--idle`, require a positive whole number suffixed with `m`, `h`, or `d` (minutes, hours, days).
+For `--artifacts`, use comma-separated `tmp`, `coverage`, and/or `target`, without duplicates or spaces.
 Accept absolute paths only strictly inside that root. Reject filesystem-root cleanup, duplicate or overlapping targets,
 symbolic-link targets or ancestors, filesystem boundaries, and Git metadata. Do not pass wildcard paths or shell-expanded deletion lists.
 
@@ -79,6 +95,26 @@ top-level entry. Pass `--no-prune` to review matching nested subdirectories indi
 with `--depth <levels>`. When candidates are discovered, review their contents before remediation: authorized caches
 under `.cache` or `.tmp` use `paths remove`, registered worktrees use `worktrees remove`, and tool runtimes use their
 respective package manager or CLI uninstaller.
+
+Folder scans stay on the root filesystem and report unreadable paths in `errors` alongside successful matches;
+any recorded error returns exit code `1`.
+
+### Combined assessment output
+
+`disk assess` emits `{root, isComplete, sections}` only after every section finishes. Each section has `name`,
+`isComplete`, `data`, and `errors`. Names are `filesystem`, `overview`, `largePaths`, `dependencies`, `worktrees`,
+`staleFolders`, and `docker`. Overview and large-path data are arrays of `{bytes, path}` sorted largest first.
+The overview includes directories through depth three regardless of size; large paths include files and directories
+at every depth meeting `--size`. These are overlapping allocations, not independent reclaimable totals.
+Filesystem data is raw `df` output. Dependency, worktree, and stale-folder data retain their list-command JSON.
+Docker data contains individual command reports for context, endpoint, data root, usage, verbose details, containers,
+container IDs, and mounts when containers exist. All daemon queries use the initially selected context; inspect its
+endpoint before attributing usage to this machine. A missing Docker executable or unavailable daemon is an error,
+not zero usage. A failed context lookup prevents dependent Docker queries.
+Nonzero commands retain available stdout and stderr; failed sections never hide successful sibling sections.
+`isComplete` describes scan completion only, never deletion safety. Exit code is `1` if any section is incomplete.
+The scope is the selected root's filesystem plus the reported Docker context; other host paths and filesystems
+are outside this assessment. Use targeted commands for further content review and Rust process/activity decisions.
 
 ## Dependency decisions
 
@@ -116,6 +152,27 @@ the home directory as `--root`. For example, select `.cache/pi-codegraph` only a
 Do not generalize authorization for one cache to Go, npm, Bun, browser, or other caches.
 For package-manager cache commands or database maintenance, verify current official documentation first.
 The existing artifact command does not accept arbitrary `.npm`, `.bun`, or Trash paths; do not claim it does.
+
+### CodeGraph indexes
+
+Include CodeGraph storage in development and home disk inspections. Locate the configured index store from
+the installed integration's configuration and environment; check the XDG cache root rather than assuming
+`~/.cache`. Inspect central stores such as `pi-codegraph/projects` and their daemon directories, plus real
+project-local `.codegraph` directories. Resolve project index symlinks for attribution, but measure each
+physical directory once and never pass a symlink to the removal command.
+
+Report per-project index sizes, database/WAL sizes, and logs separately. Where present, use
+`.pi-codegraph.json` metadata's `sourcePath` to associate hashed directories with projects or worktrees.
+Check whether those sources still exist; missing metadata or an inspection error is not proof of a stale index.
+Do not apply Rust's 30-minute artifact policy to CodeGraph indexes or assume native garbage collection
+enforces an age or size limit. Verify the installed implementation's collection rules before proposing it.
+
+Before proposing index deletion, inspect open database files and mapped files, daemon processes, and sockets.
+Preserve active indexes; coordinate stopping their owner before rechecking an authorized target. Never unlink
+individual live database, WAL, or shared-memory files as cache cleanup. Explain that removing an index requires
+reindexing. Preview only explicitly selected, validated inactive cache directories with `paths remove` where
+its path policy permits them; project-local `.codegraph` alone is not an accepted artifact component.
+Do not delete an entire central store merely because one project's index is stale.
 
 When emptying Trash is explicitly authorized, inspect its resolved `.local/share/Trash/files` and `info`
 directories, reject symbolic-link containers and filesystem crossings, and save the exact entry list before removal.
@@ -167,7 +224,9 @@ On the first removal or verification failure, stop the batch and retain its part
 
 Set `AGENT=1`, `true`, or `yes` for compact JSON and untruncated help/errors. Other values use indented JSON,
 tree help trimmed to terminal width (100-column fallback), and concise errors. Agent help begins with the skill alert.
-No other environment variables control cleanup. Each execution creates `.tmp/cleanup-*/execution.json` under root,
+Rust inspection inherits Cargo configuration and environment overrides, and disables rustup auto-installation
+with `RUSTUP_AUTO_INSTALL=0`. Other commands have no additional cleanup environment settings.
+Each nonempty execution creates `.tmp/cleanup-*/execution.json` under root,
 records selected actions, verified removals, failures, and before/after `df` output. Preview/list commands write no logs.
 Return exit code `0` on success or help, `1` on validation, usage, inspection, removal, or verification failure.
 

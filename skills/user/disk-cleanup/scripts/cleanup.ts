@@ -1,4 +1,12 @@
-import { Command, InvalidArgumentError } from 'commander';
+import { Command, InvalidArgumentError, Option } from 'commander';
+import { assessDisk } from './assessDisk';
+import { runInspectionCommand } from './runInspectionCommand';
+import { parseSizeToBytes } from './inspectFolders';
+import type { AssessmentOptions } from './types';
+import { inspectRustProjects } from './inspectRustProjects';
+import { parseIdleDuration, parseRustArtifacts } from './parseIdleDuration';
+import { removeRustArtifacts } from './removeRustArtifacts';
+import type { RustOptions } from './types';
 import skillText from '../SKILL.md' with { type: 'text' };
 import { resolveRoot, run } from './filesystemUtils';
 import { inspectStaleFolders } from './inspectFolders';
@@ -36,6 +44,15 @@ program
   });
 
 const disk = program.command('disk').description('Measure allocated space');
+scoped(disk.command('assess').description('Await a combined disk, project, cache, and Docker assessment'))
+  .option('--size <size>', 'Minimum allocation for files and folders at every depth', '1G')
+  .option('--days <count>', 'Required inactivity for dependency decisions', positiveInteger, 30)
+  .action(async (options: AssessmentOptions) => {
+    const root = await resolveRoot(options.root);
+    const report = await assessDisk(root, parseSizeToBytes(options.size), options.days, runInspectionCommand);
+    output(report);
+    if (!report.isComplete) process.exitCode = 1;
+  });
 scoped(disk.command('inspect').description('Report filesystem capacity and largest folders'))
   .option('--depth <levels>', 'Directory depth to report', positiveInteger, 2)
   .action(async (options: DiskOptions) => {
@@ -74,15 +91,20 @@ scoped(folders.command('list').description('List stale folders by size and last 
       throw new InvalidArgumentError(`Invalid time mode: "${options.time}". Choose from: either, modified, accessed.`);
     }
 
-    const report = await inspectStaleFolders({
-      root,
-      size: options.size,
-      days: options.days,
-      time: selectedTimeMode,
-      depth: options.depth,
-      prune: options.prune,
-    });
-    output({ root, size: options.size, days: options.days, time: selectedTimeMode, folders: report });
+    const errors: string[] = [];
+    const report = await inspectStaleFolders(
+      {
+        root,
+        size: options.size,
+        days: options.days,
+        time: selectedTimeMode,
+        depth: options.depth,
+        prune: options.prune,
+      },
+      (path, error) => errors.push(`${path}: ${String(error)}`),
+    );
+    output({ root, size: options.size, days: options.days, time: selectedTimeMode, folders: report, errors });
+    if (errors.length > 0) process.exitCode = 1;
   });
 
 const dependencies = program.command('dependencies').description('Review dependencies in inactive Git projects');
@@ -116,6 +138,45 @@ for (const verb of ['list', 'remove']) {
       output({ result, preserved: report.filter((item) => !item.eligible) });
     });
 }
+
+const rust = program.command('rust').description('Review artifacts in inactive Cargo projects');
+scoped(rust.command('list').description('List project activity and tmp, coverage, and target allocations'))
+  .addOption(
+    new Option('--idle <duration>', 'Required inactivity: positive whole minutes (m), hours (h), or days (d)')
+      .argParser(parseIdleDuration)
+      .default(1_800_000, '30m'),
+  )
+  .action(async (options: RustOptions) => {
+    const root = await resolveRoot(options.root);
+    const projects = await inspectRustProjects(root, options.idle);
+    output({ root, idleMs: options.idle, coverageIncludedInTarget: true, projects });
+    if (projects.some((project) => project.error !== null)) process.exitCode = 1;
+  });
+scoped(
+  rust
+    .command('remove')
+    .description('Preview or remove selected artifacts from named inactive projects')
+    .argument('<projects...>', 'Direct child project paths relative to root, or absolute paths'),
+  true,
+)
+  .addOption(
+    new Option('--idle <duration>', 'Required inactivity: positive whole minutes (m), hours (h), or days (d)')
+      .argParser(parseIdleDuration)
+      .default(1_800_000, '30m'),
+  )
+  .requiredOption('--artifacts <kinds>', 'Explicit comma-separated scope: tmp, coverage, target', parseRustArtifacts)
+  .action(async (projects: string[], options: RustOptions) => {
+    const root = await resolveRoot(options.root);
+    output(
+      await removeRustArtifacts({
+        root,
+        projects,
+        artifacts: options.artifacts,
+        idleMs: options.idle,
+        execute: options.execute,
+      }),
+    );
+  });
 
 const paths = program.command('paths').description('Review explicitly selected caches and temporary files');
 scoped(

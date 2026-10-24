@@ -9,7 +9,10 @@ Maintain the portable development-folder cleanup skill and its Bun scripts in th
 - Install locked dependencies: `bun install --frozen-lockfile`.
 - Run type checks, lint, and behavioral tests: `bun run check`.
 - Use Oxlint and Oxfmt for linting and formatting: `bun run lint` checks both; `bun run fix` applies fixes.
-- Run the tool for agents: `bun run run-ai skill`, then `bun run run-ai disk inspect --root <target>`.
+- Run the tool for agents: `bun run run-ai skill`, then `bun run run-ai disk assess --root <target>`.
+- General disk-space requests require the combined assessment before cleanup recommendations or deletion questions.
+  Await all sections, include large development paths alongside caches, preserve partial command output, and expose
+  every inspection failure. Never report a pending or failed assessment as complete.
 - Keep test fixtures and verification artifacts in `.tmp/`; tests must never delete real project data.
 
 Update `SKILL.md` and its `last_modified` in the same change as any command, argument, option, default,

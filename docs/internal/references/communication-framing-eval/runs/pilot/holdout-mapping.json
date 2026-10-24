@@ -1,0 +1,162 @@
+[
+  {
+    "responseId": "t001",
+    "jobId": "v2-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v2",
+    "caseId": "h4",
+    "characters": 1154,
+    "words": 183
+  },
+  {
+    "responseId": "t002",
+    "jobId": "v2-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v2",
+    "caseId": "h1",
+    "characters": 274,
+    "words": 40
+  },
+  {
+    "responseId": "t003",
+    "jobId": "v2-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v2",
+    "caseId": "h2",
+    "characters": 466,
+    "words": 71
+  },
+  {
+    "responseId": "t004",
+    "jobId": "v2-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v2",
+    "caseId": "h3",
+    "characters": 778,
+    "words": 123
+  },
+  {
+    "responseId": "t005",
+    "jobId": "v2-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v2",
+    "caseId": "h4",
+    "characters": 1219,
+    "words": 182
+  },
+  {
+    "responseId": "t006",
+    "jobId": "v2-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v2",
+    "caseId": "h1",
+    "characters": 270,
+    "words": 41
+  },
+  {
+    "responseId": "t007",
+    "jobId": "v2-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v2",
+    "caseId": "h2",
+    "characters": 436,
+    "words": 65
+  },
+  {
+    "responseId": "t008",
+    "jobId": "v2-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v2",
+    "caseId": "h3",
+    "characters": 565,
+    "words": 92
+  },
+  {
+    "responseId": "t009",
+    "jobId": "v2-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v2",
+    "caseId": "h4",
+    "characters": 1152,
+    "words": 173
+  },
+  {
+    "responseId": "t010",
+    "jobId": "v2-adhd-r1",
+    "arm": "adhd",
+    "repetition": 1,
+    "version": "v2",
+    "caseId": "h1",
+    "characters": 263,
+    "words": 39
+  },
+  {
+    "responseId": "t011",
+    "jobId": "v2-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v2",
+    "caseId": "h2",
+    "characters": 404,
+    "words": 59
+  },
+  {
+    "responseId": "t012",
+    "jobId": "v2-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v2",
+    "caseId": "h3",
+    "characters": 680,
+    "words": 110
+  },
+  {
+    "responseId": "t013",
+    "jobId": "v2-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v2",
+    "caseId": "h4",
+    "characters": 1127,
+    "words": 180
+  },
+  {
+    "responseId": "t014",
+    "jobId": "v2-neutral-r1",
+    "arm": "neutral",
+    "repetition": 1,
+    "version": "v2",
+    "caseId": "h1",
+    "characters": 251,
+    "words": 38
+  },
+  {
+    "responseId": "t015",
+    "jobId": "v2-neutral-r2",
+    "arm": "neutral",
+    "repetition": 2,
+    "version": "v2",
+    "caseId": "h2",
+    "characters": 460,
+    "words": 64
+  },
+  {
+    "responseId": "t016",
+    "jobId": "v2-adhd-r2",
+    "arm": "adhd",
+    "repetition": 2,
+    "version": "v2",
+    "caseId": "h3",
+    "characters": 659,
+    "words": 111
+  }
+]

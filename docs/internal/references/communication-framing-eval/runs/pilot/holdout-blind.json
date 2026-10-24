@@ -1,0 +1,331 @@
+{
+  "rubric": {
+    "schemaVersion": 1,
+    "criteria": {
+      "answerPlacement": "Pass if the first substantive content directly answers the latest question or gives the applicable action. Short labels/headings/code fences alone are not failures.",
+      "actionableSteps": "Pass if the response supplies the case's concrete usable next step, procedure, decision, or requested explanatory example. Explanations and comparisons do not require invented chores or numbering.",
+      "continuity": "Evaluate only cases with non-null continuity acceptance. Pass only if current state and unresolved gates are preserved without resetting completed work or claiming unfinished work succeeded.",
+      "completeness": "Pass only if every requirement in the case acceptance is covered and no material invented fact or conflicting instruction is added."
+    },
+    "gradingInstructions": "Grade each response independently against all case acceptance conditions. Binary pass/fail per applicable criterion; continuity is null when not applicable. Include a short evidence quotation or concrete omission for each failed criterion. Do not infer correctness from length or formatting alone. Do not grade against imagined author preferences. Do not provide numerical prompt quality scores.",
+    "outputShape": {
+      "judgments": [
+        {
+          "responseId": "opaque-id",
+          "answerPlacement": true,
+          "actionableSteps": true,
+          "continuity": null,
+          "completeness": true,
+          "failures": []
+        }
+      ]
+    }
+  },
+  "instruction": "Evaluate each response independently. Read no files other than this input. Save judgments with responseId, four criteria booleans (continuity null when not applicable), and failures with evidence. Enforce explicit cardinality constraints literally: one requested input means exactly one, not at least one. Do not guess hidden treatment labels.",
+  "responses": [
+    {
+      "responseId": "t001",
+      "caseId": "h4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "This fictional sync protocol has six facts: a revision is an opaque string; a client sends its last revision; an unchanged revision returns no changes; a changed revision returns a complete replacement snapshot; the client must replace rather than merge its local snapshot; an unknown revision requires a fresh full snapshot. Explain each fact and show one short example for the unchanged, changed, and unknown cases. Example values may be invented and must be labeled illustrative. No time estimate is needed."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Begins with the key full-replacement behavior or a substantive protocol explanation.",
+        "actionableSteps": "Makes the replace-versus-merge and unknown-revision behavior operationally clear, with three labeled illustrative examples.",
+        "continuity": null,
+        "completeness": "Preserves all six facts and all three examples, treats revisions as opaque, and invents no incremental merge or timing guarantees."
+      },
+      "text": "The client sends its last revision so the protocol can determine which snapshot response is needed.\n\nRevision rules:\n1. A revision is an **opaque string**: treat it as a token, without interpreting its contents.\n2. The client sends its last revision with a sync request.\n\nResponse rules:\n1. An unchanged revision returns no changes.\n2. A changed revision returns a complete replacement snapshot.\n3. The client must replace its local snapshot with that snapshot, rather than merge them.\n4. An unknown revision requires a fresh full snapshot.\n\n**Illustrative examples — all values are invented:**\n\n| Case | Request and response | Client action |\n|---|---|---|\n| Unchanged | Client sends `rev-a`; revision is unchanged; response contains no changes. | Keep the existing local snapshot. |\n| Changed | Client sends `rev-a`; revision has changed; response contains the complete snapshot `{\"items\":[\"B\"]}`. | Replace the local snapshot with `{\"items\":[\"B\"]}`. If it previously contained `A`, do not retain `A` by merging. |\n| Unknown | Client sends `rev-unknown`; the revision is unknown. | Obtain a fresh full snapshot and replace the local snapshot with it. |"
+    },
+    {
+      "responseId": "t002",
+      "caseId": "h1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "For fictional release R-8: compilation passed, 42 unit tests passed, and the staging payment check returned 503. The cause is unknown. Production rollout is prohibited until the staging payment check passes. The sole diagnostic artifact available is payment-check.log."
+        },
+        {
+          "role": "assistant",
+          "content": "Compilation and unit tests passed. Staging payment check failed with 503; production rollout remains gated."
+        },
+        {
+          "role": "user",
+          "content": "Give me the current release status and the single next action. Can we call this ready?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately says release is not ready or that staging failed and rollout is gated.",
+        "actionableSteps": "Identifies inspection of payment-check.log as the single next diagnostic action.",
+        "continuity": "Retains compile/unit success, staging 503, unknown cause, and rollout gate.",
+        "completeness": "Does not claim readiness, fabricate a cause, or describe a rerun as already passing."
+      },
+      "text": "No—R-8 is not ready for production. Compilation passed and all 42 unit tests passed, but the staging payment check returned 503. The cause remains unknown, and production rollout is prohibited until that check passes.\n\nNext action: provide `payment-check.log` for diagnosis."
+    },
+    {
+      "responseId": "t003",
+      "caseId": "h2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Turn this fictional sandbox restore contract into an executable operator checklist; do not perform it. All seven operations are mandatory, in order: pause sandbox workers; run `vault inspect restore-7`; verify the manifest says sandbox, otherwise stop; run `vault restore restore-7 --sandbox`; run `vault verify --sandbox`; resume sandbox workers only if verification passes, otherwise leave them paused; record the restore identifier and verification result in the run log. Never target production. Keep all gates."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts with a direct sandbox-only instruction or the first required action.",
+        "actionableSteps": "Uses an ordered checklist with exact supplied commands and conditional resume behavior.",
+        "continuity": null,
+        "completeness": "Keeps all seven operations, manifest stop gate, verification gate, run-log fields, and production prohibition."
+      },
+      "text": "Sandbox only. Never target production.\n\nPrepare:\n1. Pause sandbox workers.\n2. Run `vault inspect restore-7`.\n3. Verify that the manifest says sandbox. If it does not, stop; do not run the restore.\n\nRestore and finish:\n4. Run `vault restore restore-7 --sandbox`.\n5. Run `vault verify --sandbox`.\n6. Resume sandbox workers only if verification passes. Otherwise, leave them paused.\n7. Record the restore identifier (`restore-7`) and verification result in the run log."
+    },
+    {
+      "responseId": "t004",
+      "caseId": "h3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Recommend and compare every fictional export format below. Requirement: preserve both decimal precision and timezone offsets; recipients prefer readable files but fidelity wins. CSV: readable, loses timezone offsets, preserves decimals. Packed: opaque, preserves both, requires the supplied viewer. TextMap: readable, preserves both, files are twice the size of Packed. Include each trade-off; no setup commands are known."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts by recommending TextMap.",
+        "actionableSteps": "States a clear choice grounded in fidelity first and readability second; does not invent commands.",
+        "continuity": null,
+        "completeness": "Includes all three formats, precision and offset fidelity, readability, viewer requirement, and size trade-off."
+      },
+      "text": "Choose **TextMap**: it preserves decimal precision and timezone offsets while meeting recipients’ preference for readable files. The cost is files twice the size of Packed.\n\n| Format | Readability | Decimal precision | Timezone offsets | Trade-off |\n|---|---|---|---|---|\n| CSV | Readable | Preserved | Lost | Fails the required fidelity despite preserving decimals. |\n| Packed | Opaque | Preserved | Preserved | Meets fidelity requirements; requires the supplied viewer. TextMap files are twice its size. |\n| TextMap | Readable | Preserved | Preserved | Meets both fidelity and readability needs; files are twice the size of Packed. |\n\nPacked is the alternative if smaller files outweigh readability and using the supplied viewer is acceptable. No setup commands were supplied."
+    },
+    {
+      "responseId": "t005",
+      "caseId": "h4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "This fictional sync protocol has six facts: a revision is an opaque string; a client sends its last revision; an unchanged revision returns no changes; a changed revision returns a complete replacement snapshot; the client must replace rather than merge its local snapshot; an unknown revision requires a fresh full snapshot. Explain each fact and show one short example for the unchanged, changed, and unknown cases. Example values may be invented and must be labeled illustrative. No time estimate is needed."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Begins with the key full-replacement behavior or a substantive protocol explanation.",
+        "actionableSteps": "Makes the replace-versus-merge and unknown-revision behavior operationally clear, with three labeled illustrative examples.",
+        "continuity": null,
+        "completeness": "Preserves all six facts and all three examples, treats revisions as opaque, and invents no incremental merge or timing guarantees."
+      },
+      "text": "The client sends its last revision; the response determines whether it keeps or replaces its local snapshot.\n\n1. **Revision:** An opaque string. Treat it as a token without interpreting its contents.\n2. **Client request:** Send the last revision the client has.\n3. **Unchanged revision:** The response contains no changes, so keep the local snapshot.\n4. **Changed revision:** The response contains a complete replacement snapshot.\n5. **Client update:** Replace the local snapshot with that complete snapshot; do not merge them.\n6. **Unknown revision:** Obtain a fresh full snapshot and use it to replace the local snapshot.\n\nIllustrative examples — all values below are invented:\n\n- **Unchanged:** The client sends revision `alpha`. It is unchanged, so no changes are returned and the client keeps its snapshot.\n- **Changed:** The client sends revision `alpha`, but the revision has changed to `beta`. The complete snapshot is `{\"items\":[\"B\"]}`. The client replaces its local `{\"items\":[\"A\"]}` with it, leaving only `B`.\n- **Unknown:** The client sends revision `mystery`, which is unknown. It obtains a fresh full snapshot, illustratively `{\"items\":[\"C\"]}` at revision `gamma`, and replaces its local snapshot with it."
+    },
+    {
+      "responseId": "t006",
+      "caseId": "h1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "For fictional release R-8: compilation passed, 42 unit tests passed, and the staging payment check returned 503. The cause is unknown. Production rollout is prohibited until the staging payment check passes. The sole diagnostic artifact available is payment-check.log."
+        },
+        {
+          "role": "assistant",
+          "content": "Compilation and unit tests passed. Staging payment check failed with 503; production rollout remains gated."
+        },
+        {
+          "role": "user",
+          "content": "Give me the current release status and the single next action. Can we call this ready?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately says release is not ready or that staging failed and rollout is gated.",
+        "actionableSteps": "Identifies inspection of payment-check.log as the single next diagnostic action.",
+        "continuity": "Retains compile/unit success, staging 503, unknown cause, and rollout gate.",
+        "completeness": "Does not claim readiness, fabricate a cause, or describe a rerun as already passing."
+      },
+      "text": "No. R-8 is not ready for production. Compilation and all 42 unit tests passed, but the staging payment check returned 503. The cause is unknown, and production rollout is prohibited until that check passes.\n\nSingle next action: provide `payment-check.log` for diagnosis."
+    },
+    {
+      "responseId": "t007",
+      "caseId": "h2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Turn this fictional sandbox restore contract into an executable operator checklist; do not perform it. All seven operations are mandatory, in order: pause sandbox workers; run `vault inspect restore-7`; verify the manifest says sandbox, otherwise stop; run `vault restore restore-7 --sandbox`; run `vault verify --sandbox`; resume sandbox workers only if verification passes, otherwise leave them paused; record the restore identifier and verification result in the run log. Never target production. Keep all gates."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts with a direct sandbox-only instruction or the first required action.",
+        "actionableSteps": "Uses an ordered checklist with exact supplied commands and conditional resume behavior.",
+        "continuity": null,
+        "completeness": "Keeps all seven operations, manifest stop gate, verification gate, run-log fields, and production prohibition."
+      },
+      "text": "Sandbox only. Never target production.\n\nPrepare:\n1. Pause sandbox workers.\n2. Run `vault inspect restore-7`.\n3. Verify the manifest says `sandbox`. If it does not, stop.\n\nRestore and close:\n4. Run `vault restore restore-7 --sandbox`.\n5. Run `vault verify --sandbox`.\n6. Resume sandbox workers only if verification passes. Otherwise, leave them paused.\n7. Record restore identifier `restore-7` and the verification result in the run log."
+    },
+    {
+      "responseId": "t008",
+      "caseId": "h3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Recommend and compare every fictional export format below. Requirement: preserve both decimal precision and timezone offsets; recipients prefer readable files but fidelity wins. CSV: readable, loses timezone offsets, preserves decimals. Packed: opaque, preserves both, requires the supplied viewer. TextMap: readable, preserves both, files are twice the size of Packed. Include each trade-off; no setup commands are known."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts by recommending TextMap.",
+        "actionableSteps": "States a clear choice grounded in fidelity first and readability second; does not invent commands.",
+        "continuity": null,
+        "completeness": "Includes all three formats, precision and offset fidelity, readability, viewer requirement, and size trade-off."
+      },
+      "text": "Choose TextMap: it preserves decimal precision and timezone offsets while remaining readable. The trade-off is files twice the size of Packed.\n\n| Format | Decimal precision | Timezone offsets | Trade-off and recommendation |\n|---|---|---|---|\n| CSV | Preserved | Lost | Readable, but fails the fidelity requirement. |\n| Packed | Preserved | Preserved | Opaque and requires the supplied viewer; choose it if smaller files justify that inconvenience. |\n| TextMap | Preserved | Preserved | Readable, but twice the size of Packed; best fit for the stated preferences. |"
+    },
+    {
+      "responseId": "t009",
+      "caseId": "h4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "This fictional sync protocol has six facts: a revision is an opaque string; a client sends its last revision; an unchanged revision returns no changes; a changed revision returns a complete replacement snapshot; the client must replace rather than merge its local snapshot; an unknown revision requires a fresh full snapshot. Explain each fact and show one short example for the unchanged, changed, and unknown cases. Example values may be invented and must be labeled illustrative. No time estimate is needed."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Begins with the key full-replacement behavior or a substantive protocol explanation.",
+        "actionableSteps": "Makes the replace-versus-merge and unknown-revision behavior operationally clear, with three labeled illustrative examples.",
+        "continuity": null,
+        "completeness": "Preserves all six facts and all three examples, treats revisions as opaque, and invents no incremental merge or timing guarantees."
+      },
+      "text": "The client sends its last revision to determine whether it needs a replacement snapshot.\n\nA revision is an opaque string: treat it as an identifier. The client sends the revision associated with its last snapshot.\n\nIf the revision is unchanged, the response contains no changes. If it has changed, the response contains a complete replacement snapshot. The client must replace its local snapshot with that snapshot rather than merge them.\n\nIf the revision is unknown, the client requires a fresh full snapshot.\n\nIllustrative examples—all revision strings and snapshot contents below are invented:\n\n- **Unchanged:** The client sends `rev-a`; the revision is unchanged. The response contains no changes, so the client keeps its local snapshot.\n- **Changed:** The client sends `rev-a`; the revision has changed. Its local snapshot is `{\"items\":[\"old\"]}` and the complete replacement is `{\"items\":[\"new\"]}`. The client replaces the local snapshot with `{\"items\":[\"new\"]}`; it does not retain `old`.\n- **Unknown:** The client sends `rev-unknown`; that revision is unknown. The client requires a fresh full snapshot and uses it to replace its local snapshot."
+    },
+    {
+      "responseId": "t010",
+      "caseId": "h1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "For fictional release R-8: compilation passed, 42 unit tests passed, and the staging payment check returned 503. The cause is unknown. Production rollout is prohibited until the staging payment check passes. The sole diagnostic artifact available is payment-check.log."
+        },
+        {
+          "role": "assistant",
+          "content": "Compilation and unit tests passed. Staging payment check failed with 503; production rollout remains gated."
+        },
+        {
+          "role": "user",
+          "content": "Give me the current release status and the single next action. Can we call this ready?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately says release is not ready or that staging failed and rollout is gated.",
+        "actionableSteps": "Identifies inspection of payment-check.log as the single next diagnostic action.",
+        "continuity": "Retains compile/unit success, staging 503, unknown cause, and rollout gate.",
+        "completeness": "Does not claim readiness, fabricate a cause, or describe a rerun as already passing."
+      },
+      "text": "No. R-8 is not ready: production rollout is prohibited until the staging payment check passes.\n\nCompilation and all 42 unit tests passed. The staging payment check returned 503; its cause is unknown.\n\nSingle next action: provide `payment-check.log` for diagnosis."
+    },
+    {
+      "responseId": "t011",
+      "caseId": "h2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Turn this fictional sandbox restore contract into an executable operator checklist; do not perform it. All seven operations are mandatory, in order: pause sandbox workers; run `vault inspect restore-7`; verify the manifest says sandbox, otherwise stop; run `vault restore restore-7 --sandbox`; run `vault verify --sandbox`; resume sandbox workers only if verification passes, otherwise leave them paused; record the restore identifier and verification result in the run log. Never target production. Keep all gates."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts with a direct sandbox-only instruction or the first required action.",
+        "actionableSteps": "Uses an ordered checklist with exact supplied commands and conditional resume behavior.",
+        "continuity": null,
+        "completeness": "Keeps all seven operations, manifest stop gate, verification gate, run-log fields, and production prohibition."
+      },
+      "text": "Sandbox restore checklist — never target production.\n\n1. Pause sandbox workers.\n2. Run `vault inspect restore-7`.\n3. Verify the manifest says `sandbox`. Otherwise, stop.\n4. Run `vault restore restore-7 --sandbox`.\n5. Run `vault verify --sandbox`.\n6. Resume sandbox workers only if verification passes. Otherwise, leave them paused.\n7. Record the restore identifier and verification result in the run log."
+    },
+    {
+      "responseId": "t012",
+      "caseId": "h3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Recommend and compare every fictional export format below. Requirement: preserve both decimal precision and timezone offsets; recipients prefer readable files but fidelity wins. CSV: readable, loses timezone offsets, preserves decimals. Packed: opaque, preserves both, requires the supplied viewer. TextMap: readable, preserves both, files are twice the size of Packed. Include each trade-off; no setup commands are known."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts by recommending TextMap.",
+        "actionableSteps": "States a clear choice grounded in fidelity first and readability second; does not invent commands.",
+        "continuity": null,
+        "completeness": "Includes all three formats, precision and offset fidelity, readability, viewer requirement, and size trade-off."
+      },
+      "text": "Choose TextMap: it preserves both decimal precision and timezone offsets while remaining readable. Its trade-off is files twice the size of Packed.\n\n| Format | Decimal precision | Timezone offsets | Readability and trade-off | Recommendation |\n|---|---|---|---|---|\n| TextMap | Preserved | Preserved | Readable; twice the size of Packed | Best fit for fidelity and recipient readability |\n| Packed | Preserved | Preserved | Opaque; requires the supplied viewer; half the size of TextMap | Choose if smaller files outweigh readability |\n| CSV | Preserved | Lost | Readable, but loses required timezone information | Does not meet the requirement |\n\nNo setup commands were supplied."
+    },
+    {
+      "responseId": "t013",
+      "caseId": "h4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "This fictional sync protocol has six facts: a revision is an opaque string; a client sends its last revision; an unchanged revision returns no changes; a changed revision returns a complete replacement snapshot; the client must replace rather than merge its local snapshot; an unknown revision requires a fresh full snapshot. Explain each fact and show one short example for the unchanged, changed, and unknown cases. Example values may be invented and must be labeled illustrative. No time estimate is needed."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Begins with the key full-replacement behavior or a substantive protocol explanation.",
+        "actionableSteps": "Makes the replace-versus-merge and unknown-revision behavior operationally clear, with three labeled illustrative examples.",
+        "continuity": null,
+        "completeness": "Preserves all six facts and all three examples, treats revisions as opaque, and invents no incremental merge or timing guarantees."
+      },
+      "text": "Use the revision to decide whether the local snapshot stays or is replaced.\n\n1. A revision is an opaque string: treat it as an identifier without interpreting its contents. The client sends its last revision.\n2. If that revision is unchanged, the response contains no changes. The local snapshot stays as it is.\n3. If the revision has changed, the response contains a complete replacement snapshot. The client must replace its local snapshot, rather than merge the new data into it.\n4. If the revision is unknown, the client needs a fresh full snapshot.\n\nIllustrative examples—all revision strings and snapshot contents below are invented:\n\n- **Unchanged:** The client sends `rev-a`, which is still current. The response has no changes; the client's snapshot remains `[A]`.\n- **Changed:** The client sends `rev-a`, but the current revision is `rev-b`. The response supplies the complete snapshot `[B]`. The client replaces `[A]` with `[B]`; it must not merge them into `[A, B]`.\n- **Unknown:** The client sends `rev-old`, which is unknown. It requires a fresh full snapshot, illustrated by `[C]`, to replace its local snapshot."
+    },
+    {
+      "responseId": "t014",
+      "caseId": "h1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "For fictional release R-8: compilation passed, 42 unit tests passed, and the staging payment check returned 503. The cause is unknown. Production rollout is prohibited until the staging payment check passes. The sole diagnostic artifact available is payment-check.log."
+        },
+        {
+          "role": "assistant",
+          "content": "Compilation and unit tests passed. Staging payment check failed with 503; production rollout remains gated."
+        },
+        {
+          "role": "user",
+          "content": "Give me the current release status and the single next action. Can we call this ready?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately says release is not ready or that staging failed and rollout is gated.",
+        "actionableSteps": "Identifies inspection of payment-check.log as the single next diagnostic action.",
+        "continuity": "Retains compile/unit success, staging 503, unknown cause, and rollout gate.",
+        "completeness": "Does not claim readiness, fabricate a cause, or describe a rerun as already passing."
+      },
+      "text": "R-8 is not ready. Compilation and all 42 unit tests passed, but the staging payment check returned 503. Its cause is unknown, and production rollout is prohibited until that check passes.\n\nSingle next action: provide `payment-check.log` for diagnosis."
+    },
+    {
+      "responseId": "t015",
+      "caseId": "h2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Turn this fictional sandbox restore contract into an executable operator checklist; do not perform it. All seven operations are mandatory, in order: pause sandbox workers; run `vault inspect restore-7`; verify the manifest says sandbox, otherwise stop; run `vault restore restore-7 --sandbox`; run `vault verify --sandbox`; resume sandbox workers only if verification passes, otherwise leave them paused; record the restore identifier and verification result in the run log. Never target production. Keep all gates."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts with a direct sandbox-only instruction or the first required action.",
+        "actionableSteps": "Uses an ordered checklist with exact supplied commands and conditional resume behavior.",
+        "continuity": null,
+        "completeness": "Keeps all seven operations, manifest stop gate, verification gate, run-log fields, and production prohibition."
+      },
+      "text": "Sandbox restore checklist—never target production.\n\nBefore restoring:\n\n1. Pause sandbox workers.\n2. Run `vault inspect restore-7`.\n3. Verify that the manifest says `sandbox`. Otherwise, stop.\n\nRestore and finish:\n\n4. Run `vault restore restore-7 --sandbox`.\n5. Run `vault verify --sandbox`.\n6. Resume sandbox workers only if verification passes. Otherwise, leave them paused.\n7. Record restore identifier `restore-7` and the verification result in the run log."
+    },
+    {
+      "responseId": "t016",
+      "caseId": "h3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Recommend and compare every fictional export format below. Requirement: preserve both decimal precision and timezone offsets; recipients prefer readable files but fidelity wins. CSV: readable, loses timezone offsets, preserves decimals. Packed: opaque, preserves both, requires the supplied viewer. TextMap: readable, preserves both, files are twice the size of Packed. Include each trade-off; no setup commands are known."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts by recommending TextMap.",
+        "actionableSteps": "States a clear choice grounded in fidelity first and readability second; does not invent commands.",
+        "continuity": null,
+        "completeness": "Includes all three formats, precision and offset fidelity, readability, viewer requirement, and size trade-off."
+      },
+      "text": "Choose **TextMap**: it preserves decimal precision and timezone offsets while staying readable. Its cost is files twice the size of Packed.\n\n| Format | Decimal precision | Timezone offsets | Readability and trade-off |\n| --- | --- | --- | --- |\n| TextMap | Preserved | Preserved | Readable; files are twice the size of Packed. Best fit. |\n| Packed | Preserved | Preserved | Opaque; requires the supplied viewer. Smaller than TextMap. |\n| CSV | Preserved | Lost | Readable, but fails the timezone-offset requirement. |\n\nPacked also meets the fidelity requirement if smaller files outweigh readability and the viewer requirement. No setup commands are supplied."
+    }
+  ]
+}

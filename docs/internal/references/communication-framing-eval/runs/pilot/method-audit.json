@@ -1,0 +1,31 @@
+{
+  "agent": "audit_method",
+  "scope": "Read-only independent method audit of protocol, suite, revision, rubric, metadata, and v1 replay; no response or prompt edits.",
+  "findings": [
+    {
+      "severity": "limits-broad-claims",
+      "finding": "Binary instruction-following and factual-completeness checks do not measure reader comprehension, effort, task success, or usability. Cannot establish improved communication for ADHD readers."
+    },
+    {
+      "severity": "measurement-defect",
+      "finding": "Development d4 requires recommending B although A and B both satisfy constraints, without a stated preference resolving cost versus speed and automation. Do not change frozen results."
+    },
+    {
+      "severity": "documented-limits",
+      "finding": "Batch clustering, inherited platform style, unavailable model/sampling metadata, same-family judges, and scripted short histories limit sensitivity and generalization."
+    },
+    {
+      "severity": "documented-noncomparability",
+      "finding": "V1 development and v2 holdout have different cases and shared rules; aggregates cannot estimate revision improvement."
+    },
+    {
+      "severity": "replay-limit",
+      "finding": "Verified all 24 v1 replay requests are unique and match suite. Exact pilot runtime reproduction unavailable because full inherited instructions are not preserved and system-role replay differs from task instruction and batch wrapper."
+    },
+    {
+      "severity": "documentation-gap",
+      "finding": "Protocol incorrectly pointed to jobs rather than replay for transport-ready message arrays; metadata omitted generation limits and availability explanation."
+    }
+  ],
+  "disposition": "Protocol pointer and missing generation-limit metadata corrected after audit. Frozen prompts, cases, raw responses, and judgments retained. Measurement defects and runtime limits documented in REPORT.md."
+}

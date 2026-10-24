@@ -1,0 +1,73 @@
+{
+  "jobId": "v1-adhd-r2",
+  "version": "v1",
+  "arm": "adhd",
+  "repetition": 2,
+  "systemPrompt": "Use an ADHD-friendly communication style.\n\nPut the answer or immediately useful action before background explanation.\nFor a procedure, use numbered, bounded steps and include every necessary operation.\nWhen work is unfinished, give one concrete next action.\nKeep the response focused on the requested task.\nIn an ongoing conversation, briefly restate the relevant state.\nExpress useful time estimates in concrete units; do not invent estimates.\nState completed work and errors factually; retain genuine uncertainty.\nKeep lists manageable, aiming for at most five items per group without dropping required information.\nRemove introductory filler, redundant recaps, and closing pleasantries.\nExplain fully when requested; correctness and completeness override presentation defaults.",
+  "cases": [
+    {
+      "id": "d1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "In this fictional project, `forge test auth` runs the authentication tests. I only need the command. What do I run?"
+        }
+      ]
+    },
+    {
+      "id": "d2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write the operator procedure from this fictional import contract. Required order: (1) pause writes, (2) export a snapshot using `ledger snapshot`, (3) validate the input with `ledger validate batch.csv`, (4) import with `ledger import batch.csv`, (5) compare imported row count with the validated row count, (6) resume writes only if they match. If validation fails, do not import; if counts differ, keep writes paused and investigate. Include every requirement. Do not execute anything."
+        }
+      ]
+    },
+    {
+      "id": "d3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "We are fixing fictional checkout bug C-17. The patch is already applied. Unit tests passed. The staging integration check has not run because the staging fixture identifier is missing. Do not deploy until that check passes."
+        },
+        {
+          "role": "assistant",
+          "content": "Patch applied; unit tests passed. Staging integration remains blocked on the fixture identifier."
+        },
+        {
+          "role": "user",
+          "content": "Back after lunch. Where were we, and what do you need from me?"
+        }
+      ]
+    },
+    {
+      "id": "d4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Compare these fictional backup options and recommend one. I need restore within 20 minutes and can spend up to 15 credits monthly. A: 10 credits/month, 12-minute restore, manual daily backup. B: 14 credits/month, 8-minute restore, automatic hourly backup. C: 6 credits/month, 45-minute restore, automatic daily backup. Show all three options and their trade-offs. Do not invent other properties."
+        }
+      ]
+    },
+    {
+      "id": "d5",
+      "messages": [
+        {
+          "role": "user",
+          "content": "My fictional invoice importer failed. I have not supplied the error output, input file, or importer code. Tell me exactly which line to change."
+        }
+      ]
+    },
+    {
+      "id": "d6",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Explain all seven rules of this fictional queue, and why each matters. Facts: capacity is 100 jobs; jobs beyond capacity are rejected rather than silently dropped; a running job has a 30-second lease; workers renew the lease every 10 seconds; an expired lease makes the job available again; handlers must be idempotent because a job can run twice; only explicit acknowledgement removes a job. Explain the relationship between renewal, expiry, duplicate runs, and acknowledgement. Also, a separate dashboard color change is planned, but that is irrelevant here."
+        }
+      ]
+    }
+  ],
+  "generationInstruction": "Answer each supplied case as a separate fictional conversation. Follow systemPrompt as the requested communication style, subject to higher-priority runtime instructions. Use only the case's supplied facts. Do not execute commands, browse, inspect project source, or invent test outcomes. Return only JSON: {\"responses\":[{\"caseId\":\"d1\",\"text\":\"the unedited response you would give\"}]}. Include every case exactly once. Do not discuss this batch instruction in the responses."
+}
+

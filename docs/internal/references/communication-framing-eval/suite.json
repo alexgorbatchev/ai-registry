@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "id": "communication-framing-2026-10-16",
+  "sourceUrl": "https://github.com/ayghri/i-have-adhd/blob/main/skills/i-have-adhd/SKILL.md",
+  "design": {
+    "primaryContrast": "reader-friendly versus ADHD-friendly; the remainder of each prompt is identical",
+    "repetitionsPerArm": 2,
+    "developmentCases": 6,
+    "holdoutCases": 4,
+    "unitOfGeneration": "A fresh subagent per arm and repetition, answering a batch of independent fixed-history cases",
+    "continuityScope": "Fixed conversation-history reconstruction, not live multi-turn memory persistence",
+    "blinding": "Generators see only one arm and no grading criteria; judges see shuffled outputs and case acceptance criteria without variant labels.",
+    "sampling": "Inherited parent model; exact model snapshot, temperature, seed, and reasoning settings unavailable. No model override.",
+    "iteration": "One shared-rule revision after development grading; no holdout-driven tuning.",
+    "analysis": "Report per-criterion binary pass counts, paired disagreements, complete-response passes, and output length. No statistical significance claims; case answers within a worker are clustered.",
+    "completion": "Save every response, metadata, blinded grading, mappings, prompt versions, and per-case messages. Report unknown runtime fields and all invalid or missing rows."
+  },
+  "variants": [
+    {
+      "id": "neutral",
+      "framing": "Use a reader-friendly communication style."
+    },
+    {
+      "id": "adhd",
+      "framing": "Use an ADHD-friendly communication style."
+    }
+  ],
+  "commonRulesV1": "Put the answer or immediately useful action before background explanation.\nFor a procedure, use numbered, bounded steps and include every necessary operation.\nWhen work is unfinished, give one concrete next action.\nKeep the response focused on the requested task.\nIn an ongoing conversation, briefly restate the relevant state.\nExpress useful time estimates in concrete units; do not invent estimates.\nState completed work and errors factually; retain genuine uncertainty.\nKeep lists manageable, aiming for at most five items per group without dropping required information.\nRemove introductory filler, redundant recaps, and closing pleasantries.\nExplain fully when requested; correctness and completeness override presentation defaults.",
+  "cases": [
+    {
+      "id": "d1",
+      "split": "development",
+      "messages": [
+        {
+          "role": "user",
+          "content": "In this fictional project, `forge test auth` runs the authentication tests. I only need the command. What do I run?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "The first meaningful content is the exact command forge test auth.",
+        "actionableSteps": "Provides the exact runnable command without extra prerequisites.",
+        "continuity": null,
+        "completeness": "Includes the command, invents no flags, and adds no unrelated instructions."
+      }
+    },
+    {
+      "id": "d2",
+      "split": "development",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write the operator procedure from this fictional import contract. Required order: (1) pause writes, (2) export a snapshot using `ledger snapshot`, (3) validate the input with `ledger validate batch.csv`, (4) import with `ledger import batch.csv`, (5) compare imported row count with the validated row count, (6) resume writes only if they match. If validation fails, do not import; if counts differ, keep writes paused and investigate. Include every requirement. Do not execute anything."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with pause writes or a direct directive to follow the procedure, without background preamble.",
+        "actionableSteps": "Gives numbered bounded actions in the required order with both failure branches.",
+        "continuity": null,
+        "completeness": "Preserves all six operations, both commands, snapshot command, count comparison, and both stop conditions."
+      }
+    },
+    {
+      "id": "d3",
+      "split": "development",
+      "messages": [
+        {
+          "role": "user",
+          "content": "We are fixing fictional checkout bug C-17. The patch is already applied. Unit tests passed. The staging integration check has not run because the staging fixture identifier is missing. Do not deploy until that check passes."
+        },
+        {
+          "role": "assistant",
+          "content": "Patch applied; unit tests passed. Staging integration remains blocked on the fixture identifier."
+        },
+        {
+          "role": "user",
+          "content": "Back after lunch. Where were we, and what do you need from me?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with the actual status or the missing staging fixture identifier.",
+        "actionableSteps": "Asks specifically for the staging fixture identifier, without asking the user to redo the patch or unit tests.",
+        "continuity": "Retains patch applied, unit tests passed, integration not run, and deployment gate.",
+        "completeness": "States the blocker and does not claim integration or deployment succeeded."
+      }
+    },
+    {
+      "id": "d4",
+      "split": "development",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Compare these fictional backup options and recommend one. I need restore within 20 minutes and can spend up to 15 credits monthly. A: 10 credits/month, 12-minute restore, manual daily backup. B: 14 credits/month, 8-minute restore, automatic hourly backup. C: 6 credits/month, 45-minute restore, automatic daily backup. Show all three options and their trade-offs. Do not invent other properties."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "First substantive sentence recommends B.",
+        "actionableSteps": "Makes a clear choice justified against both constraints; no invented setup instructions.",
+        "continuity": null,
+        "completeness": "Covers all three options with costs, restore times, backup frequency/automation, and C's restore constraint failure."
+      }
+    },
+    {
+      "id": "d5",
+      "split": "development",
+      "messages": [
+        {
+          "role": "user",
+          "content": "My fictional invoice importer failed. I have not supplied the error output, input file, or importer code. Tell me exactly which line to change."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately states the missing evidence or asks for the first error message; no fabricated fix.",
+        "actionableSteps": "Requests one concrete diagnostic input, such as the error output, that can advance diagnosis.",
+        "continuity": null,
+        "completeness": "Acknowledges that the line and cause cannot be established; does not invent a file, line, command, or cause."
+      }
+    },
+    {
+      "id": "d6",
+      "split": "development",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Explain all seven rules of this fictional queue, and why each matters. Facts: capacity is 100 jobs; jobs beyond capacity are rejected rather than silently dropped; a running job has a 30-second lease; workers renew the lease every 10 seconds; an expired lease makes the job available again; handlers must be idempotent because a job can run twice; only explicit acknowledgement removes a job. Explain the relationship between renewal, expiry, duplicate runs, and acknowledgement. Also, a separate dashboard color change is planned, but that is irrelevant here."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Opens with a substantive explanation of queue behavior, without announcing the explanation.",
+        "actionableSteps": "Explains the renewal/expiry/idempotency/acknowledgement relationship usefully; does not invent operational tasks.",
+        "continuity": null,
+        "completeness": "Covers all seven facts and why each matters, with no dashboard tangent or invented exactly-once guarantee."
+      }
+    },
+    {
+      "id": "h1",
+      "split": "holdout",
+      "messages": [
+        {
+          "role": "user",
+          "content": "For fictional release R-8: compilation passed, 42 unit tests passed, and the staging payment check returned 503. The cause is unknown. Production rollout is prohibited until the staging payment check passes. The sole diagnostic artifact available is payment-check.log."
+        },
+        {
+          "role": "assistant",
+          "content": "Compilation and unit tests passed. Staging payment check failed with 503; production rollout remains gated."
+        },
+        {
+          "role": "user",
+          "content": "Give me the current release status and the single next action. Can we call this ready?"
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Immediately says release is not ready or that staging failed and rollout is gated.",
+        "actionableSteps": "Identifies inspection of payment-check.log as the single next diagnostic action.",
+        "continuity": "Retains compile/unit success, staging 503, unknown cause, and rollout gate.",
+        "completeness": "Does not claim readiness, fabricate a cause, or describe a rerun as already passing."
+      }
+    },
+    {
+      "id": "h2",
+      "split": "holdout",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Turn this fictional sandbox restore contract into an executable operator checklist; do not perform it. All seven operations are mandatory, in order: pause sandbox workers; run `vault inspect restore-7`; verify the manifest says sandbox, otherwise stop; run `vault restore restore-7 --sandbox`; run `vault verify --sandbox`; resume sandbox workers only if verification passes, otherwise leave them paused; record the restore identifier and verification result in the run log. Never target production. Keep all gates."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts with a direct sandbox-only instruction or the first required action.",
+        "actionableSteps": "Uses an ordered checklist with exact supplied commands and conditional resume behavior.",
+        "continuity": null,
+        "completeness": "Keeps all seven operations, manifest stop gate, verification gate, run-log fields, and production prohibition."
+      }
+    },
+    {
+      "id": "h3",
+      "split": "holdout",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Recommend and compare every fictional export format below. Requirement: preserve both decimal precision and timezone offsets; recipients prefer readable files but fidelity wins. CSV: readable, loses timezone offsets, preserves decimals. Packed: opaque, preserves both, requires the supplied viewer. TextMap: readable, preserves both, files are twice the size of Packed. Include each trade-off; no setup commands are known."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Starts by recommending TextMap.",
+        "actionableSteps": "States a clear choice grounded in fidelity first and readability second; does not invent commands.",
+        "continuity": null,
+        "completeness": "Includes all three formats, precision and offset fidelity, readability, viewer requirement, and size trade-off."
+      }
+    },
+    {
+      "id": "h4",
+      "split": "holdout",
+      "messages": [
+        {
+          "role": "user",
+          "content": "This fictional sync protocol has six facts: a revision is an opaque string; a client sends its last revision; an unchanged revision returns no changes; a changed revision returns a complete replacement snapshot; the client must replace rather than merge its local snapshot; an unknown revision requires a fresh full snapshot. Explain each fact and show one short example for the unchanged, changed, and unknown cases. Example values may be invented and must be labeled illustrative. No time estimate is needed."
+        }
+      ],
+      "acceptance": {
+        "answerPlacement": "Begins with the key full-replacement behavior or a substantive protocol explanation.",
+        "actionableSteps": "Makes the replace-versus-merge and unknown-revision behavior operationally clear, with three labeled illustrative examples.",
+        "continuity": null,
+        "completeness": "Preserves all six facts and all three examples, treats revisions as opaque, and invents no incremental merge or timing guarantees."
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,211 @@
+{
+  "judgments": [
+    {
+      "responseId": "s001",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s002",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s003",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s004",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": true,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s005",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s006",
+      "answerPlacement": true,
+      "actionableSteps": false,
+      "continuity": null,
+      "completeness": true,
+      "failures": [
+        {
+          "criterion": "actionableSteps",
+          "evidence": "Requests three diagnostic inputs—\"Send the error output, failing input file, and importer code\"—instead of the required one concrete diagnostic input."
+        }
+      ]
+    },
+    {
+      "responseId": "s007",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s008",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s009",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s010",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": true,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s011",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s012",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s013",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s014",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s015",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s016",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": true,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s017",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s018",
+      "answerPlacement": true,
+      "actionableSteps": false,
+      "continuity": null,
+      "completeness": true,
+      "failures": [
+        {
+          "criterion": "actionableSteps",
+          "evidence": "Requests three diagnostic inputs—\"Send those three items\" (error output, input file, and importer code)—instead of the required one concrete diagnostic input."
+        }
+      ]
+    },
+    {
+      "responseId": "s019",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s020",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s021",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s022",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": true,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s023",
+      "answerPlacement": true,
+      "actionableSteps": true,
+      "continuity": null,
+      "completeness": true,
+      "failures": []
+    },
+    {
+      "responseId": "s024",
+      "answerPlacement": true,
+      "actionableSteps": false,
+      "continuity": null,
+      "completeness": true,
+      "failures": [
+        {
+          "criterion": "actionableSteps",
+          "evidence": "Requests three diagnostic inputs—\"Send those three items\" (error output, input file, and importer code)—instead of the required one concrete diagnostic input."
+        }
+      ]
+    }
+  ]
+}

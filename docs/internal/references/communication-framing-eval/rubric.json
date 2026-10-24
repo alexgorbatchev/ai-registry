@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "criteria": {
+    "answerPlacement": "Pass if the first substantive content directly answers the latest question or gives the applicable action. Short labels/headings/code fences alone are not failures.",
+    "actionableSteps": "Pass if the response supplies the case's concrete usable next step, procedure, decision, or requested explanatory example. Explanations and comparisons do not require invented chores or numbering.",
+    "continuity": "Evaluate only cases with non-null continuity acceptance. Pass only if current state and unresolved gates are preserved without resetting completed work or claiming unfinished work succeeded.",
+    "completeness": "Pass only if every requirement in the case acceptance is covered and no material invented fact or conflicting instruction is added."
+  },
+  "gradingInstructions": "Grade each response independently against all case acceptance conditions. Binary pass/fail per applicable criterion; continuity is null when not applicable. Include a short evidence quotation or concrete omission for each failed criterion. Do not infer correctness from length or formatting alone. Do not grade against imagined author preferences. Do not provide numerical prompt quality scores.",
+  "outputShape": {
+    "judgments": [
+      {
+        "responseId": "opaque-id",
+        "answerPlacement": true,
+        "actionableSteps": true,
+        "continuity": null,
+        "completeness": true,
+        "failures": []
+      }
+    ]
+  }
+}
+

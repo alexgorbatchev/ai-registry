@@ -1,0 +1,362 @@
+{
+  "runId": "pilot",
+  "responseCount": 40,
+  "generatorSessions": 8,
+  "judgeSessions": 4,
+  "methodAuditSessions": 1,
+  "criteria": [
+    "answerPlacement",
+    "actionableSteps",
+    "continuity",
+    "completeness"
+  ],
+  "phases": [
+    {
+      "phase": "development",
+      "arms": [
+        {
+          "arm": "neutral",
+          "responses": 12,
+          "allApplicablePass": 10,
+          "criteria": {
+            "answerPlacement": {
+              "pass": 12,
+              "total": 12
+            },
+            "actionableSteps": {
+              "pass": 10,
+              "total": 12
+            },
+            "continuity": {
+              "pass": 2,
+              "total": 2
+            },
+            "completeness": {
+              "pass": 12,
+              "total": 12
+            }
+          },
+          "meanWords": 74.83333333333333,
+          "meanCharacters": 448.6666666666667,
+          "failures": [
+            {
+              "responseId": "s018",
+              "caseId": "d5",
+              "repetition": 1,
+              "failures": [
+                {
+                  "criterion": "actionableSteps",
+                  "evidence": "Requests three diagnostic inputs—\"Send those three items\" (error output, input file, and importer code)—instead of the required one concrete diagnostic input."
+                }
+              ]
+            },
+            {
+              "responseId": "s024",
+              "caseId": "d5",
+              "repetition": 2,
+              "failures": [
+                {
+                  "criterion": "actionableSteps",
+                  "evidence": "Requests three diagnostic inputs—\"Send those three items\" (error output, input file, and importer code)—instead of the required one concrete diagnostic input."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "arm": "adhd",
+          "responses": 12,
+          "allApplicablePass": 11,
+          "criteria": {
+            "answerPlacement": {
+              "pass": 12,
+              "total": 12
+            },
+            "actionableSteps": {
+              "pass": 11,
+              "total": 12
+            },
+            "continuity": {
+              "pass": 2,
+              "total": 2
+            },
+            "completeness": {
+              "pass": 12,
+              "total": 12
+            }
+          },
+          "meanWords": 74.83333333333333,
+          "meanCharacters": 458.4166666666667,
+          "failures": [
+            {
+              "responseId": "s006",
+              "caseId": "d5",
+              "repetition": 2,
+              "failures": [
+                {
+                  "criterion": "actionableSteps",
+                  "evidence": "Requests three diagnostic inputs—\"Send the error output, failing input file, and importer code\"—instead of the required one concrete diagnostic input."
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "paired": [
+        {
+          "caseId": "d1",
+          "repetition": 1,
+          "adhd": true,
+          "neutral": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d1",
+          "repetition": 2,
+          "adhd": true,
+          "neutral": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d2",
+          "repetition": 1,
+          "adhd": true,
+          "neutral": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d2",
+          "repetition": 2,
+          "neutral": true,
+          "adhd": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d3",
+          "repetition": 1,
+          "neutral": true,
+          "adhd": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d3",
+          "repetition": 2,
+          "neutral": true,
+          "adhd": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d4",
+          "repetition": 1,
+          "adhd": true,
+          "neutral": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d4",
+          "repetition": 2,
+          "neutral": true,
+          "adhd": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d5",
+          "repetition": 1,
+          "adhd": true,
+          "neutral": false,
+          "outcome": "adhd"
+        },
+        {
+          "caseId": "d5",
+          "repetition": 2,
+          "adhd": false,
+          "neutral": false,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d6",
+          "repetition": 1,
+          "neutral": true,
+          "adhd": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "d6",
+          "repetition": 2,
+          "neutral": true,
+          "adhd": true,
+          "outcome": "tie"
+        }
+      ],
+      "judging": {
+        "applicable": 76,
+        "disagreementsInitial": 3,
+        "disagreementsAfterAudit": 0
+      }
+    },
+    {
+      "phase": "holdout",
+      "arms": [
+        {
+          "arm": "neutral",
+          "responses": 8,
+          "allApplicablePass": 6,
+          "criteria": {
+            "answerPlacement": {
+              "pass": 8,
+              "total": 8
+            },
+            "actionableSteps": {
+              "pass": 6,
+              "total": 8
+            },
+            "continuity": {
+              "pass": 2,
+              "total": 2
+            },
+            "completeness": {
+              "pass": 6,
+              "total": 8
+            }
+          },
+          "meanWords": 94.75,
+          "meanCharacters": 625.625,
+          "failures": [
+            {
+              "responseId": "t002",
+              "caseId": "h1",
+              "repetition": 2,
+              "failures": [
+                "actionableSteps: 'Next action: provide `payment-check.log` for diagnosis' requests provision of the artifact instead of identifying inspection of payment-check.log as the required single diagnostic action.",
+                "completeness: The required inspection of payment-check.log is omitted; the supplied next action is only to provide it."
+              ]
+            },
+            {
+              "responseId": "t014",
+              "caseId": "h1",
+              "repetition": 1,
+              "failures": [
+                "actionableSteps: 'Single next action: provide `payment-check.log` for diagnosis' requests provision of the artifact instead of identifying inspection of payment-check.log as the required single diagnostic action.",
+                "completeness: The required inspection of payment-check.log is omitted; the supplied next action is only to provide it."
+              ]
+            }
+          ]
+        },
+        {
+          "arm": "adhd",
+          "responses": 8,
+          "allApplicablePass": 6,
+          "criteria": {
+            "answerPlacement": {
+              "pass": 8,
+              "total": 8
+            },
+            "actionableSteps": {
+              "pass": 6,
+              "total": 8
+            },
+            "continuity": {
+              "pass": 2,
+              "total": 2
+            },
+            "completeness": {
+              "pass": 6,
+              "total": 8
+            }
+          },
+          "meanWords": 101.625,
+          "meanCharacters": 644.125,
+          "failures": [
+            {
+              "responseId": "t006",
+              "caseId": "h1",
+              "repetition": 2,
+              "failures": [
+                "actionableSteps: 'Single next action: provide `payment-check.log` for diagnosis' requests provision of the artifact instead of identifying inspection of payment-check.log as the required single diagnostic action.",
+                "completeness: The required inspection of payment-check.log is omitted; the supplied next action is only to provide it."
+              ]
+            },
+            {
+              "responseId": "t010",
+              "caseId": "h1",
+              "repetition": 1,
+              "failures": [
+                "actionableSteps: 'Single next action: provide `payment-check.log` for diagnosis' requests provision of the artifact instead of identifying inspection of payment-check.log as the required single diagnostic action.",
+                "completeness: The required inspection of payment-check.log is omitted; the supplied next action is only to provide it."
+              ]
+            }
+          ]
+        }
+      ],
+      "paired": [
+        {
+          "caseId": "h1",
+          "repetition": 1,
+          "adhd": false,
+          "neutral": false,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "h1",
+          "repetition": 2,
+          "neutral": false,
+          "adhd": false,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "h2",
+          "repetition": 1,
+          "adhd": true,
+          "neutral": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "h2",
+          "repetition": 2,
+          "adhd": true,
+          "neutral": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "h3",
+          "repetition": 1,
+          "adhd": true,
+          "neutral": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "h3",
+          "repetition": 2,
+          "neutral": true,
+          "adhd": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "h4",
+          "repetition": 1,
+          "adhd": true,
+          "neutral": true,
+          "outcome": "tie"
+        },
+        {
+          "caseId": "h4",
+          "repetition": 2,
+          "neutral": true,
+          "adhd": true,
+          "outcome": "tie"
+        }
+      ],
+      "judging": {
+        "applicable": 52,
+        "disagreementsInitial": 0,
+        "disagreementsAfterAudit": 0
+      }
+    }
+  ],
+  "interpretation": "Exploratory only. A one-response development difference and a holdout tie do not demonstrate a reliable framing advantage.",
+  "postHocSensitivity": {
+    "caseId": "h1",
+    "reason": "The case names an available log but does not supply its contents; requesting it is a plausible step toward inspection. Strict graders fail actionableSteps and completeness for all four h1 responses.",
+    "alternative": "If log provision is accepted as a valid diagnostic next action and status completeness is assessed independently, both holdout arms have 8/8 all-criteria passes. This is post hoc and does not replace frozen-rubric results."
+  }
+}

@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, readdir, rm, writeFile } from "fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { basename, join } from "path";
 import { homedir } from "os";
@@ -201,10 +201,10 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     for (const stagedAgent of stagedAgents) {
       if (!stagedAgent.isFile()) continue;
 
-      await context.buildSupport.copyPathWithTemplateVariables(
-        join(agentStagingDir, stagedAgent.name),
+      // Agents are generated artifacts, not source files to fingerprint or recover edits into.
+      await Bun.write(
         join(agentOutputDir, stagedAgent.name),
-        context.templateContext,
+        Bun.file(join(agentStagingDir, stagedAgent.name)),
       );
     }
 

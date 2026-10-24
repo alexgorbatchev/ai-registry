@@ -196,10 +196,10 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
 
       const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
       if (existsSync(stagedAppendSystemPath)) {
-        await context.buildSupport.copyPathWithTemplateVariables(
-          stagedAppendSystemPath,
+        // This prompt is generated from the profile, not an editable source file.
+        await Bun.write(
           join(visibleProfileDir, APPEND_SYSTEM_FILE_NAME),
-          context.templateContext,
+          Bun.file(stagedAppendSystemPath),
         );
       }
 

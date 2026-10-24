@@ -98,6 +98,38 @@ describe("OpenCode harness build plugin", () => {
     await rm(TEST_ROOT, { force: true, recursive: true });
   });
 
+  it("keeps source fingerprints readable after generated agent staging is removed", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "harnesses/opencode/settings.json", "{}\n");
+    const sourceChecksums = new Map<string, string>();
+    const sourcePaths = Object.assign(new Map<string, string>(), { sourceChecksums });
+    const context = createUnifiedContext(repositoryRoot);
+    context.buildSupport = {
+      ...context.buildSupport,
+      copyDirectoryWithTemplateVariables: (source, target, variables) =>
+        copyDirectoryWithTemplateVariables(source, target, variables, sourcePaths),
+      copyPathWithTemplateVariables: (source, target, variables) =>
+        copyPathWithTemplateVariables(source, target, variables, sourcePaths),
+    };
+    await getStageProfile()(createProfileContext(repositoryRoot, {
+      globalMatchedSkills: [],
+      profileLocalSkills: [],
+      buildSupport: context.buildSupport,
+    }));
+    const stagedAgentPath = join(context.outputDir, ".opencode-agents", "developer.md");
+    const agentContent = await Bun.file(stagedAgentPath).text();
+
+    await getFinalizeOutput()(context);
+
+    expect(await Bun.file(stagedAgentPath).exists()).toBe(false);
+    expect(await Bun.file(join(context.outputDir, "opencode", "agents", "developer.md")).text()).toBe(agentContent);
+    for (const [sourcePath, checksum] of sourceChecksums) {
+      expect(new Bun.CryptoHasher("sha256").update(await Bun.file(sourcePath).bytes()).digest("hex")).toBe(checksum);
+    }
+    expect(sourceChecksums.size).toBe(1);
+    expect(sourcePaths.has(join(context.outputDir, "opencode", "agents", "developer.md"))).toBe(false);
+  });
+
   it("adds a harness-name skill wildcard to generated agent permissions", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");

@@ -15,6 +15,7 @@ import {
   type IUnifiedHarnessBuildContext,
 } from "../../lib/harnessBuild";
 import { createRuntimeDirectoryRegistry } from "../../lib/generatedOutputUtils";
+import { createSettingsSyncRegistry } from "../../lib/settingsSync/createSettingsSyncRegistry";
 
 const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..", "..");
 const TMP_DIR = resolve(REPO_ROOT, ".tmp");
@@ -37,6 +38,7 @@ beforeAll(async () => {
       stageProfileAssets,
       writeBinScript,
       ensureRuntimeDirectory: createRuntimeDirectoryRegistry(outputDir).ensureRuntimeDirectory,
+      syncSettingsFile: createSettingsSyncRegistry(outputDir).syncSettingsFile,
     },
   };
   mkdirSync(context.harnessDir, { recursive: true });
@@ -68,7 +70,7 @@ interface IHelpResult {
 
 function runHelpAtPath(commandPath: string): IHelpResult {
   const result = spawnSync(commandPath, ["--help"], {
-    cwd: REPOSITORY_ROOT,
+    cwd: REPO_ROOT,
     encoding: "utf8",
   });
 

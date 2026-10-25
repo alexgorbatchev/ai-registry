@@ -319,13 +319,15 @@ describe("generatedOutputUtils", () => {
       expect(drift).toEqual([]);
     });
 
-    it("keeps a synced settings file that an older manifest still tracked as managed", async () => {
+    it("preserves a synced settings edit after preflight even when an older manifest tracked it", async () => {
       const repositoryRoot = await createTestDirectory();
       const outputDir = join(repositoryRoot, ".output");
       const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
 
       await writeTestFile(repositoryRoot, ".output/claude-code/default/settings.json", '{ "model": "opus" }\n');
       await writeTestFile(repositoryRoot, ".tmp/generated-output-staging/claude-code/default/settings.json", "{}\n");
+      const expectedCurrentEntries = await collectGeneratedOutputEntries(outputDir, { syncedFilePaths });
+      await writeTestFile(repositoryRoot, ".output/claude-code/default/settings.json", '{ "model": "sonnet" }\n');
 
       await syncManagedGeneratedOutputs({
         nextEntries: await collectGeneratedOutputEntries(stagingDir, { syncedFilePaths }),
@@ -337,10 +339,11 @@ describe("generatedOutputUtils", () => {
           "claude-code/default/settings.json": { kind: "file", checksum: "generated" },
         }),
         syncedFilePaths,
+        expectedCurrentEntries,
       });
 
       expect(await readFile(join(outputDir, "claude-code", "default", "settings.json"), "utf-8")).toBe(
-        '{ "model": "opus" }\n',
+        '{ "model": "sonnet" }\n',
       );
     });
   });

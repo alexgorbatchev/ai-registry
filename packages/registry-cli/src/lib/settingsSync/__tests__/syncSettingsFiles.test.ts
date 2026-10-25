@@ -95,7 +95,7 @@ async function runSync(
 // Writes the registry source plus the copy the build renders from it.
 async function writeSource(layout: ITestLayout, sourceText: string): Promise<void> {
   await writeTestFile(layout.sourcePath, sourceText);
-  await writeTestFile(layout.stagedPath, sourceText.replaceAll("{{repo_root}}", layout.rootDir));
+  await writeTestFile(layout.stagedPath, sourceText.replaceAll("<%- repo_root %>", layout.rootDir));
 }
 
 afterEach(() => {
@@ -111,7 +111,7 @@ afterAll(async () => {
 describe("syncSettingsFiles", () => {
   it("installs the rendered settings and records them as the base on the first build", async () => {
     const layout = await createLayout();
-    const sourceText = '{\n  "plugin": ["file://{{repo_root}}/vendor/a.ts"]\n}\n';
+    const sourceText = '{\n  "plugin": ["file://<%- repo_root %>/vendor/a.ts"]\n}\n';
     await writeSource(layout, sourceText);
 
     await runSync(layout);
@@ -126,7 +126,7 @@ describe("syncSettingsFiles", () => {
   it("writes harness edits back to the source with repository paths turned back into template tags", async () => {
     const layout = await createLayout();
     const logSpy = spyOn(console, "log").mockImplementation(() => {});
-    await writeSource(layout, '{\n  // shared plugins\n  "plugin": ["file://{{repo_root}}/vendor/a.ts"]\n}\n');
+    await writeSource(layout, '{\n  // shared plugins\n  "plugin": ["file://<%- repo_root %>/vendor/a.ts"]\n}\n');
     await runSync(layout);
     await writeTestFile(
       layout.livePath,
@@ -140,8 +140,8 @@ describe("syncSettingsFiles", () => {
         "{",
         "  // shared plugins",
         '  "plugin": [',
-        '    "file://{{repo_root}}/vendor/a.ts",',
-        '    "file://{{repo_root}}/vendor/b.ts"',
+        '    "file://<%- repo_root %>/vendor/a.ts",',
+        '    "file://<%- repo_root %>/vendor/b.ts"',
         "  ],",
         '  "model": "opus"',
         "}",

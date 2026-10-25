@@ -3,9 +3,11 @@ sandbox_mode = "danger-full-access"
 # model_auto_compact_token_limit = 150000
 # model_auto_compact_token_limit_scope = "total"
 screen_reader_detection_done = true
-model = "gpt-6.1-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "high"
 service_tier = "default"
+model_auto_compact_token_limit = 150000
+model_auto_compact_token_limit_scope = "total"
 
 [desktop]
 external-agent-import-sync-enabled = false
@@ -18,8 +20,10 @@ status_line = [
   "context-window-size",
   "five-hour-limit",
   "weekly-limit",
+  "used-tokens",
 ]
 screen_reader_detection_done = true
+status_line_use_colors = true
 
 [shell_environment_policy.set]
 AGENT = "1"

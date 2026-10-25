@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-14 10:29
-last_modified: 2026-10-24 10:52
+last_modified: 2026-10-24 11:06
 status: current
 ---
 
@@ -373,3 +373,17 @@ The merge preparation incorrectly treated I020's unimplemented coverage gate as 
 The user clarified that the active objective is fixing instructions that prevent autonomous completion. Root and shared guidance, merge-to-main, registry integration, and docs-writer's authoring reference/templates now distinguish policy maintenance from enforcement implementation. Newly specified but unimplemented enforcement is recorded as follow-up work; it does not silently expand an instruction-maintenance task or block its commit/merge. Existing applicable checks, failing-check repairs, and behavior-changing implementation requirements remain intact. User-deferred operations suspend only themselves and actual dependents. Progress records do not create additional gates. The README's incorrect scope and I031's blanket hold are corrected; the waiver request is withdrawn.
 
 All three changed skill bundles validate, and the change's whitespace check passes. Written acceptance review covers an instruction audit with missing enforcement (record follow-up, validate, and land authorized work), an existing failing check (repair under prerequisite authority), a behavior-changing implementation task (retain meaningful tests and the coverage policy), and paused live regeneration (preserve runtime data and continue independent source verification/integration). These are instruction reviews, not claims of executed agent behavior or coverage compliance. The prepared code revision has 350 passing package tests, 67 passing cleanup tests, and 67 passing reviewer tests, plus root typechecking and cleanup type/lint/format checks. No live rebuild or bootstrap was run; I020 and live I031 verification remain open.
+
+## I043: PR review requests repeat approval for an already-approved queue
+
+Post-integration review at `867f006` found a repeated approval gate in the registry-owned [PR review reference](skills/agent/github-pr/references/reviewing.md:49), introduced by the merged PR-feedback workflow. Step 6 says:
+
+> Wait for the user's direction before replying, resolving threads, or changing code. When the user approves an action that needs code changes or other work, queue it and move on to the next comment; start queued work only after every comment and every issue reviewers did not raise has been reviewed, then confirm the full queue before starting.
+
+The comment-by-comment interview can be intentional. The additional full-queue confirmation can nevertheless stop execution after each queued action has already been approved. Step 7 already honors approval of a reply action without another question.
+
+Proposed replacement for step 6, pending Q45:
+
+> Use existing applicable authorization before replying, resolving threads, or changing code; ask only for actions or decisions it does not cover. During a comment-by-comment review, queue approved code changes and other work and continue to the next comment. After all comments and additional findings have been reviewed, summarize the approved queue and execute it without another confirmation. Honor an explicit request to wait for final approval. If the combined queue exposes conflicting decisions or requires additional scope, suspend only the affected actions, ask the exact unresolved question, and continue independent approved work.
+
+Written acceptance review: individually approved actions execute after the interview; an explicit final-approval hold remains in force; a conflict or newly required scope suspends only dependent actions. This is a proposed instruction change, not executed agent behavior. The source workflow is unchanged pending the decision. No build, live output, session data, PR, or remote state is changed by this finding.

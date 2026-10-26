@@ -32,15 +32,21 @@ const COMMAND_SKILLS_STAGING_DIR_NAME = ".codex-command-skills";
 const CONFIG_FILE_NAME = "config.toml";
 
 // Codex keys that never reach the registry source: project trust levels, skill
-// toggles, and hook trust hashes keyed by absolute local paths; the bundled
-// marketplace Codex points at its own home's `.tmp/`; acknowledgement notices and
-// notice counters Codex stamps itself; and MCP server fields that can hold credentials.
+// toggles, and hook trust hashes keyed by absolute local paths; entries Codex and the
+// ChatGPT desktop app point at machine-local binaries and caches (the computer-use
+// `notify` hook, the bundled and primary-runtime marketplaces, and the app's REPL MCP
+// servers); acknowledgement notices and notice counters Codex stamps itself; and MCP
+// server fields that can hold credentials.
 const CODEX_LIVE_ONLY_KEY_PATHS = [
   ["projects"],
   ["notice"],
   ["skills", "config"],
   ["hooks", "state"],
+  ["notify"],
   ["marketplaces", "openai-bundled"],
+  ["marketplaces", "openai-primary-runtime"],
+  ["mcp_servers", "node_repl"],
+  ["mcp_servers", "cua_repl"],
   ["tui", "model_availability_nux"],
   ["mcp_servers", "*", "env"],
   ["mcp_servers", "*", "http_headers"],

@@ -16,6 +16,7 @@
     "scheduled:update": "bun run packages/registry-cli/src/bin/scheduled-update.ts",
     "prepare": "bun run packages/registry-cli/src/bin/install-git-hooks.ts",
     "typecheck": "tsc -p tsconfig.json",
+    "coverage": "bun run --cwd packages/registry-cli coverage",
     "sync:opencode-docs": "air-sync-opencode-docs",
     "skills:add": "air-add-vendored-skill",
     "skills:list": "npx skills add . --list",

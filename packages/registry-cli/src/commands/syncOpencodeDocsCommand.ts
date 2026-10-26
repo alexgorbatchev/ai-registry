@@ -126,9 +126,9 @@ function getLocaleDirectories(entries: IGitHubContentEntry[]): Set<string> {
 async function collectFiles(
   dependencies: ISyncOpencodeDocsDependencies,
   relativePath: string,
+  entries: IGitHubContentEntry[],
   localeDirectories: Set<string>,
 ): Promise<IFileToSync[]> {
-  const entries = await listDirectory(dependencies, relativePath);
   const files: IFileToSync[] = [];
   for (const entry of entries) {
     const entryRelativePath = getRelativePath(entry.path);
@@ -136,7 +136,8 @@ async function collectFiles(
       if (!relativePath && localeDirectories.has(entry.name)) {
         continue;
       }
-      files.push(...(await collectFiles(dependencies, entryRelativePath, localeDirectories)));
+      const childEntries = await listDirectory(dependencies, entryRelativePath);
+      files.push(...(await collectFiles(dependencies, entryRelativePath, childEntries, localeDirectories)));
       continue;
     }
     files.push({
@@ -182,7 +183,7 @@ export async function syncOpencodeDocsCommand(
   try {
     const rootEntries = await listDirectory(dependencies, "");
     const localeDirectories = getLocaleDirectories(rootEntries);
-    const files = await collectFiles(dependencies, "", localeDirectories);
+    const files = await collectFiles(dependencies, "", rootEntries, localeDirectories);
 
     if (files.length === 0) {
       throw new Error(`No English docs found under ${SOURCE_DOCS_PATH}`);

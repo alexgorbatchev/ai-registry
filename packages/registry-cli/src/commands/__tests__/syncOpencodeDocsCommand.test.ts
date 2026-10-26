@@ -102,10 +102,9 @@ describe("syncOpencodeDocsCommand", () => {
       "my page.mdx",
     ]);
     expect(await readFile(join(docsDir, "my page.mdx"), "utf-8")).toBe("# My page\n");
-    expect(requests.filter((request) => request.url.startsWith(API_ROOT)).map((request) => request.authorization)).toEqual([
-      "Bearer secret-token",
-      "Bearer secret-token",
-      "Bearer secret-token",
+    expect(requests.filter((request) => request.url.startsWith(API_ROOT))).toEqual([
+      { url: `${API_ROOT}?ref=dev`, authorization: "Bearer secret-token" },
+      { url: `${API_ROOT}/guides?ref=dev`, authorization: "Bearer secret-token" },
     ]);
     expect(logLines).toEqual([
       `Synced 3 English doc files into ${docsDir}`,

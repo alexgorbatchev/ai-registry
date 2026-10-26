@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rename, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
-import { getRegistryPaths } from "../lib/getRegistryPaths";
+import { getRegistryPaths, type IRegistryPaths } from "../lib/getRegistryPaths";
 
 const SOURCE_OWNER = "anomalyco";
 const SOURCE_REPO = "opencode";
@@ -20,6 +20,12 @@ type IGitHubContentEntry = {
 type IFileToSync = {
   relativePath: string;
   downloadUrl: string;
+};
+
+export type ISyncOpencodeDocsDependencies = {
+  registryPaths: IRegistryPaths;
+  fetch: (url: string, init: RequestInit) => Promise<Response>;
+  githubToken?: string;
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -54,20 +60,19 @@ function isGitHubContentEntryList(value: unknown): value is IGitHubContentEntry[
   return Array.isArray(value) && value.every((entry) => isGitHubContentEntry(entry));
 }
 
-function getGitHubHeaders(): HeadersInit {
+function getGitHubHeaders(token: string | undefined): HeadersInit {
   const headers = new Headers({
     Accept: "application/vnd.github+json",
     "User-Agent": "ai-registry-opencode-docs-sync",
   });
-  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
   return headers;
 }
 
-async function fetchJson(url: string): Promise<unknown> {
-  const response = await fetch(url, { headers: getGitHubHeaders() });
+async function fetchJson(dependencies: ISyncOpencodeDocsDependencies, url: string): Promise<unknown> {
+  const response = await dependencies.fetch(url, { headers: getGitHubHeaders(dependencies.githubToken) });
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`GitHub API request failed for ${url}: ${response.status} ${response.statusText}\n${errorText}`);
@@ -75,8 +80,8 @@ async function fetchJson(url: string): Promise<unknown> {
   return response.json();
 }
 
-async function downloadFile(url: string): Promise<Uint8Array> {
-  const response = await fetch(url, {
+async function downloadFile(dependencies: ISyncOpencodeDocsDependencies, url: string): Promise<Uint8Array> {
+  const response = await dependencies.fetch(url, {
     headers: {
       "User-Agent": "ai-registry-opencode-docs-sync",
     },
@@ -100,10 +105,10 @@ function getFallbackDownloadUrl(relativePath: string): string {
   return encodeURI(`${RAW_CONTENT_BASE_URL}/${SOURCE_DOCS_PATH}/${relativePath}`);
 }
 
-async function listDirectory(relativePath: string): Promise<IGitHubContentEntry[]> {
+async function listDirectory(dependencies: ISyncOpencodeDocsDependencies, relativePath: string): Promise<IGitHubContentEntry[]> {
   const url = new URL(`${GITHUB_API_BASE_URL}/${getSourcePath(relativePath)}`);
   url.searchParams.set("ref", SOURCE_REF);
-  const payload = await fetchJson(url.toString());
+  const payload = await fetchJson(dependencies, url.toString());
   if (!isGitHubContentEntryList(payload)) {
     throw new Error(`Unexpected GitHub directory payload for ${relativePath || SOURCE_DOCS_PATH}`);
   }
@@ -119,10 +124,11 @@ function getLocaleDirectories(entries: IGitHubContentEntry[]): Set<string> {
 }
 
 async function collectFiles(
+  dependencies: ISyncOpencodeDocsDependencies,
   relativePath: string,
   localeDirectories: Set<string>,
 ): Promise<IFileToSync[]> {
-  const entries = await listDirectory(relativePath);
+  const entries = await listDirectory(dependencies, relativePath);
   const files: IFileToSync[] = [];
   for (const entry of entries) {
     const entryRelativePath = getRelativePath(entry.path);
@@ -130,7 +136,7 @@ async function collectFiles(
       if (!relativePath && localeDirectories.has(entry.name)) {
         continue;
       }
-      files.push(...(await collectFiles(entryRelativePath, localeDirectories)));
+      files.push(...(await collectFiles(dependencies, entryRelativePath, localeDirectories)));
       continue;
     }
     files.push({
@@ -141,35 +147,49 @@ async function collectFiles(
   return files;
 }
 
-async function writeSyncedFiles(stagingDocsDir: string, files: IFileToSync[]): Promise<void> {
+async function writeSyncedFiles(
+  dependencies: ISyncOpencodeDocsDependencies,
+  stagingDocsDir: string,
+  files: IFileToSync[],
+): Promise<void> {
   await Promise.all(
     files.map(async (file) => {
       const destinationPath = join(stagingDocsDir, file.relativePath);
       await mkdir(dirname(destinationPath), { recursive: true });
-      await writeFile(destinationPath, await downloadFile(file.downloadUrl));
+      await writeFile(destinationPath, await downloadFile(dependencies, file.downloadUrl));
     }),
   );
 }
 
-export async function syncOpencodeDocsCommand(): Promise<void> {
-  const { root, temp, harnesses } = getRegistryPaths();
+function createDefaultDependencies(): ISyncOpencodeDocsDependencies {
+  return {
+    registryPaths: getRegistryPaths(),
+    fetch: (url, init) => fetch(url, init),
+    githubToken: process.env.GITHUB_TOKEN || process.env.GH_TOKEN,
+  };
+}
+
+export async function syncOpencodeDocsCommand(
+  dependencies: ISyncOpencodeDocsDependencies = createDefaultDependencies(),
+): Promise<void> {
+  const { temp, harnesses } = dependencies.registryPaths;
   const targetDocsDir = join(harnesses, "opencode", "docs");
-  
+
   await mkdir(temp, { recursive: true });
   const stagingRootDir = await mkdtemp(join(temp, "opencode-docs-"));
   const stagingDocsDir = join(stagingRootDir, "docs");
 
   try {
-    const rootEntries = await listDirectory("");
+    const rootEntries = await listDirectory(dependencies, "");
     const localeDirectories = getLocaleDirectories(rootEntries);
-    const files = await collectFiles("", localeDirectories);
+    const files = await collectFiles(dependencies, "", localeDirectories);
 
     if (files.length === 0) {
       throw new Error(`No English docs found under ${SOURCE_DOCS_PATH}`);
     }
 
     await mkdir(stagingDocsDir, { recursive: true });
-    await writeSyncedFiles(stagingDocsDir, files);
+    await writeSyncedFiles(dependencies, stagingDocsDir, files);
 
     await rm(targetDocsDir, { force: true, recursive: true });
     await rename(stagingDocsDir, targetDocsDir);

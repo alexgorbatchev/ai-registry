@@ -13,9 +13,7 @@ async function isGitWorktree(root: string): Promise<boolean> {
   }
 }
 
-export async function installGitHooksCommand(): Promise<void> {
-  const { root } = getRegistryPaths();
-  
+export async function installGitHooksCommand(root: string = getRegistryPaths().root): Promise<void> {
   if (!(await isGitWorktree(root))) {
     console.log("Skipping Git hook install outside a Git worktree.");
     return;

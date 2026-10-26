@@ -1,6 +1,13 @@
-import { $ } from "bun";
 import { getRegistryPaths } from "../lib/getRegistryPaths";
+import { runCommand, type IRunCommandSpawn } from "../lib/runCommand";
 import { relocateVendoredSkill } from "../lib/vendoredSkillUtils";
+
+export type IVendoredSkillCommandDependencies = {
+  argv: string[];
+  root: string;
+  relocate: typeof relocateVendoredSkill;
+  spawn?: IRunCommandSpawn;
+};
 
 type IParsedAddCommand = {
   source: string;
@@ -56,8 +63,8 @@ function tokenizeCommand(command: string): string[] {
   return tokens;
 }
 
-function getRawCommand(): string {
-  const rawCommand = process.argv.slice(2).join(" ").trim();
+function getRawCommand(argv: string[]): string {
+  const rawCommand = argv.slice(2).join(" ").trim();
   if (!rawCommand) {
     throw new Error(
       "Missing command. Example: bun run skills:add 'npx skills add https://github.com/shadcn/ui --skill shadcn'",
@@ -120,19 +127,29 @@ function parseAddCommand(command: string): IParsedAddCommand {
   return { source, skillNames };
 }
 
-export async function addVendoredSkillCommand(): Promise<void> {
-  const rawCommand = getRawCommand();
-  const parsedCommand = parseAddCommand(rawCommand);
-  const { root } = getRegistryPaths();
+function createDefaultDependencies(): IVendoredSkillCommandDependencies {
+  return { argv: process.argv, root: getRegistryPaths().root, relocate: relocateVendoredSkill };
+}
+
+export async function addVendoredSkillCommand(
+  dependencies: IVendoredSkillCommandDependencies = createDefaultDependencies(),
+): Promise<void> {
+  const parsedCommand = parseAddCommand(getRawCommand(dependencies.argv));
+  const { root } = dependencies;
 
   console.log(`Vendoring ${parsedCommand.skillNames.length} external skill(s) from ${parsedCommand.source}...`);
 
   for (const skillName of parsedCommand.skillNames) {
     console.log(`\nAdding ${skillName}`);
-    await $`npx skills add ${parsedCommand.source} --skill ${skillName} -a openclaw --copy -y`.cwd(root);
-    await relocateVendoredSkill(root, skillName, parsedCommand.source);
+    await runCommand({
+      cmd: ["npx", "skills", "add", parsedCommand.source, "--skill", skillName, "-a", "openclaw", "--copy", "-y"],
+      cwd: root,
+      description: `vendor skill ${skillName}`,
+      spawn: dependencies.spawn,
+    });
+    await dependencies.relocate(root, skillName, parsedCommand.source);
   }
 
   console.log("\nRebuilding generated outputs...");
-  await $`bun run build`.cwd(root);
+  await runCommand({ cmd: ["bun", "run", "build"], cwd: root, description: "build generated outputs", spawn: dependencies.spawn });
 }

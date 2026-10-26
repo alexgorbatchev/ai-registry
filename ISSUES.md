@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-14 10:29
-last_modified: 2026-10-24 11:06
+last_modified: 2026-10-25 08:17
 status: current
 ---
 
@@ -24,7 +24,7 @@ The interactive checkpoints in these explicitly user-invoked workflows are inten
 
 ## I002: AGENTS refresh paths corrected
 
-[commands/--refresh-agents-md.md](commands/--refresh-agents-md.md) now references the docs-writer skill and its two resources through `{{skills_dir}}/agent/docs-writer/...`, replacing the obsolete `skills/docs-writer/...` paths. The canonical template resolves independently of the consuming project's working directory.
+[commands/--refresh-agents-md.md](commands/--refresh-agents-md.md) now references the docs-writer skill and its two resources through `<%- skills_dir %>/agent/docs-writer/...`, replacing the obsolete `skills/docs-writer/...` paths. The canonical template resolves independently of the consuming project's working directory.
 
 Typechecking and output compilation pass. All 21 references across seven staged command copies resolve to existing source files. The current successful unified build also applies these source changes to active outputs.
 

@@ -18,7 +18,7 @@ import {
   type ITemplateContext,
   type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
-import { collectGeneratedOutputEntries, createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
+import { collectGeneratedOutputEntries } from "../../../lib/generatedOutputUtils";
 import {
   createSettingsSyncRegistry,
   type ISettingsSyncRegistry,
@@ -28,13 +28,14 @@ import { syncBackModifiedFiles } from "../../../commands/buildCommand";
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "codex-build-tests");
 const originalArgv: string[] = [...process.argv];
 const originalCodexHome: string | undefined = process.env.CODEX_HOME;
+const originalXdgDataHome: string | undefined = process.env.XDG_DATA_HOME;
+const TEST_XDG_DATA_HOME = join(TEST_ROOT, "xdg-data-home");
 
 type IProfileContextOverrides = {
   globalMatchedSkills?: string[];
   globalMatchedCommands?: string[];
   profileLocalSkills?: string[];
   profileLocalCommands?: string[];
-  runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry;
   settingsSyncRegistry?: ISettingsSyncRegistry;
   sourcePathByOutputPath?: Map<string, string>;
   systemPrompt?: string;
@@ -64,7 +65,6 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
 
 function createBuildSupport(
   repositoryRoot: string,
-  runtimeDirectoryRegistry: IRuntimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")),
   sourcePathByOutputPath?: Map<string, string>,
   settingsSyncRegistry: ISettingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output")),
 ): IBuildSupport {
@@ -76,7 +76,6 @@ function createBuildSupport(
       copyDirectoryWithTemplateVariables(sourceDir, targetDir, context, sourcePathByOutputPath),
     copyPathWithTemplateVariables: (sourcePath, targetPath, context) =>
       copyPathWithTemplateVariables(sourcePath, targetPath, context, sourcePathByOutputPath),
-    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
     syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 }
@@ -104,7 +103,6 @@ function createProfileContext(
     templateContext: createTemplateContext(repositoryRoot),
     buildSupport: createBuildSupport(
       repositoryRoot,
-      overrides.runtimeDirectoryRegistry,
       overrides.sourcePathByOutputPath,
       overrides.settingsSyncRegistry,
     ),
@@ -116,7 +114,7 @@ function createUnifiedContext(repositoryRoot: string, sourcePathByOutputPath?: M
     harnessDir: join(repositoryRoot, "harnesses", "codex"),
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot, undefined, sourcePathByOutputPath),
+    buildSupport: createBuildSupport(repositoryRoot, sourcePathByOutputPath),
   };
 }
 
@@ -139,11 +137,17 @@ describe("Codex harness build plugin", () => {
   beforeEach(() => {
     process.argv = ["bun", "scripts/bootstrap.ts"];
     delete process.env.CODEX_HOME;
+    process.env.XDG_DATA_HOME = TEST_XDG_DATA_HOME;
   });
 
   afterEach(async () => {
     process.argv = [...originalArgv];
     process.env.CODEX_HOME = originalCodexHome;
+    if (originalXdgDataHome === undefined) {
+      delete process.env.XDG_DATA_HOME;
+    } else {
+      process.env.XDG_DATA_HOME = originalXdgDataHome;
+    }
     await rm(TEST_ROOT, { force: true, recursive: true });
   });
 
@@ -157,8 +161,7 @@ describe("Codex harness build plugin", () => {
     await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "---\ndescription: Test workflow\n---\nLocal command.\n");
     await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
 
-    const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output"));
-    await getStageProfile()(createProfileContext(repositoryRoot, "default", { runtimeDirectoryRegistry }));
+    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
     await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
     expect(existsSync(join(repositoryRoot, ".output", "codex", "default", "prompts"))).toBe(false);
     expect(await Bun.file(join(repositoryRoot, ".output", "codex", "default", "skills", "command-review", "agents", "openai.yaml")).text()).toBe("policy:\n  allow_implicit_invocation: false\n");
@@ -166,14 +169,13 @@ describe("Codex harness build plugin", () => {
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "AGENTS.md"), "utf-8")).toBe(
       "Follow the repo guidance.\nEscalate risky changes.\n",
     );
-    // Codex owns these afterwards, so they are runtime directories, not manifest entries.
-    for (const runtimeDirName of [".tmp", "log", "sessions"]) {
-      expect((await lstat(join(repositoryRoot, ".output", "codex", "default", runtimeDirName))).isDirectory()).toBe(true);
-    }
-    expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).toEqual([
-      "codex/default/.tmp",
-      "codex/default/log",
-      "codex/default/sessions",
+    // Sessions, logs, and databases belong to the real `~/.codex` home that bootstrap
+    // links these entries into, so the build creates none of them.
+    expect((await readdir(join(repositoryRoot, ".output", "codex", "default"))).sort()).toEqual([
+      "AGENTS.md",
+      "config.toml",
+      "rules",
+      "skills",
     ]);
     expect(await readFile(join(repositoryRoot, ".output", "codex", "default", "skills", "command-review", "SKILL.md"), "utf-8")).toBe(
       "---\ndescription: Test workflow\n---\nReview the changes.\n",
@@ -369,12 +371,12 @@ if [ -z "$real_binary" ]; then
   exit 1
 fi
 
-CODEX_HOME="<%- output_dir %>/codex/developer" exec "$real_binary" "$@"
+CODEX_HOME="\${XDG_DATA_HOME:-\$HOME/.local/share}/ai-registry/codex/profiles/developer" exec "$real_binary" "$@"
 "
 `);
   });
 
-  it("links the default Codex profile when bootstrap did not request an override", async () => {
+  it("applies the default Codex profile when bootstrap did not request an override", async () => {
     const outputDir = await createTestDirectory();
     const profilePath = join(outputDir, "codex", "default");
     await mkdir(profilePath, { recursive: true });
@@ -383,6 +385,7 @@ CODEX_HOME="<%- output_dir %>/codex/developer" exec "$real_binary" "$@"
 
     expect(targets).toEqual([
       {
+        kind: "home",
         description: "Codex home (default)",
         sourcePath: profilePath,
         targetPath: join(homedir(), ".codex"),
@@ -390,7 +393,7 @@ CODEX_HOME="<%- output_dir %>/codex/developer" exec "$real_binary" "$@"
     ]);
   });
 
-  it("links the explicitly requested Codex profile root", async () => {
+  it("applies the explicitly requested Codex profile and gives it its own home", async () => {
     const outputDir = await createTestDirectory();
     const profilePath = join(outputDir, "codex", "developer");
     await mkdir(profilePath, { recursive: true });
@@ -400,9 +403,17 @@ CODEX_HOME="<%- output_dir %>/codex/developer" exec "$real_binary" "$@"
 
     expect(targets).toEqual([
       {
+        kind: "home",
         description: "Codex home (developer)",
         sourcePath: profilePath,
         targetPath: join(homedir(), ".codex"),
+      },
+      {
+        kind: "home",
+        description: "Codex profile home (developer)",
+        sourcePath: profilePath,
+        targetPath: join(TEST_XDG_DATA_HOME, "ai-registry", "codex", "profiles", "developer"),
+        sharedHomePath: join(homedir(), ".codex"),
       },
     ]);
   });
@@ -419,9 +430,17 @@ CODEX_HOME="<%- output_dir %>/codex/developer" exec "$real_binary" "$@"
 
     expect(targets).toEqual([
       {
+        kind: "home",
         description: "Codex home (designer)",
         sourcePath: profilePath,
         targetPath,
+      },
+      {
+        kind: "home",
+        description: "Codex profile home (designer)",
+        sourcePath: profilePath,
+        targetPath: join(TEST_XDG_DATA_HOME, "ai-registry", "codex", "profiles", "designer"),
+        sharedHomePath: targetPath,
       },
     ]);
   });
@@ -437,6 +456,7 @@ CODEX_HOME="<%- output_dir %>/codex/developer" exec "$real_binary" "$@"
 
     expect(targets).toEqual([
       {
+        kind: "home",
         description: "Codex home (default)",
         sourcePath: profilePath,
         targetPath,

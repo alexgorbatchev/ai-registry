@@ -1,7 +1,19 @@
-import { $ } from "bun";
-import { cp, lstat, mkdir, readdir, realpath, rm, writeFile } from "fs/promises";
+import { cp, lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from "fs/promises";
 import { join } from "path";
 import { getRegistryPaths } from "../lib/getRegistryPaths";
+import { runCommand } from "../lib/runCommand";
+
+// Runs `bun run bootstrap -- <arguments>` in the smoke clone with the given environment.
+export type ISmokeBootstrapRunner = (
+  repositoryDir: string,
+  bootstrapArguments: string[],
+  environment: NodeJS.ProcessEnv,
+) => Promise<void>;
+
+export type ISmokeBootstrapDependencies = {
+  root: string;
+  runBootstrap: ISmokeBootstrapRunner;
+};
 
 const PUBLIC_SCRIPT_NAMES = [
   "air-opencode-conversation-extract",
@@ -40,24 +52,49 @@ async function assertSymlinkTarget(linkPath: string, expectedTarget: string): Pr
   }
 }
 
-async function findSingleBackup(parentDir: string, prefix: string): Promise<string> {
-  const entries = await readdir(parentDir, { withFileTypes: true });
-  const matches = entries
-    .filter((entry) => entry.isDirectory() && entry.name.startsWith(prefix))
-    .map((entry) => join(parentDir, entry.name));
-
-  if (matches.length !== 1) {
-    fail(`Expected exactly one backup matching ${prefix} in ${parentDir}, found ${matches.length}`);
+async function assertRealDirectory(path: string): Promise<void> {
+  const stats = await lstat(path);
+  if (stats.isSymbolicLink() || !stats.isDirectory()) {
+    fail(`Expected a real directory at: ${path}`);
   }
-  return matches[0];
 }
 
-export async function smokeBootstrapCommand(): Promise<void> {
-  const { root } = getRegistryPaths();
-  
+async function assertFileContent(path: string, expectedContent: string): Promise<void> {
+  const content = await readFile(path, "utf-8").catch(() => fail(`Expected file to exist: ${path}`));
+  if (content !== expectedContent) {
+    fail(`Unexpected content in: ${path}`);
+  }
+}
+
+async function assertNoBackups(parentDir: string, prefix: string): Promise<void> {
+  const entries = await readdir(parentDir);
+  if (entries.some((entry) => entry.startsWith(prefix))) {
+    fail(`Expected no ${prefix}* backups in ${parentDir}`);
+  }
+}
+
+async function runRealBootstrap(
+  repositoryDir: string,
+  bootstrapArguments: string[],
+  environment: NodeJS.ProcessEnv,
+): Promise<void> {
+  await runCommand({
+    cmd: bootstrapArguments.length === 0 ? ["bun", "run", "bootstrap"] : ["bun", "run", "bootstrap", "--", ...bootstrapArguments],
+    cwd: repositoryDir,
+    env: environment,
+    description: "run bootstrap in the smoke clone",
+  });
+}
+
+export async function smokeBootstrapCommand(
+  dependencies: ISmokeBootstrapDependencies = { root: getRegistryPaths().root, runBootstrap: runRealBootstrap },
+): Promise<void> {
+  const { root } = dependencies;
+
   const SMOKE_HOME = join(root, ".tmp", "bootstrap-smoke");
   const SMOKE_REPO_DIR = join(SMOKE_HOME, "development", "ai-registry");
   const CONFIG_HOME = join(SMOKE_HOME, ".config");
+  const DATA_HOME = join(SMOKE_HOME, ".local", "share");
   const PUBLIC_BIN_DIR = join(SMOKE_HOME, ".local", "bin");
   const OPENCODE_TARGET = join(CONFIG_HOME, "opencode");
   const OPENCODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "opencode");
@@ -68,6 +105,7 @@ export async function smokeBootstrapCommand(): Promise<void> {
   const CLAUDE_CODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "claude-code", "default");
   const CLAUDE_CODE_SMOKE_PROFILE = "developer";
   const CLAUDE_CODE_PROFILE_SOURCE = join(SMOKE_REPO_DIR, ".output", "claude-code", CLAUDE_CODE_SMOKE_PROFILE);
+  const CLAUDE_CODE_PROFILE_HOME = join(DATA_HOME, "ai-registry", "claude-code", "profiles", CLAUDE_CODE_SMOKE_PROFILE);
   const OUTPUT_MANIFEST = join(SMOKE_REPO_DIR, ".output", "manifest.json");
 
   async function seedExistingTargets(): Promise<void> {
@@ -92,66 +130,63 @@ export async function smokeBootstrapCommand(): Promise<void> {
     }
   }
 
+  const SMOKE_ENVIRONMENT: NodeJS.ProcessEnv = {
+    ...process.env,
+    HOME: SMOKE_HOME,
+    XDG_CONFIG_HOME: CONFIG_HOME,
+    XDG_DATA_HOME: DATA_HOME,
+  };
+
   async function runBootstrap(): Promise<void> {
-    await $`bun run bootstrap`
-      .cwd(SMOKE_REPO_DIR)
-      .env({
-        ...process.env,
-        HOME: SMOKE_HOME,
-        XDG_CONFIG_HOME: CONFIG_HOME,
-      });
+    await dependencies.runBootstrap(SMOKE_REPO_DIR, [], SMOKE_ENVIRONMENT);
   }
 
   async function runBootstrapWithPiProfile(): Promise<void> {
-    await $`bun run bootstrap -- --pi-profile ${PI_SMOKE_PROFILE}`
-      .cwd(SMOKE_REPO_DIR)
-      .env({
-        ...process.env,
-        HOME: SMOKE_HOME,
-        PI_CODING_AGENT_DIR: PI_TARGET,
-        XDG_CONFIG_HOME: CONFIG_HOME,
-      });
+    await dependencies.runBootstrap(SMOKE_REPO_DIR, ["--pi-profile", PI_SMOKE_PROFILE], {
+      ...SMOKE_ENVIRONMENT,
+      PI_CODING_AGENT_DIR: PI_TARGET,
+    });
   }
 
   async function runBootstrapWithClaudeCodeProfile(): Promise<void> {
-    await $`bun run bootstrap -- --claude-code-profile ${CLAUDE_CODE_SMOKE_PROFILE}`
-      .cwd(SMOKE_REPO_DIR)
-      .env({
-        ...process.env,
-        CLAUDE_CONFIG_DIR: CLAUDE_CODE_TARGET,
-        HOME: SMOKE_HOME,
-        XDG_CONFIG_HOME: CONFIG_HOME,
-      });
+    await dependencies.runBootstrap(SMOKE_REPO_DIR, ["--claude-code-profile", CLAUDE_CODE_SMOKE_PROFILE], {
+      ...SMOKE_ENVIRONMENT,
+      CLAUDE_CONFIG_DIR: CLAUDE_CODE_TARGET,
+    });
   }
 
+  // Harness homes stay real directories: existing runtime data remains in place and
+  // only the generated entries are linked in.
   async function verifyBootstrapOutputs(): Promise<void> {
-    const opencodeBackupDir = await findSingleBackup(CONFIG_HOME, "opencode.backup-");
-    const publicScriptAssertions = PUBLIC_SCRIPT_NAMES.map((scriptName) =>
-      assertSymlinkTarget(join(PUBLIC_BIN_DIR, scriptName), join(SMOKE_REPO_DIR, ".output", "bin", scriptName)),
-    );
-    await Promise.all([
-      assertPathExists(join(opencodeBackupDir, "existing.txt")),
-      assertPathExists(OUTPUT_MANIFEST),
-      assertSymlinkTarget(OPENCODE_TARGET, OPENCODE_SOURCE),
-      assertSymlinkTarget(CLAUDE_CODE_TARGET, CLAUDE_CODE_SOURCE),
-      ...publicScriptAssertions,
-    ]);
+    await assertPathExists(OUTPUT_MANIFEST);
+    await assertRealDirectory(OPENCODE_TARGET);
+    await assertFileContent(join(OPENCODE_TARGET, "existing.txt"), "existing opencode data\n");
+    await assertSymlinkTarget(join(OPENCODE_TARGET, "opencode.jsonc"), join(OPENCODE_SOURCE, "opencode.jsonc"));
+    await assertNoBackups(CONFIG_HOME, "opencode.backup-");
+    await assertRealDirectory(CLAUDE_CODE_TARGET);
+    await assertFileContent(join(CLAUDE_CODE_TARGET, "existing.txt"), "existing claude code data\n");
+    await assertSymlinkTarget(join(CLAUDE_CODE_TARGET, "CLAUDE.md"), join(CLAUDE_CODE_SOURCE, "CLAUDE.md"));
+    await assertSymlinkTarget(join(CLAUDE_CODE_TARGET, "settings.json"), join(CLAUDE_CODE_SOURCE, "settings.json"));
+    await assertNoBackups(SMOKE_HOME, ".claude.backup-");
+    await assertRealDirectory(CLAUDE_CODE_PROFILE_HOME);
+    await assertSymlinkTarget(join(CLAUDE_CODE_PROFILE_HOME, "CLAUDE.md"), join(CLAUDE_CODE_PROFILE_SOURCE, "CLAUDE.md"));
+    await assertSymlinkTarget(join(CLAUDE_CODE_PROFILE_HOME, "existing.txt"), join(CLAUDE_CODE_TARGET, "existing.txt"));
+    for (const scriptName of PUBLIC_SCRIPT_NAMES) {
+      await assertSymlinkTarget(join(PUBLIC_BIN_DIR, scriptName), join(SMOKE_REPO_DIR, ".output", "bin", scriptName));
+    }
   }
 
   async function verifyClaudeCodeBootstrapOutputs(): Promise<void> {
-    const claudeCodeBackupDir = await findSingleBackup(SMOKE_HOME, ".claude.backup-");
-    await Promise.all([
-      assertPathExists(join(claudeCodeBackupDir, "existing.txt")),
-      assertSymlinkTarget(CLAUDE_CODE_TARGET, CLAUDE_CODE_PROFILE_SOURCE),
-    ]);
+    await assertRealDirectory(CLAUDE_CODE_TARGET);
+    await assertFileContent(join(CLAUDE_CODE_TARGET, "existing.txt"), "existing claude code data\n");
+    await assertSymlinkTarget(join(CLAUDE_CODE_TARGET, "CLAUDE.md"), join(CLAUDE_CODE_PROFILE_SOURCE, "CLAUDE.md"));
   }
 
   async function verifyPiBootstrapOutputs(): Promise<void> {
-    const piBackupDir = await findSingleBackup(join(SMOKE_HOME, ".pi"), "agent.backup-");
-    await Promise.all([
-      assertPathExists(join(piBackupDir, "existing.txt")),
-      assertSymlinkTarget(PI_TARGET, PI_SOURCE),
-    ]);
+    await assertRealDirectory(PI_TARGET);
+    await assertFileContent(join(PI_TARGET, "existing.txt"), "existing pi data\n");
+    await assertSymlinkTarget(join(PI_TARGET, "APPEND_SYSTEM.md"), join(PI_SOURCE, "APPEND_SYSTEM.md"));
+    await assertNoBackups(join(SMOKE_HOME, ".pi"), "agent.backup-");
   }
 
   console.log("🚬 Running bootstrap smoke test...\n");
@@ -161,11 +196,11 @@ export async function smokeBootstrapCommand(): Promise<void> {
 
   console.log(`Using fake HOME: ${SMOKE_HOME}`);
   console.log(`Using smoke repo clone: ${SMOKE_REPO_DIR}`);
-  console.log("First bootstrap run: backup existing directories, link generated outputs, and sync public scripts.");
+  console.log("First bootstrap run: keep existing home data, link generated entries, and sync public scripts.");
   await runBootstrap();
   await verifyBootstrapOutputs();
 
-  console.log("Second bootstrap run: verify idempotent reuse of managed symlinks.");
+  console.log("Second bootstrap run: verify idempotent reuse of managed links.");
   await runBootstrap();
   await verifyBootstrapOutputs();
 

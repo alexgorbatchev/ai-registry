@@ -1,20 +1,21 @@
-import { lstat, mkdir, readFile, readdir, rename, rm, symlink, writeFile } from "fs/promises";
+import { mkdir, readFile, readdir, rm, symlink, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
-import { dirname, join } from "path";
+import { join } from "path";
 import { parseArgs } from "node:util";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 
 import type {
+  IBootstrapTarget,
   IProfileBuildContext,
   IUnifiedHarnessBuildContext,
   IUnifiedHarnessPlugin,
 } from "../../lib/harnessBuild";
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
-import { getErrorMessage } from "../../lib/getErrorMessage";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
+import { getProfileHomeDir, getProfileHomeShellPath } from "../../lib/profileHomeUtils";
 import {
   getOutputSkillName,
   injectDisableModelInvocation,
@@ -32,28 +33,6 @@ const MEMORY_FILE_NAME = "CLAUDE.md";
 const SETTINGS_FILE_NAME = "settings.json";
 const SKILLS_DIR_NAME = "skills";
 const DEFAULT_PROFILE_NAME = "default";
-
-// Directories Claude Code writes runtime state into. They are materialized in the
-// default profile root so every generated profile shares one history, plugin
-// install, and session store instead of diverging per profile. Claude Code creates,
-// fills, and prunes them afterwards, so they are registered as runtime directories:
-// recreated when missing but never tracked by the manifest or reported as drift.
-const SHARED_RUNTIME_DIR_NAMES = [
-  "file-history",
-  "session-env",
-  "statsig",
-];
-
-// Work a rebuild must not destroy: per-project memory files and transcripts
-// (`projects/`), the session history `claude --resume` reads (`sessions/`), the
-// per-session todo lists (`todos/`), the shell snapshots those sessions restore from
-// (`shell-snapshots/`), and the installed plugins a user would otherwise have to add
-// back by hand (`plugins/`). `.output/` is generated and may be deleted at any time,
-// so these stores live in the user's XDG data directory and are symlinked into the
-// generated default profile root. Non-default profiles reach them through the symlink
-// chain finalizeOutput() already builds from the default profile.
-const PERSISTENT_STORE_DIR_NAMES = ["plugins", "projects", "sessions", "shell-snapshots", "todos"];
-const PERSISTENT_STORE_ROOT_SEGMENTS = ["ai-registry", "claude-code"];
 
 function getProfileOutputDir(outputDir: string, profileName: string): string {
   return join(outputDir, CLAUDE_CODE_OUTPUT_DIR_NAME, profileName);
@@ -101,62 +80,6 @@ async function stageHarnessFiles(context: IProfileBuildContext, profileOutputDir
   const settingsPath = join(profileOutputDir, SETTINGS_FILE_NAME);
   if (existsSync(settingsPath)) {
     context.buildSupport.syncSettingsFile(settingsPath);
-  }
-}
-
-async function stageSharedRuntimeDirectories(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
-  for (const runtimeDirName of SHARED_RUNTIME_DIR_NAMES) {
-    await context.buildSupport.ensureRuntimeDirectory(join(profileOutputDir, runtimeDirName));
-  }
-}
-
-function getPersistentStoreRoot(): string {
-  const dataHome = process.env.XDG_DATA_HOME?.trim() || join(homedir(), ".local", "share");
-  return join(dataHome, ...PERSISTENT_STORE_ROOT_SEGMENTS);
-}
-
-// Builds that predate a persistent store left a real directory in the generated
-// output. Move it once, so existing history survives the switch instead of being
-// shadowed by an empty store.
-async function migrateLegacyStore(storeDirName: string, legacyStorePath: string, storePath: string): Promise<void> {
-  const legacyStoreStats = await lstat(legacyStorePath).catch(() => null);
-  if (legacyStoreStats === null || legacyStoreStats.isSymbolicLink() || !legacyStoreStats.isDirectory()) {
-    return;
-  }
-
-  if (existsSync(storePath)) {
-    throw new Error(
-      `Cannot move the Claude Code ${storeDirName} store: ${legacyStorePath} and ${storePath} both exist. Merge them by hand, then rerun the build.`,
-    );
-  }
-
-  await mkdir(dirname(storePath), { recursive: true });
-
-  try {
-    await rename(legacyStorePath, storePath);
-  } catch (error) {
-    throw new Error(
-      `Failed to move the Claude Code ${storeDirName} store from ${legacyStorePath} to ${storePath}: ${getErrorMessage(error)}. Move it by hand, then rerun the build.`,
-    );
-  }
-
-  console.log(`   📦 Moved the Claude Code ${storeDirName} store to ${storePath}`);
-}
-
-async function stagePersistentStores(context: IProfileBuildContext, profileOutputDir: string): Promise<void> {
-  const storeRoot = getPersistentStoreRoot();
-  const finalDefaultProfileDir = join(
-    context.templateContext.output_dir,
-    CLAUDE_CODE_OUTPUT_DIR_NAME,
-    DEFAULT_PROFILE_NAME,
-  );
-
-  for (const storeDirName of PERSISTENT_STORE_DIR_NAMES) {
-    const storePath = join(storeRoot, storeDirName);
-
-    await migrateLegacyStore(storeDirName, join(finalDefaultProfileDir, storeDirName), storePath);
-    await mkdir(storePath, { recursive: true });
-    await symlink(storePath, join(profileOutputDir, storeDirName));
   }
 }
 
@@ -218,8 +141,6 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
 
   if (isDefaultProfile) {
     await stageHarnessFiles(context, profileOutputDir);
-    await stageSharedRuntimeDirectories(context, profileOutputDir);
-    await stagePersistentStores(context, profileOutputDir);
     await mkdir(join(profileOutputDir, "commands"), { recursive: true });
 
     await context.buildSupport.stageProfileAssets(context, {
@@ -357,14 +278,17 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       );
     }
 
-    // The default profile is reached through the `~/.claude` symlink that bootstrap
-    // creates, so only non-default profiles need a launcher that overrides
-    // CLAUDE_CONFIG_DIR. Nothing generated here shadows the real `claude` binary.
-    const profileConfigDir = `<%- output_dir %>/${CLAUDE_CODE_OUTPUT_DIR_NAME}/${profileEntry.name}`;
+    // The default profile is applied to `~/.claude` by bootstrap, so only non-default
+    // profiles need a launcher that overrides CLAUDE_CONFIG_DIR with their own home.
+    // Nothing generated here shadows the real `claude` binary.
     await context.buildSupport.writeBinScript(
       context.outputDir,
       `claude-${profileEntry.name}`,
-      createExternalProfileHelper("claude", "CLAUDE_CONFIG_DIR", profileConfigDir),
+      createExternalProfileHelper(
+        "claude",
+        "CLAUDE_CONFIG_DIR",
+        getProfileHomeShellPath(CLAUDE_CODE_OUTPUT_DIR_NAME, profileEntry.name),
+      ),
     );
   }
 
@@ -418,21 +342,27 @@ function formatMissingClaudeCodeProfileMessage(sourcePath: string, availableProf
   return `Generated Claude Code profile does not exist: ${sourcePath}. Available generated Claude Code profiles: ${availableProfiles.join(", ")}.`;
 }
 
-async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>> {
+async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
   const profile = getRequestedClaudeCodeProfile(process.argv) ?? DEFAULT_PROFILE_NAME;
+  const availableProfiles = await getGeneratedClaudeCodeProfileNames(outputDir);
 
   const sourcePath = getProfileOutputDir(outputDir, profile);
   if (!existsSync(sourcePath)) {
-    const availableProfiles = await getGeneratedClaudeCodeProfileNames(outputDir);
     throw new Error(formatMissingClaudeCodeProfileMessage(sourcePath, availableProfiles));
   }
 
+  const homePath = process.env.CLAUDE_CONFIG_DIR?.trim() || join(homedir(), ".claude");
   return [
-    {
-      sourcePath,
-      targetPath: process.env.CLAUDE_CONFIG_DIR?.trim() || join(homedir(), ".claude"),
-      description: `Claude Code config (${profile})`,
-    },
+    { kind: "home", sourcePath, targetPath: homePath, description: `Claude Code config (${profile})` },
+    ...availableProfiles
+      .filter((profileName) => profileName !== DEFAULT_PROFILE_NAME)
+      .map((profileName): IBootstrapTarget => ({
+        kind: "home",
+        sourcePath: getProfileOutputDir(outputDir, profileName),
+        targetPath: getProfileHomeDir(CLAUDE_CODE_OUTPUT_DIR_NAME, profileName, process.env),
+        description: `Claude Code profile home (${profileName})`,
+        sharedHomePath: homePath,
+      })),
   ];
 }
 

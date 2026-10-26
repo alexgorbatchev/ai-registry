@@ -16,13 +16,22 @@ import {
   type IUnifiedHarnessBuildContext,
   type ITemplateContext,
 } from "../../../lib/harnessBuild";
-import { createRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
 import {
   createSettingsSyncRegistry,
   type ISettingsSyncRegistry,
 } from "../../../lib/settingsSync/createSettingsSyncRegistry";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "opencode-build-tests");
+const originalOpencodeConfigDir: string | undefined = process.env.OPENCODE_CONFIG_DIR;
+const originalXdgConfigHome: string | undefined = process.env.XDG_CONFIG_HOME;
+
+function restoreEnvironmentVariable(name: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[name];
+    return;
+  }
+  process.env[name] = value;
+}
 
 async function createTestDirectory(): Promise<string> {
   await mkdir(TEST_ROOT, { recursive: true });
@@ -56,7 +65,6 @@ function createBuildSupport(
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
-    ensureRuntimeDirectory: createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")).ensureRuntimeDirectory,
     syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 }
@@ -100,6 +108,11 @@ function createUnifiedContext(
   };
 }
 
+function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
+  assert(plugin.getBootstrapTargets);
+  return plugin.getBootstrapTargets;
+}
+
 function getFinalizeOutput(): NonNullable<typeof plugin.finalizeOutput> {
   assert(plugin.finalizeOutput);
   return plugin.finalizeOutput;
@@ -107,7 +120,38 @@ function getFinalizeOutput(): NonNullable<typeof plugin.finalizeOutput> {
 
 describe("OpenCode harness build plugin", () => {
   afterEach(async () => {
+    restoreEnvironmentVariable("OPENCODE_CONFIG_DIR", originalOpencodeConfigDir);
+    restoreEnvironmentVariable("XDG_CONFIG_HOME", originalXdgConfigHome);
     await rm(TEST_ROOT, { force: true, recursive: true });
+  });
+
+  it("applies the generated config to the OpenCode config home under XDG_CONFIG_HOME", async () => {
+    const outputDir = await createTestDirectory();
+    delete process.env.OPENCODE_CONFIG_DIR;
+    process.env.XDG_CONFIG_HOME = join(outputDir, "config");
+
+    expect(await getBootstrapTargets()(outputDir)).toEqual([
+      {
+        kind: "home",
+        sourcePath: join(outputDir, "opencode"),
+        targetPath: join(outputDir, "config", "opencode"),
+        description: "OpenCode config",
+      },
+    ]);
+  });
+
+  it("applies the generated config to OPENCODE_CONFIG_DIR when it is set", async () => {
+    const outputDir = await createTestDirectory();
+    process.env.OPENCODE_CONFIG_DIR = join(outputDir, "custom-opencode");
+
+    expect(await getBootstrapTargets()(outputDir)).toEqual([
+      {
+        kind: "home",
+        sourcePath: join(outputDir, "opencode"),
+        targetPath: join(outputDir, "custom-opencode"),
+        description: "OpenCode config",
+      },
+    ]);
   });
 
   it("keeps source fingerprints readable after generated agent staging is removed", async () => {

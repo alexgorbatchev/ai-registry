@@ -17,7 +17,6 @@ import {
   type ITemplateContext,
   type IUnifiedHarnessBuildContext,
 } from "../../../lib/harnessBuild";
-import { createRuntimeDirectoryRegistry, type IRuntimeDirectoryRegistry } from "../../../lib/generatedOutputUtils";
 import {
   createSettingsSyncRegistry,
   type ISettingsSyncRegistry,
@@ -26,6 +25,8 @@ import {
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "pi-build-tests");
 const originalArgv: string[] = [...process.argv];
 const originalPiCodingAgentDir: string | undefined = process.env.PI_CODING_AGENT_DIR;
+const originalXdgDataHome: string | undefined = process.env.XDG_DATA_HOME;
+const TEST_XDG_DATA_HOME = join(TEST_ROOT, "xdg-data-home");
 const createdDirectories: string[] = [];
 
 async function createOutputDirectory(): Promise<string> {
@@ -60,7 +61,6 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
 
 function createBuildSupport(
   repositoryRoot: string,
-  runtimeDirectoryRegistry: IRuntimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output")),
   settingsSyncRegistry: ISettingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output")),
 ): IBuildSupport {
   return {
@@ -69,21 +69,19 @@ function createBuildSupport(
     writeBinScript,
     copyDirectoryWithTemplateVariables,
     copyPathWithTemplateVariables,
-    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
     syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 }
 
 function createUnifiedContext(
   repositoryRoot: string,
-  runtimeDirectoryRegistry?: IRuntimeDirectoryRegistry,
   settingsSyncRegistry?: ISettingsSyncRegistry,
 ): IUnifiedHarnessBuildContext {
   return {
     harnessDir: join(repositoryRoot, "harnesses", "pi"),
     outputDir: join(repositoryRoot, ".output"),
     templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot, runtimeDirectoryRegistry, settingsSyncRegistry),
+    buildSupport: createBuildSupport(repositoryRoot, settingsSyncRegistry),
   };
 }
 
@@ -139,17 +137,23 @@ describe("Pi harness bootstrap targets", () => {
   beforeEach(() => {
     process.argv = ["bun", "scripts/bootstrap.ts"];
     delete process.env.PI_CODING_AGENT_DIR;
+    process.env.XDG_DATA_HOME = TEST_XDG_DATA_HOME;
   });
 
   afterEach(async () => {
     process.argv = [...originalArgv];
     process.env.PI_CODING_AGENT_DIR = originalPiCodingAgentDir;
+    if (originalXdgDataHome === undefined) {
+      delete process.env.XDG_DATA_HOME;
+    } else {
+      process.env.XDG_DATA_HOME = originalXdgDataHome;
+    }
 
     await rm(TEST_ROOT, { force: true, recursive: true });
     createdDirectories.length = 0;
   });
 
-  it("links the default Pi profile when bootstrap did not request an override", async () => {
+  it("applies the default Pi profile when bootstrap did not request an override", async () => {
     const outputDir = await createOutputDirectory();
     const profileDir = await createPiProfile(outputDir, "default");
 
@@ -157,6 +161,7 @@ describe("Pi harness bootstrap targets", () => {
 
     expect(targets).toEqual([
       {
+        kind: "home",
         description: "Pi config (default)",
         sourcePath: profileDir,
         targetPath: join(homedir(), ".pi", "agent"),
@@ -164,7 +169,7 @@ describe("Pi harness bootstrap targets", () => {
     ]);
   });
 
-  it("links the explicitly requested Pi profile", async () => {
+  it("applies the explicitly requested Pi profile and gives it its own home", async () => {
     const outputDir = await createOutputDirectory();
     const profileDir = await createPiProfile(outputDir, "developer");
     process.argv = ["bun", "scripts/bootstrap.ts", "--pi-profile", "developer"];
@@ -173,9 +178,17 @@ describe("Pi harness bootstrap targets", () => {
 
     expect(targets).toEqual([
       {
+        kind: "home",
         description: "Pi config (developer)",
         sourcePath: profileDir,
         targetPath: join(homedir(), ".pi", "agent"),
+      },
+      {
+        kind: "home",
+        description: "Pi profile home (developer)",
+        sourcePath: profileDir,
+        targetPath: join(TEST_XDG_DATA_HOME, "ai-registry", "pi", "profiles", "developer"),
+        sharedHomePath: join(homedir(), ".pi", "agent"),
       },
     ]);
   });
@@ -191,9 +204,17 @@ describe("Pi harness bootstrap targets", () => {
 
     expect(targets).toEqual([
       {
+        kind: "home",
         description: "Pi config (designer)",
         sourcePath: profileDir,
         targetPath,
+      },
+      {
+        kind: "home",
+        description: "Pi profile home (designer)",
+        sourcePath: profileDir,
+        targetPath: join(TEST_XDG_DATA_HOME, "ai-registry", "pi", "profiles", "designer"),
+        sharedHomePath: targetPath,
       },
     ]);
   });
@@ -208,6 +229,7 @@ describe("Pi harness bootstrap targets", () => {
 
     expect(targets).toEqual([
       {
+        kind: "home",
         description: "Pi config (default)",
         sourcePath: profileDir,
         targetPath,
@@ -273,29 +295,31 @@ describe("Pi harness bootstrap targets", () => {
     expect(
       (await lstat(join(repositoryRoot, ".output", "pi", "default", "skills", "harness-skill", "SKILL.md"))).isSymbolicLink(),
     ).toBe(false);
-    expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isDirectory()).toBe(true);
-    expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isSymbolicLink()).toBe(false);
   });
 
-  it("registers the shared Pi sessions directory as a runtime directory", async () => {
+  it("keeps runtime state out of the generated default Pi profile", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/prompts/harness.md", "Harness prompt.\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/skills/harness-skill/SKILL.md", "# Harness skill\n");
     await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default local command.\n");
     await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
 
-    const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(join(repositoryRoot, ".output"));
     await getStageProfile()(createProfileContext(repositoryRoot, "default"));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot, runtimeDirectoryRegistry));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
 
-    expect((await lstat(join(repositoryRoot, ".output", "pi", "default", "sessions"))).isDirectory()).toBe(true);
-    expect(runtimeDirectoryRegistry.getRuntimeDirectoryPaths()).toEqual(["pi/default/sessions"]);
+    // Sessions belong to the real `~/.pi/agent` home that bootstrap links these
+    // entries into, so the build creates none of them.
+    expect((await readdir(join(repositoryRoot, ".output", "pi", "default"))).sort()).toEqual([
+      "APPEND_SYSTEM.md",
+      "prompts",
+      "settings.json",
+      "skills",
+    ]);
   });
 
   it("registers the shared Pi settings.json for settings sync with the version stamp kept live-only", async () => {
@@ -311,7 +335,7 @@ describe("Pi harness bootstrap targets", () => {
 
     const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
     await getStageProfile()(createProfileContext(repositoryRoot, "default"));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot, undefined, settingsSyncRegistry));
+    await getFinalizeOutput()(createUnifiedContext(repositoryRoot, settingsSyncRegistry));
 
     expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
       { relativePath: "pi/default/settings.json", liveOnlyKeyPaths: [["lastChangelogVersion"]] },
@@ -355,9 +379,6 @@ describe("Pi harness bootstrap targets", () => {
     );
     expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "prompts"))).toBe(
       join(repositoryRoot, ".output", "pi", "default", "prompts"),
-    );
-    expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "sessions"))).toBe(
-      join(repositoryRoot, ".output", "pi", "default", "sessions"),
     );
     expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "prompts", "review.md"), "utf-8")).toBe(
       "Review the default changes.\n",
@@ -450,7 +471,7 @@ if [ -z "$real_binary" ]; then
   exit 1
 fi
 
-PI_CODING_AGENT_DIR="<%- output_dir %>/pi/developer" exec "$real_binary" "$@"
+PI_CODING_AGENT_DIR="\${XDG_DATA_HOME:-\$HOME/.local/share}/ai-registry/pi/profiles/developer" exec "$real_binary" "$@"
 "
 `);
   });

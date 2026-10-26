@@ -182,7 +182,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Generated outputs are written under the output_dir token.
 - Generated harness skills (`skills/` entries across OpenCode, Codex, Pi, and Claude Code outputs) are copies of the source files with template tags resolved, not symbolic links, so tags inside `SKILL.md` and bundled skill files reach the agent resolved.
 - The generated-output manifest tracks only registry-managed entries under the output_dir token, and `bun run build` overwrites only those managed paths instead of replacing the entire output tree.
-- In a harness build plugin, create directories the harness tool owns at runtime (session stores, logs, todo lists) with `context.buildSupport.ensureRuntimeDirectory(...)` instead of `mkdir`. They stay out of the manifest, never count as drift, are never removed by sync, and are recreated when missing.
+- Never create harness runtime state (session stores, logs, todo lists, databases) in generated output. Bootstrap links each generated profile's managed entries into a real harness home outside the repository, and the harness writes its runtime state there. A harness plugin returns home targets from `getBootstrapTargets()`, giving non-default profiles a `getProfileHomeDir(...)` home that shares the default home's runtime entries.
 - Verify generated files that match the change, especially:
   - `opencode/` beneath the output_dir token
   - `codex/` beneath the output_dir token

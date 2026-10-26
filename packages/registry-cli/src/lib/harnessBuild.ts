@@ -64,10 +64,6 @@ export type IBuildSupport = {
     targetPath: string,
     templateContext: ITemplateContext,
   ): Promise<void>;
-  // Creates a directory the harness tool owns at runtime (session stores, todo
-  // lists, logs). The build materializes it so every generated profile can share
-  // it, but it stays out of the manifest and is recreated, never removed, on sync.
-  ensureRuntimeDirectory(dirPath: string): Promise<void>;
   // Marks a staged settings file the harness edits at runtime. The build keeps it
   // out of the manifest and reconciles it with its registry source on every run.
   syncSettingsFile(filePath: string, options?: ISyncedSettingsFileOptions): void;
@@ -97,11 +93,19 @@ export type IUnifiedHarnessBuildContext = {
   buildSupport: IBuildSupport;
 };
 
+// A harness home is a real directory outside the repository that holds the
+// harness's runtime state; bootstrap links the generated profile's managed
+// entries into it. `sharedHomePath` names the home whose runtime entries a
+// non-default profile shares. A link target replaces one path with a symlink.
+export type IBootstrapTarget =
+  | { kind: "home"; sourcePath: string; targetPath: string; description: string; sharedHomePath?: string }
+  | { kind: "link"; sourcePath: string; targetPath: string; description: string };
+
 export type IUnifiedHarnessPlugin = {
   target: string;
   stageProfile?(context: IProfileBuildContext): Promise<void>;
   finalizeOutput?(context: IUnifiedHarnessBuildContext): Promise<void>;
-  getBootstrapTargets?(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>>;
+  getBootstrapTargets?(outputDir: string): Promise<IBootstrapTarget[]>;
 };
 
 export function getObjectValue(object: object, key: string): unknown {

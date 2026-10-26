@@ -1,9 +1,12 @@
+import assert from "node:assert";
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { join } from "path";
 
 import { buildCommand } from "../buildCommand";
 import type { IRegistryPaths } from "../../lib/getRegistryPaths";
+import { getManagedEntryNames } from "../../lib/homeTargetUtils";
+import { readGeneratedOutputManifest } from "../../lib/readGeneratedOutputManifest";
 import { copyRepositoryHarnesses } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-settings-sync-tests");
@@ -58,5 +61,24 @@ describe("buildCommand settings sync", () => {
 
     expect(JSON.parse(await readFile(sourcePath, "utf-8")).harnessAddedSetting).toBe(true);
     expect(JSON.parse(await readFile(livePath, "utf-8")).harnessAddedSetting).toBe(true);
+  });
+
+  it("records synced settings files in the manifest so bootstrap links them into harness homes", async () => {
+    await buildCommand({ hasAutoConfirm: true, registryPaths });
+
+    const manifest = await readGeneratedOutputManifest(registryPaths.output);
+    assert(manifest !== null);
+    expect(manifest.syncedFilePaths).toEqual([
+      "claude-code/default/settings.json",
+      "codex/default/config.toml",
+      "opencode/opencode.jsonc",
+      "pi/default/settings.json",
+    ]);
+    expect(getManagedEntryNames(manifest, registryPaths.output, join(registryPaths.output, "codex", "default"))).toEqual([
+      "AGENTS.md",
+      "config.toml",
+      "rules",
+      "skills",
+    ]);
   });
 });

@@ -64,7 +64,7 @@ describe("syncBackModifiedFiles", () => {
     )).rejects.toThrow("Cannot recover source.md: no source fingerprint in the manifest. Preserve the generated edit and reconcile it into source before establishing a fresh baseline.");
     expect(await Bun.file(source).text()).toBe("original");
   });
-  it("automatically recovers unattended edits while preserving runtime and staged files", async () => {
+  it("automatically recovers unattended edits while preserving unmanaged and staged files", async () => {
     const root = await createTestDirectory();
     const outputDir = join(root, "output");
     const stagingDir = join(root, "staging");
@@ -77,7 +77,7 @@ describe("syncBackModifiedFiles", () => {
     const auth = await writeTestFile(outputDir, "auth.json", "runtime data");
 
     expect(await assertGeneratedOutputsAreSafeToReplace(
-      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, { runtimeDirectoryPaths: ["sessions"] },
+      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, {},
     )).toBe(true);
     expect(await Bun.file(source).text()).toBe("harness edit");
     expect(await Bun.file(output).text()).toBe("harness edit");
@@ -88,7 +88,7 @@ describe("syncBackModifiedFiles", () => {
     // Simulate the fresh generation pass, without invoking build or bootstrap.
     await Bun.write(staged, Bun.file(source));
     expect(await assertGeneratedOutputsAreSafeToReplace(
-      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, { runtimeDirectoryPaths: ["sessions"] }, false,
+      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, {}, false,
     )).toBe(false);
   });
 

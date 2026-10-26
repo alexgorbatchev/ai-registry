@@ -1,5 +1,6 @@
 import { lstat, mkdir, readdir, readlink, realpath, rename, rm, symlink } from "fs/promises";
 import { dirname, resolve, join } from "path";
+import { getErrorCode } from "./getErrorCode";
 
 const PUBLIC_SCRIPT_PREFIXES = ["air-", "claude-", "codex-", "pi-"];
 const PUBLIC_SCRIPT_NAMES = new Set(["cll", "codex", "pi"]);
@@ -23,15 +24,6 @@ export interface ISyncPublicScriptsResult {
 
 function defaultGetTimestamp(): string {
   return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-}
-
-function getErrorCode(error: unknown): string | null {
-  if (typeof error !== "object" || error === null || !("code" in error)) {
-    return null;
-  }
-
-  const { code } = error;
-  return typeof code === "string" ? code : null;
 }
 
 function getBackupPath(targetPath: string, getTimestamp: () => string): string {

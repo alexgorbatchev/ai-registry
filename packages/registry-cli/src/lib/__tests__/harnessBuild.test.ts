@@ -243,7 +243,6 @@ describe("harnessBuild template rendering", () => {
       mergeDirectory: async () => {},
       stageProfileAssets: async () => {},
       writeBinScript: async () => {},
-      ensureRuntimeDirectory: async () => {},
       syncSettingsFile: () => {},
     };
 
@@ -309,7 +308,6 @@ describe("harnessBuild template rendering", () => {
       mergeDirectory: async () => {},
       stageProfileAssets: async () => {},
       writeBinScript: async () => {},
-      ensureRuntimeDirectory: async () => {},
       syncSettingsFile: () => {},
     };
 
@@ -382,7 +380,6 @@ describe("harnessBuild template rendering", () => {
       mergeDirectory: async () => {},
       stageProfileAssets: async () => {},
       writeBinScript: async () => {},
-      ensureRuntimeDirectory: async () => {},
       syncSettingsFile: () => {},
     };
 

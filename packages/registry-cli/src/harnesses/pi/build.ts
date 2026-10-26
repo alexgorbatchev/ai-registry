@@ -136,9 +136,9 @@ async function generatePiHelpers(context: IUnifiedHarnessBuildContext, profiles:
   const piUninstallPath = join(context.harnessDir, "templates", "pi-uninstall.sh");
   const piUpdatePath = join(context.harnessDir, "templates", "pi-update.sh");
 
-  const installTemplate = await import("fs/promises").then(m => m.readFile(piInstallPath, "utf-8"));
-  const uninstallTemplate = await import("fs/promises").then(m => m.readFile(piUninstallPath, "utf-8"));
-  const updateTemplate = await import("fs/promises").then(m => m.readFile(piUpdatePath, "utf-8"));
+  const installTemplate = await readFile(piInstallPath, "utf-8");
+  const uninstallTemplate = await readFile(piUninstallPath, "utf-8");
+  const updateTemplate = await readFile(piUpdatePath, "utf-8");
 
   for (const profile of profiles) {
     // The default profile is reached through the `~/.pi/agent` symlink that bootstrap

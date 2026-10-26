@@ -47,7 +47,6 @@ cua_repl = { command = "/Applications/ChatGPT.app/Contents/MacOS/ChatGPT", enabl
 [marketplaces]
 openai-primary-runtime = { source_type = "local", source = "/Users/agorbatchev/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime" }
 alexgorbatchev = { source_type = "git", source = "https://github.com/alexgorbatchev/claude-workspace.git" }
-openai-bundled = { source_type = "local", source = "<%- output_dir %>/codex/default/.tmp/bundled-marketplaces/openai-bundled" }
 
 [plugins]
 "documents@openai-primary-runtime" = { enabled = true }

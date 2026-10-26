@@ -212,7 +212,7 @@ describe("Codex harness build plugin", () => {
     });
   });
 
-  it("registers config.toml for settings sync with local paths, notices, hook trust, and MCP credentials kept live-only", async () => {
+  it("registers config.toml for settings sync with local paths, notices, hook trust, the bundled marketplace, and MCP credentials kept live-only", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
     const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
@@ -230,6 +230,7 @@ describe("Codex harness build plugin", () => {
           ["notice"],
           ["skills", "config"],
           ["hooks", "state"],
+          ["marketplaces", "openai-bundled"],
           ["tui", "model_availability_nux"],
           ["mcp_servers", "*", "env"],
           ["mcp_servers", "*", "http_headers"],

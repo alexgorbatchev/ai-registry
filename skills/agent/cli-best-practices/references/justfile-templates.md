@@ -1,6 +1,6 @@
 # justfile Templates
 
-All CLI tools and repositories must provide a `justfile` at root with `run`, `run-ai`, and `test` recipes.
+All CLI tools and repositories must provide a `justfile` at root with `run`, `run-ai`, and `test` recipes. An application that ships a companion CLI uses `run` for the application and `cli`/`cli-ai` for the CLI, as described in `SKILL.md` section 4.
 
 ---
 

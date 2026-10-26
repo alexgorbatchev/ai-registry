@@ -8,7 +8,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-10-23 14:44
+  last_modified: 2026-10-26 14:20
   status: current
 ---
 
@@ -26,7 +26,7 @@ Web frontends and non-CLI services are outside this skill's scope. README-only w
 2. **Command Structure (`cli subject [subject] verb ...`)**: Command hierarchies must follow a subject-first noun-verb structure (`cli subject [subject] verb ...`) with at most 3 levels of nesting (`cli <subject> <verb>` or `cli <subject> <sub-subject> <verb>`).
 3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it. Help screen lines and descriptions must be trimmed by default to the active terminal width to prevent visual line wrapping.
 4. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
-5. **Mandatory Task Automation (`justfile`)**: Every CLI project must use `just` with a `justfile`. It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`. In multi-package repositories or workspaces, the root `justfile` must link all nested child `justfile`s as modules (`mod <name> '<path>'`).
+5. **Mandatory Task Automation (`justfile`)**: Every CLI project must use `just` with a `justfile`. It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`. When the repository's primary deliverable is an application (such as a desktop app or service) that ships a companion CLI, `run` launches the application and the CLI recipes are `cli` and `cli-ai` instead (see section 4). In multi-package repositories or workspaces, the root `justfile` must link all nested child `justfile`s as modules (`mod <name> '<path>'`).
 6. **GitHub Releases Distribution Only**: Ship end users prebuilt binaries from GitHub Releases. Never require them to build from source, and never use the `gh` CLI in end-user instructions.
 7. **README Content Is Owned By `docs-writer`**: Do not write or restate README structure, section order, or tone rules here. Load the `docs-writer` skill and read its `references/readme.md` plus `references/readme-cli.md` before touching a CLI `README.md`.
 8. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
@@ -219,6 +219,26 @@ test:
     <command-to-run-tests>
 ```
 
+### Applications With A Companion CLI
+
+When the repository's primary deliverable is an application (a desktop app, menu-bar app, or service) and the CLI controls it, `run` builds and launches the application. Define the CLI recipes under these names instead of `run` and `run-ai`:
+
+```justfile
+# Launch the application
+run:
+    <command-to-build-and-launch-app>
+
+# Run the CLI in human-facing mode
+cli *args:
+    <command-to-run-cli-binary> {{args}}
+
+# Run the CLI in agent-facing token-conservative mode
+cli-ai *args:
+    AGENT=1 <command-to-run-cli-binary> {{args}}
+```
+
+List this mapping in the repository's `AGENTS.md` commands section. A repository whose primary deliverable is the CLI itself keeps `run` and `run-ai` for the CLI.
+
 ### Standard Additional Recipes
 
 - `build`: Compiles or bundles the application (e.g. into `bin/`).
@@ -278,7 +298,7 @@ Before publishing or finalizing any CLI tool, verify:
 - [ ] In human mode: CLI help, argument descriptions, and user messages contain no internal technical jargon.
 - [ ] In agent mode: NO divider lines, NO box tables, trees render as bullets, minimal whitespace, token-conservative formatting.
 - [ ] Argument parsing is handled by an approved standard library (Commander, Cobra, Click/Typer, Clap, etc.). No custom argv slicing.
-- [ ] `justfile` exists at the project root with working `run`, `run-ai`, and `test` recipes (and links nested `justfile`s with `mod` when in a multi-package workspace).
+- [ ] `justfile` exists at the project root with working `run`, `run-ai`, and `test` recipes, or `run` (application), `cli`, `cli-ai`, and `test` for an application with a companion CLI (and links nested `justfile`s with `mod` when in a multi-package workspace).
 - [ ] When compiled to binary, output goes to `bin/` and is excluded by `.gitignore`.
 - [ ] `README.md` was written against the `docs-writer` skill's `references/readme.md` and `references/readme-cli.md`, and passes the checklist there.
 - [ ] Prebuilt binaries are published to GitHub Releases with versioned archive names (e.g. `mytool_X.X.X_darwin_arm64.tar.gz`).

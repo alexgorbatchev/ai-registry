@@ -1,6 +1,8 @@
 ## Check existing configuration
 
-Inspect repository guidance and user-indicated local configuration for the Apple ID, team, signing identity, and notarytool profile. Read only relevant credential names or metadata; avoid dumping secret files or keychains. A certificate file without its private key is insufficient for signing. Do not revoke or rotate certificates as routine notarization setup.
+Load the local configuration described in the skill before asking for account details. Follow its `account_guidance` path and repository guidance for missing information. The config contains account metadata and credential locations, never password or private-key contents. After successful setup, save verified reusable metadata there with owner-only access so future invocations can recover it without this conversation. Keep these machine-specific values outside public repositories.
+
+Read only relevant credential names or metadata; avoid dumping secret files or keychains. A certificate file without its private key is insufficient for signing. Do not revoke or rotate certificates as routine notarization setup.
 
 The notarytool profile is an arbitrary Keychain label. Credentials belong to the developer account/team and can serve multiple apps. An Apple Account app-specific password is for the client accessing Apple's service; it is not tied to the bundle being notarized.
 
@@ -16,7 +18,7 @@ Validate a candidate profile directly with `notarytool history`. An ordinary log
    xcrun notarytool store-credentials "$NOTARY_PROFILE" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"
    ```
 
-   Let the command validate credentials before saving. Do not use `--no-validate`. Have the user enter the password locally when no credential is available; never request its value in chat. If the user identifies an existing password variable such as `APPLE_NOTARIZATION_KEY`, access only that configured value and pass it through `--password "$APPLE_NOTARIZATION_KEY"` with tracing disabled. Do not print it or insert its literal value into command text. Confirm the credential type: a variable named “key” is not proof that it contains an App Store Connect API key.
+   Let the command validate credentials before saving. Do not use `--no-validate`. First check the configured `password_env` in the environment and then its selected assignment in `password_source`, with tracing disabled. Load only that assignment instead of sourcing an unrelated secrets file in full. For an app-specific password variable such as `APPLE_NOTARIZATION_KEY`, pass it through `--password "$APPLE_NOTARIZATION_KEY"`; do not print it or insert its literal value into command text. Confirm the credential type from configuration and guidance: a variable named “key” is not proof that it contains an App Store Connect API key. Have the user enter a password locally only when no usable configured credential remains; never request its value in chat.
 4. For an existing App Store Connect API key, use the installed tool's supported options:
 
    ```sh

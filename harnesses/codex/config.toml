@@ -8,9 +8,16 @@ model_reasoning_effort = "high"
 service_tier = "default"
 model_auto_compact_token_limit = 150000
 model_auto_compact_token_limit_scope = "total"
+shell_environment_policy.inherit = "core"
+notify = [ "<%- output_dir %>/codex/default/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended" ]
 
 [desktop]
 external-agent-import-sync-enabled = false
+followUpQueueMode = "steer"
+external-agent-import-sync-item-types = "all"
+conversationDetailMode = "STEPS_COMMANDS"
+ambient-suggestions-enabled = true
+selected-avatar-id = "stacky"
 
 [tui]
 status_line = [
@@ -24,10 +31,39 @@ status_line = [
 ]
 screen_reader_detection_done = true
 status_line_use_colors = true
+session_picker_view = "comfortable"
 
 [shell_environment_policy.set]
 AGENT = "1"
+CLAUDE_CODE_MAX_CONTEXT_TOKENS = "1000000"
 
 [features]
 goals = true
+
+[mcp_servers]
+node_repl = { args = [], command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl", env_vars = [ "BROWSER_USE_ACCESS_EXECUTOR_ID", "BROWSER_USE_ACCESS_PIPE_PATH", "BROWSER_USE_ACCESS_VERIFYING_IDENTITY" ], startup_timeout_sec = 120 }
+cua_repl = { command = "/Applications/ChatGPT.app/Contents/MacOS/ChatGPT", enabled = false }
+
+[marketplaces]
+openai-primary-runtime = { source_type = "local", source = "/Users/agorbatchev/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime" }
+alexgorbatchev = { source_type = "git", source = "https://github.com/alexgorbatchev/claude-workspace.git" }
+openai-bundled = { source_type = "local", source = "<%- output_dir %>/codex/default/.tmp/bundled-marketplaces/openai-bundled" }
+
+[plugins]
+"documents@openai-primary-runtime" = { enabled = true }
+"pdf@openai-primary-runtime" = { enabled = true }
+"spreadsheets@openai-primary-runtime" = { enabled = true }
+"presentations@openai-primary-runtime" = { enabled = true }
+"template-creator@openai-primary-runtime" = { enabled = true }
+"claude-workspace@alexgorbatchev" = { enabled = true }
+"codex-app-tools@openai-bundled" = { enabled = true }
+"browser@openai-bundled" = { enabled = true }
+"unified-computer-use@openai-bundled" = { enabled = true }
+"chrome@openai-bundled" = { enabled = true }
+"code-review@openai-bundled" = { enabled = true }
+"visualize@openai-bundled" = { enabled = true }
+"computer-use@openai-bundled" = { enabled = true }
+
+[apps]
+connector_openai_codex_document_control = { enabled = false }
 

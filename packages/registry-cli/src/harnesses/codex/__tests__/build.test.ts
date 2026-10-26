@@ -142,7 +142,11 @@ describe("Codex harness build plugin", () => {
 
   afterEach(async () => {
     process.argv = [...originalArgv];
-    process.env.CODEX_HOME = originalCodexHome;
+    if (originalCodexHome === undefined) {
+      delete process.env.CODEX_HOME;
+    } else {
+      process.env.CODEX_HOME = originalCodexHome;
+    }
     if (originalXdgDataHome === undefined) {
       delete process.env.XDG_DATA_HOME;
     } else {

@@ -142,7 +142,11 @@ describe("Pi harness bootstrap targets", () => {
 
   afterEach(async () => {
     process.argv = [...originalArgv];
-    process.env.PI_CODING_AGENT_DIR = originalPiCodingAgentDir;
+    if (originalPiCodingAgentDir === undefined) {
+      delete process.env.PI_CODING_AGENT_DIR;
+    } else {
+      process.env.PI_CODING_AGENT_DIR = originalPiCodingAgentDir;
+    }
     if (originalXdgDataHome === undefined) {
       delete process.env.XDG_DATA_HOME;
     } else {

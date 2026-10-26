@@ -5,6 +5,7 @@ import { homedir } from "os";
 import { dedentTemplate } from "@alexgorbatchev/dedent-string";
 
 import type {
+  IBootstrapTarget,
   IProfileBuildContext,
   IUnifiedHarnessBuildContext,
   IUnifiedHarnessPlugin,
@@ -228,10 +229,11 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
   }
 }
 
-async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>> {
+async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
   const getConfigHome = () => process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
   return [
     {
+      kind: "home",
       sourcePath: join(outputDir, "opencode"),
       targetPath: process.env.OPENCODE_CONFIG_DIR?.trim() || join(getConfigHome(), "opencode"),
       description: "OpenCode config",

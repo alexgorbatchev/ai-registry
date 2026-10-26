@@ -43,7 +43,6 @@ function createUnifiedContext(
       writeBinScript: async () => {},
       copyDirectoryWithTemplateVariables: async () => {},
       copyPathWithTemplateVariables: async () => {},
-      ensureRuntimeDirectory: async () => {},
       syncSettingsFile: () => {},
     },
   };

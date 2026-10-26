@@ -24,16 +24,13 @@ import {
   mergeDirectory,
   stageProfileAssets,
   writeBinScript,
-  getObjectValue,
 } from "../lib/harnessBuild";
 import { discoverProfileLocalAssets } from "../lib/discoverProfileLocalAssets";
 import { discoverProfiles, resolveMatchedAssets } from "../lib/resolveRegistryAssets";
 import {
   collectGeneratedOutputEntries,
   createGeneratedOutputManifest,
-  createRuntimeDirectoryRegistry,
   GENERATED_OUTPUT_MANIFEST_NAME,
-  GENERATED_OUTPUT_MANIFEST_VERSION,
   getGeneratedOutputDrift,
   LEGACY_GENERATED_OUTPUT_MANIFEST_NAME,
   type IGeneratedOutputDrift,
@@ -42,6 +39,7 @@ import {
   type IUnmanagedOutputPaths,
   syncManagedGeneratedOutputs,
 } from "../lib/generatedOutputUtils";
+import { readGeneratedOutputManifest } from "../lib/readGeneratedOutputManifest";
 import { reverseTemplateContent } from "../lib/reverseTemplateContent";
 import { isUserSkillPath, removeDisableModelInvocation, updateSkillName } from "../lib/userSkillUtils";
 import { resolveBuildHostname } from "../lib/resolveBuildHostname";
@@ -64,116 +62,6 @@ const unifiedHarnessPlugins: IUnifiedHarnessPlugin[] = [claudeCodePlugin, codexP
 
 function isProfileManifest(value: unknown): value is IProfileManifest {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isStringRecord(value: unknown): value is Record<string, string> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  return Object.values(value).every((entry) => typeof entry === "string");
-}
-
-function isGeneratedOutputManifestEntry(
-  value: unknown,
-): value is IGeneratedOutputManifestEntry {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const kind = getObjectValue(value, "kind");
-  if (kind === "directory") return true;
-  if (kind === "file") return typeof getObjectValue(value, "checksum") === "string";
-  if (kind === "symlink") return typeof getObjectValue(value, "target") === "string";
-  return false;
-}
-
-function isGeneratedOutputManifestEntryRecord(
-  value: unknown,
-): value is Record<string, IGeneratedOutputManifestEntry> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  return Object.values(value).every((entry) => isGeneratedOutputManifestEntry(entry));
-}
-
-function isGeneratedOutputManifest(
-  value: unknown,
-): value is IGeneratedOutputManifest {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const version = getObjectValue(value, "version");
-  const generatedAt = getObjectValue(value, "generatedAt");
-  const entries = getObjectValue(value, "entries");
-  const sourcePaths = getObjectValue(value, "sourcePaths");
-  const sourceChecksums = getObjectValue(value, "sourceChecksums");
-  return (
-    version === GENERATED_OUTPUT_MANIFEST_VERSION &&
-    typeof generatedAt === "string" &&
-    isGeneratedOutputManifestEntryRecord(entries) &&
-    (sourcePaths === undefined || isStringRecord(sourcePaths)) &&
-    (sourceChecksums === undefined || isStringRecord(sourceChecksums))
-  );
-}
-
-type ILegacyGeneratedOutputManifest = {
-  version: 1;
-  generatedAt: string;
-  files: Record<string, string>;
-};
-
-function isLegacyGeneratedOutputManifest(
-  value: unknown,
-): value is ILegacyGeneratedOutputManifest {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const version = getObjectValue(value, "version");
-  const generatedAt = getObjectValue(value, "generatedAt");
-  const files = getObjectValue(value, "files");
-  return version === 1 && typeof generatedAt === "string" && isStringRecord(files);
-}
-
-function convertLegacyGeneratedOutputManifest(
-  legacyManifest: ILegacyGeneratedOutputManifest,
-): IGeneratedOutputManifest {
-  const entries = Object.fromEntries(
-    Object.entries(legacyManifest.files).map(([relativePath, checksum]) => [
-      relativePath,
-      { kind: "file", checksum } satisfies IGeneratedOutputManifestEntry,
-    ]),
-  );
-  return {
-    version: GENERATED_OUTPUT_MANIFEST_VERSION,
-    generatedAt: legacyManifest.generatedAt,
-    entries,
-  };
-}
-
-async function readGeneratedOutputManifest(outputDir: string): Promise<IGeneratedOutputManifest | null> {
-  const generatedManifestPath = join(outputDir, GENERATED_OUTPUT_MANIFEST_NAME);
-  const legacyManifestPath = join(outputDir, LEGACY_GENERATED_OUTPUT_MANIFEST_NAME);
-
-  const manifestPath = existsSync(generatedManifestPath)
-    ? generatedManifestPath
-    : existsSync(legacyManifestPath)
-      ? legacyManifestPath
-      : null;
-
-  if (!manifestPath) {
-    return null;
-  }
-
-  const manifestContent = await readFile(manifestPath, "utf-8");
-  const parsedManifest = JSON.parse(manifestContent);
-  if (isGeneratedOutputManifest(parsedManifest)) {
-    return parsedManifest;
-  }
-
-  if (isLegacyGeneratedOutputManifest(parsedManifest)) {
-    return convertLegacyGeneratedOutputManifest(parsedManifest);
-  }
-
-  throw new Error(`Invalid generated output manifest: ${manifestPath}`);
 }
 
 export async function syncBackModifiedFiles(
@@ -340,8 +228,10 @@ async function writeGeneratedOutputManifest(
   sourcePathByOutputPath: Map<string, string>,
   stagingDir: string,
   sourceChecksums: Map<string, string>,
+  syncedFilePaths: readonly string[],
 ): Promise<void> {
   const manifest = createGeneratedOutputManifest(managedEntries);
+  manifest.syncedFilePaths = [...syncedFilePaths].sort();
   const sourcePaths: Record<string, string> = Object.fromEntries(
     [...sourcePathByOutputPath]
       .map(([outputPath, sourcePath]) => [relative(stagingDir, outputPath).replaceAll("\\", "/"), sourcePath])
@@ -400,7 +290,6 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   await mkdir(GENERATED_OUTPUT_STAGING_DIR, { recursive: true });
   const sourceChecksums = new Map<string, string>();
   const sourcePathByOutputPath = Object.assign(new Map<string, string>(), { sourceChecksums });
-  const runtimeDirectoryRegistry = createRuntimeDirectoryRegistry(GENERATED_OUTPUT_STAGING_DIR);
   const settingsSyncRegistry = createSettingsSyncRegistry(GENERATED_OUTPUT_STAGING_DIR);
 
   const wrappedBuildSupport: IBuildSupport = {
@@ -415,7 +304,6 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     },
     stageProfileAssets,
     writeBinScript,
-    ensureRuntimeDirectory: runtimeDirectoryRegistry.ensureRuntimeDirectory,
     syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 
@@ -519,10 +407,8 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   console.log("   ✅ Successfully compiled unified outputs!");
 
   const syncedSettingsFiles = settingsSyncRegistry.getSyncedSettingsFiles();
-  const unmanagedPaths: IUnmanagedOutputPaths = {
-    runtimeDirectoryPaths: runtimeDirectoryRegistry.getRuntimeDirectoryPaths(),
-    syncedFilePaths: syncedSettingsFiles.map((file) => file.relativePath),
-  };
+  const syncedFilePaths = syncedSettingsFiles.map((file) => file.relativePath);
+  const unmanagedPaths: IUnmanagedOutputPaths = { syncedFilePaths };
   const settingsSyncOptions: ISyncSettingsFilesOptions = {
     syncedSettingsFiles,
     stagingDir: GENERATED_OUTPUT_STAGING_DIR,
@@ -567,7 +453,14 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     expectedCurrentEntries,
   });
   await syncSettingsFiles(settingsSyncOptions);
-  await writeGeneratedOutputManifest(output, nextManagedEntries, sourcePathByOutputPath, GENERATED_OUTPUT_STAGING_DIR, sourceChecksums);
+  await writeGeneratedOutputManifest(
+    output,
+    nextManagedEntries,
+    sourcePathByOutputPath,
+    GENERATED_OUTPUT_STAGING_DIR,
+    sourceChecksums,
+    syncedFilePaths,
+  );
   await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
 
   console.log("\n🎉 Unified configuration ready!");

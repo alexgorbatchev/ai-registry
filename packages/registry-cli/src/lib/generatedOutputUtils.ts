@@ -12,7 +12,7 @@ import {
   symlink,
   writeFile,
 } from "fs/promises";
-import { dirname, isAbsolute, join, relative } from "path";
+import { dirname, join, relative } from "path";
 
 export const GENERATED_OUTPUT_MANIFEST_VERSION = 2;
 export const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
@@ -35,6 +35,8 @@ export interface IGeneratedOutputManifest {
   version: number;
   generatedAt: string;
   entries: Record<string, IGeneratedOutputManifestEntry>;
+  // Output-relative settings files the build reconciles instead of tracking.
+  syncedFilePaths?: string[];
   sourcePaths?: Record<string, string>;
   sourceChecksums?: Record<string, string>;
 }
@@ -45,10 +47,6 @@ export interface IGeneratedOutputDrift {
 }
 
 export interface IUnmanagedOutputPaths {
-  // Output-relative directory paths that a harness tool owns at runtime. They and
-  // everything under them are left out of the collected entries, so the manifest
-  // never tracks them and their disappearance is never reported as drift.
-  runtimeDirectoryPaths?: readonly string[];
   // Output-relative settings files that the harness edits and the build reconciles
   // with their registry source. They are neither tracked, reported, nor removed.
   syncedFilePaths?: readonly string[];
@@ -60,15 +58,6 @@ export interface ISyncManagedGeneratedOutputsOptions extends IUnmanagedOutputPat
   outputDir: string;
   previousManifest: IGeneratedOutputManifest | null;
   expectedCurrentEntries?: Record<string, IGeneratedOutputManifestEntry>;
-}
-
-// Registers the directories a harness build materializes only so that every
-// generated profile shares them (session stores, todo lists, logs). The tool
-// creates, fills, and prunes them afterwards, so they are "ensure-present,
-// unmanaged": created in staging, recreated on sync, excluded from the manifest.
-export interface IRuntimeDirectoryRegistry {
-  ensureRuntimeDirectory(dirPath: string): Promise<void>;
-  getRuntimeDirectoryPaths(): string[];
 }
 
 function createFileChecksum(fileBuffer: Buffer): string {
@@ -90,33 +79,7 @@ function shouldIgnoreGeneratedOutputPath(relativePath: string): boolean {
 }
 
 function isUnmanagedPath(relativePath: string, unmanagedPaths: IUnmanagedOutputPaths): boolean {
-  const runtimeDirectoryPaths = unmanagedPaths.runtimeDirectoryPaths ?? [];
-  const syncedFilePaths = unmanagedPaths.syncedFilePaths ?? [];
-  return (
-    syncedFilePaths.includes(relativePath) ||
-    runtimeDirectoryPaths.some(
-      (runtimeDirectoryPath) => relativePath === runtimeDirectoryPath || relativePath.startsWith(`${runtimeDirectoryPath}/`),
-    )
-  );
-}
-
-export function createRuntimeDirectoryRegistry(rootDir: string): IRuntimeDirectoryRegistry {
-  const runtimeDirectoryPaths = new Set<string>();
-
-  return {
-    async ensureRuntimeDirectory(dirPath: string): Promise<void> {
-      const relativePath = normalizeRelativePath(relative(rootDir, dirPath));
-      if (relativePath.length === 0 || relativePath.startsWith("..") || isAbsolute(relativePath)) {
-        throw new Error(`Runtime directory must be inside the generated output root ${rootDir}: ${dirPath}`);
-      }
-
-      await mkdir(dirPath, { recursive: true });
-      runtimeDirectoryPaths.add(relativePath);
-    },
-    getRuntimeDirectoryPaths(): string[] {
-      return [...runtimeDirectoryPaths].sort((leftPath, rightPath) => leftPath.localeCompare(rightPath));
-    },
-  };
+  return (unmanagedPaths.syncedFilePaths ?? []).includes(relativePath);
 }
 
 function sortManifestEntries(
@@ -338,11 +301,10 @@ export function getGeneratedOutputDrift(
 }
 
 // Unmanaged paths are never removed, even when an older manifest still lists them
-// as managed entries; runtime directories are also ensured to exist afterwards.
+// as managed entries.
 export async function syncManagedGeneratedOutputs(
   options: ISyncManagedGeneratedOutputsOptions,
 ): Promise<void> {
-  const runtimeDirectoryPaths = options.runtimeDirectoryPaths ?? [];
   if (options.expectedCurrentEntries) {
     const currentEntries = await collectGeneratedOutputEntries(options.outputDir, options);
     const affectedPaths = new Set([
@@ -383,9 +345,5 @@ export async function syncManagedGeneratedOutputs(
   for (const nextPath of nextPaths) {
     const nextEntry = options.nextEntries[nextPath];
     await writeManagedEntry(options.nextOutputDir, options.outputDir, nextPath, nextEntry);
-  }
-
-  for (const runtimeDirectoryPath of runtimeDirectoryPaths) {
-    await mkdir(resolveManifestPath(options.outputDir, runtimeDirectoryPath), { recursive: true });
   }
 }

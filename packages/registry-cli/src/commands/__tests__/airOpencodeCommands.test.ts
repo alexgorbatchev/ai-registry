@@ -14,7 +14,6 @@ import {
   writeBinScript,
   type IUnifiedHarnessBuildContext,
 } from "../../lib/harnessBuild";
-import { createRuntimeDirectoryRegistry } from "../../lib/generatedOutputUtils";
 import { createSettingsSyncRegistry } from "../../lib/settingsSync/createSettingsSyncRegistry";
 
 const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..", "..");
@@ -37,7 +36,6 @@ beforeAll(async () => {
       mergeDirectory,
       stageProfileAssets,
       writeBinScript,
-      ensureRuntimeDirectory: createRuntimeDirectoryRegistry(outputDir).ensureRuntimeDirectory,
       syncSettingsFile: createSettingsSyncRegistry(outputDir).syncSettingsFile,
     },
   };

@@ -137,7 +137,7 @@ Keep actual private hostnames and environment instructions in the private overla
 
 The generated-output manifest records skill source paths. Generated-edit recovery writes changes to the selected variant and rejects recovery when the recorded source differs from the current selection, such as after switching hostnames. Rebuild with the original hostname and overlay before recovering those edits. Recovery reverses path tokens but does not reconstruct include directives; edit include-based skills in their source files to preserve those directives.
 
-Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, relink the OpenCode config, relink the generated `default` Codex profile into `~/.codex`, relink the generated `default` Pi profile into `~/.pi/agent`, relink the generated `default` Claude Code profile into `~/.claude`, and resync the repo-local `air-*`, `claude-*`, `codex-*`, `pi-*`, and `cll` wrappers into `~/.local/bin`. Add `-- --codex-profile <profile>`, `-- --pi-profile <profile>`, and/or `-- --claude-code-profile <profile>` when you want to override those linked non-native profile targets.
+Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, reapply the generated OpenCode config, the generated `default` Codex, Pi, and Claude Code profiles to `~/.codex`, `~/.pi/agent`, and `~/.claude`, and every non-default profile to its profile home (see [Harness Homes](#harness-homes)), and resync the repo-local `air-*`, `claude-*`, `codex-*`, `pi-*`, and `cll` wrappers into `~/.local/bin`. Add `-- --codex-profile <profile>`, `-- --pi-profile <profile>`, and/or `-- --claude-code-profile <profile>` when you want to apply a different generated profile to those homes.
 
 To smoke test that flow without touching your real XDG config paths, run:
 
@@ -154,10 +154,11 @@ That command:
 - verifies the previous generated-output manifest before overwriting managed generated paths in `.output/`
 - automatically recovers supported harness-written generated-file edits into their mapped source and regenerates outputs when the manifest baseline confirms that source changes will not be overwritten; conflicts, unsupported recovery, or save failures preserve both versions and suspend output application, including with `-y`
 - syncs harness settings files (Claude Code and Pi `settings.json`, OpenCode `opencode.jsonc`, Codex `config.toml`) both ways instead of treating them as drift: changes the harness made are written back to `harnesses/<name>/` and committed when the file had no other uncommitted edits, and registry changes are applied to the live file
-- links `.output/opencode` into `${XDG_CONFIG_HOME:-~/.config}/opencode`
-- links `.output/codex/default` into `${CODEX_HOME:-~/.codex}` by default, or links `.output/codex/<profile>` when you pass `-- --codex-profile <profile>`
-- links `.output/pi/default` into `${PI_CODING_AGENT_DIR:-~/.pi/agent}` by default, or links `.output/pi/<profile>` when you pass `-- --pi-profile <profile>`
-- links `.output/claude-code/default` into `${CLAUDE_CONFIG_DIR:-~/.claude}` by default, or links `.output/claude-code/<profile>` when you pass `-- --claude-code-profile <profile>`
+- links the managed entries of `.output/opencode` into the real `${XDG_CONFIG_HOME:-~/.config}/opencode` directory
+- links the managed entries of `.output/codex/default` into the real `${CODEX_HOME:-~/.codex}` directory by default, or of `.output/codex/<profile>` when you pass `-- --codex-profile <profile>`
+- links the managed entries of `.output/pi/default` into the real `${PI_CODING_AGENT_DIR:-~/.pi/agent}` directory by default, or of `.output/pi/<profile>` when you pass `-- --pi-profile <profile>`
+- links the managed entries of `.output/claude-code/default` into the real `${CLAUDE_CONFIG_DIR:-~/.claude}` directory by default, or of `.output/claude-code/<profile>` when you pass `-- --claude-code-profile <profile>`
+- applies every non-default Codex, Pi, and Claude Code profile to its home under `${XDG_DATA_HOME:-~/.local/share}/ai-registry/<harness>/profiles/` and links the default home's runtime entries into it
 - symlinks every `air-*`, `claude-*`, `codex-*`, `pi-*`, and `cll` helper from `.output/bin` into `~/.local/bin`
 - removes broken public-wrapper symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
@@ -278,11 +279,30 @@ The build script generates unified final outputs in `.output/` for the targets t
 
 - `.output/opencode`: OpenCode config with skills (copied from source with template tags resolved), commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `packages/registry-cli/src/harnesses/opencode/build.ts`.
 - `.output/codex/<profile>`: Codex profile root for one ai-registry profile. Each profile has its own `AGENTS.md` and generated `skills/`, including the default profile's commands packaged as native skills that require explicit invocation. Non-default roots symlink shared entries such as `config.toml` from `default/`. Runtime files such as `auth.json` stay Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
-- `.output/pi/<profile>`: Pi profile root for one ai-registry profile. Each generated profile renders its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json`, `prompts/`, and static `sessions/` directory, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Pi-specific final shaping lives in `packages/registry-cli/src/harnesses/pi/build.ts`.
-- `.output/claude-code/<profile>`: Claude Code config root for one ai-registry profile, matching the layout Claude Code expects at `CLAUDE_CONFIG_DIR`. Each generated profile renders its own `CLAUDE.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json`, `commands/`, and the static runtime directories Claude Code writes into, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Claude Code-specific shaping lives in `packages/registry-cli/src/harnesses/claude-code/build.ts`.
-- `.output/manifest.json`: SHA-256 manifest for managed generated files, directories, symlinks, mapped source paths, and source fingerprints under `.output/`. Builds automatically recover supported harness edits when source fingerprints and fresh generated output match their recorded baselines and supported transformations reverse exactly. Recovery supports plain text, canonical raw path tags, and generated skill name/invocation metadata; EJS includes, expressions, control flow, and other transformations require source edits. Conflicts, missing baselines/mappings, or save failures preserve the edits and stop output application without an overwrite prompt. Existing drift in older manifests without source fingerprints must be reconciled into source before a clean generation can establish a fresh baseline; `-y` does not discard it. After recovery, a fresh generation pass updates all copies; further drift suspends application for reconciliation. Runtime directories remain outside the manifest, never count as drift, are never removed by sync, and are recreated when missing. Unmanaged session and runtime files are preserved. Synced harness settings files are excluded too and reconciled key by key with source, using previous merged values under `.tmp/settings-sync/`.
+- `.output/pi/<profile>`: Pi profile root for one ai-registry profile. Each generated profile renders its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json` and `prompts/`, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Pi-specific final shaping lives in `packages/registry-cli/src/harnesses/pi/build.ts`.
+- `.output/claude-code/<profile>`: Claude Code config root for one ai-registry profile, matching the layout Claude Code expects at `CLAUDE_CONFIG_DIR`. Each generated profile renders its own `CLAUDE.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json` and `commands/`, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Claude Code-specific shaping lives in `packages/registry-cli/src/harnesses/claude-code/build.ts`.
+- `.output/manifest.json`: SHA-256 manifest for managed generated files, directories, symlinks, mapped source paths, and source fingerprints under `.output/`. Builds automatically recover supported harness edits when source fingerprints and fresh generated output match their recorded baselines and supported transformations reverse exactly. Recovery supports plain text, canonical raw path tags, and generated skill name/invocation metadata; EJS includes, expressions, control flow, and other transformations require source edits. Conflicts, missing baselines/mappings, or save failures preserve the edits and stop output application without an overwrite prompt. Existing drift in older manifests without source fingerprints must be reconciled into source before a clean generation can establish a fresh baseline; `-y` does not discard it. After recovery, a fresh generation pass updates all copies; further drift suspends application for reconciliation. Unmanaged files are preserved. Synced harness settings files are listed under `syncedFilePaths` instead of the managed entries and reconciled key by key with source, using previous merged values under `.tmp/settings-sync/`.
 
 The build writes only final generated outputs into `.output/` and updates only the managed paths recorded in the manifest.
+
+### Harness Homes
+
+Harness runtime state never lives in `.output/`. Each harness home is a real directory outside the repository, and bootstrap links the generated profile's managed entries into it:
+
+| Profile | Home |
+| --- | --- |
+| Claude Code `default` | `${CLAUDE_CONFIG_DIR:-~/.claude}` |
+| Codex `default` | `${CODEX_HOME:-~/.codex}` |
+| Pi `default` | `${PI_CODING_AGENT_DIR:-~/.pi/agent}` |
+| OpenCode | `${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-~/.config}/opencode}` |
+| Any non-default Claude Code, Codex, or Pi profile | `${XDG_DATA_HOME:-~/.local/share}/ai-registry/<harness>/profiles/<profile>` |
+
+- bootstrap links only the top-level entries the manifest records for the generated profile, such as `CLAUDE.md`, `skills/`, `commands/`, and the synced settings file
+- sessions, transcripts, history, databases, logs, worktrees, installed plugins, and credentials stay where the harness writes them, in the home itself, so deleting `.output/` or moving the checkout never hides or splits them
+- rerunning bootstrap from a relocated checkout repoints the managed links and leaves runtime state untouched
+- a real file or directory that occupies a managed name is kept as `<name>.backup-<timestamp>` before the link replaces it
+- non-default profile homes link every runtime entry of the default home they do not hold themselves, except bootstrap's own backups, so profiles share history and sessions
+- bootstrap refuses a home that is still a symlink; move the state it points at into a real directory first
 
 For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://<%- repo_root %>/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.
 
@@ -300,67 +320,67 @@ The Codex harness compiles the generated `default` profile into the shared Codex
 - non-default profiles inherit the default command set; their own command selections are not emitted
 - non-default roots symlink every shared top-level entry from `default/` except `AGENTS.md` and `skills/`, keeping their own instructions and skills; Codex outputs have no managed `prompts/` directory
 
-To link one generated Codex profile into your active Codex directories, run:
+To apply one generated Codex profile to your active Codex home, run:
 
 ```bash
 bun run bootstrap -- --codex-profile developer
 ```
 
-Codex uses one active home directory at a time. This repository links the generated `default` profile into `${CODEX_HOME:-~/.codex}` during plain bootstrap, and `-- --codex-profile <profile>` overrides that link to a different generated profile root.
+Codex uses one active home directory at a time. Plain bootstrap applies the generated `default` profile to `${CODEX_HOME:-~/.codex}`, and `-- --codex-profile <profile>` applies a different generated profile there instead.
 
 Bootstrap also links generated Codex launchers into `~/.local/bin`:
 
-- `codex-<profile>` launches any non-default generated Codex profile by setting `CODEX_HOME`
-- no bare `codex` wrapper is generated, so the real `codex` binary stays on `PATH` untouched and reads the generated `default` profile through the `${CODEX_HOME:-~/.codex}` symlink
+- `codex-<profile>` launches any non-default generated Codex profile by setting `CODEX_HOME` to its profile home
+- no bare `codex` wrapper is generated, so the real `codex` binary stays on `PATH` untouched and reads `${CODEX_HOME:-~/.codex}`
 
 ### Using with Pi
 
 The Pi harness compiles the generated `default` profile into the shared Pi root under `.output/pi/default/`. Every generated Pi profile root renders its own `APPEND_SYSTEM.md` from that profile manifest's `system_prompt`, while non-default roots symlink the remaining shared entries from `default/` and keep only their own `skills/` directory.
 
 - each generated profile contributes its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`
-- the generated `default` profile contributes the shared `settings.json`, `prompts/`, and static `sessions/` directory
+- the generated `default` profile contributes the shared `settings.json` and `prompts/`
 - `skills/` plus any Pi-only harness skills under `harnesses/pi/skills/` (grouped into `agent/` and `user/`) are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Pi payload
-- non-default generated Pi profile roots symlink every shared top-level entry from `default/` except `APPEND_SYSTEM.md` and `skills/`, so they inherit the default commands, settings, and sessions while keeping their own instructions and skills
+- non-default generated Pi profile roots symlink every shared top-level entry from `default/` except `APPEND_SYSTEM.md` and `skills/`, so they inherit the default commands and settings while keeping their own instructions and skills
 
-To link one generated Pi profile into your active Pi config directory, run:
+To apply one generated Pi profile to your active Pi config directory, run:
 
 ```bash
 bun run bootstrap -- --pi-profile developer
 ```
 
-Pi uses one active config root at a time. This repository links the generated `default` profile into `${PI_CODING_AGENT_DIR:-~/.pi/agent}` during plain bootstrap, and `-- --pi-profile <profile>` overrides that link to a different generated profile root.
+Pi uses one active config root at a time. Plain bootstrap applies the generated `default` profile to `${PI_CODING_AGENT_DIR:-~/.pi/agent}`, and `-- --pi-profile <profile>` applies a different generated profile there instead.
 
 Bootstrap also links generated Pi launchers into `~/.local/bin`:
 
-- `pi-<profile>` launches any non-default generated Pi profile by setting `PI_CODING_AGENT_DIR`
+- `pi-<profile>` launches any non-default generated Pi profile by setting `PI_CODING_AGENT_DIR` to its profile home
 - `pi-install`, `pi-update`, and `pi-uninstall` manage Pi packages in `harnesses/pi/settings.json` and rebuild afterward
-- no bare `pi` wrapper is generated, so the real `pi` binary stays on `PATH` untouched and reads the generated `default` profile through the `${PI_CODING_AGENT_DIR:-~/.pi/agent}` symlink
+- no bare `pi` wrapper is generated, so the real `pi` binary stays on `PATH` untouched and reads `${PI_CODING_AGENT_DIR:-~/.pi/agent}`
 
 ### Using with Claude Code
 
 The Claude Code harness compiles the generated `default` profile into the shared Claude Code config root under `.output/claude-code/default/`. Every generated Claude Code profile root renders its own `CLAUDE.md` from that profile manifest's `system_prompt`, while non-default roots symlink the remaining shared entries from `default/` and keep only their own `skills/` directory.
 
 - each generated profile contributes its own user-global `CLAUDE.md` from `profiles/<name>/profile.yaml`
-- the generated `default` profile contributes the shared `settings.json`, `commands/`, and the disposable runtime directories Claude Code writes into (`file-history/`, `session-env/`, and `statsig/`)
-- everything Claude Code would be painful to lose — per-project memory files and transcripts (`projects/`), resumable session history (`sessions/`), todo lists (`todos/`), shell snapshots (`shell-snapshots/`), and installed plugins (`plugins/`) — lives outside the generated output under `${XDG_DATA_HOME:-~/.local/share}/ai-registry/claude-code/` and is symlinked into the generated `default` profile, so deleting `.output/` and rebuilding never loses it
+- the generated `default` profile contributes the shared `settings.json` and `commands/`
+- per-project memory files and transcripts (`projects/`), session history, todo lists, file history, and installed plugins live in the real Claude Code home, never in the generated output
 - every file shipped under `harnesses/claude-code/` other than `skills/` is copied into the generated `default` root, so new native config surfaces such as `agents/` or `output-styles/` need no build changes
 - `skills/` plus any Claude Code-only harness skills under `harnesses/claude-code/skills/` (grouped into `agent/` and `user/`) are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Claude Code payload
-- non-default generated Claude Code profile roots symlink every shared top-level entry from `default/` except `CLAUDE.md` and `skills/`, so they inherit the default commands, settings, and runtime state while keeping their own instructions and skills
+- non-default generated Claude Code profile roots symlink every shared top-level entry from `default/` except `CLAUDE.md` and `skills/`, so they inherit the default commands and settings while keeping their own instructions and skills
 - the Claude Code harness has no native equivalent for the manifest's `tools` and `permission` fields, so the build fails instead of silently dropping them
 
-To link one generated Claude Code profile into your active Claude Code config directory, run:
+To apply one generated Claude Code profile to your active Claude Code config directory, run:
 
 ```bash
 bun run bootstrap -- --claude-code-profile developer
 ```
 
-Claude Code uses one active config directory at a time. This repository links the generated `default` profile into `${CLAUDE_CONFIG_DIR:-~/.claude}` during plain bootstrap, and `-- --claude-code-profile <profile>` overrides that link to a different generated profile root.
+Claude Code uses one active config directory at a time. Plain bootstrap applies the generated `default` profile to `${CLAUDE_CONFIG_DIR:-~/.claude}`, and `-- --claude-code-profile <profile>` applies a different generated profile there instead.
 
 Bootstrap also links generated Claude Code launchers into `~/.local/bin`:
 
-- `claude-<profile>` launches any non-default generated Claude Code profile by setting `CLAUDE_CONFIG_DIR`
+- `claude-<profile>` launches any non-default generated Claude Code profile by setting `CLAUDE_CONFIG_DIR` to its profile home
 - `cll` launches Claude Code routed through LiteLLM (reading `ANTHROPIC_BASE_URL` or `LITELLM_BASE_URL`, and `ANTHROPIC_AUTH_TOKEN` or `LITELLM_API_KEY`), defaulting to `gemini-3.7-flash` (or a custom model name passed as the first argument)
-- no `claude` wrapper is generated, so the real `claude` binary stays on `PATH` untouched and reads the generated `default` profile through the `~/.claude` symlink
+- no `claude` wrapper is generated, so the real `claude` binary stays on `PATH` untouched and reads `~/.claude`
 
 ### Bootstrap Overrides
 

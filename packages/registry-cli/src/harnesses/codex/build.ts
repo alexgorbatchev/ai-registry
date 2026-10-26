@@ -7,6 +7,7 @@ import { parseArgs } from "node:util";
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 
 import type {
+  IBootstrapTarget,
   IProfileBuildContext,
   IUnifiedHarnessBuildContext,
   IUnifiedHarnessPlugin,
@@ -14,6 +15,7 @@ import type {
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
 import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
+import { getProfileHomeDir, getProfileHomeShellPath } from "../../lib/profileHomeUtils";
 import {
   getOutputSkillName,
   injectDisableModelInvocation,
@@ -26,10 +28,6 @@ import { getCommandSkillName } from "./getCommandSkillName";
 const CODEX_OUTPUT_DIR_NAME = "codex";
 const DEFAULT_PROFILE_NAME = "default";
 const COMMAND_SKILLS_STAGING_DIR_NAME = ".codex-command-skills";
-
-// Directories Codex writes runtime state into. They are materialized in the default
-// profile root so every generated profile shares them, then owned by Codex.
-const CODEX_RUNTIME_DIR_NAMES = [".tmp", "log", "sessions"];
 
 const CONFIG_FILE_NAME = "config.toml";
 
@@ -192,11 +190,6 @@ async function stageProfile(context: IProfileBuildContext): Promise<void> {
   await stageProfileAgentsFile(context, profileOutputDir);
 
   if (isDefaultProfile) {
-    // Codex-owned runtime state, shared by every generated profile through the
-    // default root: created here, never tracked by the manifest.
-    for (const runtimeDirName of CODEX_RUNTIME_DIR_NAMES) {
-      await context.buildSupport.ensureRuntimeDirectory(join(profileOutputDir, runtimeDirName));
-    }
     await stageCodexConfig(context, profileOutputDir);
     await stageHarnessRules(context, profileOutputDir);
     await stageHarnessLocalSkills(context, skillsDir);
@@ -257,9 +250,9 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
       }
     }
 
-    // The default profile is reached through the `${CODEX_HOME:-~/.codex}` symlink that
-    // bootstrap creates, so only non-default profiles need a launcher that overrides
-    // CODEX_HOME. Nothing generated here shadows the real `codex` binary.
+    // The default profile is applied to `${CODEX_HOME:-~/.codex}` by bootstrap, so only
+    // non-default profiles need a launcher that overrides CODEX_HOME with their own
+    // home. Nothing generated here shadows the real `codex` binary.
     if (profileEntry.name === DEFAULT_PROFILE_NAME) {
       continue;
     }
@@ -267,7 +260,7 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
     const content = createExternalProfileHelper(
       "codex",
       "CODEX_HOME",
-      `<%- output_dir %>/${CODEX_OUTPUT_DIR_NAME}/${profileEntry.name}`,
+      getProfileHomeShellPath(CODEX_OUTPUT_DIR_NAME, profileEntry.name),
     );
     await context.buildSupport.writeBinScript(context.outputDir, `codex-${profileEntry.name}`, content);
   }
@@ -317,22 +310,27 @@ function formatMissingCodexProfileMessage(sourcePath: string, availableProfiles:
   return `Generated Codex profile does not exist: ${sourcePath}. Available generated Codex profiles: ${availableProfiles.join(", ")}.`;
 }
 
-async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>> {
-  const profile = getRequestedCodexProfile(process.argv) ?? "default";
+async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
+  const profile = getRequestedCodexProfile(process.argv) ?? DEFAULT_PROFILE_NAME;
+  const availableProfiles = await getGeneratedCodexProfileNames(outputDir);
 
   const sourcePath = getProfileOutputDir(outputDir, profile);
-
   if (!existsSync(sourcePath)) {
-    const availableProfiles = await getGeneratedCodexProfileNames(outputDir);
     throw new Error(formatMissingCodexProfileMessage(sourcePath, availableProfiles));
   }
 
+  const homePath = process.env.CODEX_HOME?.trim() || join(homedir(), ".codex");
   return [
-    {
-      sourcePath,
-      targetPath: process.env.CODEX_HOME?.trim() || join(homedir(), ".codex"),
-      description: `Codex home (${profile})`,
-    },
+    { kind: "home", sourcePath, targetPath: homePath, description: `Codex home (${profile})` },
+    ...availableProfiles
+      .filter((profileName) => profileName !== DEFAULT_PROFILE_NAME)
+      .map((profileName): IBootstrapTarget => ({
+        kind: "home",
+        sourcePath: getProfileOutputDir(outputDir, profileName),
+        targetPath: getProfileHomeDir(CODEX_OUTPUT_DIR_NAME, profileName, process.env),
+        description: `Codex profile home (${profileName})`,
+        sharedHomePath: homePath,
+      })),
   ];
 }
 

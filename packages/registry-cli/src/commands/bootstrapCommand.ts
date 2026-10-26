@@ -1,12 +1,14 @@
-import { cp, lstat, mkdir, readlink, realpath, rename, rm, symlink } from "fs/promises";
-import { existsSync } from "fs";
 import { homedir } from "os";
-import { dirname, join } from "path";
+import { join } from "path";
 import { parseArgs } from "node:util";
 
-import { runCommand } from "../lib/runCommand";
+import { applyLinkTarget, type ILinkApplyResult } from "../lib/applyLinkTarget";
+import type { IBootstrapTarget, IUnifiedHarnessPlugin } from "../lib/harnessBuild";
+import { applyHomeTarget, getManagedEntryNames, type IHomeApplyResult } from "../lib/homeTargetUtils";
+import { readGeneratedOutputManifest } from "../lib/readGeneratedOutputManifest";
+import { runCommand, type IRunCommandSpawn } from "../lib/runCommand";
 import { syncPublicScripts, type ISyncPublicScriptsResult } from "../lib/syncPublicScripts";
-import { getRegistryPaths } from "../lib/getRegistryPaths";
+import { getRegistryPaths, type IRegistryPaths } from "../lib/getRegistryPaths";
 
 // We import the static harness plugins to retrieve their bootstrap targets
 import claudeCodePlugin from "../harnesses/claude-code/build";
@@ -14,27 +16,34 @@ import codexPlugin from "../harnesses/codex/build";
 import opencodePlugin from "../harnesses/opencode/build";
 import piPlugin from "../harnesses/pi/build";
 
-const PUBLIC_BIN_DIR = join(homedir(), ".local", "bin");
+type ILinkTarget = Extract<IBootstrapTarget, { kind: "link" }>;
 
-type IBootstrapTarget = {
-  sourcePath: string;
-  targetPath: string;
-  description: string;
+export type IBootstrapDependencies = {
+  registryPaths: IRegistryPaths;
+  argv: string[];
+  plugins: IUnifiedHarnessPlugin[];
+  publicBinDir: string;
+  getTimestamp: () => string;
+  spawn?: IRunCommandSpawn;
 };
-
-type IApplyResult =
-  | { action: "linked" }
-  | { action: "relinked" }
-  | { action: "unchanged" }
-  | { action: "backed_up"; backupPath: string };
 
 function getTimestamp(): string {
   return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
 
-function hasAutoConfirmFlag(): boolean {
+function createDefaultDependencies(): IBootstrapDependencies {
+  return {
+    registryPaths: getRegistryPaths(),
+    argv: process.argv,
+    plugins: [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin],
+    publicBinDir: join(homedir(), ".local", "bin"),
+    getTimestamp,
+  };
+}
+
+function hasAutoConfirmFlag(argv: string[]): boolean {
   const { values } = parseArgs({
-    args: process.argv.slice(2),
+    args: argv.slice(2),
     options: {
       yes: { type: "boolean", short: "y" },
     },
@@ -43,51 +52,8 @@ function hasAutoConfirmFlag(): boolean {
   return Boolean(values.yes);
 }
 
-function getBackupPath(targetPath: string): string {
-  return `${targetPath}.backup-${getTimestamp()}`;
-}
-
-function getErrorCode(error: unknown): string | null {
-  if (typeof error !== "object" || error === null || !("code" in error)) {
-    return null;
-  }
-  const { code } = error;
-  return typeof code === "string" ? code : null;
-}
-
-async function resolveSymlinkTarget(targetPath: string): Promise<string> {
-  const linkPath = await readlink(targetPath);
-  const absoluteLinkPath = join(dirname(targetPath), linkPath);
-  try {
-    return await realpath(absoluteLinkPath);
-  } catch (error) {
-    if (getErrorCode(error) === "ENOENT") {
-      return absoluteLinkPath;
-    }
-    throw error;
-  }
-}
-
-async function getSymlinkType(sourcePath: string): Promise<"dir" | "file"> {
-  try {
-    const stat = await lstat(sourcePath);
-    return stat.isDirectory() ? "dir" : "file";
-  } catch (error) {
-    return "dir";
-  }
-}
-
-async function resolveRealPathOrSelf(targetPath: string): Promise<string> {
-  try {
-    return await realpath(targetPath);
-  } catch (error) {
-    return targetPath;
-  }
-}
-
-async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
+async function getBootstrapTargets(plugins: IUnifiedHarnessPlugin[], outputDir: string): Promise<IBootstrapTarget[]> {
   const targets: IBootstrapTarget[] = [];
-  const plugins = [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin];
 
   for (const plugin of plugins) {
     if (plugin.getBootstrapTargets) {
@@ -98,103 +64,38 @@ async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[
   return targets;
 }
 
-async function preserveExistingRuntimeData(backupPath: string, sourcePath: string): Promise<void> {
-  const runtimeEntries = [
-    "auth.json",
-    "trust.json",
-    "history.jsonl",
-    "history.json",
-    "installation_id",
-    "models-store.json",
-    "state_5.sqlite",
-    "state_5.sqlite-wal",
-    "state_5.sqlite-shm",
-    "memories_1.sqlite",
-    "memories_1.sqlite-wal",
-    "memories_1.sqlite-shm",
-    "logs_2.sqlite",
-    "logs_2.sqlite-wal",
-    "logs_2.sqlite-shm",
-    "goals_1.sqlite",
-    "goals_1.sqlite-wal",
-    "goals_1.sqlite-shm",
-    "sessions",
-    "log",
-    "memories",
-    "missions",
-    "npm",
-    "shell_snapshots",
-    // Claude Code runtime state
-    ".claude.json",
-    ".credentials.json",
-    ".last-cleanup",
-    "backups",
-    "cache",
-    "downloads",
-    "file-history",
-    "ide",
-    "plugins",
-    "policy-limits.json",
-    "projects",
-    "remote-settings.json",
-    "session-env",
-    "settings.local.json",
-    "shell-snapshots",
-    "statsig",
-    "todos",
-  ];
-
-  for (const entryName of runtimeEntries) {
-    const backupEntryPath = join(backupPath, entryName);
-    const sourceEntryPath = join(sourcePath, entryName);
-
-    if (existsSync(backupEntryPath) && !existsSync(sourceEntryPath)) {
-      try {
-        await cp(backupEntryPath, sourceEntryPath, { recursive: true });
-        console.log(`    migrated runtime data '${entryName}' from backup to generated target`);
-      } catch (error) {
-        console.warn(`    warning: failed to migrate '${entryName}' from backup: ${error}`);
-      }
-    }
+function printLinkTargetResult(target: ILinkTarget, result: ILinkApplyResult): void {
+  if (result.action === "unchanged") {
+    console.log(`  reused ${target.description}: ${target.targetPath}`);
+    return;
+  }
+  if (result.action === "relinked") {
+    console.log(`  relinked ${target.description}: ${target.targetPath}`);
+    return;
+  }
+  console.log(`  linked ${target.description}: ${target.targetPath}`);
+  if (result.action === "backed_up") {
+    console.log(`    backed up previous contents to: ${result.backupPath}`);
   }
 }
 
-async function applyTarget(target: IBootstrapTarget): Promise<IApplyResult> {
-  await mkdir(dirname(target.targetPath), { recursive: true });
-  const symlinkType = await getSymlinkType(target.sourcePath);
-  try {
-    const targetStats = await lstat(target.targetPath);
-    if (targetStats.isSymbolicLink()) {
-      const [resolvedTargetPath, resolvedSourcePath] = await Promise.all([
-        resolveSymlinkTarget(target.targetPath),
-        resolveRealPathOrSelf(target.sourcePath),
-      ]);
-      if (resolvedTargetPath === resolvedSourcePath) {
-        return { action: "unchanged" };
-      }
-
-      await rm(target.targetPath, { force: true });
-      await symlink(target.sourcePath, target.targetPath, symlinkType);
-      return { action: "relinked" };
-    }
-
-    const backupPath = getBackupPath(target.targetPath);
-    await rename(target.targetPath, backupPath);
-    await symlink(target.sourcePath, target.targetPath, symlinkType);
-
-    if (existsSync(backupPath)) {
-      await preserveExistingRuntimeData(backupPath, target.sourcePath);
-    }
-
-    return { action: "backed_up", backupPath };
-  } catch (error) {
-    const errorCode = getErrorCode(error);
-    if (errorCode !== "ENOENT") {
-      throw error;
-    }
+function printHomeTargetResult(target: IBootstrapTarget, result: IHomeApplyResult): void {
+  console.log(`  applied ${target.description}: ${target.targetPath}`);
+  if (result.linked.length > 0) {
+    console.log(`    linked: ${result.linked.join(", ")}`);
   }
-  await symlink(target.sourcePath, target.targetPath, symlinkType);
-  return { action: "linked" };
+  if (result.relinked.length > 0) {
+    console.log(`    relinked: ${result.relinked.join(", ")}`);
+  }
+  for (const backedUpEntry of result.backedUp) {
+    console.log(`    backed up ${backedUpEntry.name} to: ${backedUpEntry.backupPath}`);
+  }
+  if (result.removed.length > 0) {
+    console.log(`    removed stale links: ${result.removed.join(", ")}`);
+  }
+  if (result.shared.length > 0) {
+    console.log(`    shared runtime entries: ${result.shared.join(", ")}`);
+  }
 }
 
 function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResult): void {
@@ -219,8 +120,8 @@ function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResul
   }
 }
 
-export async function bootstrapCommand(): Promise<void> {
-  const { root, overlay, output } = getRegistryPaths();
+export async function bootstrapCommand(dependencies: IBootstrapDependencies = createDefaultDependencies()): Promise<void> {
+  const { root, overlay, output } = dependencies.registryPaths;
   console.log("🚀 Bootstrapping ai-registry...\n");
   if (overlay) {
     console.log(`📦 Using overlay: ${overlay}\n`);
@@ -231,41 +132,42 @@ export async function bootstrapCommand(): Promise<void> {
     cmd: ["bun", "install"],
     cwd: root,
     description: "install dependencies",
+    spawn: dependencies.spawn,
   });
 
   console.log("Building generated outputs...");
   await runCommand({
-    cmd: hasAutoConfirmFlag() ? ["bun", "run", "build", "--", "-y"] : ["bun", "run", "build"],
+    cmd: hasAutoConfirmFlag(dependencies.argv) ? ["bun", "run", "build", "--", "-y"] : ["bun", "run", "build"],
     cwd: root,
     description: "build generated outputs",
+    spawn: dependencies.spawn,
     failureHint: "Generated edits are recovered automatically when safe. Resolve any reported source conflict, unsupported recovery, or save failure before retrying; -y does not discard edits.",
   });
 
-  const bootstrapTargets = await getBootstrapTargets(output);
-
-  console.log("Applying generated outputs...");
-  for (const target of bootstrapTargets) {
-    const result = await applyTarget(target);
-    if (result.action === "unchanged") {
-      console.log(`  reused ${target.description}: ${target.targetPath}`);
-      continue;
-    }
-    if (result.action === "relinked") {
-      console.log(`  relinked ${target.description}: ${target.targetPath}`);
-      continue;
-    }
-    console.log(`  linked ${target.description}: ${target.targetPath}`);
-    if (result.action === "backed_up") {
-      console.log(`    backed up previous contents to: ${result.backupPath}`);
-    }
+  const bootstrapTargets = await getBootstrapTargets(dependencies.plugins, output);
+  const manifest = await readGeneratedOutputManifest(output);
+  if (manifest === null) {
+    throw new Error(`Generated output manifest is missing from ${output}. Rebuild before bootstrapping.`);
   }
 
-  // we pass the outputDir because public scripts are generated in .output/bin now
+  console.log("Applying generated outputs...");
+  const backupSuffix = dependencies.getTimestamp();
+  for (const target of bootstrapTargets) {
+    if (target.kind === "link") {
+      printLinkTargetResult(target, await applyLinkTarget(target, backupSuffix));
+      continue;
+    }
+
+    const managedEntryNames = getManagedEntryNames(manifest, output, target.sourcePath);
+    printHomeTargetResult(target, await applyHomeTarget(target, managedEntryNames, backupSuffix));
+  }
+
   const publicScriptResult = await syncPublicScripts({
-    binDir: PUBLIC_BIN_DIR,
-    repositoryRoot: root, // not actually used for the source in the function, it computes .output/bin inside
+    binDir: dependencies.publicBinDir,
+    getTimestamp: dependencies.getTimestamp,
+    repositoryRoot: root,
   });
-  printPublicScriptResult(PUBLIC_BIN_DIR, publicScriptResult);
+  printPublicScriptResult(dependencies.publicBinDir, publicScriptResult);
 
   console.log("\nReady.");
   if (overlay) {
@@ -274,6 +176,6 @@ export async function bootstrapCommand(): Promise<void> {
   for (const target of bootstrapTargets) {
     console.log(`${target.description} now reads from: ${target.targetPath}`);
   }
-  console.log(`Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: ${PUBLIC_BIN_DIR}`);
+  console.log(`Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: ${dependencies.publicBinDir}`);
   console.log("Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, and CLAUDE_CONFIG_DIR if needed.");
 }

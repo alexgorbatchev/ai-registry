@@ -7,12 +7,14 @@ import { parseArgs } from "node:util";
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 
 import type {
+  IBootstrapTarget,
   IProfileBuildContext,
   IUnifiedHarnessBuildContext,
   IUnifiedHarnessPlugin,
 } from "../../lib/harnessBuild";
 import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
+import { getProfileHomeDir, getProfileHomeShellPath } from "../../lib/profileHomeUtils";
 import { assertSupportedPiManifest } from "./lib/profileOutputRules";
 import {
   getOutputSkillName,
@@ -25,6 +27,7 @@ import {
 const PROFILE_STAGING_DIR_NAME = ".pi-profiles";
 const APPEND_SYSTEM_FILE_NAME = "APPEND_SYSTEM.md";
 const DEFAULT_PROFILE_NAME = "default";
+const PI_OUTPUT_DIR_NAME = "pi";
 
 function getProfileStagingRoot(outputDir: string): string {
   return join(outputDir, PROFILE_STAGING_DIR_NAME);
@@ -141,14 +144,18 @@ async function generatePiHelpers(context: IUnifiedHarnessBuildContext, profiles:
   const updateTemplate = await readFile(piUpdatePath, "utf-8");
 
   for (const profile of profiles) {
-    // The default profile is reached through the `~/.pi/agent` symlink that bootstrap
-    // creates, so only non-default profiles need a launcher that overrides
-    // PI_CODING_AGENT_DIR. Nothing generated here shadows the real `pi` binary.
+    // The default profile is applied to `~/.pi/agent` by bootstrap, so only non-default
+    // profiles need a launcher that overrides PI_CODING_AGENT_DIR with their own home.
+    // Nothing generated here shadows the real `pi` binary.
     if (profile === DEFAULT_PROFILE_NAME) {
       continue;
     }
 
-    const content = createExternalProfileHelper("pi", "PI_CODING_AGENT_DIR", `<%- output_dir %>/pi/${profile}`);
+    const content = createExternalProfileHelper(
+      "pi",
+      "PI_CODING_AGENT_DIR",
+      getProfileHomeShellPath(PI_OUTPUT_DIR_NAME, profile),
+    );
 
     await context.buildSupport.writeBinScript(context.outputDir, `pi-${profile}`, content);
   }
@@ -240,10 +247,6 @@ async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<voi
         }
         await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
         await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
-
-        // Pi-owned runtime state, shared by every generated profile through the
-        // default root: created here, never tracked by the manifest.
-        await context.buildSupport.ensureRuntimeDirectory(join(visibleProfileDir, "sessions"));
         continue;
       }
 
@@ -312,26 +315,33 @@ function formatMissingPiProfileMessage(sourcePath: string, availableProfiles: st
   return `Generated Pi profile does not exist: ${sourcePath}. Available generated Pi profiles: ${availableProfiles.join(", ")}.`;
 }
 
-async function getBootstrapTargets(outputDir: string): Promise<Array<{ sourcePath: string; targetPath: string; description: string }>> {
+async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
   const profile = getRequestedPiProfile(process.argv) ?? DEFAULT_PROFILE_NAME;
+  const availableProfiles = await getGeneratedPiProfileNames(outputDir);
 
-  const sourcePath = join(outputDir, "pi", profile);
+  const sourcePath = join(outputDir, PI_OUTPUT_DIR_NAME, profile);
   if (!existsSync(sourcePath)) {
-    const availableProfiles = await getGeneratedPiProfileNames(outputDir);
     throw new Error(formatMissingPiProfileMessage(sourcePath, availableProfiles));
   }
 
-  const targets = [
-    {
-      sourcePath,
-      targetPath: process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent"),
-      description: `Pi config (${profile})`,
-    },
+  const homePath = process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent");
+  const targets: IBootstrapTarget[] = [
+    { kind: "home", sourcePath, targetPath: homePath, description: `Pi config (${profile})` },
+    ...availableProfiles
+      .filter((profileName) => profileName !== DEFAULT_PROFILE_NAME)
+      .map((profileName): IBootstrapTarget => ({
+        kind: "home",
+        sourcePath: join(outputDir, PI_OUTPUT_DIR_NAME, profileName),
+        targetPath: getProfileHomeDir(PI_OUTPUT_DIR_NAME, profileName, process.env),
+        description: `Pi profile home (${profileName})`,
+        sharedHomePath: homePath,
+      })),
   ];
 
   const webSearchSource = join(sourcePath, "web-search.json");
   if (existsSync(webSearchSource)) {
     targets.push({
+      kind: "link",
       sourcePath: webSearchSource,
       targetPath: join(homedir(), ".pi", "web-search.json"),
       description: "Pi web search config",

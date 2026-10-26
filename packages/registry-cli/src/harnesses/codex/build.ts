@@ -32,14 +32,15 @@ const COMMAND_SKILLS_STAGING_DIR_NAME = ".codex-command-skills";
 const CONFIG_FILE_NAME = "config.toml";
 
 // Codex keys that never reach the registry source: project trust levels, skill
-// toggles, and hook trust hashes keyed by absolute local paths; acknowledgement
-// notices and notice counters Codex stamps itself; and MCP server fields that can
-// hold credentials.
+// toggles, and hook trust hashes keyed by absolute local paths; the bundled
+// marketplace Codex points at its own home's `.tmp/`; acknowledgement notices and
+// notice counters Codex stamps itself; and MCP server fields that can hold credentials.
 const CODEX_LIVE_ONLY_KEY_PATHS = [
   ["projects"],
   ["notice"],
   ["skills", "config"],
   ["hooks", "state"],
+  ["marketplaces", "openai-bundled"],
   ["tui", "model_availability_nux"],
   ["mcp_servers", "*", "env"],
   ["mcp_servers", "*", "http_headers"],

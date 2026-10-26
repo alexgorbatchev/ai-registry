@@ -14,10 +14,10 @@ metadata:
 
 Choose the mode from the request and follow its reference.
 
-| Request | Read and follow |
-| --- | --- |
-| Draft, create, or update a PR title or description | [Creating](references/creating.md) |
-| Review or respond to comments left on a PR | [Reviewing](references/reviewing.md) |
+| Request                                            | Read and follow                      |
+| -------------------------------------------------- | ------------------------------------ |
+| Draft, create, or update a PR title or description | [Creating](references/creating.md)   |
+| Review or respond to comments left on a PR         | [Reviewing](references/reviewing.md) |
 
 ## Attachments
 
@@ -38,6 +38,16 @@ gh pr edit 123 --body-file .tmp/pr-body.md --attach .tmp/after.png --attach .tmp
 - `--attach` accepts only image and media files (PNG, GIF, JPEG, SVG, MP4, MOV, WebM), at most 50 per command and each file once. It requires push access to the repository. See [GitHub's attachment limits](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/attaching-files).
 - Uploads to public repositories are readable without authentication. Confirm that a screenshot contains no secrets, tokens, or private data before attaching it.
 - When some uploads fail, `gh` still posts the ones that succeeded and exits non-zero. Read the posted body before retrying so the retry does not duplicate attachments.
+
+## Commits
+
+Every commit made in either mode, including commits that address review feedback, follows the target repository's commit message convention. Determine it before the first commit:
+
+- Read explicit guidance first: contributor docs such as `CONTRIBUTING.md` or `AGENTS.md`, and commit-message tooling such as commitlint or commitizen config and `commit-msg` hooks. Then read recent subjects on the base branch with `git log --format=%s -20 <base>`. Explicit guidance and tooling outrank patterns inferred from history.
+- Match the convention's subject format, type and scope vocabulary, casing, tense, length limit, body, and required trailers or issue references.
+- Describe the behavior each commit changes, not the review process; never title a commit `address review comments` or similar.
+- When the repository shows no convention, use Conventional Commits (`<type>(<scope>): <summary>`) and state that choice in the report.
+- When a `commit-msg` hook rejects a message, rewrite the message; never bypass the hook with `--no-verify`.
 
 ## Writing Rules
 

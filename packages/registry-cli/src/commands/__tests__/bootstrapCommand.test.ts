@@ -158,7 +158,8 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
 `);
   });
 
-  it("reports reused, repointed, backed-up, and removed entries on a later run", async () => {
+  it("reports reused, repointed, backed-up, removed, and diverged entries on a later run", async () => {
+    await writeTestFile(join(homeDir, ".fake", "history.jsonl"), "shared\n");
     await bootstrapCommand(createDependencies());
     const otherCheckout = join(root, "other-checkout");
     await writeTestFile(join(otherCheckout, "AGENTS.md"), "other\n");
@@ -167,6 +168,8 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
     await rm(join(homeDir, ".fake", "settings.json"));
     await writeTestFile(join(homeDir, ".fake", "settings.json"), "{\"local\":true}\n");
     await symlink(join(registryPaths.output, "fake", "default", "removed"), join(homeDir, ".fake", "removed"));
+    await rm(join(homeDir, "profiles", "designer", "history.jsonl"));
+    await writeTestFile(join(homeDir, "profiles", "designer", "history.jsonl"), "designer only\n");
     await rm(join(homeDir, "fake-settings.json"));
     await writeTestFile(join(homeDir, "fake-settings.json"), "{\"local\":true}\n");
     await rm(join(homeDir, ".local", "bin", "claude-designer"));
@@ -187,6 +190,7 @@ Applying generated outputs...
     backed up settings.json to: <root>/home/.fake/settings.json.backup-20261026T000000Z
     removed stale links: removed
   applied Fake profile home (designer): <root>/home/profiles/designer
+    own copies hiding the shared home's entries (move them aside to share again): history.jsonl
   linked Fake settings: <root>/home/fake-settings.json
     backed up previous contents to: <root>/home/fake-settings.json.backup-20261026T000000Z
 Syncing repo-local public scripts...

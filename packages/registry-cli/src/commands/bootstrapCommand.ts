@@ -96,6 +96,11 @@ function printHomeTargetResult(target: IBootstrapTarget, result: IHomeApplyResul
   if (result.shared.length > 0) {
     console.log(`    shared runtime entries: ${result.shared.join(", ")}`);
   }
+  if (result.diverged.length > 0) {
+    console.log(
+      `    own copies hiding the shared home's entries (move them aside to share again): ${result.diverged.join(", ")}`,
+    );
+  }
 }
 
 function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResult): void {

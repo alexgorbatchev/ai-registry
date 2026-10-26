@@ -6,6 +6,7 @@
     "pr": "",
     "sessionUrl": false
   },
+  "autoMemoryEnabled": false,
   "env": {
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-5-5"
   },

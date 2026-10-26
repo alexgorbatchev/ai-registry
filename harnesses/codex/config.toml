@@ -15,7 +15,7 @@ notify = [ "<%- output_dir %>/codex/default/computer-use/Codex Computer Use.app/
 external-agent-import-sync-enabled = false
 followUpQueueMode = "steer"
 external-agent-import-sync-item-types = "all"
-conversationDetailMode = "STEPS_COMMANDS"
+conversationDetailMode = "STEPS_PROSE"
 ambient-suggestions-enabled = true
 selected-avatar-id = "stacky"
 

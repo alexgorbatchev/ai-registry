@@ -6,6 +6,9 @@
     "pr": "",
     "sessionUrl": false
   },
+  "env": {
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-5-5"
+  },
   "hooks": {
     "PermissionRequest": [
       {
@@ -163,7 +166,7 @@
       }
     ]
   },
-  "model": "opus",
+  "model": "opus[1m]",
   "modelSettings": {
     "claude-opus-5-5": {
       "effortLevel": "high"

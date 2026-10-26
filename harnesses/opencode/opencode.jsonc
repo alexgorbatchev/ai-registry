@@ -43,7 +43,9 @@
       "git reset --merge*": "deny",
       "git reset * --merge*": "deny",
       "git reset --keep*": "deny",
-      "git reset * --keep*": "deny"
+      "git reset * --keep*": "deny",
+      "git checkout *": "ask",
+      "git reset *": "ask"
     }
   },
   "disabled_providers": [],

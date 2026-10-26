@@ -4,15 +4,17 @@ description: Sign, notarize, staple, and verify a macOS app for distribution out
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-26 14:46
-  last_modified: 2026-10-26 14:49
+  last_modified: 2026-10-26 14:55
   status: current
 ---
 
 ## Identify the artifact and credentials
 
+Before asking setup questions, read `${APPLE_NOTARIZE_CONFIG:-$HOME/.config/apple-notarize-app/config.json}` when present. Use its `apple_id`, `team_id`, `notary_profile`, `signing_identity_sha1`, `password_env`, `password_source`, and `account_guidance` as machine defaults. Expand `~` in configured paths. Explicit invocation settings and verified project-specific configuration take precedence. Resolve command variables from these values; do not ask the user to repeat usable saved information. Read the configured account guidance when signing or credential setup needs repair.
+
 1. Resolve the target app, version, architectures, intended output, and any existing release from the request and repository guidance. Distinguish a local development build, an installed app, and a published download; checking one does not establish the status of the others. If the target remains ambiguous, ask for the app path or project while continuing independent inspection.
 2. Inspect existing build and signing workflows before creating another. Use the intended release artifact; do not silently substitute a debug build, rebuild an already released version from different source, bump its version, or move a release tag.
-3. Check `xcrun --find notarytool`, `xcrun --find stapler`, and `security find-identity -v -p codesigning`. Select a valid **Developer ID Application** identity with its private key for the intended team. Resolve multiple plausible teams before signing.
+3. Check `xcrun --find notarytool`, `xcrun --find stapler`, and `security find-identity -v -p codesigning`. Select the configured valid **Developer ID Application** identity with its private key for the intended team. If its fingerprint has changed, find the valid replacement for that same team rather than assuming membership is missing. Resolve remaining identity or team ambiguity before signing.
 4. Reuse the configured notarytool Keychain profile; try `AppleNotarization` when no other profile is specified. Validate it with `xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" --output-format json`. A missing profile does not imply a missing developer membership or signing certificate. Read [references/setup.md](references/setup.md) when credentials or signing prerequisites need configuration.
 
 Keep credential values out of chat, logs, repository files, and command tracing. Read current [Apple notarization requirements](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution) and installed command help when platform behavior or flags are uncertain.
@@ -65,7 +67,7 @@ Require successful ticket validation and Gatekeeper acceptance as `Notarized Dev
 
 1. Create the final distribution ZIP **after stapling**, using `ditto -c -k --sequesterRsrc --keepParent`. Do not distribute the pre-stapling submission ZIP. Never modify or re-sign executable contents after notarization without repeating submission and stapling.
 2. Extract the final ZIP into a fresh directory. Repeat ticket validation, strict signature verification, and Gatekeeper assessment on that extracted app. Perform the project's relevant release smoke check, especially when hardened runtime was newly enabled; report any untested runtime behavior.
-3. Generate SHA-256 checksums against the final archive, using its basename in the checksum file. Publish only within the session's authorized distribution scope. Inspect existing release assets first; replace or delete them only when authorized, and do not leave conflicting signing claims in documentation or release notes.
+3. Generate SHA-256 checksums against the final archive, using its basename in the checksum file. Preserve established asset filenames; do not add signing-status suffixes or display labels unless requested. Publish only within the session's authorized distribution scope. Inspect existing release assets first; replace or delete them only when authorized, and do not leave obsolete assets or conflicting signing claims after an authorized replacement. When renaming an archive, regenerate its checksum entry and update download references.
 4. After an authorized upload, verify remote asset metadata and the downloaded artifact's checksum. Report the verified artifact path or download link, submission status, stapling and Gatekeeper results, and any remaining blocker. Never claim another app or release is notarized based on this submission.
 
 Consult [Apple's custom workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow) for DMG, PKG, and nested installer distribution; ZIPs cannot carry stapled tickets themselves. Preserve the requested distribution format and apply its format-specific signing and stapling requirements.

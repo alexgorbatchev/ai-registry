@@ -74,7 +74,7 @@ describe("applyHomeTarget", () => {
       BACKUP_SUFFIX,
     );
 
-    expect(result).toEqual({ linked: ["CLAUDE.md", "skills"], relinked: [], backedUp: [], removed: [], shared: [] });
+    expect(result).toEqual({ linked: ["CLAUDE.md", "skills"], relinked: [], backedUp: [], removed: [], shared: [], diverged: [] });
     expect((await lstat(homePath)).isDirectory()).toBe(true);
     expect(await readlink(join(homePath, "CLAUDE.md"))).toBe(join(sourcePath, "CLAUDE.md"));
     expect(await readFile(join(homePath, "skills", "review", "SKILL.md"), "utf-8")).toBe("# Review\n");
@@ -97,7 +97,7 @@ describe("applyHomeTarget", () => {
       BACKUP_SUFFIX,
     );
 
-    expect(result).toEqual({ linked: [], relinked: ["CLAUDE.md"], backedUp: [], removed: [], shared: [] });
+    expect(result).toEqual({ linked: [], relinked: ["CLAUDE.md"], backedUp: [], removed: [], shared: [], diverged: [] });
     expect(await readFile(join(homePath, "CLAUDE.md"), "utf-8")).toBe("relocated\n");
     expect(await readFile(join(homePath, "history.jsonl"), "utf-8")).toBe("{\"display\":\"keep me\"}\n");
     expect(await readFile(join(homePath, "projects", "app", "session.jsonl"), "utf-8")).toBe("transcript\n");
@@ -117,7 +117,7 @@ describe("applyHomeTarget", () => {
       BACKUP_SUFFIX,
     );
 
-    expect(result).toEqual({ linked: [], relinked: [], backedUp: [], removed: [], shared: [] });
+    expect(result).toEqual({ linked: [], relinked: [], backedUp: [], removed: [], shared: [], diverged: [] });
   });
 
   it("backs up a real entry that occupies a managed name before linking it", async () => {
@@ -140,6 +140,7 @@ describe("applyHomeTarget", () => {
       backedUp: [{ name: "settings.json", backupPath }],
       removed: [],
       shared: [],
+      diverged: [],
     });
     expect(await readFile(backupPath, "utf-8")).toBe("{\"local\":true}\n");
     expect(await readlink(join(homePath, "settings.json"))).toBe(join(sourcePath, "settings.json"));
@@ -160,11 +161,11 @@ describe("applyHomeTarget", () => {
       BACKUP_SUFFIX,
     );
 
-    expect(result).toEqual({ linked: ["AGENTS.md"], relinked: [], backedUp: [], removed: ["rules"], shared: [] });
+    expect(result).toEqual({ linked: ["AGENTS.md"], relinked: [], backedUp: [], removed: ["rules"], shared: [], diverged: [] });
     expect((await readdir(homePath)).sort()).toEqual(["AGENTS.md", "foreign"]);
   });
 
-  it("shares the default home's runtime entries with a profile home without replacing its own", async () => {
+  it("shares the default home's runtime entries with a profile home and reports its own copies as diverged", async () => {
     const root = await createTestDirectory();
     const defaultSourcePath = join(root, "output", "default");
     const sourcePath = join(root, "output", "designer");
@@ -185,7 +186,14 @@ describe("applyHomeTarget", () => {
       BACKUP_SUFFIX,
     );
 
-    expect(result).toEqual({ linked: ["skills"], relinked: [], backedUp: [], removed: [], shared: ["projects"] });
+    expect(result).toEqual({
+      linked: ["skills"],
+      relinked: [],
+      backedUp: [],
+      removed: [],
+      shared: ["projects"],
+      diverged: ["history.jsonl"],
+    });
     expect(await readlink(join(homePath, "projects"))).toBe(join(sharedHomePath, "projects"));
     expect(await readFile(join(homePath, "history.jsonl"), "utf-8")).toBe("designer history\n");
     expect(existsSync(join(homePath, "CLAUDE.md"))).toBe(false);
@@ -208,7 +216,7 @@ describe("applyHomeTarget", () => {
       BACKUP_SUFFIX,
     );
 
-    expect(result).toEqual({ linked: ["AGENTS.md"], relinked: [], backedUp: [], removed: ["log"], shared: [] });
+    expect(result).toEqual({ linked: ["AGENTS.md"], relinked: [], backedUp: [], removed: ["log"], shared: [], diverged: [] });
   });
 
   it("refuses a home that is still a symlink to a directory", async () => {

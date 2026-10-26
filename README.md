@@ -301,7 +301,8 @@ Harness runtime state never lives in `.output/`. Each harness home is a real dir
 - sessions, transcripts, history, databases, logs, worktrees, installed plugins, and credentials stay where the harness writes them, in the home itself, so deleting `.output/` or moving the checkout never hides or splits them
 - rerunning bootstrap from a relocated checkout repoints the managed links and leaves runtime state untouched
 - a real file or directory that occupies a managed name is kept as `<name>.backup-<timestamp>` before the link replaces it
-- non-default profile homes link every runtime entry of the default home they do not hold themselves, except bootstrap's own backups, so profiles share history and sessions
+- non-default profile homes link every runtime entry of the default home they do not hold themselves, except bootstrap's own backups, so profiles share history, sessions, and Codex's databases
+- bootstrap reports a real entry in a profile home that hides the shared entry of the same name as diverged; move it aside and rerun bootstrap to share again
 - bootstrap refuses a home that is still a symlink; move the state it points at into a real directory first
 
 For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://<%- repo_root %>/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.

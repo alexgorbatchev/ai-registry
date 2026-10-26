@@ -17,6 +17,9 @@ export type IHomeApplyResult = {
   backedUp: Array<{ name: string; backupPath: string }>;
   removed: string[];
   shared: string[];
+  // Real entries in a profile home that hide the shared home's entry of the same
+  // name, such as a shared file a harness replaced by writing a new file in place.
+  diverged: string[];
 };
 
 async function lstatOrNull(path: string): Promise<Stats | null> {
@@ -134,7 +137,8 @@ async function removeStaleLinks(
 
 // A non-default profile shares the runtime state of the default home: every real
 // entry there that the profile neither manages nor already holds is linked in,
-// except the backups bootstrap made of replaced entries.
+// except the backups bootstrap made of replaced entries. A real entry the profile
+// holds in place of a shared one is left alone and reported as diverged.
 async function shareRuntimeEntries(
   target: IHomeBootstrapTarget,
   managedEntryNames: readonly string[],
@@ -155,7 +159,11 @@ async function shareRuntimeEntries(
     }
 
     const homeEntryPath = join(target.targetPath, sharedEntry.name);
-    if ((await lstatOrNull(homeEntryPath)) !== null) {
+    const homeEntryStats = await lstatOrNull(homeEntryPath);
+    if (homeEntryStats !== null) {
+      if (!homeEntryStats.isSymbolicLink()) {
+        result.diverged.push(sharedEntry.name);
+      }
       continue;
     }
 
@@ -173,7 +181,7 @@ export async function applyHomeTarget(
     throw new Error(`The generated output manifest records no entries for ${target.sourcePath}. Rebuild before bootstrapping.`);
   }
 
-  const result: IHomeApplyResult = { linked: [], relinked: [], backedUp: [], removed: [], shared: [] };
+  const result: IHomeApplyResult = { linked: [], relinked: [], backedUp: [], removed: [], shared: [], diverged: [] };
   await assertHomeDirectory(target.targetPath);
   await linkManagedEntries(target, managedEntryNames, backupSuffix, result);
   await removeStaleLinks(target, managedEntryNames, result);

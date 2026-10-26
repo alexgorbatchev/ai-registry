@@ -28,7 +28,6 @@ status_line = [
   "weekly-limit",
   "used-tokens",
 ]
-screen_reader_detection_done = true
 status_line_use_colors = true
 session_picker_view = "comfortable"
 

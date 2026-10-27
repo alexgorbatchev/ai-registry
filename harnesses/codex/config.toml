@@ -14,7 +14,7 @@ shell_environment_policy.inherit = "core"
 external-agent-import-sync-enabled = false
 followUpQueueMode = "steer"
 external-agent-import-sync-item-types = "all"
-conversationDetailMode = "STEPS_PROSE"
+conversationDetailMode = "STEPS_COMMANDS"
 ambient-suggestions-enabled = true
 selected-avatar-id = "stacky"
 
@@ -53,7 +53,6 @@ alexgorbatchev = { source_type = "git", source = "https://github.com/alexgorbatc
 "browser@openai-bundled" = { enabled = true }
 "unified-computer-use@openai-bundled" = { enabled = true }
 "chrome@openai-bundled" = { enabled = true }
-"code-review@openai-bundled" = { enabled = true }
 "visualize@openai-bundled" = { enabled = true }
 "computer-use@openai-bundled" = { enabled = true }
 

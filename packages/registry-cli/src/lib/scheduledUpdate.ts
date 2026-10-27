@@ -11,6 +11,7 @@ function createRunner(repositoryRoot: string, bunExecutable: string): IScheduled
     ...process.env,
     PATH: `${dirname(bunExecutable)}:${process.env.PATH ?? ""}`,
     GIT_TERMINAL_PROMPT: "0",
+    AI_REGISTRY_SETTINGS_AUTO_COMMIT: "0",
   };
   return async (cmd, shouldCapture = false) => {
     const subprocess = Bun.spawn(cmd, {
@@ -37,7 +38,7 @@ export async function scheduledUpdate(
   const before = await run(["git", "rev-parse", "HEAD"], true);
   await pullWithRebase(repositoryRoot, before, run);
   // Bootstrap on every run, not only after incoming commits: the build also syncs
-  // settings the harnesses changed on this machine and commits them for the push.
+  // settings the harnesses changed on this machine, leaving those edits uncommitted.
   await run([bunExecutable, "run", "bootstrap", "--", "-y"]);
   const hasPushed = await pushScheduledCommits(run);
   return hasPushed ? "bootstrapped-and-pushed" : "bootstrapped";

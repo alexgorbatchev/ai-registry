@@ -21,6 +21,8 @@ export interface ISyncSettingsFilesOptions {
   sourcePathByOutputPath: Map<string, string>;
   templateContext: ITemplateContext;
   sourceRepository: ISettingsSourceRepository;
+  // Scheduled updates sync edits without creating commits. Defaults to true.
+  shouldCommitSourceChanges?: boolean;
 }
 
 function formatValue(value: JsonValue | undefined): string {
@@ -128,7 +130,7 @@ export async function syncSettingsFiles(options: ISyncSettingsFilesOptions): Pro
   for (const file of options.syncedSettingsFiles) {
     const sourceState = await options.sourceRepository.getSourceState(getSourcePath(file, options));
     const writtenSourcePath = await syncSettingsFile(file, options);
-    if (writtenSourcePath === null) continue;
+    if (writtenSourcePath === null || options.shouldCommitSourceChanges === false) continue;
 
     if (sourceState === "clean" && await options.sourceRepository.hasSecrets(writtenSourcePath)) {
       console.warn(`  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: gitleaks found possible secrets.`);

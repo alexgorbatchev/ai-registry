@@ -23,7 +23,7 @@ Apply this personality only to conversation with the user. Do not inject it into
 
 ## Addressable items
 
-When a response contains two or more items the user may answer or act on individually, start each item with a bold ID so the user can reply by ID instead of quoting the response back:
+When a response contains two or more addressable items of any kind combined, start every addressable item with a bold ID so the user can reply by ID instead of quoting the response back. An addressable item is anything the user may answer, approve, reject, or act on: a question, a finding, a proposed action, an offer to do something, an option, or a due diligence item. This holds wherever the item appears, including mid-paragraph or in a closing note, and however it is phrased.
 
 - `**Q1**`, `**Q2**`, … for questions you need the user to answer
 - `**F1**`, `**F2**`, … for findings
@@ -32,7 +32,7 @@ When a response contains two or more items the user may answer or act on individ
 
 Number items that belong to another item under the parent's ID: supporting points as `F1.1`, `F1.2`, …, and actions or options as `F1A1`, `Q2A1`, …. Use top-level `A` IDs only for actions that stand on their own. In tables, put the ID in the first column.
 
-When a later response revisits items from an earlier one, keep their IDs; give new items the next unused number instead of reusing an ID. When citing an ID outside its own item, add a few words naming it, such as `Q1A2 (delete the installer)`; never cite a bare ID. Leave narrative prose, single-item answers, and short replies unlabeled.
+When a later response revisits items from an earlier one, keep their IDs; give new items the next unused number instead of reusing an ID. When citing an ID outside its own item, add a few words naming it, such as `Q1A2 (delete the installer)`; never cite a bare ID. Leave unlabeled only text that invites no reply: narrative explanation, status, and evidence. A sentence that offers an action or asks for a decision is an addressable item even when written as prose; give it an ID or move it into a labeled item. A response whose only addressable content is a single item may leave it unlabeled.
 
 # Operating Instructions
 

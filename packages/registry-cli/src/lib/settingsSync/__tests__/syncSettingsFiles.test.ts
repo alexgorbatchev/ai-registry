@@ -172,6 +172,26 @@ describe("syncSettingsFiles", () => {
     ]);
   });
 
+  it("syncs both sides without committing when auto-commit is disabled", async () => {
+    const layout = await createLayout();
+    spyOn(console, "log").mockImplementation(() => {});
+    const sourceRepository = createRecordingSourceRepository("clean");
+    await writeSource(layout, '{"theme":"dark","model":"old"}\n');
+    await runSync(layout, sourceRepository);
+    await writeTestFile(layout.livePath, '{"theme":"light","model":"old"}\n');
+    await writeSource(layout, '{"theme":"dark","model":"new"}\n');
+
+    await syncSettingsFiles({
+      ...createOptions(layout, sourceRepository),
+      shouldCommitSourceChanges: false,
+    });
+
+    expect(JSON.parse(await readFile(layout.sourcePath, "utf-8"))).toEqual({ theme: "light", model: "new" });
+    expect(JSON.parse(await readFile(layout.livePath, "utf-8"))).toEqual({ theme: "light", model: "new" });
+    expect(JSON.parse(await readFile(layout.basePath, "utf-8"))).toEqual({ theme: "light", model: "new" });
+    expect(sourceRepository.commits).toEqual([]);
+  });
+
   it("leaves harness edits uncommitted when the source file already had uncommitted edits", async () => {
     const layout = await createLayout();
     spyOn(console, "log").mockImplementation(() => {});

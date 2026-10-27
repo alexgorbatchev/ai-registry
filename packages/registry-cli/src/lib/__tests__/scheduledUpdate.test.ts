@@ -42,6 +42,7 @@ async function createRepository() {
   await Bun.write(join(remotePath, "bootstrap.ts"), [
     'await Bun.write(".tmp/bootstrap-args.json", JSON.stringify(process.argv.slice(2)));',
     'if (await Bun.file(".tmp/fail-bootstrap").exists()) process.exit(7);',
+    'await Bun.write(".tmp/settings-auto-commit", process.env.AI_REGISTRY_SETTINGS_AUTO_COMMIT ?? "unset");',
     'const file = Bun.file(".tmp/bootstrap-count");',
     'const count = await file.exists() ? Number(await file.text()) : 0;',
     'await Bun.write(file, String(count + 1));',
@@ -93,10 +94,11 @@ describe("scheduledUpdate", () => {
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
   });
 
-  it("bootstraps on every run even when the pull brings no commits", async () => {
+  it("bootstraps on every run with settings auto-commit disabled even when the pull brings no commits", async () => {
     const { repositoryPath } = await createRepository();
     expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
+    expect(await Bun.file(join(repositoryPath, ".tmp/settings-auto-commit")).text()).toBe("0");
   });
 
   it("pulls commits and bootstraps with auto-confirm while suppressing Git hooks", async () => {

@@ -417,6 +417,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     sourcePathByOutputPath,
     templateContext: TEMPLATE_CONTEXT,
     sourceRepository: createGitSettingsSourceRepository(),
+    shouldCommitSourceChanges: process.env.AI_REGISTRY_SETTINGS_AUTO_COMMIT !== "0",
   };
   await validateStagedSettingsFiles(settingsSyncOptions);
   for (const [sourcePath, checksum] of sourceChecksums) {

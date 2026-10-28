@@ -15,9 +15,7 @@ export async function logHarnessSkillOverrides(
   }
 
   const globalSkillsDir = context.templateContext.skills_dir;
-  const overlaySkillsDir = context.templateContext.overlay_dir
-    ? join(context.templateContext.overlay_dir, "skills")
-    : null;
+  const overlaySkillsDirs = (context.overlayDirs ?? []).map((overlay) => join(overlay, "skills"));
 
   const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
   const overriddenSkills: string[] = [];
@@ -28,11 +26,11 @@ export async function logHarnessSkillOverrides(
       existsSync(join(globalSkillsDir, "agent", entry.name)) ||
       existsSync(join(globalSkillsDir, "user", entry.name)) ||
       existsSync(join(globalSkillsDir, entry.name));
-    const isOverridingOverlay = overlaySkillsDir
-      ? existsSync(join(overlaySkillsDir, "agent", entry.name)) ||
+    const isOverridingOverlay = overlaySkillsDirs.some((overlaySkillsDir) =>
+      existsSync(join(overlaySkillsDir, "agent", entry.name)) ||
         existsSync(join(overlaySkillsDir, "user", entry.name)) ||
-        existsSync(join(overlaySkillsDir, entry.name))
-      : false;
+        existsSync(join(overlaySkillsDir, entry.name)),
+    );
 
     if (isOverridingGlobal || isOverridingOverlay) {
       overriddenSkills.push(entry.name);

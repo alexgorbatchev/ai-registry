@@ -88,6 +88,7 @@ export type IProfileBuildContext = {
 
 export type IUnifiedHarnessBuildContext = {
   harnessDir: string;
+  overlayDirs?: string[];
   outputDir: string;
   templateContext: ITemplateContext;
   buildSupport: IBuildSupport;

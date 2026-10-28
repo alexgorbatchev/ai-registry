@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
 import { homedir } from "os";
-import { join, resolve } from "path";
+import { delimiter, join, resolve } from "path";
 
 function resolveRepoRoot(): string {
   // Use process.cwd() so that smoke tests that clone the repo and run from the clone work correctly.
@@ -20,7 +20,7 @@ export function resolvePathWithHome(inputPath: string, rootDir: string): string 
 
 export type IRegistryPaths = {
   root: string;
-  overlay: string | null;
+  overlays: string[];
   harnesses: string;
   skills: string;
   commands: string;
@@ -31,23 +31,24 @@ export type IRegistryPaths = {
 
 export function getRegistryPaths(): IRegistryPaths {
   const root = resolveRepoRoot();
-  const rawOverlay = process.env.AI_REGISTRY_OVERLAY?.trim();
-  let overlay: string | null = null;
-
-  if (rawOverlay && rawOverlay.length > 0) {
-    const resolvedOverlay = resolvePathWithHome(rawOverlay, root);
+  const rawOverlays = (process.env.AI_REGISTRY_OVERLAY ?? "").split(delimiter);
+  const resolvedOverlays = rawOverlays.filter((entry) => entry.trim()).map((entry) => resolvePathWithHome(entry, root));
+  const overlays: string[] = [];
+  // Keep the last occurrence so repeated entries preserve last-wins precedence.
+  const uniqueOverlays = Array.from(new Set(resolvedOverlays.reverse())).reverse();
+  for (const resolvedOverlay of uniqueOverlays) {
     if (!existsSync(resolvedOverlay)) {
       console.warn(
-        `⚠️ Overlay directory does not exist: ${resolvedOverlay} (from AI_REGISTRY_OVERLAY=${rawOverlay})`,
+        `⚠️ Overlay directory does not exist: ${resolvedOverlay} (from AI_REGISTRY_OVERLAY)`,
       );
     } else {
-      overlay = resolvedOverlay;
+      overlays.push(resolvedOverlay);
     }
   }
 
   return {
     root,
-    overlay,
+    overlays,
     harnesses: join(root, "harnesses"),
     skills: join(root, "skills"),
     commands: join(root, "commands"),

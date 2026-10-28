@@ -28,6 +28,7 @@ function createUnifiedContext(
 ): IUnifiedHarnessBuildContext {
   return {
     harnessDir: join(repositoryRoot, "harnesses", target),
+    overlayDirs: options.hasOverlay ? [join(repositoryRoot, "overlay"), join(repositoryRoot, "empty-overlay")] : [],
     outputDir: join(repositoryRoot, ".output"),
     templateContext: {
       repo_root: repositoryRoot,

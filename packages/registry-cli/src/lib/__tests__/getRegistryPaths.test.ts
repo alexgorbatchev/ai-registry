@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { mkdir, mkdtemp, rm } from "fs/promises";
 import { homedir } from "os";
-import { join } from "path";
+import { delimiter, join, relative } from "path";
 
 import { getRegistryPaths, resolvePathWithHome } from "../getRegistryPaths";
 
@@ -10,7 +10,8 @@ describe("getRegistryPaths", () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(homedir(), ".tmp-registry-paths-test-"));
+    await mkdir(join(process.cwd(), ".tmp"), { recursive: true });
+    tempDir = await mkdtemp(join(process.cwd(), ".tmp", "registry-paths-test-"));
   });
 
   afterEach(async () => {
@@ -22,42 +23,42 @@ describe("getRegistryPaths", () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  it("returns overlay as null when AI_REGISTRY_OVERLAY is not set", () => {
+  it("returns no overlays when AI_REGISTRY_OVERLAY is not set", () => {
     delete process.env.AI_REGISTRY_OVERLAY;
     const paths = getRegistryPaths();
-    expect(paths.overlay).toBeNull();
+    expect(paths.overlays).toEqual([]);
     expect(paths.skills).toBe(join(paths.root, "skills"));
     expect(paths.commands).toBe(join(paths.root, "commands"));
     expect(paths.profiles).toBe(join(paths.root, "profiles"));
   });
 
-  it("returns overlay as null when AI_REGISTRY_OVERLAY is whitespace", () => {
+  it("returns no overlays when AI_REGISTRY_OVERLAY is whitespace", () => {
     process.env.AI_REGISTRY_OVERLAY = "   ";
     const paths = getRegistryPaths();
-    expect(paths.overlay).toBeNull();
+    expect(paths.overlays).toEqual([]);
   });
 
   it("resolves overlay when AI_REGISTRY_OVERLAY points to an existing absolute path", () => {
     process.env.AI_REGISTRY_OVERLAY = tempDir;
     const paths = getRegistryPaths();
-    expect(paths.overlay).toBe(tempDir);
+    expect(paths.overlays).toEqual([tempDir]);
   });
 
   it("resolves overlay with tilde (~) expansion", () => {
     const relativeToHome = tempDir.slice(homedir().length).replace(/^[/\\]+/, "");
     process.env.AI_REGISTRY_OVERLAY = `~/${relativeToHome}`;
     const paths = getRegistryPaths();
-    expect(paths.overlay).toBe(tempDir);
+    expect(paths.overlays).toEqual([tempDir]);
   });
 
-  it("warns and returns overlay as null when AI_REGISTRY_OVERLAY points to a non-existent path", () => {
+  it("warns and skips a missing path while preserving a relative overlay", () => {
     const nonExistent = join(tempDir, "does-not-exist");
-    process.env.AI_REGISTRY_OVERLAY = nonExistent;
+    process.env.AI_REGISTRY_OVERLAY = [nonExistent, relative(process.cwd(), tempDir)].join(delimiter);
     const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
     const paths = getRegistryPaths();
-    expect(paths.overlay).toBeNull();
+    expect(paths.overlays).toEqual([tempDir]);
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining(`Overlay directory does not exist: ${nonExistent}`),
+      `⚠️ Overlay directory does not exist: ${nonExistent} (from AI_REGISTRY_OVERLAY)`,
     );
     warnSpy.mockRestore();
   });
@@ -67,5 +68,14 @@ describe("getRegistryPaths", () => {
     expect(resolvePathWithHome("~", "/some/root")).toBe(homedir());
     expect(resolvePathWithHome("/absolute/path", "/some/root")).toBe("/absolute/path");
     expect(resolvePathWithHome("relative/path", "/some/root")).toBe(join("/some/root", "relative", "path"));
+  });
+
+  it("resolves a path list with empty entries and keeps the last duplicate", async () => {
+    const first = join(tempDir, "first");
+    const second = join(tempDir, "second");
+    await mkdir(first);
+    await mkdir(second);
+    process.env.AI_REGISTRY_OVERLAY = ["", first, second, join(first, "."), " "].join(delimiter);
+    expect(getRegistryPaths().overlays).toEqual([second, first]);
   });
 });

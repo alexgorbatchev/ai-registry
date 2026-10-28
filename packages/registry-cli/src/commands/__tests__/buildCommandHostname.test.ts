@@ -47,7 +47,7 @@ describe("hostname skill variants", () => {
     const root = join(tempDir, "repo");
     paths = {
       root,
-      overlay: null,
+      overlays: [],
       harnesses: join(root, "harnesses"),
       skills: join(root, "skills"),
       commands: join(root, "commands"),
@@ -132,7 +132,7 @@ describe("hostname skill variants", () => {
   });
 
   it("selects a private overlay variant after replacing the public bundle", async () => {
-    paths.overlay = join(tempDir, "overlay");
+    paths.overlays = [join(tempDir, "overlay")];
     await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Public variant."));
     await write("overlay/skills/agent/example/SKILL.md", skillContent("example", "Private default."));
     await write("overlay/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Private variant."));
@@ -144,7 +144,7 @@ describe("hostname skill variants", () => {
   });
 
   it("uses the overlay default when only the public bundle has a matching variant", async () => {
-    paths.overlay = join(tempDir, "overlay");
+    paths.overlays = [join(tempDir, "overlay")];
     await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Public variant."));
     await write("overlay/skills/agent/example/SKILL.md", skillContent("example", "Private default."));
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths });

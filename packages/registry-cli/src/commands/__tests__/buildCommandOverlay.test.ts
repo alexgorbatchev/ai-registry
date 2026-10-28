@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { existsSync } from "fs";
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { join } from "path";
@@ -50,7 +50,7 @@ describe("buildCommand with overlay", () => {
 
     registryPaths = {
       root: repoRoot,
-      overlay: overlayDir,
+      overlays: [overlayDir],
       harnesses: join(repoRoot, "harnesses"),
       skills: join(repoRoot, "skills"),
       commands: join(repoRoot, "commands"),
@@ -92,6 +92,36 @@ describe("buildCommand with overlay", () => {
 
     // Manifest should exist
     expect(existsSync(join(outputDir, "manifest.json"))).toBe(true);
+  });
+
+  it("emits the last overlay skill in every harness and notes each conflict", async () => {
+    const lastOverlay = join(tempDir, "last-overlay");
+    const baseSkill = join(repoRoot, "skills", "base-skill");
+    const firstSkill = join(overlayDir, "skills", "base-skill");
+    const lastSkill = join(lastOverlay, "skills", "base-skill");
+    await Bun.write(join(firstSkill, "SKILL.md"), "---\nname: base-skill\n---\nFirst overlay\n");
+    const expected = "---\nname: base-skill\n---\nLast overlay\n";
+    await Bun.write(join(lastSkill, "SKILL.md"), expected);
+    await Bun.write(join(firstSkill, "first-only.txt"), "must not merge resources");
+    registryPaths.overlays = [overlayDir, lastOverlay];
+    const messages: string[] = [];
+    const logSpy = spyOn(console, "log").mockImplementation((message) => messages.push(String(message)));
+    try {
+      await buildCommand({ hasAutoConfirm: true, registryPaths });
+    } finally {
+      logSpy.mockRestore();
+    }
+    expect(messages.filter((message) => message.startsWith("NOTE:"))).toEqual([
+      `NOTE: Skill "base-skill" conflict: ${firstSkill} replaces ${baseSkill}`,
+      `NOTE: Skill "base-skill" conflict: ${lastSkill} replaces ${firstSkill}`,
+      `NOTE: Skill "base-skill" conflict: ${firstSkill} replaces ${baseSkill}`,
+      `NOTE: Skill "base-skill" conflict: ${lastSkill} replaces ${firstSkill}`,
+    ]);
+    for (const target of ["opencode", "codex/default", "pi/default", "claude-code/default"]) {
+      const outputSkill = join(registryPaths.output, target, "skills", "base-skill");
+      expect(await Bun.file(join(outputSkill, "SKILL.md")).text()).toBe(expected);
+      expect(await Bun.file(join(outputSkill, "first-only.txt")).exists()).toBe(false);
+    }
   });
 
   it("renders overlay command skills in every Codex profile without changing the source commands", async () => {

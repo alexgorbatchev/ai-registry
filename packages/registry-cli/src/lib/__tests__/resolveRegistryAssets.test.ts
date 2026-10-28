@@ -61,7 +61,7 @@ describe("resolveRegistryAssets", () => {
       await mkdir(join(overlayProfiles, "work"), { recursive: true });
       await writeFile(join(overlayProfiles, "work", "profile.yaml"), "description: overlay work");
 
-      const profiles = await discoverProfiles(baseProfiles, overlayProfiles);
+      const profiles = await discoverProfiles(baseProfiles, [overlayProfiles]);
       expect(profiles).toHaveLength(3);
       expect(profiles.map((p) => p.profileName).sort()).toEqual(["designer", "developer", "work"]);
 
@@ -83,15 +83,46 @@ describe("resolveRegistryAssets", () => {
       await mkdir(join(baseProfiles, "default"), { recursive: true });
       await writeFile(join(baseProfiles, "default", "profile.yaml"), "description: default");
 
-      const profilesFromNull = await discoverProfiles(baseProfiles, null);
+      const profilesFromNull = await discoverProfiles(baseProfiles, []);
       expect(profilesFromNull).toHaveLength(1);
 
-      const profilesFromMissing = await discoverProfiles(baseProfiles, join(overlayDir, "missing-profiles"));
+      const profilesFromMissing = await discoverProfiles(baseProfiles, [join(overlayDir, "missing-profiles")]);
       expect(profilesFromMissing).toHaveLength(1);
     });
   });
 
   describe("resolveMatchedAssets", () => {
+    it("selects the last overlay bundle and reports each distinct conflict", async () => {
+      const baseSkills = join(baseDir, "skills");
+      const first = join(overlayDir, "first");
+      const last = join(overlayDir, "last");
+      await mkdir(join(baseSkills, "agent", "shared"), { recursive: true });
+      await mkdir(join(first, "user", "shared"), { recursive: true });
+      await mkdir(join(last, "shared"), { recursive: true });
+      const result = await resolveMatchedAssets(["*"], baseSkills, [first, last]);
+      expect(result.sourcePaths).toEqual({ shared: join(last, "shared") });
+      expect(Array.from(result.userSkillNames ?? [])).toEqual([]);
+      expect(result.conflicts).toEqual([
+        { name: "shared", previousSource: join(baseSkills, "agent", "shared"), selectedSource: join(first, "user", "shared") },
+        { name: "shared", previousSource: join(first, "user", "shared"), selectedSource: join(last, "shared") },
+      ]);
+    });
+
+    it("selects the last command and profile across multiple overlays", async () => {
+      const first = join(overlayDir, "first");
+      const last = join(overlayDir, "last");
+      await Bun.write(join(baseDir, "commands", "shared.md"), "base");
+      await Bun.write(join(first, "commands", "shared.md"), "first");
+      await Bun.write(join(last, "commands", "shared.md"), "last");
+      await Bun.write(join(first, "profiles", "work", "profile.yaml"), "description: first");
+      await Bun.write(join(last, "profiles", "work", "profile.yaml"), "description: last");
+      const result = await resolveMatchedAssets(["*.md"], join(baseDir, "commands"), [join(first, "commands"), join(last, "commands")]);
+      expect(await Bun.file(result.sourcePaths["shared.md"]!).text()).toBe("last");
+      expect(await discoverProfiles(join(baseDir, "profiles"), [join(first, "profiles"), join(last, "profiles")])).toEqual([
+        { profileName: "work", profileDir: join(last, "profiles", "work"), isOverlay: true },
+      ]);
+    });
+
     it("returns empty matches when patterns array is empty", async () => {
       const baseSkills = join(baseDir, "skills");
       await mkdir(join(baseSkills, "skill-a"), { recursive: true });
@@ -123,7 +154,7 @@ describe("resolveRegistryAssets", () => {
       await mkdir(join(overlaySkills, "shared-skill"), { recursive: true });
       await mkdir(join(overlaySkills, "overlay-only-skill"), { recursive: true });
 
-      const result = await resolveMatchedAssets(["*"], baseSkills, overlaySkills);
+      const result = await resolveMatchedAssets(["*"], baseSkills, [overlaySkills]);
       expect(result.matchedNames).toEqual(["base-only-skill", "overlay-only-skill", "shared-skill"]);
       expect(result.sourcePaths["base-only-skill"]).toBe(join(baseSkills, "base-only-skill"));
       expect(result.sourcePaths["overlay-only-skill"]).toBe(join(overlaySkills, "overlay-only-skill"));
@@ -136,13 +167,13 @@ describe("resolveRegistryAssets", () => {
       await mkdir(baseCommands, { recursive: true });
       await writeFile(join(baseCommands, "cmd-a.md"), "cmd a");
 
-      const resultWithNull = await resolveMatchedAssets(["*.md"], baseCommands, null);
+      const resultWithNull = await resolveMatchedAssets(["*.md"], baseCommands, []);
       expect(resultWithNull.matchedNames).toEqual(["cmd-a.md"]);
 
       const resultWithMissing = await resolveMatchedAssets(
         ["*.md"],
         baseCommands,
-        join(overlayDir, "non-existent-commands"),
+        [join(overlayDir, "non-existent-commands")],
       );
       expect(resultWithMissing.matchedNames).toEqual(["cmd-a.md"]);
     });
@@ -206,7 +237,7 @@ describe("resolveRegistryAssets", () => {
       await mkdir(join(overlaySkills, "overlay-flat-skill"), { recursive: true });
       await Bun.write(join(overlaySkills, "AGENTS.md"), "# Overlay skill authoring guidance");
 
-      const result = await resolveMatchedAssets(["*"], baseSkills, overlaySkills);
+      const result = await resolveMatchedAssets(["*"], baseSkills, [overlaySkills]);
       expect(result.matchedNames).toEqual(["base-skill", "overlay-flat-skill"]);
       expect(result.sourcePaths["overlay-flat-skill"]).toBe(join(overlaySkills, "overlay-flat-skill"));
     });
@@ -231,7 +262,7 @@ describe("resolveRegistryAssets", () => {
       await mkdir(join(overlaySkills, "user", "shared-skill"), { recursive: true });
       await mkdir(join(overlaySkills, "agent", "overlay-agent-skill"), { recursive: true });
 
-      const result = await resolveMatchedAssets(["*"], baseSkills, overlaySkills);
+      const result = await resolveMatchedAssets(["*"], baseSkills, [overlaySkills]);
       expect(result.matchedNames).toEqual(["base-user-skill", "overlay-agent-skill", "shared-skill"]);
       // overlay overrides base-agent with overlay-user:
       expect(result.sourcePaths["shared-skill"]).toBe(join(overlaySkills, "user", "shared-skill"));

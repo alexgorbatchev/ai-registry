@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-10-24 10:52
+  last_modified: 2026-10-28 06:15
   status: current
 ---
 
@@ -61,9 +61,9 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 ## Private Overlay Registries
 
 - Work-specific, proprietary skills, commands, and profiles that cannot be committed to this public repository live in a separate private repository.
-- Configure the overlay path in `.env` (which is git-ignored): `AI_REGISTRY_OVERLAY=/path/to/private-ai-registry`.
+- Configure `AI_REGISTRY_OVERLAY` in shell configuration or git-ignored `.env` as a PATH-style list of overlay roots (`:` on Linux/macOS, `;` on Windows). Paths support home expansion and registry-relative resolution. Empty entries are ignored; missing paths warn and are skipped. Repeated normalized paths keep their last occurrence.
 - The overlay repository should mirror standard registry folders: `skills/`, `commands/`, and `profiles/`.
-- During `bun run build`, assets from the overlay are merged with public assets. On collision, overlay assets take precedence over public base assets.
+- Build and bootstrap merge overlays left to right; the last matching skill, command, or profile wins. Replace complete bundles and profile directories. Inspect skill conflict notes for the selected and replaced sources. Preserve harness-specific override precedence. The overlay_dir template variable identifies the last active overlay; use file_dir for resources relative to assets in other overlays.
 - Apply the same safe recovery checks to overlay-backed generated files. Recover supported edits to the mapped overlay source; preserve both versions and suspend application on conflicts or unsupported recovery.
 
 ## Add A Skill

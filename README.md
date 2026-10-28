@@ -63,7 +63,7 @@ Generated harness outputs are compiled by plugins at `packages/registry-cli/src/
 Source files keep their filenames and use [EJS](https://ejs.co/docs/) syntax. `bun run build` renders generated text outputs exactly once. Templates support native JavaScript expressions and control flow; only trusted templates should be built. Unknown variables, invalid JavaScript, failed includes, and missing environment values without defaults fail the build. Use raw output tags for paths and plain text; `<%= value %>` performs HTML escaping. Use `<%%` to emit a literal opening delimiter. Foreign `{{...}}` syntax passes through unchanged. Available locals:
 
 - `<%- repo_root %>`: Absolute path to the repository root during template expansion.
-- `<%- overlay_dir %>`: Absolute path to the active private overlay directory, or empty string if none is configured.
+- `<%- overlay_dir %>`: Absolute path to the last active private overlay directory, or empty string if none is configured. Use file_dir for resources relative to an asset in another overlay.
 - `<%- skills_dir %>`: Absolute path to the repository's `skills/` directory.
 - `<%- commands_dir %>`: Absolute path to the repository's `commands/` directory.
 - `<%- profiles_dir %>`: Absolute path to the repository's `profiles/` directory.
@@ -95,18 +95,23 @@ For proprietary or work-specific skills, commands, and profiles that cannot be c
    ```text
    my-work-registry/
    ├── skills/
-   │   └── internal-tool/SKILL.md
+   │   ├── agent/internal-tool/SKILL.md
+   │   └── user/manual-task/SKILL.md
    ├── commands/
    │   └── jira-ticket.md
    └── profiles/
        └── work/
            └── profile.yaml
    ```
-3. Set the overlay path in `.env` (automatically loaded by Bun and git-ignored):
+3. Set the overlay paths in shell configuration or `.env` (automatically loaded by Bun and git-ignored):
    ```bash
-   AI_REGISTRY_OVERLAY=~/work/ai-registry
+   AI_REGISTRY_OVERLAY=~/work/ai-registry:~/personal/ai-registry
    ```
-4. Run `bun run build` or `bun run bootstrap`. The build will automatically merge assets from the overlay. On name collision, overlay assets take precedence.
+4. Run `bun run build` or `bun run bootstrap`. The build merges assets from left to right; the last matching skill, command, or profile wins. Both build and bootstrap print skill conflict notes with the selected and replaced source paths.
+
+Separate paths with the platform PATH separator (`:` on Linux/macOS, `;` on Windows). Each entry supports `~`; relative paths resolve from the registry checkout. Empty entries are ignored. Repeated normalized paths keep their last occurrence, so `A:B:A` is processed as `B:A`. Missing paths produce warnings and are skipped.
+
+Each overlay may contain any subset of `skills/`, `commands/`, and `profiles/`. Skill bundles and profile directories are replaced as a whole, not merged file by file. Profile patterns still determine which assets are selected. Harness-specific skill overrides retain their precedence over all overlays.
 
 ### Hostname Skill Variants
 

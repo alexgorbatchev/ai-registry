@@ -100,7 +100,7 @@ describe("bootstrapCommand", () => {
     homeDir = join(root, "home");
     registryPaths = {
       root: join(root, "repo"),
-      overlay: null,
+      overlays: [],
       harnesses: join(root, "repo", "harnesses"),
       skills: join(root, "repo", "skills"),
       commands: join(root, "repo", "commands"),
@@ -210,7 +210,7 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
     await bootstrapCommand(createDependencies());
     logLines = [];
 
-    await bootstrapCommand(createDependencies({ registryPaths: { ...registryPaths, overlay: join(root, "overlay") } }));
+    await bootstrapCommand(createDependencies({ registryPaths: { ...registryPaths, overlays: [join(root, "overlay")] } }));
 
     expect(getLog()).toMatchInlineSnapshot(`
 "🚀 Bootstrapping ai-registry...

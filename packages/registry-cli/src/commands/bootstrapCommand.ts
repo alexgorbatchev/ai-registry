@@ -126,9 +126,9 @@ function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResul
 }
 
 export async function bootstrapCommand(dependencies: IBootstrapDependencies = createDefaultDependencies()): Promise<void> {
-  const { root, overlay, output } = dependencies.registryPaths;
+  const { root, overlays, output } = dependencies.registryPaths;
   console.log("🚀 Bootstrapping ai-registry...\n");
-  if (overlay) {
+  for (const overlay of overlays) {
     console.log(`📦 Using overlay: ${overlay}\n`);
   }
 
@@ -175,7 +175,7 @@ export async function bootstrapCommand(dependencies: IBootstrapDependencies = cr
   printPublicScriptResult(dependencies.publicBinDir, publicScriptResult);
 
   console.log("\nReady.");
-  if (overlay) {
+  for (const overlay of overlays) {
     console.log(`Overlay merged: ${overlay}`);
   }
   for (const target of bootstrapTargets) {

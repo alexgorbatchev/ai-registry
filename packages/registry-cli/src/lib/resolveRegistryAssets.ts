@@ -14,6 +14,13 @@ export type IResolvedMatchedAssets = {
   matchedNames: string[];
   sourcePaths: Record<string, string>;
   userSkillNames?: Set<string>;
+  conflicts: IRegistryAssetConflict[];
+};
+
+type IRegistryAssetConflict = {
+  name: string;
+  previousSource: string;
+  selectedSource: string;
 };
 
 type IGroupedAssetEntry = {
@@ -140,7 +147,7 @@ async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> 
 
 export async function discoverProfiles(
   baseProfilesDir: string,
-  overlayProfilesDir?: string | null,
+  overlayProfilesDirs: string[] = [],
 ): Promise<IDiscoveredProfile[]> {
   const profileMap = new Map<string, IDiscoveredProfile>();
 
@@ -156,7 +163,8 @@ export async function discoverProfiles(
     }
   }
 
-  if (overlayProfilesDir && existsSync(overlayProfilesDir)) {
+  for (const overlayProfilesDir of overlayProfilesDirs) {
+    if (!existsSync(overlayProfilesDir)) continue;
     const overlayEntries = await readdir(overlayProfilesDir, { withFileTypes: true });
     for (const entry of overlayEntries) {
       if (!entry.isDirectory()) continue;
@@ -174,33 +182,34 @@ export async function discoverProfiles(
 export async function resolveMatchedAssets(
   patterns: string[],
   baseDir: string,
-  overlayDir?: string | null,
+  overlayDirs: string[] = [],
 ): Promise<IResolvedMatchedAssets> {
   if (!patterns || patterns.length === 0) {
     return {
       matchedNames: [],
       sourcePaths: {},
       userSkillNames: new Set<string>(),
+      conflicts: [],
     };
   }
 
-  const hasOverlay = Boolean(overlayDir && existsSync(overlayDir));
-  const isGrouped = isGroupedDirectory(baseDir) || (hasOverlay && overlayDir ? isGroupedDirectory(overlayDir) : false);
+  const sourceDirs = [baseDir, ...overlayDirs].filter((directory) => existsSync(directory));
+  const isGrouped = sourceDirs.some(isGroupedDirectory);
+  const conflicts: IRegistryAssetConflict[] = [];
 
   if (isGrouped) {
-    const baseAssets = isGroupedDirectory(baseDir)
-      ? await collectGroupedAssets(baseDir)
-      : await collectFlatAssets(baseDir);
-
-    const overlayAssets = hasOverlay && overlayDir
-      ? (isGroupedDirectory(overlayDir)
-          ? await collectGroupedAssets(overlayDir)
-          : await collectFlatAssets(overlayDir))
-      : new Map<string, IGroupedAssetEntry>();
-
-    const mergedAssets = new Map<string, IGroupedAssetEntry>(baseAssets);
-    for (const [name, entry] of overlayAssets) {
-      mergedAssets.set(name, entry);
+    const mergedAssets = new Map<string, IGroupedAssetEntry>();
+    for (const directory of sourceDirs) {
+      const assets = isGroupedDirectory(directory)
+        ? await collectGroupedAssets(directory)
+        : await collectFlatAssets(directory);
+      for (const [name, entry] of assets) {
+        const previous = mergedAssets.get(name);
+        if (previous && previous.sourcePath !== entry.sourcePath) {
+          conflicts.push({ name, previousSource: previous.sourcePath, selectedSource: entry.sourcePath });
+        }
+        mergedAssets.set(name, entry);
+      }
     }
 
     const sourcePaths: Record<string, string> = {};
@@ -221,22 +230,19 @@ export async function resolveMatchedAssets(
       matchedNames,
       sourcePaths,
       userSkillNames,
+      conflicts: conflicts.filter((conflict) => Object.hasOwn(sourcePaths, conflict.name)),
     };
   }
 
-  const baseMatches = existsSync(baseDir) ? await resolveGlobs(patterns, baseDir) : [];
-
-  const overlayMatches = hasOverlay && overlayDir ? await resolveGlobs(patterns, overlayDir) : [];
-
   const sourcePaths: Record<string, string> = {};
-
-  for (const name of baseMatches) {
-    sourcePaths[name] = join(baseDir, name);
-  }
-
-  if (hasOverlay && overlayDir) {
-    for (const name of overlayMatches) {
-      sourcePaths[name] = join(overlayDir, name);
+  for (const directory of sourceDirs) {
+    for (const name of await resolveGlobs(patterns, directory)) {
+      const selectedSource = join(directory, name);
+      const previousSource = sourcePaths[name];
+      if (previousSource && previousSource !== selectedSource) {
+        conflicts.push({ name, previousSource, selectedSource });
+      }
+      sourcePaths[name] = selectedSource;
     }
   }
 
@@ -246,5 +252,6 @@ export async function resolveMatchedAssets(
     matchedNames,
     sourcePaths,
     userSkillNames: new Set<string>(),
+    conflicts,
   };
 }

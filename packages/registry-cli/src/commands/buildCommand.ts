@@ -8,7 +8,7 @@ import {
   rm,
   writeFile,
 } from "fs/promises";
-import { dirname, join, relative } from "path";
+import { dirname, join, relative, sep } from "path";
 import { hostname } from "node:os";
 import { globby } from "globby";
 import { existsSync } from "fs";
@@ -265,20 +265,20 @@ interface IBuildOptions {
 async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): Promise<void> {
   console.log("🚀 Building Unified Agent Outputs...");
   const buildHostname = resolveBuildHostname(process.env.AI_REGISTRY_HOSTNAME, hostname());
-  const { root, overlay, output, harnesses, profiles, skills, commands, temp } =
+  const { root, overlays, output, harnesses, profiles, skills, commands, temp } =
     options.registryPaths ?? getRegistryPaths();
   
   const GENERATED_OUTPUT_STAGING_DIR = join(temp, "generated-output-staging");
   const TEMPLATE_CONTEXT = {
     repo_root: root,
-    overlay_dir: overlay ?? "",
+    overlay_dir: overlays.at(-1) ?? "",
     skills_dir: skills,
     commands_dir: commands,
     profiles_dir: profiles,
     output_dir: output,
   } as const;
 
-  if (overlay) {
+  for (const overlay of overlays) {
     console.log(`📦 Using overlay: ${overlay}`);
   }
 
@@ -307,11 +307,11 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 
-  const overlayProfilesDir = overlay ? join(overlay, "profiles") : null;
-  const overlaySkillsDir = overlay ? join(overlay, "skills") : null;
-  const overlayCommandsDir = overlay ? join(overlay, "commands") : null;
+  const overlayProfilesDirs = overlays.map((overlay) => join(overlay, "profiles"));
+  const overlaySkillsDirs = overlays.map((overlay) => join(overlay, "skills"));
+  const overlayCommandsDirs = overlays.map((overlay) => join(overlay, "commands"));
 
-  const discoveredProfiles = await discoverProfiles(profiles, overlayProfilesDir);
+  const discoveredProfiles = await discoverProfiles(profiles, overlayProfilesDirs);
 
   for (const discoveredProfile of discoveredProfiles) {
     const { profileName, profileDir, isOverlay } = discoveredProfile;
@@ -343,10 +343,14 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     }
 
     const [matchedSkillsResult, matchedCommandsResult, localAssets] = await Promise.all([
-      resolveMatchedAssets(manifest.skills ?? [], skills, overlaySkillsDir),
-      resolveMatchedAssets(manifest.commands ?? [], commands, overlayCommandsDir),
+      resolveMatchedAssets(manifest.skills ?? [], skills, overlaySkillsDirs),
+      resolveMatchedAssets(manifest.commands ?? [], commands, overlayCommandsDirs),
       discoverProfileLocalAssets(profileDir),
     ]);
+
+    for (const conflict of matchedSkillsResult.conflicts) {
+      console.log(`NOTE: Skill "${conflict.name}" conflict: ${conflict.selectedSource} replaces ${conflict.previousSource}`);
+    }
 
     const globalMatchedSkills = matchedSkillsResult.matchedNames;
     const globalSkillSourcePaths = matchedSkillsResult.sourcePaths;
@@ -354,12 +358,12 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     const globalMatchedCommands = matchedCommandsResult.matchedNames;
     const globalCommandSourcePaths = matchedCommandsResult.sourcePaths;
 
-    if (overlay) {
+    if (overlays.length > 0) {
       const overlaySkillNames = globalMatchedSkills.filter(
-        (name) => globalSkillSourcePaths[name]?.startsWith(overlay),
+        (name) => overlays.some((overlay) => globalSkillSourcePaths[name]?.startsWith(overlay + sep)),
       );
       const overlayCommandNames = globalMatchedCommands.filter(
-        (name) => globalCommandSourcePaths[name]?.startsWith(overlay),
+        (name) => overlays.some((overlay) => globalCommandSourcePaths[name]?.startsWith(overlay + sep)),
       );
       if (overlaySkillNames.length > 0) {
         console.log(`   ↳ overlay skills (${overlaySkillNames.length}): ${overlaySkillNames.join(", ")}`);
@@ -397,6 +401,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
 
     await unifiedHarnessPlugin.finalizeOutput({
       harnessDir: join(harnesses, unifiedHarnessPlugin.target),
+      overlayDirs: overlays,
       outputDir: GENERATED_OUTPUT_STAGING_DIR,
       templateContext: TEMPLATE_CONTEXT,
       buildSupport: wrappedBuildSupport,
@@ -470,7 +475,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     console.log(`  - ${join(output, unifiedHarnessPlugin.target)}`);
   }
   console.log(`  - ${join(output, GENERATED_OUTPUT_MANIFEST_NAME)}`);
-  if (overlay) {
+  for (const overlay of overlays) {
     console.log(`  - overlay merged: ${overlay}`);
   }
   console.log("\nTo test OpenCode instantly via CLI, run:");

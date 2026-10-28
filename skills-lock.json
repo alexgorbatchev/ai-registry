@@ -2,10 +2,11 @@
   "version": 1,
   "skills": {
     "archify": {
-      "source": "tt-a1i/archify",
+      "source": "alexgorbatchev/archify",
+      "ref": "6bd7822dcda53c7a87978ac73f413a9b1968c25b",
       "sourceType": "github",
       "skillPath": "archify/SKILL.md",
-      "computedHash": "e8cbde4db89de7b49cfab034923a9f6028afd0bc413ab26fe1a68c242e2005fe"
+      "computedHash": "7e9612af41474380b9c60eaadd7ed325846310d1a7b9250f89218820058165a2"
     },
     "caveman": {
       "source": "JuliusBrussee/caveman",

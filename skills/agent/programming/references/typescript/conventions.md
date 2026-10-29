@@ -52,6 +52,7 @@ Also follow these ownership-location rules:
 
 - component ownership `.tsx` files live under `components/`, `templates/`, or `layouts/`, using `ComponentName.tsx` by default or `component-name.tsx` when the shared config uses `FilenameStyle.DashCase`
 - exported runtime hooks whose names start with `use` live in direct-child `hooks/useThing.ts[x]` files by default or `hooks/use-thing.ts[x]` when the shared config uses `FilenameStyle.DashCase`
+- Hook-owned `.tsx` files follow hook contracts and matching test requirements rather than component naming, test-id, or sibling-story requirements. Shared raw-JSX and direct-styling ownership boundaries still apply.
 - `stories/` directories are reserved for `*.stories.tsx`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`
 - `__tests__/` directories are reserved for `*.test.ts[x]`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`
 

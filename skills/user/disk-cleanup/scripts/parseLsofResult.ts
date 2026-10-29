@@ -22,7 +22,12 @@ export function parseLsofResult(project: string, stdout: string, stderr: string,
     }
     warnings.push(`${line}\n${lines[index + 1]}`);
   }
-  const records = stdout.trim().split('\n').filter(Boolean);
+  // Older macOS lsof emits descriptor fields even when only PID fields are requested.
+  const records = stdout
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .filter((line) => !/^f(?:\d+|cwd|rtd|txt|mem|DEL)$/.test(line));
   if (
     (code !== 0 && code !== 1) ||
     (code === 0 && records.length === 0) ||

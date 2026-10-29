@@ -9,6 +9,9 @@ test('keeps process IDs and reports unrelated mount warnings', () => {
     warnings: [stderr.trim()],
   });
 });
+test('accepts descriptor fields emitted by older macOS lsof', () => {
+  expect(parseLsofResult('/projects/example', 'p42\nfcwd\nftxt\nf3\n', '', 1)).toEqual({ pids: [42], warnings: [] });
+});
 test.each(['/projects', '/projects/example', '/projects/example/mount'])(
   'rejects incomplete mount inspection for %s',
   (mount) => {

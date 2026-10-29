@@ -1,5 +1,10 @@
 import { Command, InvalidArgumentError, Option } from 'commander';
 import { assessDisk } from './assessDisk';
+import { realpath } from 'node:fs/promises';
+import { inspectDisk } from './inspectDisk';
+import { systemAssessmentRoots } from './systemAssessmentRoots';
+import { reviewNativeTargets } from './reviewNativeTargets';
+import { removeNativeTargets } from './removeNativeTargets';
 import { runInspectionCommand } from './runInspectionCommand';
 import { parseSizeToBytes } from './inspectFolders';
 import type { AssessmentOptions } from './types';
@@ -8,12 +13,20 @@ import { parseIdleDuration, parseRustArtifacts } from './parseIdleDuration';
 import { removeRustArtifacts } from './removeRustArtifacts';
 import type { RustOptions } from './types';
 import skillText from '../SKILL.md' with { type: 'text' };
-import { resolveRoot, run } from './filesystemUtils';
+import { resolveRoot } from './filesystemUtils';
 import { inspectStaleFolders } from './inspectFolders';
 import { inspectWorktrees, validateWorktree } from './inspectWorktrees';
 import { inspectDependencies } from './inventory';
 import { removeTargets, validateCache, validateDependency, worktreeAction } from './removeTargets';
-import type { Action, DependencyOptions, DiskOptions, FolderOptions, RunOptions, TimeMode } from './types';
+import type {
+  Action,
+  DependencyOptions,
+  DiskOptions,
+  FolderOptions,
+  RunOptions,
+  TimeMode,
+  InspectionError,
+} from './types';
 
 const isAgent = ['1', 'true', 'yes'].includes(Bun.env.AGENT?.trim().toLowerCase() ?? '');
 const program = new Command().name('cleanup').description('Inspect disk use and remove selected development artifacts');
@@ -46,10 +59,28 @@ program
 const disk = program.command('disk').description('Measure allocated space');
 scoped(disk.command('assess').description('Await a combined disk, project, cache, and Docker assessment'))
   .option('--size <size>', 'Minimum allocation for files and folders at every depth', '1G')
+  .option('--system', 'Also inspect platform temporary, cache, library, and log paths', false)
   .option('--days <count>', 'Required inactivity for dependency decisions', positiveInteger, 30)
   .action(async (options: AssessmentOptions) => {
     const root = await resolveRoot(options.root);
-    const report = await assessDisk(root, parseSizeToBytes(options.size), options.days, runInspectionCommand);
+    const systemRoots = options.system
+      ? await Promise.all(
+          systemAssessmentRoots().map(async (path) => {
+            try {
+              return await realpath(path);
+            } catch {
+              return path;
+            }
+          }),
+        )
+      : [];
+    const report = await assessDisk(
+      root,
+      parseSizeToBytes(options.size),
+      options.days,
+      runInspectionCommand,
+      systemRoots,
+    );
     output(report);
     if (!report.isComplete) process.exitCode = 1;
   });
@@ -57,17 +88,9 @@ scoped(disk.command('inspect').description('Report filesystem capacity and large
   .option('--depth <levels>', 'Directory depth to report', positiveInteger, 2)
   .action(async (options: DiskOptions) => {
     const root = await resolveRoot(options.root);
-    const filesystem = await run(['df', '-B1', '--', root]);
-    const usage = await run(['du', '-x', '-B1', '--null', `--max-depth=${options.depth}`, '--', root]);
-    const folders = usage
-      .split('\0')
-      .filter(Boolean)
-      .map((record) => {
-        const separator = record.indexOf('\t');
-        return { bytes: Number(record.slice(0, separator)), path: record.slice(separator + 1) };
-      })
-      .sort((left, right) => right.bytes - left.bytes);
-    output({ root, filesystem, folders });
+    const report = await inspectDisk(root, options.depth);
+    output(report);
+    if (!report.isComplete) process.exitCode = 1;
   });
 
 const folders = program.command('folders').description('Find directories exceeding size and staleness thresholds');
@@ -122,16 +145,20 @@ for (const verb of ['list', 'remove']) {
     .option('--days <count>', 'Required days without recorded Git activity', positiveInteger, 30)
     .action(async (options: DependencyOptions) => {
       const root = await resolveRoot(options.root);
-      const report = await inspectDependencies(root, options.days);
-      if (verb === 'list') return output({ root, days: options.days, dependencies: report });
+      const errors: InspectionError[] = [];
+      const report = await inspectDependencies(root, options.days, (error) => errors.push(error));
+      if (verb === 'list') {
+        output({ root, days: options.days, dependencies: report, errors });
+        if (errors.length) process.exitCode = 1;
+        return;
+      }
+      if (errors.length) throw new Error(`Dependency inspection incomplete: ${JSON.stringify(errors)}`);
       const actions: Action[] = report
         .filter((item) => item.eligible)
-        .map((item) => ({
-          path: item.path,
-          repository: item.repository,
-          bytes: item.bytes,
-          kind: 'dependency',
-        }));
+        .map((item) => {
+          if (item.bytes === null) throw new Error(`Unknown allocation: ${item.path}`);
+          return { path: item.path, repository: item.repository, bytes: item.bytes, kind: 'dependency' };
+        });
       const result = await removeTargets({ root, execute: options.execute }, actions, (action) =>
         validateDependency(root, action, options.days),
       );
@@ -195,6 +222,60 @@ scoped(
     }),
   );
 });
+
+const native = program
+  .command('native')
+  .description('Record and remove reviewed native cache or temporary directories');
+type NativeCliOptions = RunOptions & { verbose: boolean };
+scoped(
+  native
+    .command('review')
+    .description('Save an exact target manifest without deleting data')
+    .argument('<paths...>', 'Reviewed cache or temporary directories inside root'),
+)
+  .option('--verbose', 'Include all target records', false)
+  .action(async (inputs: string[], options: NativeCliOptions) => {
+    const report = await reviewNativeTargets(await resolveRoot(options.root), inputs);
+    output(
+      options.verbose
+        ? report
+        : {
+            manifestPath: report.manifestPath,
+            selectedCount: report.manifest.actions.length,
+            preservedCount: report.manifest.preserved.length,
+            processWarningCount: report.manifest.processWarnings.length,
+          },
+    );
+  });
+scoped(
+  native
+    .command('remove')
+    .description('Validate a saved manifest; delete only with --execute')
+    .argument('<manifest>', 'Manifest JSON from native review'),
+  true,
+)
+  .option('--verbose', 'Include all target and command records', false)
+  .action(async (manifest: string, options: NativeCliOptions) => {
+    const report = await removeNativeTargets(await resolveRoot(options.root), manifest, options.execute);
+    output(
+      options.verbose
+        ? report
+        : {
+            execute: report.execute,
+            manifestPath: manifest,
+            selectedCount: report.actions.length,
+            removedCount: report.removed.length,
+            preservedCount: report.preserved.length,
+            newEntryCount: report.newEntries.length,
+            failure: report.failure,
+            logPath: report.logPath,
+            freeBeforeBytes: report.freeBeforeBytes,
+            freeAfterBytes: report.freeAfterBytes,
+            reclaimedBytes: report.reclaimedBytes,
+          },
+    );
+    if (report.failure) process.exitCode = 1;
+  });
 
 const worktrees = program.command('worktrees').description('Review registered worktrees and workspace directories');
 scoped(worktrees.command('list').description('List sizes, registration, branches, locks, and file status')).action(

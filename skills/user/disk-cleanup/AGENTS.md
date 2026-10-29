@@ -1,6 +1,6 @@
 ---
 created_on: '2026-10-05 07:24'
-last_modified: '2026-10-18 15:22'
+last_modified: '2026-10-29 15:47'
 status: current
 ---
 
@@ -9,7 +9,8 @@ Maintain the portable development-folder cleanup skill and its Bun scripts in th
 - Install locked dependencies: `bun install --frozen-lockfile`.
 - Run type checks, lint, and behavioral tests: `bun run check`.
 - Use Oxlint and Oxfmt for linting and formatting: `bun run lint` checks both; `bun run fix` applies fixes.
-- Run the tool for agents: `bun run run-ai skill`, then `bun run run-ai disk assess --root <target>`.
+- Run the tool for agents: `bun run run-ai skill`, then `bun run run-ai disk assess --root <target> --system`
+  for machine-wide requests on macOS/Linux; omit `--system` for a selected project scope.
 - General disk-space requests require the combined assessment before cleanup recommendations or deletion questions.
   Await all sections, include large development paths alongside caches, preserve partial command output, and expose
   every inspection failure. Never report a pending or failed assessment as complete.
@@ -21,6 +22,11 @@ command tree; preserve verbatim `skill` output and the single alert on every age
 
 Use real disposable Git repositories for cleanup tests. Keep removal previews read-only. Preserve the root `.tmp`
 container because execution logs live there; reject deletions that would remove those logs.
+`native review` intentionally writes its manifest without deleting targets. Keep native removal bound to that
+exact manifest, validate the whole batch first, and recheck identities and visible process use per removal.
+Preserve blocked repositories and active targets; never replace source review with a temp-path naming assumption.
+Test permission-denied siblings, process transitions, target replacement, concurrent arrivals, and partial failure
+using disposable fixtures. GNU utility resolution must work with macOS's ordinary Homebrew PATH.
 Keep worktree deletion in native Git and preserve tracked files, ignored files, branch/tag reachability, and locks.
 Do not replace failed Git inspection with an inactivity guess or add `--force` to make removal pass.
 

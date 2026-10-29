@@ -41,7 +41,7 @@ import (
 	"fmt"
 	"os"
 
-	cobrahelptree "github.com/alexgorbatchev/cobra-help-tree/v2"
+	cobrahelptree "github.com/alexgorbatchev/cobra-help-tree/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -63,8 +63,15 @@ var syncCmd = &cobra.Command{
 }
 
 func Execute() {
-	// Enable hierarchical tree help screens across all command levels
-	cobrahelptree.Setup(rootCmd)
+	// Tree help on every command level, plus the `skill` command and agent alert
+	// pointing at skills/mytool/SKILL.md in the repository
+	err := cobrahelptree.SetupWithOptions(rootCmd, cobrahelptree.HelpOptions{
+		Skill: cobrahelptree.SkillSource{Repository: "<owner>/mytool", Branch: "main"},
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

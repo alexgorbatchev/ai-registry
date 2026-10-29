@@ -4,7 +4,7 @@ description: Must use any time a TypeScript file is read or written.
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-16 12:22
-  last_modified: 2026-10-16 13:58
+  last_modified: 2026-10-29 13:40
   status: current
 ---
 

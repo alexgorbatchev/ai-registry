@@ -14,6 +14,7 @@ Mandatory testing guidelines for TypeScript projects using Bun's test runner.
 **File naming and location:**
 
 - Test files: `*.test.ts` or `*.test.tsx` in a `__tests__` directory **directly adjacent to the code being tested**
+- Hook tests must preserve the source basename and extension: `hooks/useAccount.ts` requires `hooks/__tests__/useAccount.test.ts`, while `hooks/useAccount.tsx` requires `hooks/__tests__/useAccount.test.tsx`.
 - Shared fixtures: a single local `./fixtures` entrypoint per test area using `fixtures.ts`, `fixtures.tsx`, or `fixtures/`
 - Fixture exports: `fixture_<lowerCamelCase>` for constant fixtures and `factory_<lowerCamelCase>` for factories
 

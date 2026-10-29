@@ -46,7 +46,7 @@ export async function inspectWorktrees(root: string): Promise<WorktreeInspection
   const items = await inventory(root);
   const known = new Map<string, WorktreeReport>();
   const commonDirectories = new Set<string>();
-  const errors: InspectionError[] = [];
+  const errors: InspectionError[] = [...items.errors];
   const failedRepositories = new Set<string>();
   for (const repository of items.repositories) {
     try {
@@ -83,9 +83,15 @@ export async function inspectWorktrees(root: string): Promise<WorktreeInspection
   }
   for (const workspace of items.workspaces) {
     if (known.has(workspace.path)) continue;
+    let bytes: number | null = null;
+    try {
+      bytes = await diskBytes(workspace.path);
+    } catch (error) {
+      errors.push({ repository: workspace.path, message: String(error) });
+    }
     known.set(workspace.path, {
       ...workspace,
-      bytes: await diskBytes(workspace.path),
+      bytes,
       isRegistered: workspace.repository && failedRepositories.has(workspace.repository) ? null : false,
       head: null,
       branch: null,

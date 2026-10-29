@@ -1,11 +1,13 @@
 import { join } from 'node:path';
 import type { AssessmentSection, AssessmentTask, DiskAssessment, InspectionRunner } from './types';
+import { parseUsage } from './inspectDisk';
 
 export async function assessDisk(
   root: string,
   minimumBytes: number,
   days: number,
   runCommand: InspectionRunner,
+  systemRoots: string[] = [],
 ): Promise<DiskAssessment> {
   async function command(name: string, args: string[], format: 'text' | 'usage' | 'json'): Promise<AssessmentSection> {
     let result;
@@ -18,16 +20,7 @@ export async function assessDisk(
     const errors = result.exitCode === 0 ? [] : [`${args[0]} exited ${result.exitCode}: ${result.stderr.trim()}`];
     try {
       if (format === 'usage') {
-        data = result.stdout
-          .split('\0')
-          .filter(Boolean)
-          .map((record) => {
-            const separator = record.indexOf('\t');
-            const bytes = Number(record.slice(0, separator));
-            if (separator < 1 || !Number.isSafeInteger(bytes) || bytes < 0) throw new Error('Invalid du record');
-            return { bytes, path: record.slice(separator + 1) };
-          })
-          .sort((left, right) => right.bytes - left.bytes);
+        data = parseUsage(result.stdout);
       } else if (format === 'json' && result.stdout.trim()) {
         data = JSON.parse(result.stdout);
       }
@@ -99,6 +92,17 @@ export async function assessDisk(
       },
     },
   ];
+  for (const path of new Set(systemRoots)) {
+    tasks.push({
+      name: `system:${path}`,
+      inspect: () =>
+        command(
+          `system:${path}`,
+          ['du', '-a', '-x', '-B1', '--null', `--threshold=${minimumBytes}`, '--', path],
+          'usage',
+        ),
+    });
+  }
   const sections = await Promise.all(
     tasks.map(async (task): Promise<AssessmentSection> => {
       try {
@@ -108,5 +112,18 @@ export async function assessDisk(
       }
     }),
   );
-  return { root, isComplete: sections.every((section) => section.isComplete), sections };
+  return {
+    root,
+    isComplete: sections.every((section) => section.isComplete),
+    sections,
+    scope: {
+      roots: [root, ...new Set(systemRoots)],
+      exclusions: [
+        'Other paths and users outside the listed roots',
+        'Nested filesystems and symbolic-link traversal',
+        'Unreadable paths reported in section errors',
+      ],
+      docker: 'Reported Docker context; may be remote',
+    },
+  };
 }

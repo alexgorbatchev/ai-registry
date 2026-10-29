@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-10-18 15:24
+  last_modified: 2026-10-29 15:47
   status: current
 ---
 
@@ -13,11 +13,14 @@ Require Bun, Git, and GNU `du`, `df`, and `rm`. Install this skill's locked depe
 `bun install --frozen-lockfile` from the skill directory before invoking its scripts.
 Use `<%- file_dir %>/scripts/cleanup.ts`; do not assume the working directory is the skill directory.
 Rust commands also require an installed Cargo toolchain and Unix `lsof`.
+Native cleanup also requires Unix `lsof`. The tool resolves and verifies GNU utilities itself, preferring
+`gdu`, `gdf`, and `grm` on macOS; no `gnubin` PATH override is needed. Missing GNU tools fail with an install hint.
 
 ## Inspect before selecting deletions
 
 1. Identify the user's target root, default to $HOME. Pass it explicitly as `--root`; the default is the working directory.
-2. Run `disk assess --root <target>` for a general disk-space request. Await its final JSON and process exit;
+2. Run `disk assess --root <target> --system` for a general machine disk-space request on macOS or Linux.
+   Omit `--system` when the user selected only a project or directory. Await its final JSON and process exit;
    resume every yielded tool call until it finishes. This command collects filesystem capacity, a three-level
    overview, files and directories of at least 1G at every depth, dependencies, worktrees, stale folders, and Docker.
    Report the largest paths across the entire selected root, including development projects and hidden directories.
@@ -45,12 +48,15 @@ From the target root, use the following commands:
 ```sh
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" disk inspect --root . --depth 2
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" disk assess --root .
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" disk assess --root "$HOME" --system
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" folders list --root . --size 1G --days 30
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" dependencies list --root . --days 30
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" dependencies remove --root . --days 30
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" rust list --root . --idle 30m
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" rust remove project --root . --idle 30m --artifacts tmp,target
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" paths remove project/.tmp/build-cache --root .
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" native review Library/Caches/example --root "$HOME"
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" native remove .tmp/native-cleanup-EXAMPLE/manifest.json --root "$HOME"
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" worktrees list --root .
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" worktrees remove project/.workspaces/review --root .
 ```
@@ -62,14 +68,16 @@ Read [scripts/inventory.ts](scripts/inventory.ts) when changing activity classif
 
 | Command | Arguments and options | Behavior |
 |---|---|---|
-| `disk assess` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30` | Await all inspection sections and emit one combined report. Scan large allocated files and folders at every depth. `--size` also sets the stale-folder threshold; `--days` controls dependency and stale-folder inactivity. No deletion or log files. |
-| `disk inspect` | `--root <directory>` default `.`, `--depth <levels>` default `2` | Return filesystem capacity and directory allocations, sorted largest first. |
+| `disk assess` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--system` default false | Await all inspection sections and emit one combined report. Include platform cache, temp, library, and log scopes when selected. `--size` sets large-path and stale-folder thresholds; `--days` controls inactivity. No deletion or log files. |
+| `disk inspect` | `--root <directory>` default `.`, `--depth <levels>` default `2` | Return capacity, sorted directory allocations, `errors`, and `isComplete`. Preserve successful output when either command fails; incomplete inspection exits `1`. |
 | `folders list` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--time <mode>` default `either`, `--depth <levels>`, `--no-prune` | Return directories exceeding size and staleness thresholds with access/modification timestamps, pruning nested matching children by default. |
-| `dependencies list` | `--root <directory>` default `.`, `--days <count>` default `30` | Return each discovered outermost `node_modules` folder, owner, allocation, latest activity, eligibility, and reason. |
+| `dependencies list` | `--root <directory>` default `.`, `--days <count>` default `30` | Return discovered outermost `node_modules` folders with owner, allocation, activity, eligibility, reason, and top-level `errors`. Preserve readable siblings on errors; incomplete inspection exits `1`. Unknown allocation is null. |
 | `dependencies remove` | Same options plus `--execute` default false | Preview or delete all eligible folders under the selected root. |
 | `rust list` | `--root <directory>` default `.`, `--idle <duration>` default `30m` | Inspect direct child Cargo projects; return activity, process IDs, warnings, eligibility, and separate `.tmp`, coverage, and target allocations. Coverage is included in the target total. Inspection errors return exit code `1`. |
 | `rust remove <projects...>` | Exact direct child projects; `--root` and `--idle` as above; required `--artifacts <kinds>`; `--execute` default false | Preview or remove explicitly selected `tmp`, `coverage`, and/or `target` artifacts in idle projects. Preserve active projects and protected contents. Recheck before every removal. |
 | `paths remove <paths...>` | One or more exact paths; `--root <directory>` default `.`, `--execute` default false | Preview or delete reviewed artifacts beneath `.tmp`, `.cache`, `node_modules`, `target`, or `dist`. |
+| `native review <paths...>` | Exact reviewed cache/temp directories; `--root <directory>` default `.`, `--verbose` default false | Save an exact manifest beneath root's `.tmp/native-cleanup-*`. Return its path and counts; `--verbose` includes the full manifest. Writes the review record only; never deletes targets. |
+| `native remove <manifest>` | Manifest path relative to root or absolute inside it; `--root <directory>` default `.`, `--execute` default false, `--verbose` default false | Validate the saved selection; preview by default. Execute only its unchanged, inactive targets and retain a receipt. Return counts, failure, log path, and free-space change; `--verbose` includes full target/command records. |
 | `worktrees list` | `--root <directory>` default `.` | Return linked worktrees and `.workspaces` entries, allocations, branches/HEADs, locks, registration, status counts, and inspection errors. Partial scans return exit code `1`. |
 | `worktrees remove <paths...>` | One or more exact paths; `--root <directory>` default `.`, `--execute` default false | Preview or remove validated registered linked worktrees through Git. |
 | `skill` | No positional arguments or command-specific flags | Print this entire file verbatim, including frontmatter. |
@@ -101,7 +109,7 @@ any recorded error returns exit code `1`.
 
 ### Combined assessment output
 
-`disk assess` emits `{root, isComplete, sections}` only after every section finishes. Each section has `name`,
+`disk assess` emits `{root, isComplete, sections, scope}` only after every section finishes. Each section has `name`,
 `isComplete`, `data`, and `errors`. Names are `filesystem`, `overview`, `largePaths`, `dependencies`, `worktrees`,
 `staleFolders`, and `docker`. Overview and large-path data are arrays of `{bytes, path}` sorted largest first.
 The overview includes directories through depth three regardless of size; large paths include files and directories
@@ -113,8 +121,14 @@ endpoint before attributing usage to this machine. A missing Docker executable o
 not zero usage. A failed context lookup prevents dependent Docker queries.
 Nonzero commands retain available stdout and stderr; failed sections never hide successful sibling sections.
 `isComplete` describes scan completion only, never deletion safety. Exit code is `1` if any section is incomplete.
-The scope is the selected root's filesystem plus the reported Docker context; other host paths and filesystems
-are outside this assessment. Use targeted commands for further content review and Rust process/activity decisions.
+`scope` lists inspected roots, exclusions, and the Docker context boundary. With `--system`, macOS adds the current
+user's OS temp directory, its sibling `X` staging directory, `~/Library/Caches`, `/Library`, and `/private/var/log`.
+Linux adds the OS temp directory, `/var/tmp`, `/var/cache`, `/var/log`, and `~/.cache`. Resolve existing root aliases
+to physical paths and deduplicate identical extra roots. A missing or restricted path remains an explicit error.
+Extra roots have `system:<path>` sections with large files and folders at every depth; they are inspection scope,
+never deletion targets. Overlapping roots and directory totals must not be summed. Other users' paths outside
+these roots, nested filesystems, and symlink traversal are excluded. Unsupported platforms reject `--system`;
+use explicit roots instead. Use targeted commands for content review and Rust process/activity decisions.
 
 ## Dependency decisions
 
@@ -151,7 +165,41 @@ For an authorized cache beneath `.cache`, use the existing `paths remove` previe
 the home directory as `--root`. For example, select `.cache/pi-codegraph` only after inspecting its contents.
 Do not generalize authorization for one cache to Go, npm, Bun, browser, or other caches.
 For package-manager cache commands or database maintenance, verify current official documentation first.
-The existing artifact command does not accept arbitrary `.npm`, `.bun`, or Trash paths; do not claim it does.
+The artifact command does not accept arbitrary `.npm`, `.bun`, or Trash paths. Use the reviewed native-directory
+workflow below for exact cache/temp directories outside its naming policy; Trash retains its separate procedure.
+
+### Reviewed native cache and temporary directories
+
+Use this workflow after reviewing contents and identifying the producer, including macOS extracted temp runtimes,
+browser staging clones, and application caches. A location or runtime-looking name does not establish disposal.
+
+1. Select exact directories strictly inside one explicit root. Never pass globs, shell-expanded lists, an entire
+   temp/cache container, or an unreviewed source tree. `native review <paths...> --root <container>` records the
+   selection and returns its manifest path. It rejects symlink targets/ancestors, filesystem crossings, overlapping
+   selections, and deletion of root's `.tmp`. Tracked files, embedded repositories, and active targets are preserved
+   with reasons. Inspection uncertainty aborts the review. It may record safe siblings alongside blocked entries.
+2. Read the saved manifest's `actions`, `preserved`, and `processWarnings`, or request it with `--verbose`. Actions contain allocation and a
+   SHA-256 identity derived from every entry's path, device, inode, size, and change/modification times. Parent
+   entry lists establish the baseline for detecting later arrivals. The review writes only `.tmp/native-cleanup-*/manifest.json`.
+3. Run `native remove <manifest> --root <container>` to validate the saved batch without writing or deleting.
+   Obtain missing user authorization for its concrete actions. Do not edit a manifest to expand authorization;
+   create a fresh review when scope or contents change.
+4. Add `--execute` within existing authorization. Revalidate the entire batch before the first deletion, then
+   recheck each target's contents/identity, process use, and identity again before native GNU `rm -r -- <exact-path>`.
+   Preserve newly active targets. Stop at the first validation, process, removal, or verification failure.
+   Save command exit statuses, selected actions, verified removals, preserved entries, failure, and before/after
+   available-byte `df` output in a separate `.tmp/native-cleanup-*/execution.json`, replacing the receipt atomically
+   after each removal. Retain the original manifest and partial receipt on failure.
+5. Read the receipt or `--verbose` output and report `removed`, `preserved`, `newEntries` in reviewed parent directories, and `failure` separately. Verify
+   removed paths are still absent. Report `freeBeforeBytes`, `freeAfterBytes`, and `reclaimedBytes` as the observed
+   filesystem change, separate from allocation estimates. Concurrent writes may make this delta negative.
+
+Global `lsof -nP -F0pn` snapshots cover visible open/mapped files, executables, and working directories at review
+and immediately before each removal. Normalize macOS `/var` aliases and conservatively preserve ambiguous escaped
+names. Related mount warnings and malformed/failed snapshots block cleanup; unrelated mount warnings are recorded.
+Process visibility is limited by the invoking user's permissions. Snapshots and repeated identity checks cannot
+lock out a producer that starts or writes afterward; coordinate stopping the producer before cleanup when needed.
+Do not weaken Git guards to remove copied repositories. Review source changes through a separate authorized workflow.
 
 ### CodeGraph indexes
 
@@ -226,8 +274,9 @@ Set `AGENT=1`, `true`, or `yes` for compact JSON and untruncated help/errors. Ot
 tree help trimmed to terminal width (100-column fallback), and concise errors. Agent help begins with the skill alert.
 Rust inspection inherits Cargo configuration and environment overrides, and disables rustup auto-installation
 with `RUSTUP_AUTO_INSTALL=0`. Other commands have no additional cleanup environment settings.
-Each nonempty execution creates `.tmp/cleanup-*/execution.json` under root,
-records selected actions, verified removals, failures, and before/after `df` output. Preview/list commands write no logs.
+Each nonempty artifact/worktree execution creates `.tmp/cleanup-*/execution.json` under root,
+records selected actions, verified removals, failures, and before/after `df` output. Native review/execution uses
+`.tmp/native-cleanup-*` as described above. All inspection and removal-preview commands write no logs.
 Return exit code `0` on success or help, `1` on validation, usage, inspection, removal, or verification failure.
 
 Distinguish allocated size from actual reclaimed bytes: hard links/shared storage and concurrent filesystem changes

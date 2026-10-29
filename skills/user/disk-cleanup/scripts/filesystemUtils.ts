@@ -1,17 +1,9 @@
 import { lstat, readdir, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { runInspectionCommand } from './runInspectionCommand';
 
 export async function run(args: string[]): Promise<string> {
-  const process = Bun.spawn(args, {
-    stdout: 'pipe',
-    stderr: 'pipe',
-    env: { ...Bun.env, GIT_OPTIONAL_LOCKS: '0', LC_ALL: 'C' },
-  });
-  const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(process.stdout).text(),
-    new Response(process.stderr).text(),
-    process.exited,
-  ]);
+  const { stdout, stderr, exitCode } = await runInspectionCommand(args);
   if (exitCode !== 0) throw new Error(`${args[0]} failed (${exitCode}): ${stderr.trim()}`);
   return stdout;
 }

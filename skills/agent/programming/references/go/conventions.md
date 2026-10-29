@@ -19,7 +19,7 @@ This skill defines the non-negotiable idioms and design principles for writing G
 
 Read the matching file when the task goes beyond writing code:
 
-- [setup.md](setup.md) — **Binding project rules** (Go version, `go-scaffold`, `bin/` output, `just`, Cobra + `cobra-help-tree/v2`, `any-llm-go`, `--version` contract, XDG paths, module `tool` directives) plus setup, `justfile`, Cobra, and `.gitignore` templates. Read before starting, restructuring, building, or releasing a project.
+- [setup.md](setup.md) — **Binding project rules** (Go version, `go-scaffold`, `bin/` output, `just`, Cobra + `cobra-help-tree/v3`, `any-llm-go`, `--version` contract, XDG paths, module `tool` directives) plus setup, `justfile`, Cobra, and `.gitignore` templates. Read before starting, restructuring, building, or releasing a project.
 - [github-ci-cd-releases.md](github-ci-cd-releases.md) — GitHub Actions CI, tagged releases, GoReleaser config, and binary version metadata.
 - [go-release-notes.md](go-release-notes.md) — Language and tooling changes in Go 1.23+, released after the model training cutoff. Read when choosing between a newer and an older idiom, raising the `go` line, or relying on a recent `go` subcommand or analyzer.
 - [disk-usage.md](disk-usage.md) — **5 GB task-owned artifact budget**, shared/global cache exclusions, immediate scratch cleanup, cache ownership, and verification. Read before builds, tests, coverage, profiling, or storage cleanup.
@@ -461,7 +461,7 @@ Before introducing new functionality:
 ### 8.2 Domain-Specific Must-Use Libraries
 
 Always use the designated library for these domains instead of custom code:
-- **CLI Applications**: Cobra (`github.com/spf13/cobra`) with `github.com/alexgorbatchev/cobra-help-tree/v2`. Use all `cobra-help-tree` features (`TechCatalog` for positional arguments, tree help, `HideGeneratedCommands`, `AGENT=1` machine mode, width protection, stdout for help / stderr for usage) in place of standard Cobra help. Never use stdlib `flag` or custom parsers.
+- **CLI Applications**: Cobra (`github.com/spf13/cobra`) with `github.com/alexgorbatchev/cobra-help-tree/v3`. Use all `cobra-help-tree` features (`TechCatalog` for positional arguments, tree help, `HideGeneratedCommands`, `AGENT=1` machine mode, width protection, stdout for help / stderr for usage, `HelpOptions.Skill` with a `SkillSource` for the `skill` command and agent alert) in place of standard Cobra help. The skill stays in the repository at `skills/<cli>/SKILL.md`, never embedded in the binary. Never use stdlib `flag` or custom parsers.
 - **LLM Completions & AI Workflows**: `github.com/mozilla-ai/any-llm-go` (https://github.com/mozilla-ai/any-llm-go) for all LLM completions, chat streaming, embeddings, tool calling, and provider switching.
 - **Integration Testing with Real Services**: `testcontainers-go` (`github.com/testcontainers/testcontainers-go`) for containerized dependencies.
 
@@ -495,7 +495,7 @@ Before producing any Go code, verify the following. Project provisioning, toolch
 - [ ] Packages named for responsibility, not layer
 - [ ] Exported API is minimal — only what external consumers need
 - [ ] Third-party libraries preferred over custom implementations (researched, ranked, user-selected)
-- [ ] Domain-specific must-use libraries applied (Cobra + cobra-help-tree/v2 for CLI, any-llm-go for LLMs)
+- [ ] Domain-specific must-use libraries applied (Cobra + cobra-help-tree/v3 for CLI, any-llm-go for LLMs)
 - [ ] Standard library exceptions honored (slog, ServeMux, testing) without redundant wrappers
 - [ ] Comments explain why, code explains what
 - [ ] Callbacks come last in APIs you control; no ordinary arguments dangle after multiline callbacks or composite literals

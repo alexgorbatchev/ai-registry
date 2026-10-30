@@ -3,6 +3,7 @@
 ## Contents
 
 - [Core Rules & Decision Heuristics](#core-rules--decision-heuristics)
+- [Developer workflows](#developer-workflows)
 - [Build storage and temporary files](#build-storage-and-temporary-files)
 - [Linting & Formatting](#linting--formatting)
 - [Cheat-Sheet Translation Table](#cheat-sheet-translation-table)
@@ -16,6 +17,14 @@ Always use native, highly-optimized Bun APIs instead of falling back to Node.js 
 1. **Prioritize Bun Native**: Never import Node.js stdlib modules (like `fs`, `child_process`, `crypto`, `zlib`) or heavy npm packages (like `dotenv`, `bcrypt`, `uuid`, `better-sqlite3`, `tar`, `ioredis`) unless native Bun APIs do not support the task.
 2. **Directory Handling Exception**: `node:fs/promises` is approved for directories (`mkdir`, `readdir` with recursive globbing). For files, ALWAYS use `Bun.file` and `Bun.write`.
 3. **Use Progressive Disclosure**: Read the dedicated reference files below for detailed APIs, options, and advanced snippets rather than guessing or translating Node code.
+
+## Developer workflows
+
+Define development tasks in `justfile` recipes: running, development servers, builds, formatting, linting, type checking, tests, and aggregate verification. Invoke them with `just <recipe>` locally and in CI. Run Bun entrypoints and installed tools directly inside recipes; do not wrap or duplicate development tasks in `package.json` scripts. Keep package metadata, dependencies, workspaces, and required package-manager lifecycle hooks in `package.json`.
+
+Name aggregate validation `verify`, invoke it as `just verify`, and keep type checking in a separate `typecheck` recipe. Do not use `check` as the aggregate recipe name. In workspaces, put component recipes in package-local justfiles and coordinate them through root `mod` declarations; see [Modular justfiles](../just/modular-justfiles.md).
+
+When migrating an existing workflow, move task commands into recipes, update local and CI callers, and remove superseded package scripts.
 
 ## Build storage and temporary files
 
@@ -41,21 +50,34 @@ bun add -D oxlint oxfmt
 
 Commit `.oxlintrc.json` for lint rules and `.oxfmtrc.json` for formatting options. Preserve the project's existing formatting conventions when migrating. Replace superseded lint/format dependencies, configs, and scripts rather than running duplicate stacks.
 
-Expose separate write and check commands in `package.json`; keep CI checks read-only:
+Expose separate write and validation recipes in `justfile`; keep `verify` and its dependencies read-only:
 
-```json
-{
-  "scripts": {
-    "lint": "oxlint --deny-warnings",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check",
-    "fix": "oxlint --fix && oxfmt",
-    "check": "bun run fmt:check && bun run lint && tsc --noEmit && bun test"
-  }
-}
+```justfile
+fmt:
+    bun run oxfmt
+
+fmt-check:
+    bun run oxfmt --check
+
+lint:
+    bun run oxlint --deny-warnings
+
+fix:
+    bun run oxlint --fix
+    bun run oxfmt
+
+typecheck:
+    bun run tsc --noEmit
+
+test:
+    bun test
+
+verify: fmt-check lint typecheck test
 ```
 
 Scope these commands to the project's source and test directories when a repository contains unrelated assets or packages. Keep `tsc --noEmit` for type checking and `bun test` for behavioral tests alongside this stack.
+
+Run `just fmt` or `just fix` to modify files; run `just verify` locally and in CI to validate them.
 
 Check the official [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html) and [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html) docs before choosing rules or options. For React-specific lint rules, read [react-compiler.md](react-compiler.md).
 

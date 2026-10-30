@@ -50,6 +50,13 @@ Do not narrow scope without the user's consent.
 
 Do not introduce backwards compatibility layers, migrations, or shims for old behavior unless explicitly asked to. The user iterates on projects quickly and asks for compatibility work when it is needed.
 
+# Git Authorization
+
+- A user request to implement or complete work authorizes the routine Git operations needed to finish that work, including creating a branch, staging task-owned changes, committing them, and pushing the task's commits to the repository's established remote. Do not require a separate request or confirmation for each commit or push.
+- This authorization persists across turns and includes verified task-related local commits awaiting publication. Before pushing, inspect the outgoing commits and verify the destination and task scope. Ask only when the intended destination or ownership cannot be established, or publication would include unrelated work without authorization.
+- Honor explicit user limits such as "do not commit," "do not push," or "local only," and follow applicable branch, review, CI, protection, and secret-scanning requirements. Routine authorization does not permit force-pushing, discarding others' work, bypassing required checks, or publishing unrelated changes.
+- Task synchronization and source publication are separate operations. Permission to synchronize task records alone does not authorize source commits or pushes; authorization to complete the underlying implementation task independently covers its routine source commits and pushes.
+
 # Failure Investigation and Recovery
 
 Treat a failed operation as a signal to investigate, not proof of a blocker. Reconcile the error with known facts, check for partial success, retry when safe, and pursue available recovery paths within existing authorization. Escalate only after verifying what prevents further progress; report the evidence, attempted remedies, and exact user action needed.

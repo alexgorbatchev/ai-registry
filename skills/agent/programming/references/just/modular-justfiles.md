@@ -12,8 +12,8 @@
 
 In multi-package repositories, workspaces, or multi-component projects (e.g. `apps/*`, `packages/*`, `tools/*`, `modules/*`), use `just` submodules (`mod`) instead of calling nested directories, package scripts, or tooling entrypoints directly from a monolithic root `justfile`.
 
-- **Root `justfile`**: Owns workspace orchestration, high-level lifecycle commands (`check`, `test`, `lint`, `build`), and links submodules via `mod`. Never invokes arbitrary deeply nested scripts directly when a submodule can encapsulate them.
-- **Submodule `justfile`**: Owns component-specific recipes (`run`, `run-ai`, `check`, `test`, `fmt`, `build`) and executes within its scoped domain.
+- **Root `justfile`**: Owns workspace orchestration, high-level lifecycle commands (`verify`, `test`, `lint`, `build`), and links submodules via `mod`. Never invokes arbitrary deeply nested scripts directly when a submodule can encapsulate them.
+- **Submodule `justfile`**: Owns component-specific recipes (`run`, `run-ai`, `verify`, `test`, `fmt`, `build`) and executes within its scoped domain.
 
 ## Naming & File Conventions
 
@@ -90,8 +90,10 @@ By default, `just` sets the working directory of a submodule's recipes to the di
    run-ai *args:
        AGENT=1 bun tools/cli/src/cli.ts {{ args }}
 
-   check:
-       bun tools/cli/src/cli.ts check
+   typecheck:
+       bun run tsc --noEmit
+
+   verify: typecheck test
 
    test:
        bun test tools/cli
@@ -99,12 +101,15 @@ By default, `just` sets the working directory of a submodule's recipes to the di
 
 ## Standard Submodule Recipes
 
+Name aggregate validation `verify` and invoke it with `just verify` or `just <module> verify`. Keep `verify` and its dependencies read-only; reserve formatting and fixes for separate write recipes. Do not create a `check` alias for aggregate validation.
+
 Every runnable submodule should provide standard lifecycle recipes matching CLI standards:
 
 - `[default]` on the primary entrypoint so `just <module>` runs it without sub-recipe arguments.
 - `run *args:`: Main execution entrypoint forwarding flags.
 - `run-ai *args:`: Token-conservative agent mode when `AGENT=1` applies.
-- `check:`: Linter, typechecker, or invariant validation.
+- `verify:`: Aggregate read-only validation, including linting, type checking, invariants, and tests as applicable.
+- `typecheck:`: Type checking.
 - `test:`: Component test suite execution.
 
 ```justfile
@@ -116,8 +121,10 @@ run *args:
 run-ai *args:
     AGENT=1 bun scripts/serve.ts {{ args }}
 
-check:
-    bun run check
+typecheck:
+    bun run tsc --noEmit
+
+verify: typecheck test
 
 test:
     bun test
@@ -137,16 +144,14 @@ mod cli 'tools/cli/justfile'
 default:
     @just --list
 
-# Run checks across all submodules
-check:
-    bun scripts/lint.ts
-    just core check
-    just web check
-    just cli check
+# Run verification across all submodules
+verify:
+    just core verify
+    just web verify
+    just cli verify
 
 # Run tests across all submodules
 test:
-    bun scripts/lint.ts
     just core test
     just web test
     just cli test

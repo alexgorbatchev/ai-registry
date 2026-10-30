@@ -3,10 +3,10 @@
   "skills": {
     "archify": {
       "source": "alexgorbatchev/archify",
-      "ref": "6bd7822dcda53c7a87978ac73f413a9b1968c25b",
+      "ref": "8b6575464d4ea1112bd8359dfdaeab566c038b9f",
       "sourceType": "github",
       "skillPath": "archify/SKILL.md",
-      "computedHash": "7e9612af41474380b9c60eaadd7ed325846310d1a7b9250f89218820058165a2"
+      "computedHash": "cfdc6f11b025110423f7d3b6252514d27c631aa474e021cf74e850afbef6b370"
     },
     "caveman": {
       "source": "JuliusBrussee/caveman",

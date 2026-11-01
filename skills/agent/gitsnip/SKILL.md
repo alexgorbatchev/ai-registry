@@ -1,95 +1,111 @@
 ---
 name: gitsnip
 description: >-
-  Use the gitsnip CLI to fetch full repositories or specific directories from
-  GitHub without cloning entire repos. Trigger whenever there is a need to
-  explore full or partial GitHub repository content, inspect remote code
-  quickly, or pull only selected folders for analysis.
+  Use gitsnip to explore remote Git repositories or fetch selected directories,
+  files, and globs for source inspection.
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-15 21:48
-  last_modified: 2026-10-14 14:54
+  last_modified: 2026-10-31 18:50
   status: current
 ---
 
-# gitsnip
-
 Use `gitsnip` as the default approach for remote GitHub repository exploration.
+These instructions match version 0.2.1. Check `gitsnip --version` and `gitsnip --help`
+when the installed interface differs; preserve the task's source and destination.
 
 ## Command Shape
 
 ```bash
-gitsnip <repository_url> <folder_path> [output_dir] [flags]
+gitsnip <source> [path...] -o <output_dir> [flags]
 ```
 
-Arguments:
-
-- `repository_url`: GitHub repo URL (for example `https://github.com/owner/repo`)
-- `folder_path`: Directory path inside the repo to download
-- `output_dir` (optional): Destination on disk
+- `source`: `owner/repo[@ref]`, a repository/file/folder URL, or another Git URL.
+- `path...`: Optional repository-relative directories, files, or quoted globs.
+  Use `.` for the full repository; a source URL can also select a file or folder.
+- `-o, --output <dir>`: Destination directory. Always specify it for agent work;
+  additional positional arguments select source paths, not the destination.
 
 ## Core Rules
 
-- Use `.` (dot) as `folder_path` to fetch the full repository tree.
-- Do **not** use `/` as `folder_path`; sparse checkout rejects leading slashes.
-- Pass an explicit `output_dir` to avoid writing files into the current working directory.
-- Prefer output paths under the current repository's `.tmp/gitsnip/` directory.
-- Treat `folder_path` as a **directory path**. For a single file, download its parent directory.
+- Use repository-relative paths and quote globs so the local shell does not expand them.
+- Prefer a task-owned destination under the current repository's `.tmp/gitsnip/`.
+- Existing files are protected by default. Resolve collisions with a fresh destination;
+  use `--force` only when overwriting those specific files is authorized.
+- Use existing SSH authentication, Git credential helpers, or `GH_TOKEN`/`GITHUB_TOKEN`
+  for private repositories. Keep credentials out of source URLs and logged commands.
 
-## Recommended Workflow
+## Workflow
 
-1. Identify `repository_url`, `branch`, and required scope (`.` for full repo or `path/to/dir` for partial).
-2. Choose a deterministic destination folder under the current project's `.tmp/` directory (for example `.tmp/gitsnip/<repo>/<branch>/<scope>`).
-3. Run `gitsnip` with explicit flags.
-4. Inspect downloaded content using search and reading tools suited to the task.
-5. Remove temporary downloads when done unless they are needed for follow-up work.
+1. Identify the source, requested revision, and scope. Ask for a missing repository
+   when it cannot be established from the task. Use `-b <ref>` for a branch, tag,
+   or commit; otherwise the repository's default branch is selected.
+2. Choose an owned destination and download with `-o`. Leave `--method` at `auto`
+   unless the task requires a specific transport.
+3. Check the exit status and downloaded paths before using their contents. Report
+   an unavailable revision, missing path, or access failure rather than silently
+   changing the requested source. Use `--json` when the resolved commit matters.
+4. Inspect the downloaded source, then remove task-owned temporary downloads after
+   their last consumer unless needed for follow-up work.
 
 ## Examples
 
-Fetch full repo from default branch:
+Fetch a full repository from its default branch:
 
 ```bash
-gitsnip https://github.com/octocat/Spoon-Knife . .tmp/gitsnip/spoon-knife/main/full
+gitsnip https://github.com/octocat/Spoon-Knife . -o .tmp/gitsnip/spoon-knife/full
 ```
 
 Fetch a specific directory:
 
 ```bash
-gitsnip https://github.com/octokit/octokit.js scripts .tmp/gitsnip/octokit/main/scripts
+gitsnip https://github.com/octokit/octokit.js scripts -o .tmp/gitsnip/octokit/scripts
 ```
 
-Fetch from non-default branch (`master`):
+Fetch a single file at a verified branch:
 
 ```bash
-gitsnip https://github.com/octocat/Hello-World . .tmp/gitsnip/hello-world/master/full -b master
+gitsnip https://github.com/octocat/Hello-World README -b master -o .tmp/gitsnip/hello-world/readme
 ```
 
-Use API mode (can be simpler for lightweight fetches):
+Use API mode for a GitHub download:
 
 ```bash
-gitsnip https://github.com/octocat/Spoon-Knife . .tmp/gitsnip/spoon-knife/main/full -m api
+gitsnip https://github.com/octocat/Spoon-Knife . -o .tmp/gitsnip/spoon-knife/api -m api
 ```
 
-Use token for private repos or rate-limit headroom:
+Fetch selected files with a quoted glob:
 
 ```bash
-gitsnip https://github.com/owner/private-repo path/to/dir .tmp/gitsnip/private/main/dir -t "$GITHUB_TOKEN"
+gitsnip https://github.com/octokit/octokit.js 'scripts/*.mjs' -o .tmp/gitsnip/octokit/scripts-mjs
 ```
 
-## Flag Guidance
+## Flags and Results
 
-- `-b, --branch`: Specify branch (default is `main`)
-- `-m, --method`: `sparse` (default) or `api`
-- `-t, --token`: GitHub token for private repos / higher limits
-- `-q, --quiet`: Reduce progress output
-- `-p, --provider`: Provider (currently `github`)
+- `-b, --branch <ref>`: Branch, tag, or commit; defaults to the repository's default branch.
+- `-m, --method <name>`: `auto` (default), `sparse`, or `api`. Auto uses sparse Git
+  when Git is installed, otherwise the API for GitHub. API mode supports github.com.
+- `-t, --token <token>`: Token override; otherwise uses `GH_TOKEN` or `GITHUB_TOKEN`.
+- `-f, --force`: Permit overwriting existing files.
+- `-q, --quiet`: Suppress output on success.
+- `-v, --verbose`: Show Git commands and API calls for diagnosis.
+- `--json`: Write structured results, including resolved ref/commit and output path, to stdout.
+- `-h, --help`: Show usage. `--version`: Show the installed version.
+
+Normal progress/results go to stderr. Exit codes are `0` for success, `1` for a
+download failure, `2` for invalid arguments, and `130` for interruption. Without
+`-o`, folders use their basename, single files use the current directory, multiple
+paths retain their structure below their common parent, and full repositories use
+the repository name.
 
 ## Troubleshooting
 
-- Error `couldn't find remote ref main`: rerun with the actual default branch, often `-b master`.
-- Error about sparse checkout + leading slash: remove leading `/` and use relative paths (`.` or `dir/subdir`).
-- Error `not a directory`: `folder_path` points to a file; download the file's parent directory instead.
+- A destination reported as a missing source path usually means `-o` was omitted.
+- For a missing revision or path, verify spelling and the intended source; omit
+  `-b` only when the task actually wants the default branch.
+- For access or rate-limit failures, verify existing authentication and the source
+  URL. An API quota failure may be avoided with sparse Git when available.
 
-## Help Reference
-
-Read `references/help.md` for the captured help output (`--help`, `completion --help`, `version --help`) used to build this skill.
+Read [references/help.md](references/help.md) for the captured 0.2.1 help and version
+output. The current CLI uses `--version`; the old provider flag and completion/version
+subcommands are absent from this interface.

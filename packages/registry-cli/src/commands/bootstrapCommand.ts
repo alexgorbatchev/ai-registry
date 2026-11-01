@@ -47,7 +47,7 @@ function hasAutoConfirmFlag(argv: string[]): boolean {
     options: {
       yes: { type: "boolean", short: "y" },
     },
-    strict: false,
+    strict: true,
   });
   return Boolean(values.yes);
 }
@@ -93,14 +93,6 @@ function printHomeTargetResult(target: IBootstrapTarget, result: IHomeApplyResul
   if (result.removed.length > 0) {
     console.log(`    removed stale links: ${result.removed.join(", ")}`);
   }
-  if (result.shared.length > 0) {
-    console.log(`    shared runtime entries: ${result.shared.join(", ")}`);
-  }
-  if (result.diverged.length > 0) {
-    console.log(
-      `    own copies hiding the shared home's entries (move them aside to share again): ${result.diverged.join(", ")}`,
-    );
-  }
 }
 
 function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResult): void {
@@ -132,6 +124,7 @@ export async function bootstrapCommand(dependencies: IBootstrapDependencies = cr
     console.log(`📦 Using overlay: ${overlay}\n`);
   }
 
+  const hasAutoConfirm = hasAutoConfirmFlag(dependencies.argv);
   console.log("Installing dependencies...");
   await runCommand({
     cmd: ["bun", "install"],
@@ -142,7 +135,7 @@ export async function bootstrapCommand(dependencies: IBootstrapDependencies = cr
 
   console.log("Building generated outputs...");
   await runCommand({
-    cmd: hasAutoConfirmFlag(dependencies.argv) ? ["bun", "run", "build", "--", "-y"] : ["bun", "run", "build"],
+    cmd: hasAutoConfirm ? ["bun", "run", "build", "--", "-y"] : ["bun", "run", "build"],
     cwd: root,
     description: "build generated outputs",
     spawn: dependencies.spawn,
@@ -181,6 +174,6 @@ export async function bootstrapCommand(dependencies: IBootstrapDependencies = cr
   for (const target of bootstrapTargets) {
     console.log(`${target.description} now reads from: ${target.targetPath}`);
   }
-  console.log(`Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: ${dependencies.publicBinDir}`);
+  console.log(`Repo-local public helpers are linked into: ${dependencies.publicBinDir}`);
   console.log("Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, and CLAUDE_CONFIG_DIR if needed.");
 }

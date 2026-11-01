@@ -1,325 +1,49 @@
 import assert from "node:assert";
-import { existsSync } from "fs";
-import { afterEach, describe, expect, it } from "bun:test";
-import { lstat, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
-import { dirname, join } from "path";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { homedir } from "node:os";
+import { createHarnessContext, seedRegistry } from "../../../commands/__tests__/helpers";
+import { applyTemplateVariablesToGeneratedOutput } from "../../../lib/harnessBuild";
+import plugin from "../build";
 
-import plugin from "../../opencode/build";
-import {
-  copyDirectoryWithTemplateVariables,
-  copyPathWithTemplateVariables,
-  mergeDirectory,
-  stageProfileAssets,
-  writeBinScript,
-  type IBuildSupport,
-  type IProfileBuildContext,
-  type IUnifiedHarnessBuildContext,
-  type ITemplateContext,
-} from "../../../lib/harnessBuild";
-import {
-  createSettingsSyncRegistry,
-  type ISettingsSyncRegistry,
-} from "../../../lib/settingsSync/createSettingsSyncRegistry";
-
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "opencode-build-tests");
-const originalOpencodeConfigDir: string | undefined = process.env.OPENCODE_CONFIG_DIR;
-const originalXdgConfigHome: string | undefined = process.env.XDG_CONFIG_HOME;
-
-function restoreEnvironmentVariable(name: string, value: string | undefined): void {
-  if (value === undefined) {
-    delete process.env[name];
-    return;
-  }
-  process.env[name] = value;
-}
-
-async function createTestDirectory(): Promise<string> {
-  await mkdir(TEST_ROOT, { recursive: true });
-  return mkdtemp(join(TEST_ROOT, "case-"));
-}
-
-async function writeTestFile(rootDir: string, relativePath: string, content: string): Promise<string> {
-  const filePath = join(rootDir, relativePath);
-  await mkdir(dirname(filePath), { recursive: true });
-  await writeFile(filePath, content, "utf-8");
-  return filePath;
-}
-
-function createTemplateContext(repositoryRoot: string): ITemplateContext {
-  return {
-    repo_root: repositoryRoot,
-    skills_dir: join(repositoryRoot, "skills"),
-    commands_dir: join(repositoryRoot, "commands"),
-    profiles_dir: join(repositoryRoot, "profiles"),
-    output_dir: join(repositoryRoot, ".output"),
-  };
-}
-
-function createBuildSupport(
-  repositoryRoot: string,
-  settingsSyncRegistry: ISettingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output")),
-): IBuildSupport {
-  return {
-    mergeDirectory,
-    stageProfileAssets,
-    writeBinScript,
-    copyDirectoryWithTemplateVariables,
-    copyPathWithTemplateVariables,
-    syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
-  };
-}
-
-function createProfileContext(repositoryRoot: string, overrides: Partial<IProfileBuildContext> = {}): IProfileBuildContext {
-  return {
-    harnessDir: join(repositoryRoot, "harnesses", "opencode"),
-    profileName: "developer",
-    profileDir: join(repositoryRoot, "profiles", "developer"),
-    manifest: {
-      commands: [],
-      description: "Developer profile",
-      skills: ["shared-skill"],
-      system_prompt: "Follow the repo guidance.",
-    },
-    globalMatchedSkills: ["shared-skill"],
-    globalMatchedCommands: [],
-    profileLocalSkills: ["local-skill"],
-    profileLocalCommands: [],
-    outputDir: join(repositoryRoot, ".output"),
-    templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot),
-    ...overrides,
-  };
-}
-
-function getStageProfile(): NonNullable<typeof plugin.stageProfile> {
-  assert(plugin.stageProfile);
-  return plugin.stageProfile;
-}
-
-function createUnifiedContext(
-  repositoryRoot: string,
-  settingsSyncRegistry?: ISettingsSyncRegistry,
-): IUnifiedHarnessBuildContext {
-  return {
-    harnessDir: join(repositoryRoot, "harnesses", "opencode"),
-    outputDir: join(repositoryRoot, ".output"),
-    templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot, settingsSyncRegistry),
-  };
-}
-
-function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
-  assert(plugin.getBootstrapTargets);
-  return plugin.getBootstrapTargets;
-}
-
-function getFinalizeOutput(): NonNullable<typeof plugin.finalizeOutput> {
-  assert(plugin.finalizeOutput);
-  return plugin.finalizeOutput;
-}
-
-describe("OpenCode harness build plugin", () => {
-  afterEach(async () => {
-    restoreEnvironmentVariable("OPENCODE_CONFIG_DIR", originalOpencodeConfigDir);
-    restoreEnvironmentVariable("XDG_CONFIG_HOME", originalXdgConfigHome);
-    await rm(TEST_ROOT, { force: true, recursive: true });
+const scratch = join(import.meta.dir, "../.tmp/build-tests");
+let root: string;
+let environment: NodeJS.ProcessEnv;
+beforeEach(async () => {
+  environment = { ...process.env };
+  delete process.env.OPENCODE_CONFIG_DIR;
+  delete process.env.XDG_CONFIG_HOME;
+  await mkdir(scratch, { recursive: true });
+  root = await mkdtemp(join(scratch, "case-"));
+  await seedRegistry(root);
+});
+afterEach(async () => {
+  process.env = environment;
+  await rm(root, { recursive: true, force: true });
+});
+describe("opencode harness", () => {
+  it("builds one native root with reusable assets and harness instructions", async () => {
+    await Bun.write(join(root, "harnesses/opencode/instructions.md"), "Root: <%- repo_root %>\n");
+    await Bun.write(join(root, "skills/agent/example/SKILL.md"), "---\nname: example\n---\nUse example.\n");
+    const context = await createHarnessContext(root, "opencode");
+    await plugin.build(context);
+    await applyTemplateVariablesToGeneratedOutput(context.outputDir, context.templateContext);
+    expect(await Bun.file(join(context.outputDir, "opencode/instructions.md")).text()).toBe(`Root: ${root}\n`);
+    expect(await Bun.file(join(context.outputDir, "opencode/skills/example/SKILL.md")).text()).toBe("---\nname: example\n---\nUse example.\n");
+    expect(await Bun.file(join(context.outputDir, "opencode/default/instructions.md")).exists()).toBe(false);
   });
-
-  it("applies the generated config to the OpenCode config home under XDG_CONFIG_HOME", async () => {
-    const outputDir = await createTestDirectory();
-    delete process.env.OPENCODE_CONFIG_DIR;
-    process.env.XDG_CONFIG_HOME = join(outputDir, "config");
-
-    expect(await getBootstrapTargets()(outputDir)).toEqual([
-      {
-        kind: "home",
-        sourcePath: join(outputDir, "opencode"),
-        targetPath: join(outputDir, "config", "opencode"),
-        description: "OpenCode config",
-      },
+  it("returns the standard home", async () => {
+    assert(plugin.getBootstrapTargets);
+    expect(await plugin.getBootstrapTargets(join(root, ".output"))).toEqual([
+      { kind: "home", sourcePath: join(root, ".output/opencode"), targetPath: join(homedir(), ".config/opencode"), description: "OpenCode config" },
     ]);
   });
-
-  it("applies the generated config to OPENCODE_CONFIG_DIR when it is set", async () => {
-    const outputDir = await createTestDirectory();
-    process.env.OPENCODE_CONFIG_DIR = join(outputDir, "custom-opencode");
-
-    expect(await getBootstrapTargets()(outputDir)).toEqual([
-      {
-        kind: "home",
-        sourcePath: join(outputDir, "opencode"),
-        targetPath: join(outputDir, "custom-opencode"),
-        description: "OpenCode config",
-      },
+  it("honors the native home override", async () => {
+    process.env.OPENCODE_CONFIG_DIR = join(root, "custom-home");
+    assert(plugin.getBootstrapTargets);
+    expect(await plugin.getBootstrapTargets(join(root, ".output"))).toEqual([
+      { kind: "home", sourcePath: join(root, ".output/opencode"), targetPath: join(root, "custom-home"), description: "OpenCode config" },
     ]);
-  });
-
-  it("keeps source fingerprints readable after generated agent staging is removed", async () => {
-    const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "harnesses/opencode/settings.json", "{}\n");
-    const sourceChecksums = new Map<string, string>();
-    const sourcePaths = Object.assign(new Map<string, string>(), { sourceChecksums });
-    const context = createUnifiedContext(repositoryRoot);
-    context.buildSupport = {
-      ...context.buildSupport,
-      copyDirectoryWithTemplateVariables: (source, target, variables) =>
-        copyDirectoryWithTemplateVariables(source, target, variables, sourcePaths),
-      copyPathWithTemplateVariables: (source, target, variables) =>
-        copyPathWithTemplateVariables(source, target, variables, sourcePaths),
-    };
-    await getStageProfile()(createProfileContext(repositoryRoot, {
-      globalMatchedSkills: [],
-      profileLocalSkills: [],
-      buildSupport: context.buildSupport,
-    }));
-    const stagedAgentPath = join(context.outputDir, ".opencode-agents", "developer.md");
-    const agentContent = await Bun.file(stagedAgentPath).text();
-
-    await getFinalizeOutput()(context);
-
-    expect(await Bun.file(stagedAgentPath).exists()).toBe(false);
-    expect(await Bun.file(join(context.outputDir, "opencode", "agents", "developer.md")).text()).toBe(agentContent);
-    for (const [sourcePath, checksum] of sourceChecksums) {
-      expect(new Bun.CryptoHasher("sha256").update(await Bun.file(sourcePath).bytes()).digest("hex")).toBe(checksum);
-    }
-    expect(sourceChecksums.size).toBe(1);
-    expect(sourcePaths.has(join(context.outputDir, "opencode", "agents", "developer.md"))).toBe(false);
-  });
-
-  it("adds a harness-name skill wildcard to generated agent permissions", async () => {
-    const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
-
-    await getStageProfile()(createProfileContext(repositoryRoot));
-
-    const agentContent = await readFile(join(repositoryRoot, ".output", ".opencode-agents", "developer.md"), "utf-8");
-    const [prefix, frontmatter, body] = agentContent.split("---\n");
-    assert(frontmatter);
-    expect(prefix).toBe("");
-    expect(Bun.YAML.parse(frontmatter)).toEqual({
-      description: "Developer profile",
-      mode: "primary",
-      permission: {
-        skill: {
-          "*": "deny",
-          "opencode-*": "allow",
-          "shared-skill": "allow",
-          "local-skill": "allow",
-        },
-      },
-    });
-    expect(body).toBe("Follow the repo guidance.");
-  });
-
-  it("handles custom manifest tools and permissions", async () => {
-    const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-
-    await getStageProfile()(createProfileContext(repositoryRoot, {
-      manifest: {
-        description: "Custom profile",
-        skills: ["shared-skill"],
-        tools: { bash: true },
-        permission: { bash: "ask" },
-        system_prompt: "Custom prompt",
-      },
-      profileLocalSkills: [],
-    }));
-
-    const agentContent = await readFile(join(repositoryRoot, ".output", ".opencode-agents", "developer.md"), "utf-8");
-    expect(agentContent).toContain("bash: true");
-    expect(agentContent).toContain("bash: ask");
-  });
-
-  it("registers opencode.jsonc for settings sync", async () => {
-    const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "harnesses/opencode/opencode.jsonc", '{\n  // shared config\n  "theme": "dark"\n}\n');
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
-
-    const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
-    await getStageProfile()(createProfileContext(repositoryRoot));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot, settingsSyncRegistry));
-
-    expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
-      {
-        relativePath: "opencode/opencode.jsonc",
-        liveOnlyKeyPaths: [
-          ["mcp", "*", "headers"],
-          ["mcp", "*", "environment"],
-        ],
-      },
-    ]);
-  });
-
-  it("stages skills as rendered copies in finalizeOutput", async () => {
-    const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "harnesses/opencode/.registry-ignore", "./skills/\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Local skill\n");
-    await writeTestFile(repositoryRoot, "harnesses/opencode/skills/harness-skill/SKILL.md", "# Harness skill\n");
-
-    await getStageProfile()(createProfileContext(repositoryRoot));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
-
-    expect(
-      (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "shared-skill", "SKILL.md"))).isSymbolicLink(),
-    ).toBe(false);
-    expect(
-      (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "local-skill", "SKILL.md"))).isSymbolicLink(),
-    ).toBe(false);
-    expect(
-      (await lstat(join(repositoryRoot, ".output", "opencode", "skills", "harness-skill", "SKILL.md"))).isSymbolicLink(),
-    ).toBe(false);
-  });
-
-  it("overrides global skills with harness-specific skills on collision", async () => {
-    const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "harnesses/opencode/.registry-ignore", "./skills/\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Global version\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/extra.txt", "global extra\n");
-    await writeTestFile(repositoryRoot, "harnesses/opencode/skills/shared-skill/SKILL.md", "# Harness version\n");
-
-    await getStageProfile()(createProfileContext(repositoryRoot, {
-      globalMatchedSkills: ["shared-skill"],
-      profileLocalSkills: [],
-    }));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
-
-    const skillDir = join(repositoryRoot, ".output", "opencode", "skills", "shared-skill");
-    expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
-    expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
-  });
-
-  it("stages grouped harness skills (agent and user), injecting disable-model-invocation for user skills", async () => {
-    const repositoryRoot = await createTestDirectory();
-    await writeTestFile(repositoryRoot, "harnesses/opencode/.registry-ignore", "./skills/\n");
-    await writeTestFile(
-      repositoryRoot,
-      "harnesses/opencode/skills/agent/harness-agent-skill/SKILL.md",
-      "---\nname: harness-agent-skill\n---\n# Agent\n",
-    );
-    await writeTestFile(
-      repositoryRoot,
-      "harnesses/opencode/skills/user/harness-user-skill/SKILL.md",
-      "---\nname: harness-user-skill\n---\n# User\n",
-    );
-
-    await getStageProfile()(createProfileContext(repositoryRoot, {
-      globalMatchedSkills: [],
-      profileLocalSkills: [],
-    }));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
-
-    const agentSkillDir = join(repositoryRoot, ".output", "opencode", "skills", "harness-agent-skill");
-    const userSkillDir = join(repositoryRoot, ".output", "opencode", "skills", "harness-user-skill");
-
-    expect(await readFile(join(agentSkillDir, "SKILL.md"), "utf-8")).toBe(
-      "---\nname: harness-agent-skill\n---\n# Agent\n",
-    );
-    expect(await readFile(join(userSkillDir, "SKILL.md"), "utf-8")).toBe(
-      "---\ndisable-model-invocation: true\nname: harness-user-skill\n---\n# User\n",
-    );
   });
 });

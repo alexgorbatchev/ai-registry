@@ -25,11 +25,6 @@ describe("buildCommand settings sync", () => {
     await writeFile(join(repoRoot, "skills", "base-skill", "SKILL.md"), "---\nname: base-skill\n---\n# Base Skill\n");
     await mkdir(join(repoRoot, "commands"), { recursive: true });
     await writeFile(join(repoRoot, "commands", "base-cmd.md"), "---\ndescription: Base command\n---\n# Base Command\n");
-    await mkdir(join(repoRoot, "profiles", "default"), { recursive: true });
-    await writeFile(
-      join(repoRoot, "profiles", "default", "profile.yaml"),
-      "description: default profile\nskills:\n  - '*'\ncommands:\n  - '*'\nsystem_prompt: 'Base prompt'\n",
-    );
 
     registryPaths = {
       root: repoRoot,
@@ -37,7 +32,6 @@ describe("buildCommand settings sync", () => {
       harnesses: join(repoRoot, "harnesses"),
       skills: join(repoRoot, "skills"),
       commands: join(repoRoot, "commands"),
-      profiles: join(repoRoot, "profiles"),
       output: join(repoRoot, ".output"),
       temp: join(repoRoot, ".tmp"),
     };
@@ -51,7 +45,7 @@ describe("buildCommand settings sync", () => {
 
   it("syncs a harness-edited settings file into the registry without asking to overwrite", async () => {
     await buildCommand({ hasAutoConfirm: true, registryPaths });
-    const livePath = join(registryPaths.output, "claude-code", "default", "settings.json");
+    const livePath = join(registryPaths.output, "claude-code", "settings.json");
     const sourcePath = join(registryPaths.harnesses, "claude-code", "settings.json");
     const liveSettings = JSON.parse(await readFile(livePath, "utf-8"));
     await writeFile(livePath, `${JSON.stringify({ ...liveSettings, harnessAddedSetting: true }, null, 2)}\n`);
@@ -69,12 +63,12 @@ describe("buildCommand settings sync", () => {
     const manifest = await readGeneratedOutputManifest(registryPaths.output);
     assert(manifest !== null);
     expect(manifest.syncedFilePaths).toEqual([
-      "claude-code/default/settings.json",
-      "codex/default/config.toml",
+      "claude-code/settings.json",
+      "codex/config.toml",
       "opencode/opencode.jsonc",
-      "pi/default/settings.json",
+      "pi/settings.json",
     ]);
-    expect(getManagedEntryNames(manifest, registryPaths.output, join(registryPaths.output, "codex", "default"))).toEqual([
+    expect(getManagedEntryNames(manifest, registryPaths.output, join(registryPaths.output, "codex"))).toEqual([
       "AGENTS.md",
       "config.toml",
       "rules",

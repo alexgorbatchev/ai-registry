@@ -8,18 +8,11 @@ import { getErrorCode } from "./getErrorCode";
 
 type IHomeBootstrapTarget = Extract<IBootstrapTarget, { kind: "home" }>;
 
-// Backups bootstrap itself leaves beside a replaced entry; they are not runtime state.
-const BOOTSTRAP_BACKUP_PATTERN = /\.backup-\d{8}T\d{6}Z$/;
-
 export type IHomeApplyResult = {
   linked: string[];
   relinked: string[];
   backedUp: Array<{ name: string; backupPath: string }>;
   removed: string[];
-  shared: string[];
-  // Real entries in a profile home that hide the shared home's entry of the same
-  // name, such as a shared file a harness replaced by writing a new file in place.
-  diverged: string[];
 };
 
 async function lstatOrNull(path: string): Promise<Stats | null> {
@@ -38,14 +31,14 @@ function isInsideDirectory(path: string, directoryPath: string): boolean {
   return relativePath.length > 0 && !relativePath.startsWith("..") && !isAbsolute(relativePath);
 }
 
-// Top-level entries the build generated for one profile directory, read from the
+// Top-level entries the build generated for one harness directory, read from the
 // manifest so leftovers that a harness wrote into `.output/` are never linked.
 export function getManagedEntryNames(
   manifest: IGeneratedOutputManifest,
   outputDir: string,
-  profileOutputDir: string,
+  harnessOutputDir: string,
 ): string[] {
-  const prefix = `${relative(outputDir, profileOutputDir).replaceAll("\\", "/")}/`;
+  const prefix = `${relative(outputDir, harnessOutputDir).replaceAll("\\", "/")}/`;
   const names = new Set<string>();
   for (const path of [...Object.keys(manifest.entries), ...(manifest.syncedFilePaths ?? [])]) {
     if (!path.startsWith(prefix)) {
@@ -118,7 +111,7 @@ async function removeStaleLinks(
   managedEntryNames: readonly string[],
   result: IHomeApplyResult,
 ): Promise<void> {
-  const ownedDirectories = [target.sourcePath, ...(target.sharedHomePath === undefined ? [] : [target.sharedHomePath])];
+
   const homeEntries = await readdir(target.targetPath, { withFileTypes: true });
   for (const homeEntry of homeEntries) {
     if (!homeEntry.isSymbolicLink() || managedEntryNames.includes(homeEntry.name)) {
@@ -127,48 +120,11 @@ async function removeStaleLinks(
 
     const homeEntryPath = join(target.targetPath, homeEntry.name);
     const linkTargetPath = resolve(target.targetPath, await readlink(homeEntryPath));
-    const isOwnedLink = ownedDirectories.some((directoryPath) => isInsideDirectory(linkTargetPath, directoryPath));
+    const isOwnedLink = isInsideDirectory(linkTargetPath, target.sourcePath);
     if (isOwnedLink && !existsSync(linkTargetPath)) {
       await rm(homeEntryPath, { force: true });
       result.removed.push(homeEntry.name);
     }
-  }
-}
-
-// A non-default profile shares the runtime state of the default home: every real
-// entry there that the profile neither manages nor already holds is linked in,
-// except the backups bootstrap made of replaced entries. A real entry the profile
-// holds in place of a shared one is left alone and reported as diverged.
-async function shareRuntimeEntries(
-  target: IHomeBootstrapTarget,
-  managedEntryNames: readonly string[],
-  result: IHomeApplyResult,
-): Promise<void> {
-  if (target.sharedHomePath === undefined || !existsSync(target.sharedHomePath)) {
-    return;
-  }
-
-  const sharedEntries = await readdir(target.sharedHomePath, { withFileTypes: true });
-  for (const sharedEntry of sharedEntries) {
-    if (
-      sharedEntry.isSymbolicLink() ||
-      managedEntryNames.includes(sharedEntry.name) ||
-      BOOTSTRAP_BACKUP_PATTERN.test(sharedEntry.name)
-    ) {
-      continue;
-    }
-
-    const homeEntryPath = join(target.targetPath, sharedEntry.name);
-    const homeEntryStats = await lstatOrNull(homeEntryPath);
-    if (homeEntryStats !== null) {
-      if (!homeEntryStats.isSymbolicLink()) {
-        result.diverged.push(sharedEntry.name);
-      }
-      continue;
-    }
-
-    await symlink(join(target.sharedHomePath, sharedEntry.name), homeEntryPath);
-    result.shared.push(sharedEntry.name);
   }
 }
 
@@ -181,10 +137,9 @@ export async function applyHomeTarget(
     throw new Error(`The generated output manifest records no entries for ${target.sourcePath}. Rebuild before bootstrapping.`);
   }
 
-  const result: IHomeApplyResult = { linked: [], relinked: [], backedUp: [], removed: [], shared: [], diverged: [] };
+  const result: IHomeApplyResult = { linked: [], relinked: [], backedUp: [], removed: [] };
   await assertHomeDirectory(target.targetPath);
   await linkManagedEntries(target, managedEntryNames, backupSuffix, result);
   await removeStaleLinks(target, managedEntryNames, result);
-  await shareRuntimeEntries(target, managedEntryNames, result);
   return result;
 }

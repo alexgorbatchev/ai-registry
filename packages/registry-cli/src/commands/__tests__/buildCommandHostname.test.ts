@@ -29,12 +29,9 @@ describe("hostname skill variants", () => {
   function outputSkills(): string[] {
     return [
       "opencode/skills",
-      "codex/default/skills",
-      "codex/work/skills",
-      "pi/default/skills",
-      "pi/work/skills",
-      "claude-code/default/skills",
-      "claude-code/work/skills",
+      "codex/skills",
+      "pi/skills",
+      "claude-code/skills",
     ].map((relativePath) => join(paths.output, relativePath));
   }
 
@@ -51,16 +48,12 @@ describe("hostname skill variants", () => {
       harnesses: join(root, "harnesses"),
       skills: join(root, "skills"),
       commands: join(root, "commands"),
-      profiles: join(root, "profiles"),
       output: join(root, ".output"),
       temp: join(root, ".tmp"),
     };
     await write("repo/skills/agent/example/SKILL.md", skillContent("example", "Default instructions."));
     await write("repo/skills/agent/example/references/shared.md", "Shared instructions.\n");
     await write("repo/skills/agent/example/variants/workstation-b/SKILL.md", "Other machine instructions.\n");
-    for (const profile of ["default", "work"]) {
-      await write(`repo/profiles/${profile}/profile.yaml`, "skills: ['*']\nsystem_prompt: Test prompt\n");
-    }
     for (const target of ["opencode", "codex", "pi", "claude-code"]) {
       await write(`repo/harnesses/${target}/.registry-ignore`, "skills/\n");
     }
@@ -80,7 +73,7 @@ describe("hostname skill variants", () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  it("selects a variant in every harness and profile, rendering it once from its original path", async () => {
+  it("selects a variant in every harness, rendering it once from its original path", async () => {
     await write("repo/system/common.md", "Common instructions.");
     const variantPath = await write(
       "repo/skills/agent/example/variants/workstation-a/SKILL.md",
@@ -101,7 +94,7 @@ describe("hostname skill variants", () => {
     expect(await Bun.file(join(paths.skills, "agent/example/SKILL.md")).text())
       .toBe(skillContent("example", "Default instructions."));
     const manifest: IGeneratedOutputManifest = await Bun.file(join(paths.output, "manifest.json")).json();
-    expect(manifest.sourcePaths?.["codex/work/skills/example/SKILL.md"]).toBe(variantPath);
+    expect(manifest.sourcePaths?.["codex/skills/example/SKILL.md"]).toBe(variantPath);
     expect(manifest.sourcePaths?.["opencode/skills/example/SKILL.md"]).toBe(variantPath);
   });
 
@@ -119,7 +112,7 @@ describe("hostname skill variants", () => {
     delete process.env.AI_REGISTRY_HOSTNAME;
     await write(`repo/skills/agent/example/variants/${hostname()}/SKILL.md`, skillContent("example", "Detected machine."));
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
-    expect(await Bun.file(join(paths.output, "codex/default/skills/example/SKILL.md")).text())
+    expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text())
       .toBe(skillContent("example", "Detected machine."));
   });
 
@@ -127,7 +120,7 @@ describe("hostname skill variants", () => {
     process.env.AI_REGISTRY_HOSTNAME = buildHostname;
     await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Different machine."));
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
-    expect(await Bun.file(join(paths.output, "codex/default/skills/example/SKILL.md")).text())
+    expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text())
       .toBe(skillContent("example", "Default instructions."));
   });
 
@@ -163,18 +156,6 @@ describe("hostname skill variants", () => {
     for (const skillsDir of outputSkills()) {
       expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(skillContent("example", "Harness variant."));
     }
-  });
-
-  it("selects profile-local skill variants", async () => {
-    await write("repo/profiles/work/skills/local-example/SKILL.md", skillContent("local-example", "Local default."));
-    await write("repo/profiles/work/skills/local-example/variants/workstation-a/SKILL.md", skillContent("local-example", "Local variant."));
-    await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
-    for (const target of ["codex", "pi", "claude-code"]) {
-      expect(await Bun.file(join(paths.output, target, "work/skills/local-example/SKILL.md")).text())
-        .toBe(skillContent("local-example", "Local variant."));
-    }
-    expect(await Bun.file(join(paths.output, "opencode/skills/local-example/SKILL.md")).text())
-      .toBe(skillContent("local-example", "Local variant."));
   });
 
   it("preserves author prefixes and user invocation policy", async () => {

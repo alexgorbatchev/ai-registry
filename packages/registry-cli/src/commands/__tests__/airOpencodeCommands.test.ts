@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
@@ -9,10 +9,8 @@ import {
   applyTemplateVariablesToGeneratedOutput,
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
-  mergeDirectory,
-  stageProfileAssets,
   writeBinScript,
-  type IUnifiedHarnessBuildContext,
+  type IHarnessBuildContext,
 } from "../../lib/harnessBuild";
 import { createSettingsSyncRegistry } from "../../lib/settingsSync/createSettingsSyncRegistry";
 
@@ -26,33 +24,24 @@ beforeAll(async () => {
   fixtureDirectory = mkdtempSync(resolve(TMP_DIR, "air-opencode-fixture-"));
   const outputDir = resolve(fixtureDirectory, "output");
   scriptsDirectory = resolve(outputDir, "bin");
-  const context: IUnifiedHarnessBuildContext = {
-    harnessDir: resolve(fixtureDirectory, "harness"),
+  const context: IHarnessBuildContext = {
+    harnessDirs: [resolve(fixtureDirectory, "harness")],
+    skills: { matchedNames: [], sourcePaths: {}, conflicts: [] },
+    commands: { matchedNames: [], sourcePaths: {}, conflicts: [] },
     outputDir,
     templateContext: { repo_root: REPO_ROOT },
     buildSupport: {
       copyDirectoryWithTemplateVariables,
       copyPathWithTemplateVariables,
-      mergeDirectory,
-      stageProfileAssets,
       writeBinScript,
       syncSettingsFile: createSettingsSyncRegistry(outputDir).syncSettingsFile,
     },
   };
-  mkdirSync(context.harnessDir, { recursive: true });
-  assert(plugin.stageProfile);
-  assert(plugin.finalizeOutput);
-  await plugin.stageProfile({
-    ...context,
-    profileName: "default",
-    profileDir: resolve(fixtureDirectory, "profile"),
-    manifest: {},
-    globalMatchedSkills: [],
-    globalMatchedCommands: [],
-    profileLocalSkills: [],
-    profileLocalCommands: [],
-  });
-  await plugin.finalizeOutput(context);
+  context.templateContext.output_dir = outputDir;
+  for (const name of ["opencode-conversation-analysis", "opencode-sessions"]) {
+    cpSync(resolve(REPO_ROOT, "harnesses/opencode/skills/agent", name), resolve(outputDir, "opencode/skills", name), { recursive: true });
+  }
+  await plugin.build(context);
   await applyTemplateVariablesToGeneratedOutput(outputDir, context.templateContext);
 });
 

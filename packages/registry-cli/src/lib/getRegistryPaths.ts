@@ -24,7 +24,6 @@ export type IRegistryPaths = {
   harnesses: string;
   skills: string;
   commands: string;
-  profiles: string;
   output: string;
   temp: string;
 };
@@ -52,7 +51,6 @@ export function getRegistryPaths(): IRegistryPaths {
     harnesses: join(root, "harnesses"),
     skills: join(root, "skills"),
     commands: join(root, "commands"),
-    profiles: join(root, "profiles"),
     output: join(root, ".output"),
     temp: join(root, ".tmp"),
   };

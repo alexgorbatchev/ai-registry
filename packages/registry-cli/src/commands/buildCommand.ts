@@ -8,7 +8,7 @@ import {
   rm,
   writeFile,
 } from "fs/promises";
-import { dirname, join, relative, sep } from "path";
+import { dirname, join, relative } from "path";
 import { hostname } from "node:os";
 import { globby } from "globby";
 import { existsSync } from "fs";
@@ -16,17 +16,13 @@ import { existsSync } from "fs";
 import { getRegistryPaths, type IRegistryPaths } from "../lib/getRegistryPaths";
 import {
   type IBuildSupport,
-  type IProfileManifest,
   type IUnifiedHarnessPlugin,
   applyTemplateVariablesToGeneratedOutput,
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
-  mergeDirectory,
-  stageProfileAssets,
   writeBinScript,
 } from "../lib/harnessBuild";
-import { discoverProfileLocalAssets } from "../lib/discoverProfileLocalAssets";
-import { discoverProfiles, resolveMatchedAssets } from "../lib/resolveRegistryAssets";
+import { resolveMatchedAssets } from "../lib/resolveRegistryAssets";
 import {
   collectGeneratedOutputEntries,
   createGeneratedOutputManifest,
@@ -59,10 +55,6 @@ import opencodePlugin from "../harnesses/opencode/build";
 import piPlugin from "../harnesses/pi/build";
 
 const unifiedHarnessPlugins: IUnifiedHarnessPlugin[] = [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin];
-
-function isProfileManifest(value: unknown): value is IProfileManifest {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 export async function syncBackModifiedFiles(
   drift: IGeneratedOutputDrift[],
@@ -265,7 +257,7 @@ interface IBuildOptions {
 async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): Promise<void> {
   console.log("🚀 Building Unified Agent Outputs...");
   const buildHostname = resolveBuildHostname(process.env.AI_REGISTRY_HOSTNAME, hostname());
-  const { root, overlays, output, harnesses, profiles, skills, commands, temp } =
+  const { root, overlays, output, harnesses, skills, commands, temp } =
     options.registryPaths ?? getRegistryPaths();
   
   const GENERATED_OUTPUT_STAGING_DIR = join(temp, "generated-output-staging");
@@ -274,7 +266,6 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     overlay_dir: overlays.at(-1) ?? "",
     skills_dir: skills,
     commands_dir: commands,
-    profiles_dir: profiles,
     output_dir: output,
   } as const;
 
@@ -299,111 +290,23 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     copyPathWithTemplateVariables: (sourcePath, targetPath, templateContext) => {
       return copyPathWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath, buildHostname);
     },
-    mergeDirectory: (sourceDir, destinationDir, options) => {
-      return mergeDirectory(sourceDir, destinationDir, options, sourcePathByOutputPath);
-    },
-    stageProfileAssets,
     writeBinScript,
     syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 
-  const overlayProfilesDirs = overlays.map((overlay) => join(overlay, "profiles"));
-  const overlaySkillsDirs = overlays.map((overlay) => join(overlay, "skills"));
-  const overlayCommandsDirs = overlays.map((overlay) => join(overlay, "commands"));
-
-  const discoveredProfiles = await discoverProfiles(profiles, overlayProfilesDirs);
-
-  for (const discoveredProfile of discoveredProfiles) {
-    const { profileName, profileDir, isOverlay } = discoveredProfile;
-
-    console.log(`📦 Processing persona: ${profileName}${isOverlay ? " (overlay)" : ""}`);
-    let manifest: IProfileManifest | null = null;
-
-    const yamlPath = join(profileDir, "profile.yaml");
-    const jsonPath = join(profileDir, "profile.json");
-
-    if (existsSync(yamlPath)) {
-      const module = await import(yamlPath);
-      if (isProfileManifest(module.default)) {
-        manifest = module.default;
-      }
-    } else if (existsSync(jsonPath)) {
-      const manifestContent = await readFile(jsonPath, "utf-8");
-      const parsedManifest = JSON.parse(manifestContent);
-      if (isProfileManifest(parsedManifest)) {
-        manifest = parsedManifest;
-      }
-    } else {
-      console.warn(`   ⚠️ Skipping: Neither profile.yaml nor profile.json found.`);
-      continue;
+  const commandsResult = await resolveMatchedAssets(["*.md"], commands, overlays.map(dir => join(dir, "commands")));
+  for (const plugin of unifiedHarnessPlugins) {
+    const harnessDirs = [join(harnesses, plugin.target), ...overlays.map(dir => join(dir, "harnesses", plugin.target))];
+    const skillsResult = await resolveMatchedAssets(
+      ["*"], skills,
+      [...overlays.map(dir => join(dir, "skills")), ...harnessDirs.map(dir => join(dir, "skills"))],
+    );
+    for (const conflict of skillsResult.conflicts) {
+      console.log(`NOTE: ${plugin.target} skill "${conflict.name}": ${conflict.selectedSource} replaces ${conflict.previousSource}`);
     }
-
-    if (!manifest) {
-      throw new Error(`Profile manifest for ${profileName} must be a JSON/YAML object.`);
-    }
-
-    const [matchedSkillsResult, matchedCommandsResult, localAssets] = await Promise.all([
-      resolveMatchedAssets(manifest.skills ?? [], skills, overlaySkillsDirs),
-      resolveMatchedAssets(manifest.commands ?? [], commands, overlayCommandsDirs),
-      discoverProfileLocalAssets(profileDir),
-    ]);
-
-    for (const conflict of matchedSkillsResult.conflicts) {
-      console.log(`NOTE: Skill "${conflict.name}" conflict: ${conflict.selectedSource} replaces ${conflict.previousSource}`);
-    }
-
-    const globalMatchedSkills = matchedSkillsResult.matchedNames;
-    const globalSkillSourcePaths = matchedSkillsResult.sourcePaths;
-    const globalUserSkillNames = matchedSkillsResult.userSkillNames;
-    const globalMatchedCommands = matchedCommandsResult.matchedNames;
-    const globalCommandSourcePaths = matchedCommandsResult.sourcePaths;
-
-    if (overlays.length > 0) {
-      const overlaySkillNames = globalMatchedSkills.filter(
-        (name) => overlays.some((overlay) => globalSkillSourcePaths[name]?.startsWith(overlay + sep)),
-      );
-      const overlayCommandNames = globalMatchedCommands.filter(
-        (name) => overlays.some((overlay) => globalCommandSourcePaths[name]?.startsWith(overlay + sep)),
-      );
-      if (overlaySkillNames.length > 0) {
-        console.log(`   ↳ overlay skills (${overlaySkillNames.length}): ${overlaySkillNames.join(", ")}`);
-      }
-      if (overlayCommandNames.length > 0) {
-        console.log(`   ↳ overlay commands (${overlayCommandNames.length}): ${overlayCommandNames.join(", ")}`);
-      }
-    }
-
-    for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
-      if (!unifiedHarnessPlugin.stageProfile) continue;
-
-      await unifiedHarnessPlugin.stageProfile({
-        harnessDir: join(harnesses, unifiedHarnessPlugin.target),
-        profileName,
-        profileDir,
-        manifest,
-        globalMatchedSkills,
-        globalMatchedCommands,
-        globalSkillSourcePaths,
-        globalCommandSourcePaths,
-        globalUserSkillNames,
-        profileLocalSkills: localAssets.profileLocalSkills,
-        profileLocalCommands: localAssets.profileLocalCommands,
-        outputDir: GENERATED_OUTPUT_STAGING_DIR,
-        templateContext: TEMPLATE_CONTEXT,
-        buildSupport: wrappedBuildSupport,
-      });
-    }
-  }
-
-  console.log("\n🧩 Finalizing harness outputs...");
-  for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
-    if (!unifiedHarnessPlugin.finalizeOutput) continue;
-
-    await unifiedHarnessPlugin.finalizeOutput({
-      harnessDir: join(harnesses, unifiedHarnessPlugin.target),
-      overlayDirs: overlays,
-      outputDir: GENERATED_OUTPUT_STAGING_DIR,
-      templateContext: TEMPLATE_CONTEXT,
+    await plugin.build({
+      harnessDirs, skills: skillsResult, commands: commandsResult,
+      outputDir: GENERATED_OUTPUT_STAGING_DIR, templateContext: TEMPLATE_CONTEXT,
       buildSupport: wrappedBuildSupport,
     });
   }
@@ -479,7 +382,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     console.log(`  - overlay merged: ${overlay}`);
   }
   console.log("\nTo test OpenCode instantly via CLI, run:");
-  console.log(`  XDG_CONFIG_HOME=${join(root, ".output")} opencode --agent designer\n`);
+  console.log(`  OPENCODE_CONFIG_DIR=${join(output, "opencode")} opencode\n`);
   console.log("To apply the generated outputs to your machine, run:");
   console.log("  bun run bootstrap\n");
 }

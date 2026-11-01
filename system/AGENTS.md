@@ -1,2 +1,1 @@
-System instructions for agent profiles.
-
+Shared system instruction fragments included by native harness instruction files.

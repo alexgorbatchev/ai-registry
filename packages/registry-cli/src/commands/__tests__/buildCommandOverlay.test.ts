@@ -27,11 +27,6 @@ describe("buildCommand with overlay", () => {
     await mkdir(join(repoRoot, "commands"), { recursive: true });
     await writeFile(join(repoRoot, "commands", "base-cmd.md"), "---\ndescription: Base command\n---\n# Base Command\n");
 
-    await mkdir(join(repoRoot, "profiles", "default"), { recursive: true });
-    await writeFile(
-      join(repoRoot, "profiles", "default", "profile.yaml"),
-      "description: default profile\nskills:\n  - '*'\ncommands:\n  - '*'\nsystem_prompt: 'Base prompt'\n",
-    );
 
     await copyRepositoryHarnesses(join(repoRoot, "harnesses"));
 
@@ -42,11 +37,6 @@ describe("buildCommand with overlay", () => {
     await mkdir(join(overlayDir, "commands"), { recursive: true });
     await writeFile(join(overlayDir, "commands", "work-cmd.md"), "---\ndescription: Work command\n---\n# Work Command\n");
 
-    await mkdir(join(overlayDir, "profiles", "work"), { recursive: true });
-    await writeFile(
-      join(overlayDir, "profiles", "work", "profile.yaml"),
-      "description: work profile\nskills:\n  - '*'\ncommands:\n  - '*'\nsystem_prompt: 'Work prompt'\n",
-    );
 
     registryPaths = {
       root: repoRoot,
@@ -54,7 +44,6 @@ describe("buildCommand with overlay", () => {
       harnesses: join(repoRoot, "harnesses"),
       skills: join(repoRoot, "skills"),
       commands: join(repoRoot, "commands"),
-      profiles: join(repoRoot, "profiles"),
       output: join(repoRoot, ".output"),
       temp: join(repoRoot, ".tmp"),
     };
@@ -80,15 +69,10 @@ describe("buildCommand with overlay", () => {
     expect(existsSync(join(outputDir, "opencode", "commands", "base-cmd.md"))).toBe(true);
     expect(existsSync(join(outputDir, "opencode", "commands", "work-cmd.md"))).toBe(true);
 
-    // OpenCode agents should include default and work
-    expect(existsSync(join(outputDir, "opencode", "agents", "default.md"))).toBe(true);
-    expect(existsSync(join(outputDir, "opencode", "agents", "work.md"))).toBe(true);
-
-    // Pi output should have generated the work profile
-    expect(existsSync(join(outputDir, "pi", "work"))).toBe(true);
-    expect(existsSync(join(outputDir, "pi", "work", "skills", "work-skill", "SKILL.md"))).toBe(true);
-    expect(existsSync(join(outputDir, "pi", "work", "skills", "base-skill", "SKILL.md"))).toBe(true);
-    expect(existsSync(join(outputDir, "bin", "pi-work"))).toBe(true);
+    expect(existsSync(join(outputDir, "pi", "skills", "work-skill", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(outputDir, "pi", "skills", "base-skill", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(outputDir, "bin", "pi-work"))).toBe(false);
+    expect(existsSync(join(outputDir, "opencode", "agents", "default.md"))).toBe(false);
 
     // Manifest should exist
     expect(existsSync(join(outputDir, "manifest.json"))).toBe(true);
@@ -111,20 +95,20 @@ describe("buildCommand with overlay", () => {
     } finally {
       logSpy.mockRestore();
     }
-    expect(messages.filter((message) => message.startsWith("NOTE:"))).toEqual([
-      `NOTE: Skill "base-skill" conflict: ${firstSkill} replaces ${baseSkill}`,
-      `NOTE: Skill "base-skill" conflict: ${lastSkill} replaces ${firstSkill}`,
-      `NOTE: Skill "base-skill" conflict: ${firstSkill} replaces ${baseSkill}`,
-      `NOTE: Skill "base-skill" conflict: ${lastSkill} replaces ${firstSkill}`,
-    ]);
-    for (const target of ["opencode", "codex/default", "pi/default", "claude-code/default"]) {
+    expect(messages.filter((message) => message.startsWith("NOTE:")).filter(message => message.includes('"base-skill"'))).toEqual(
+      ["claude-code", "codex", "opencode", "pi"].flatMap(target => [
+        `NOTE: ${target} skill "base-skill": ${firstSkill} replaces ${baseSkill}`,
+        `NOTE: ${target} skill "base-skill": ${lastSkill} replaces ${firstSkill}`,
+      ]),
+    );
+    for (const target of ["opencode", "codex", "pi", "claude-code"]) {
       const outputSkill = join(registryPaths.output, target, "skills", "base-skill");
       expect(await Bun.file(join(outputSkill, "SKILL.md")).text()).toBe(expected);
       expect(await Bun.file(join(outputSkill, "first-only.txt")).exists()).toBe(false);
     }
   });
 
-  it("renders overlay command skills in every Codex profile without changing the source commands", async () => {
+  it("renders overlay command skills in Codex without changing the source commands", async () => {
     const commandPath = join(overlayDir, "commands", "base-cmd.md");
     const commandContent = "---\ndescription: Overlay review\n---\nReview <%- file_path %> in <%- repo_root %>. Keep {{args}} literal.\n";
     await Bun.write(commandPath, commandContent);
@@ -132,15 +116,12 @@ describe("buildCommand with overlay", () => {
     await buildCommand({ hasAutoConfirm: true, registryPaths });
 
     const renderedContent = `---\ndescription: Overlay review\n---\nReview ${commandPath} in ${repoRoot}. Keep {{args}} literal.\n`;
-    const outputRelativePath = "codex/work/skills/command-base-cmd/SKILL.md";
+    const outputRelativePath = "codex/skills/command-base-cmd/SKILL.md";
     const skillPath = join(registryPaths.output, outputRelativePath);
     expect(await Bun.file(skillPath).text()).toBe(renderedContent);
-    expect(await Bun.file(join(registryPaths.output, "codex/default/skills/command-base-cmd/SKILL.md")).text())
-      .toBe(renderedContent);
-    expect(await Bun.file(join(registryPaths.output, "codex/work/skills/command-base-cmd/agents/openai.yaml")).text())
+    expect(await Bun.file(join(registryPaths.output, "codex/skills/command-base-cmd/agents/openai.yaml")).text())
       .toBe("policy:\n  allow_implicit_invocation: false\n");
-    expect(existsSync(join(registryPaths.output, "codex/default/prompts"))).toBe(false);
-    expect(existsSync(join(registryPaths.output, "codex/work/prompts"))).toBe(false);
+    expect(existsSync(join(registryPaths.output, "codex/prompts"))).toBe(false);
     expect(existsSync(join(registryPaths.output, ".codex-command-skills"))).toBe(false);
 
     expect(await Bun.file(commandPath).text()).toBe(commandContent);

@@ -2,12 +2,6 @@
   "$schema": "https://opencode.ai/config.json",
   "autoupdate": true,
   "formatter": false,
-  "default_agent": "developer",
-  "agent": {
-    "build": {
-      "disable": true
-    }
-  },
   "plugin": [
     "file://<%- repo_root %>/vendor/opencode-context-inspector/src/index.ts"
   ],

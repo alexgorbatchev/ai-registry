@@ -1,159 +1,13 @@
-import { mkdir, readFile, readdir, rm, writeFile } from "fs/promises";
-import { existsSync } from "fs";
-import { basename, join } from "path";
-import { homedir } from "os";
-import { dedentTemplate } from "@alexgorbatchev/dedent-string";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
+import { stageAssets, stageHarnessFiles, type IHarnessBuildContext, type IUnifiedHarnessPlugin } from "../../lib/harnessBuild";
 
-import type {
-  IBootstrapTarget,
-  IProfileBuildContext,
-  IUnifiedHarnessBuildContext,
-  IUnifiedHarnessPlugin,
-} from "../../lib/harnessBuild";
-import { getProfileLocalCommandOutputName } from "../../lib/profileLocalAssetNames";
-import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
-import { createSkillPermission } from "./lib/profileLocalAssetRules";
-import {
-  getOutputSkillName,
-  injectDisableModelInvocation,
-  parseSkillAuthor,
-  readHarnessSkillEntries,
-  updateSkillName,
-} from "../../lib/userSkillUtils";
-
-const CONFIG_FILE_NAME = "opencode.jsonc";
-const OPENCODE_LIVE_ONLY_KEY_PATHS = [
-  ["mcp", "*", "headers"],
-  ["mcp", "*", "environment"],
-];
-const AGENT_STAGING_DIR_NAME = ".opencode-agents";
-const COMMAND_STAGING_DIR_NAME = ".opencode-commands";
-const SKILL_STAGING_DIR_NAME = ".opencode-skills";
-
-function getAgentStagingDir(outputDir: string): string {
-  return join(outputDir, AGENT_STAGING_DIR_NAME);
-}
-
-function getCommandStagingDir(outputDir: string): string {
-  return join(outputDir, COMMAND_STAGING_DIR_NAME);
-}
-
-function getSkillStagingDir(outputDir: string): string {
-  return join(outputDir, SKILL_STAGING_DIR_NAME);
-}
-
-function createAgentMarkdown(context: IProfileBuildContext): string {
-  const description = typeof context.manifest.description === "string"
-    ? context.manifest.description
-    : `Auto-generated agent persona for the ${context.profileName} profile`;
-
-  const frontmatter: Record<string, unknown> = {
-    description,
-    mode: "primary",
-  };
-
-  if (context.manifest.tools && typeof context.manifest.tools === "object") {
-    frontmatter.tools = context.manifest.tools;
-  }
-
-  const permission: Record<string, string | Record<string, string>> = {
-    skill: createSkillPermission(
-      context.globalMatchedSkills,
-      context.profileLocalSkills,
-      basename(context.harnessDir),
-    ),
-  };
-
-  if (context.manifest.permission && typeof context.manifest.permission === "object") {
-    for (const [permKey, permValue] of Object.entries(context.manifest.permission)) {
-      if (permKey === "skill") {
-        continue;
-      }
-      permission[permKey] = permValue;
-    }
-  }
-
-  frontmatter.permission = permission;
-
-  const systemPrompt = typeof context.manifest.system_prompt === "string"
-    ? context.manifest.system_prompt
-    : "";
-
-  return dedentTemplate(
-    `
-      ---
-      {frontmatter}
-      ---
-      {systemPrompt}
-    `,
-    {
-      frontmatter: Bun.YAML.stringify(frontmatter, null, 2).trimEnd(),
-      systemPrompt,
-    },
-  );
-}
-
-async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir: string): Promise<void> {
-  const harnessSkillsDir = join(context.harnessDir, "skills");
-  if (!existsSync(harnessSkillsDir)) {
-    return;
-  }
-
-  const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
-  for (const harnessSkillEntry of harnessSkillEntries) {
-    const skillFilePath = join(harnessSkillEntry.sourcePath, "SKILL.md");
-    let skillAuthor: string | null = null;
-    if (existsSync(skillFilePath)) {
-      const content = await readFile(skillFilePath, "utf-8");
-      skillAuthor = parseSkillAuthor(content);
-    }
-    const outputSkillName = getOutputSkillName(harnessSkillEntry.name, skillAuthor);
-    const outputPath = join(skillsDir, outputSkillName);
-    if (existsSync(outputPath)) {
-      await rm(outputPath, { recursive: true, force: true });
-    }
-
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      harnessSkillEntry.sourcePath,
-      outputPath,
-      context.templateContext,
-    );
-
-    const generatedSkillFilePath = join(outputPath, "SKILL.md");
-    if (existsSync(generatedSkillFilePath)) {
-      let content = await readFile(generatedSkillFilePath, "utf-8");
-      if (outputSkillName !== harnessSkillEntry.name) {
-        content = updateSkillName(content, outputSkillName);
-      }
-      if (harnessSkillEntry.isUser) {
-        content = injectDisableModelInvocation(content);
-      }
-      await writeFile(generatedSkillFilePath, content, "utf-8");
-    }
-  }
-}
-
-async function stageProfile(context: IProfileBuildContext): Promise<void> {
-  const agentStagingDir = getAgentStagingDir(context.outputDir);
-  const skillsDir = getSkillStagingDir(context.outputDir);
-
-  await mkdir(agentStagingDir, { recursive: true });
-  await writeFile(join(agentStagingDir, `${context.profileName}.md`), createAgentMarkdown(context), "utf-8");
-
-  await stageHarnessLocalSkills(context, skillsDir);
-
-  await context.buildSupport.stageProfileAssets(context, {
-    skillsDir,
-    commandsDir: getCommandStagingDir(context.outputDir),
-    localCommandRenamer: getProfileLocalCommandOutputName,
-  });
-}
-
-async function generateAirHelpers(context: IUnifiedHarnessBuildContext): Promise<void> {
+async function generateAirHelpers(context: IHarnessBuildContext): Promise<void> {
   const helpers = [
     {
       name: "air-opencode-conversation-extract",
-      scriptPath: "<%- repo_root %>/harnesses/opencode/skills/agent/opencode-conversation-analysis/scripts/extract.ts",
+      scriptPath: "<%- output_dir %>/opencode/skills/opencode-conversation-analysis/scripts/extract.ts",
       envVar: "OPENCODE_CONVERSATION_EXTRACT_COMMAND",
     },
     {
@@ -163,7 +17,7 @@ async function generateAirHelpers(context: IUnifiedHarnessBuildContext): Promise
     },
     {
       name: "air-opencode-session-export",
-      scriptPath: "<%- repo_root %>/harnesses/opencode/skills/agent/opencode-sessions/scripts/export.ts",
+      scriptPath: "<%- output_dir %>/opencode/skills/opencode-sessions/scripts/export.ts",
       envVar: "OPENCODE_SESSION_EXPORT_COMMAND",
     },
   ];
@@ -179,73 +33,23 @@ exec env ${helper.envVar}="${helper.name}" \\
   }
 }
 
-async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<void> {
-  const visibleOutputDir = join(context.outputDir, "opencode");
-  const agentStagingDir = getAgentStagingDir(context.outputDir);
-  const commandStagingDir = getCommandStagingDir(context.outputDir);
-  const skillStagingDir = getSkillStagingDir(context.outputDir);
 
-  try {
-    await mkdir(visibleOutputDir, { recursive: true });
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      context.harnessDir,
-      visibleOutputDir,
-      context.templateContext,
-    );
-    // OpenCode's config updates and `mcp add` edit this file in place. MCP headers
-    // and environment can carry credentials, so they stay out of the registry.
-    const configPath = join(visibleOutputDir, CONFIG_FILE_NAME);
-    if (existsSync(configPath)) {
-      context.buildSupport.syncSettingsFile(configPath, { liveOnlyKeyPaths: OPENCODE_LIVE_ONLY_KEY_PATHS });
-    }
-
-    await context.buildSupport.mergeDirectory(commandStagingDir, join(visibleOutputDir, "commands"), { move: true });
-    await context.buildSupport.mergeDirectory(skillStagingDir, join(visibleOutputDir, "skills"), { move: true });
-
-    if (!existsSync(agentStagingDir)) {
-      return;
-    }
-
-    const agentOutputDir = join(visibleOutputDir, "agents");
-    await mkdir(agentOutputDir, { recursive: true });
-
-    const stagedAgents = await readdir(agentStagingDir, { withFileTypes: true });
-    for (const stagedAgent of stagedAgents) {
-      if (!stagedAgent.isFile()) continue;
-
-      // Agents are generated artifacts, not source files to fingerprint or recover edits into.
-      await Bun.write(
-        join(agentOutputDir, stagedAgent.name),
-        Bun.file(join(agentStagingDir, stagedAgent.name)),
-      );
-    }
-
-    await generateAirHelpers(context);
-    await logHarnessSkillOverrides(context, "opencode");
-  } finally {
-    await rm(agentStagingDir, { recursive: true, force: true });
-    await rm(commandStagingDir, { recursive: true, force: true });
-    await rm(skillStagingDir, { recursive: true, force: true });
-  }
+async function build(context: IHarnessBuildContext): Promise<void> {
+  const targetDir = join(context.outputDir, "opencode");
+  await stageHarnessFiles(context, targetDir);
+  await stageAssets(context, { skillsDir: join(targetDir, "skills"), commandsDir: join(targetDir, "commands") });
+  const configPath = join(targetDir, "opencode.jsonc");
+  if (existsSync(configPath)) context.buildSupport.syncSettingsFile(configPath, {
+    liveOnlyKeyPaths: [["mcp", "*", "headers"], ["mcp", "*", "environment"]],
+  });
+  await generateAirHelpers(context);
 }
-
-async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
-  const getConfigHome = () => process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config");
-  return [
-    {
-      kind: "home",
-      sourcePath: join(outputDir, "opencode"),
-      targetPath: process.env.OPENCODE_CONFIG_DIR?.trim() || join(getConfigHome(), "opencode"),
-      description: "OpenCode config",
-    },
-  ];
-}
-
 const plugin: IUnifiedHarnessPlugin = {
-  target: "opencode",
-  stageProfile,
-  finalizeOutput,
-  getBootstrapTargets,
+  target: "opencode", build,
+  async getBootstrapTargets(outputDir) {
+    return [{ kind: "home", sourcePath: join(outputDir, "opencode"),
+      targetPath: process.env.OPENCODE_CONFIG_DIR?.trim() || join(process.env.XDG_CONFIG_HOME?.trim() || join(homedir(), ".config"), "opencode"),
+      description: "OpenCode config" }];
+  },
 };
-
 export default plugin;

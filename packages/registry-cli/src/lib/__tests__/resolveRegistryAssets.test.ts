@@ -3,9 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
 
 import {
-  discoverProfiles,
   resolveMatchedAssets,
-  type IDiscoveredProfile,
 } from "../resolveRegistryAssets";
 
 describe("resolveRegistryAssets", () => {
@@ -26,71 +24,6 @@ describe("resolveRegistryAssets", () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  describe("discoverProfiles", () => {
-    it("discovers profiles from base directory", async () => {
-      const baseProfiles = join(baseDir, "profiles");
-      await mkdir(join(baseProfiles, "developer"), { recursive: true });
-      await writeFile(join(baseProfiles, "developer", "profile.yaml"), "description: dev");
-
-      await mkdir(join(baseProfiles, "designer"), { recursive: true });
-      await writeFile(join(baseProfiles, "designer", "profile.json"), "{}");
-
-      // Non-profile directory should be ignored
-      await mkdir(join(baseProfiles, "not-a-profile"), { recursive: true });
-
-      const profiles = await discoverProfiles(baseProfiles);
-      expect(profiles).toHaveLength(2);
-      expect(profiles.map((p) => p.profileName).sort()).toEqual(["designer", "developer"]);
-      expect(profiles.find((p) => p.profileName === "developer")?.isOverlay).toBe(false);
-    });
-
-    it("merges overlay profiles and overrides base profiles on collision", async () => {
-      const baseProfiles = join(baseDir, "profiles");
-      const overlayProfiles = join(overlayDir, "profiles");
-
-      await mkdir(join(baseProfiles, "developer"), { recursive: true });
-      await writeFile(join(baseProfiles, "developer", "profile.yaml"), "description: base dev");
-
-      await mkdir(join(baseProfiles, "designer"), { recursive: true });
-      await writeFile(join(baseProfiles, "designer", "profile.yaml"), "description: base designer");
-
-      // Overlay overrides developer and adds work
-      await mkdir(join(overlayProfiles, "developer"), { recursive: true });
-      await writeFile(join(overlayProfiles, "developer", "profile.yaml"), "description: overlay dev");
-
-      await mkdir(join(overlayProfiles, "work"), { recursive: true });
-      await writeFile(join(overlayProfiles, "work", "profile.yaml"), "description: overlay work");
-
-      const profiles = await discoverProfiles(baseProfiles, [overlayProfiles]);
-      expect(profiles).toHaveLength(3);
-      expect(profiles.map((p) => p.profileName).sort()).toEqual(["designer", "developer", "work"]);
-
-      const devProfile = profiles.find((p) => p.profileName === "developer");
-      expect(devProfile?.isOverlay).toBe(true);
-      expect(devProfile?.profileDir).toBe(join(overlayProfiles, "developer"));
-
-      const workProfile = profiles.find((p) => p.profileName === "work");
-      expect(workProfile?.isOverlay).toBe(true);
-      expect(workProfile?.profileDir).toBe(join(overlayProfiles, "work"));
-
-      const designerProfile = profiles.find((p) => p.profileName === "designer");
-      expect(designerProfile?.isOverlay).toBe(false);
-      expect(designerProfile?.profileDir).toBe(join(baseProfiles, "designer"));
-    });
-
-    it("handles null or non-existent overlay profiles directory gracefully", async () => {
-      const baseProfiles = join(baseDir, "profiles");
-      await mkdir(join(baseProfiles, "default"), { recursive: true });
-      await writeFile(join(baseProfiles, "default", "profile.yaml"), "description: default");
-
-      const profilesFromNull = await discoverProfiles(baseProfiles, []);
-      expect(profilesFromNull).toHaveLength(1);
-
-      const profilesFromMissing = await discoverProfiles(baseProfiles, [join(overlayDir, "missing-profiles")]);
-      expect(profilesFromMissing).toHaveLength(1);
-    });
-  });
-
   describe("resolveMatchedAssets", () => {
     it("selects the last overlay bundle and reports each distinct conflict", async () => {
       const baseSkills = join(baseDir, "skills");
@@ -108,19 +41,14 @@ describe("resolveRegistryAssets", () => {
       ]);
     });
 
-    it("selects the last command and profile across multiple overlays", async () => {
+    it("selects the last command across multiple overlays", async () => {
       const first = join(overlayDir, "first");
       const last = join(overlayDir, "last");
       await Bun.write(join(baseDir, "commands", "shared.md"), "base");
       await Bun.write(join(first, "commands", "shared.md"), "first");
       await Bun.write(join(last, "commands", "shared.md"), "last");
-      await Bun.write(join(first, "profiles", "work", "profile.yaml"), "description: first");
-      await Bun.write(join(last, "profiles", "work", "profile.yaml"), "description: last");
       const result = await resolveMatchedAssets(["*.md"], join(baseDir, "commands"), [join(first, "commands"), join(last, "commands")]);
       expect(await Bun.file(result.sourcePaths["shared.md"]!).text()).toBe("last");
-      expect(await discoverProfiles(join(baseDir, "profiles"), [join(first, "profiles"), join(last, "profiles")])).toEqual([
-        { profileName: "work", profileDir: join(last, "profiles", "work"), isOverlay: true },
-      ]);
     });
 
     it("returns empty matches when patterns array is empty", async () => {

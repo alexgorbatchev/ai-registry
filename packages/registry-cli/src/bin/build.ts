@@ -8,7 +8,7 @@ const { values } = parseArgs({
   options: {
     yes: { type: "boolean", short: "y" },
   },
-  strict: false,
+  strict: true,
 });
 
 buildCommand({ hasAutoConfirm: Boolean(values.yes) }).catch((error) => {

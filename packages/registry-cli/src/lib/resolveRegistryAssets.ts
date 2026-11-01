@@ -4,12 +4,6 @@ import { join } from "path";
 import { Glob } from "bun";
 import { globby } from "globby";
 
-export type IDiscoveredProfile = {
-  profileName: string;
-  profileDir: string;
-  isOverlay: boolean;
-};
-
 export type IResolvedMatchedAssets = {
   matchedNames: string[];
   sourcePaths: Record<string, string>;
@@ -143,40 +137,6 @@ async function resolveGlobs(patterns: string[], cwd: string): Promise<string[]> 
     expandDirectories: false,
   });
   return matches;
-}
-
-export async function discoverProfiles(
-  baseProfilesDir: string,
-  overlayProfilesDirs: string[] = [],
-): Promise<IDiscoveredProfile[]> {
-  const profileMap = new Map<string, IDiscoveredProfile>();
-
-  if (existsSync(baseProfilesDir)) {
-    const baseEntries = await readdir(baseProfilesDir, { withFileTypes: true });
-    for (const entry of baseEntries) {
-      if (!entry.isDirectory()) continue;
-      const profileName = entry.name;
-      const profileDir = join(baseProfilesDir, profileName);
-      if (existsSync(join(profileDir, "profile.json")) || existsSync(join(profileDir, "profile.yaml"))) {
-        profileMap.set(profileName, { profileName, profileDir, isOverlay: false });
-      }
-    }
-  }
-
-  for (const overlayProfilesDir of overlayProfilesDirs) {
-    if (!existsSync(overlayProfilesDir)) continue;
-    const overlayEntries = await readdir(overlayProfilesDir, { withFileTypes: true });
-    for (const entry of overlayEntries) {
-      if (!entry.isDirectory()) continue;
-      const profileName = entry.name;
-      const profileDir = join(overlayProfilesDir, profileName);
-      if (existsSync(join(profileDir, "profile.json")) || existsSync(join(profileDir, "profile.yaml"))) {
-        profileMap.set(profileName, { profileName, profileDir, isOverlay: true });
-      }
-    }
-  }
-
-  return Array.from(profileMap.values()).sort((left, right) => left.profileName.localeCompare(right.profileName));
 }
 
 export async function resolveMatchedAssets(

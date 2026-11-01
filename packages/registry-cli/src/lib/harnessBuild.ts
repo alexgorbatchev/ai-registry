@@ -1,22 +1,18 @@
 import {
   chmod,
-  copyFile,
   lstat,
   mkdir,
   readdir,
   readFile,
-  readlink,
-  rename,
-  rm,
-  symlink,
   writeFile,
 } from "fs/promises";
 import { existsSync } from "fs";
-import { basename, dirname, isAbsolute, join, relative } from "path";
+import { basename, dirname, join } from "path";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 import walk from "ignore-walk";
 import { resolveSkillVariant } from "./resolveSkillVariant";
+import type { IResolvedMatchedAssets } from "./resolveRegistryAssets";
 import type { ISyncedSettingsFileOptions } from "./settingsSync/types";
 import {
   getOutputSkillName,
@@ -34,25 +30,7 @@ interface ISourcePathByOutputPath extends Map<string, string> {
   sourceChecksums?: Map<string, string>;
 }
 
-export type IProfileManifest = {
-  description?: string;
-  skills?: string[];
-  commands?: string[];
-  tools?: Record<string, boolean>;
-  permission?: Record<string, string | Record<string, string>>;
-  system_prompt?: string;
-};
-
 export type IBuildSupport = {
-  mergeDirectory(sourceDir: string, destDir: string, options?: { move?: boolean }): Promise<void>;
-  stageProfileAssets(
-    context: IProfileBuildContext,
-    destinations: {
-      skillsDir: string;
-      commandsDir?: string;
-      localCommandRenamer?: (profileName: string, commandName: string) => string;
-    },
-  ): Promise<void>;
   writeBinScript(outputDir: string, filename: string, content: string): Promise<void>;
   copyDirectoryWithTemplateVariables(
     sourceDir: string,
@@ -69,43 +47,23 @@ export type IBuildSupport = {
   syncSettingsFile(filePath: string, options?: ISyncedSettingsFileOptions): void;
 };
 
-export type IProfileBuildContext = {
-  harnessDir: string;
-  profileName: string;
-  profileDir: string;
-  manifest: IProfileManifest;
-  globalMatchedSkills: string[];
-  globalMatchedCommands: string[];
-  globalSkillSourcePaths?: Record<string, string>;
-  globalCommandSourcePaths?: Record<string, string>;
-  globalUserSkillNames?: Set<string>;
-  profileLocalSkills: string[];
-  profileLocalCommands: string[];
+export type IHarnessBuildContext = {
+  harnessDirs: string[];
+  skills: IResolvedMatchedAssets;
+  commands: IResolvedMatchedAssets;
   outputDir: string;
   templateContext: ITemplateContext;
   buildSupport: IBuildSupport;
 };
 
-export type IUnifiedHarnessBuildContext = {
-  harnessDir: string;
-  overlayDirs?: string[];
-  outputDir: string;
-  templateContext: ITemplateContext;
-  buildSupport: IBuildSupport;
-};
-
-// A harness home is a real directory outside the repository that holds the
-// harness's runtime state; bootstrap links the generated profile's managed
-// entries into it. `sharedHomePath` names the home whose runtime entries a
-// non-default profile shares. A link target replaces one path with a symlink.
+// Harness homes retain runtime state outside the repository.
 export type IBootstrapTarget =
-  | { kind: "home"; sourcePath: string; targetPath: string; description: string; sharedHomePath?: string }
+  | { kind: "home"; sourcePath: string; targetPath: string; description: string }
   | { kind: "link"; sourcePath: string; targetPath: string; description: string };
 
 export type IUnifiedHarnessPlugin = {
   target: string;
-  stageProfile?(context: IProfileBuildContext): Promise<void>;
-  finalizeOutput?(context: IUnifiedHarnessBuildContext): Promise<void>;
+  build(context: IHarnessBuildContext): Promise<void>;
   getBootstrapTargets?(outputDir: string): Promise<IBootstrapTarget[]>;
 };
 
@@ -119,14 +77,12 @@ export function isUnifiedHarnessPlugin(value: unknown): value is IUnifiedHarness
   }
 
   const target = getObjectValue(value, "target");
-  const stageProfile = getObjectValue(value, "stageProfile");
-  const finalizeOutput = getObjectValue(value, "finalizeOutput");
+  const build = getObjectValue(value, "build");
   const getBootstrapTargets = getObjectValue(value, "getBootstrapTargets");
 
   return (
     typeof target === "string" &&
-    (stageProfile === undefined || typeof stageProfile === "function") &&
-    (finalizeOutput === undefined || typeof finalizeOutput === "function") &&
+    typeof build === "function" &&
     (getBootstrapTargets === undefined || typeof getBootstrapTargets === "function")
   );
 }
@@ -219,58 +175,6 @@ function registerOriginalSourcePath(
   sourcePathByOutputPath?: ISourcePathByOutputPath,
 ): void {
   sourcePathByOutputPath?.set(outputPath, sourcePath);
-}
-
-function moveOriginalSourcePathForFile(
-  currentOutputPath: string,
-  nextOutputPath: string,
-  sourcePathByOutputPath?: ISourcePathByOutputPath,
-  removeCurrentPath: boolean = true,
-): void {
-  if (!sourcePathByOutputPath) {
-    return;
-  }
-
-  const originalSourcePath = sourcePathByOutputPath.get(currentOutputPath);
-  if (originalSourcePath === undefined) {
-    return;
-  }
-
-  sourcePathByOutputPath.set(nextOutputPath, originalSourcePath);
-  if (removeCurrentPath) {
-    sourcePathByOutputPath.delete(currentOutputPath);
-  }
-}
-
-function moveOriginalSourcePathForDirectory(
-  currentOutputDir: string,
-  nextOutputDir: string,
-  sourcePathByOutputPath?: ISourcePathByOutputPath,
-): void {
-  if (!sourcePathByOutputPath) {
-    return;
-  }
-
-  const movedEntries: Array<{ currentOutputPath: string; nextOutputPath: string; originalSourcePath: string }> = [];
-  for (const [currentOutputPath, originalSourcePath] of sourcePathByOutputPath.entries()) {
-    const relativeOutputPath = relative(currentOutputDir, currentOutputPath);
-    const isDescendantPath = relativeOutputPath.length > 0 && !relativeOutputPath.startsWith("..") && !isAbsolute(relativeOutputPath);
-
-    if (!isDescendantPath) {
-      continue;
-    }
-
-    movedEntries.push({
-      currentOutputPath,
-      nextOutputPath: join(nextOutputDir, relativeOutputPath),
-      originalSourcePath,
-    });
-  }
-
-  for (const movedEntry of movedEntries) {
-    sourcePathByOutputPath.delete(movedEntry.currentOutputPath);
-    sourcePathByOutputPath.set(movedEntry.nextOutputPath, movedEntry.originalSourcePath);
-  }
 }
 
 async function copyFileWithTemplateVariables(
@@ -405,170 +309,57 @@ export async function applyTemplateVariablesToGeneratedOutput(
   }
 }
 
-export async function mergeDirectory(
-  sourceDir: string,
-  destinationDir: string,
-  options: { move?: boolean } = {},
-  sourcePathByOutputPath?: ISourcePathByOutputPath,
-): Promise<void> {
-  if (!existsSync(sourceDir)) {
-    return;
-  }
-  await mkdir(destinationDir, { recursive: true });
-
-  const sourceEntries = await readdir(sourceDir, { withFileTypes: true });
-  for (const sourceEntry of sourceEntries) {
-    const sourcePath = join(sourceDir, sourceEntry.name);
-    const destinationPath = join(destinationDir, sourceEntry.name);
-
-    if (sourceEntry.isDirectory()) {
-      if (existsSync(destinationPath)) {
-        const destinationStats = await lstat(destinationPath);
-        if (!destinationStats.isDirectory()) {
-          throw new Error(`Cannot merge directory into file: ${destinationPath}`);
-        }
-        await mergeDirectory(sourcePath, destinationPath, options, sourcePathByOutputPath);
-        continue;
+// Layer native files individually; skills are resolved separately as complete bundles.
+export async function stageHarnessFiles(context: IHarnessBuildContext, targetDir: string): Promise<void> {
+  await mkdir(targetDir, { recursive: true });
+  for (const sourceDir of context.harnessDirs) {
+    if (!existsSync(sourceDir)) continue;
+    for (const entry of await getSourceCopyEntries(sourceDir)) {
+      if (entry === "skills" || entry.startsWith("skills/")) continue;
+      const sourcePath = join(sourceDir, entry);
+      const stats = await lstat(sourcePath);
+      if (stats.isSymbolicLink()) continue;
+      const targetPath = join(targetDir, entry);
+      if (stats.isDirectory()) {
+        await mkdir(targetPath, { recursive: true });
+      } else if (stats.isFile()) {
+        await context.buildSupport.copyPathWithTemplateVariables(sourcePath, targetPath, context.templateContext);
       }
-
-      if (options.move) {
-        moveOriginalSourcePathForDirectory(sourcePath, destinationPath, sourcePathByOutputPath);
-        await rename(sourcePath, destinationPath);
-      } else {
-        await mergeDirectory(sourcePath, destinationPath, options, sourcePathByOutputPath);
-      }
-      continue;
     }
-
-    if (existsSync(destinationPath)) {
-      throw new Error(`Cannot merge generated output because destination already exists: ${destinationPath}`);
-    }
-
-    if (sourceEntry.isSymbolicLink()) {
-      const target = await readlink(sourcePath);
-      if (options.move) {
-        await rename(sourcePath, destinationPath);
-        moveOriginalSourcePathForFile(sourcePath, destinationPath, sourcePathByOutputPath);
-      } else {
-        await symlink(target, destinationPath);
-        moveOriginalSourcePathForFile(sourcePath, destinationPath, sourcePathByOutputPath, false);
-      }
-      continue;
-    }
-
-    if (options.move) {
-      await rename(sourcePath, destinationPath);
-      moveOriginalSourcePathForFile(sourcePath, destinationPath, sourcePathByOutputPath);
-    } else {
-      await copyFile(sourcePath, destinationPath);
-      moveOriginalSourcePathForFile(sourcePath, destinationPath, sourcePathByOutputPath, false);
-    }
-  }
-
-  if (options.move) {
-    await rm(sourceDir, { recursive: true, force: true });
   }
 }
 
-export async function stageProfileAssets(
-  context: IProfileBuildContext,
-  destinations: {
-    skillsDir: string;
-    commandsDir?: string;
-    localCommandRenamer?: (profileName: string, commandName: string) => string;
-  }
+export async function stageAssets(
+  context: IHarnessBuildContext,
+  destinations: { skillsDir: string; commandsDir?: string },
 ): Promise<void> {
-  const { commandsDir, skillsDir, localCommandRenamer } = destinations;
-
-  const assertMissingOutputPath = (outputPath: string, assetDescription: string) => {
-    if (existsSync(outputPath)) {
-      throw new Error(`Cannot stage ${assetDescription} because the output path already exists: ${outputPath}`);
-    }
-  };
-
-  if (commandsDir) {
-    for (const matchedCommand of context.globalMatchedCommands) {
-      const outputPath = join(commandsDir, matchedCommand);
+  if (destinations.commandsDir) {
+    for (const name of context.commands.matchedNames) {
+      const outputPath = join(destinations.commandsDir, name);
+      // Native harness commands take precedence over reusable commands.
       if (existsSync(outputPath)) continue;
-      const sourcePath =
-        context.globalCommandSourcePaths?.[matchedCommand] ??
-        join(context.templateContext.commands_dir, matchedCommand);
       await context.buildSupport.copyPathWithTemplateVariables(
-        sourcePath,
-        outputPath,
-        context.templateContext,
-      );
-    }
-
-    for (const profileLocalCommand of context.profileLocalCommands) {
-      const outputName = localCommandRenamer ? localCommandRenamer(context.profileName, profileLocalCommand) : profileLocalCommand;
-      const outputPath = join(commandsDir, outputName);
-      assertMissingOutputPath(outputPath, `profile-local command ${profileLocalCommand} for profile ${context.profileName}`);
-      await context.buildSupport.copyPathWithTemplateVariables(
-        join(context.profileDir, "commands", profileLocalCommand),
-        outputPath,
-        context.templateContext,
+        context.commands.sourcePaths[name]!, outputPath, context.templateContext,
       );
     }
   }
-
-  for (const matchedSkill of context.globalMatchedSkills) {
-    const sourceDir =
-      context.globalSkillSourcePaths?.[matchedSkill] ??
-      join(context.templateContext.skills_dir, matchedSkill);
-    const skillFilePath = join(sourceDir, "SKILL.md");
-    let skillAuthor: string | null = null;
-    if (existsSync(skillFilePath)) {
-      const content = await readFile(skillFilePath, "utf-8");
-      skillAuthor = parseSkillAuthor(content);
+  const outputNames = new Set<string>();
+  await mkdir(destinations.skillsDir, { recursive: true });
+  for (const name of context.skills.matchedNames) {
+    const sourceDir = context.skills.sourcePaths[name]!;
+    const author = parseSkillAuthor(await Bun.file(join(sourceDir, "SKILL.md")).text());
+    const outputName = getOutputSkillName(name, author);
+    if (outputNames.has(outputName)) throw new Error(`Duplicate generated skill name: ${outputName}`);
+    outputNames.add(outputName);
+    const outputPath = join(destinations.skillsDir, outputName);
+    await context.buildSupport.copyDirectoryWithTemplateVariables(sourceDir, outputPath, context.templateContext);
+    const skillPath = join(outputPath, "SKILL.md");
+    let content = await Bun.file(skillPath).text();
+    if (outputName !== name) content = updateSkillName(content, outputName);
+    if (context.skills.userSkillNames?.has(name) || isUserSkillPath(sourceDir)) {
+      content = injectDisableModelInvocation(content);
     }
-    const outputSkillName = getOutputSkillName(matchedSkill, skillAuthor);
-    const outputPath = join(skillsDir, outputSkillName);
-    if (existsSync(outputPath)) continue;
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      sourceDir,
-      outputPath,
-      context.templateContext,
-    );
-
-    const generatedSkillFilePath = join(outputPath, "SKILL.md");
-    if (existsSync(generatedSkillFilePath)) {
-      let content = await readFile(generatedSkillFilePath, "utf-8");
-      if (outputSkillName !== matchedSkill) {
-        content = updateSkillName(content, outputSkillName);
-      }
-      const isUserSkill =
-        context.globalUserSkillNames?.has(matchedSkill) ||
-        isUserSkillPath(sourceDir);
-
-      if (isUserSkill) {
-        content = injectDisableModelInvocation(content);
-      }
-      await writeFile(generatedSkillFilePath, content, "utf-8");
-    }
-  }
-
-  for (const profileLocalSkill of context.profileLocalSkills) {
-    const sourceDir = join(context.profileDir, "skills", profileLocalSkill);
-    const skillFilePath = join(sourceDir, "SKILL.md");
-    let skillAuthor: string | null = null;
-    if (existsSync(skillFilePath)) {
-      const content = await readFile(skillFilePath, "utf-8");
-      skillAuthor = parseSkillAuthor(content);
-    }
-    const outputSkillName = getOutputSkillName(profileLocalSkill, skillAuthor);
-    const outputPath = join(skillsDir, outputSkillName);
-    assertMissingOutputPath(outputPath, `profile-local skill ${profileLocalSkill} for profile ${context.profileName}`);
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      sourceDir,
-      outputPath,
-      context.templateContext,
-    );
-    const generatedSkillFilePath = join(outputPath, "SKILL.md");
-    if (existsSync(generatedSkillFilePath) && outputSkillName !== profileLocalSkill) {
-      const content = await readFile(generatedSkillFilePath, "utf-8");
-      await writeFile(generatedSkillFilePath, updateSkillName(content, outputSkillName), "utf-8");
-    }
+    await Bun.write(skillPath, content);
   }
 }
 

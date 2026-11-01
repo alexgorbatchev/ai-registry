@@ -1,3 +1,4 @@
 ./scripts
 ./fetch-source.sh
 ./.tmp/
+./templates/

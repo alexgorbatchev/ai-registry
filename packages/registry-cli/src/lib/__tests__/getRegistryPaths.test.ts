@@ -29,7 +29,6 @@ describe("getRegistryPaths", () => {
     expect(paths.overlays).toEqual([]);
     expect(paths.skills).toBe(join(paths.root, "skills"));
     expect(paths.commands).toBe(join(paths.root, "commands"));
-    expect(paths.profiles).toBe(join(paths.root, "profiles"));
   });
 
   it("returns no overlays when AI_REGISTRY_OVERLAY is whitespace", () => {

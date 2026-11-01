@@ -2,6 +2,7 @@ import { basename } from "node:path";
 import { parse } from "shell-quote";
 
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
+const CONTROL_OPERATORS = /[;&|()]+/;
 const CONFIG_OVERRIDE = /^(?:GIT_CONFIG_GLOBAL|GIT_CONFIG_SYSTEM|GIT_CONFIG_NOSYSTEM|GIT_CONFIG_COUNT|GIT_CONFIG_PARAMETERS|GIT_CONFIG_(?:KEY|VALUE)_\d+)=/;
 const HOOK_KEY = /^hook\./i;
 const SHORT_NO_VERIFY = /^-[A-Za-z]*n[A-Za-z]*$/;
@@ -21,9 +22,17 @@ const CONFIG_READS = new Set(["--get", "--get-all", "--get-regexp", "--list", "-
 
 /** Split a command line into simple commands, one per shell control operator. */
 function splitCommands(command: string): string[][] {
+  let entries: ReturnType<typeof parse>;
+  try {
+    entries = parse(command, (name) => `$${name}`);
+  } catch {
+    // The parser rejects valid expansions such as ${path%%/*}. Those must neither
+    // block the command nor exempt it, so the words are still inspected.
+    return command.split(CONTROL_OPERATORS).map((part) => part.split(/\s+/).filter(Boolean));
+  }
   let current: string[] = [];
   const commands = [current];
-  for (const entry of parse(command, (name) => `$${name}`)) {
+  for (const entry of entries) {
     if (typeof entry === "string") {
       current.push(entry);
     } else if ("op" in entry && entry.op === "glob") {

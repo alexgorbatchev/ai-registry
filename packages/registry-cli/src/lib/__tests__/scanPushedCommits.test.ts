@@ -12,6 +12,8 @@ const createdDirectories: string[] = [];
 const NULL_OBJECT_ID = "0".repeat(40);
 // Assembled at runtime so this test file itself never contains a detectable key.
 const FAKE_AWS_ACCESS_KEY_ID = ["AKIA", "IOSFODNN7EXAMPLQ"].join("");
+// Global Git hooks would otherwise block the fixture's deliberate secret commit.
+const ISOLATED_GIT_ENV = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
 
 function createRecordingScan(result: GitleaksResult): { ranges: string[]; scan: (range: string) => Promise<GitleaksResult> } {
   const ranges: string[] = [];
@@ -34,7 +36,7 @@ async function createRepositoryWithRemote(): Promise<string> {
   await $`git config user.name Tester && git config user.email tester@example.com`.cwd(repositoryDir).quiet();
   await $`git remote add origin ${join(rootDir, "remote.git")}`.cwd(repositoryDir).quiet();
   await writeFile(join(repositoryDir, "readme.md"), "# Repo\n");
-  await $`git add . && git commit --quiet -m initial && git push --quiet origin main`.cwd(repositoryDir).quiet();
+  await $`git add . && git commit --quiet -m initial && git push --quiet origin main`.cwd(repositoryDir).env(ISOLATED_GIT_ENV).quiet();
   return repositoryDir;
 }
 
@@ -87,13 +89,13 @@ describe("scanPushedCommits", () => {
     const repositoryDir = await createRepositoryWithRemote();
     const remoteHead = (await $`git rev-parse HEAD`.cwd(repositoryDir).text()).trim();
     await writeFile(join(repositoryDir, "notes.md"), "Nothing secret.\n");
-    await $`git add . && git commit --quiet -m clean`.cwd(repositoryDir).quiet();
+    await $`git add . && git commit --quiet -m clean`.cwd(repositoryDir).env(ISOLATED_GIT_ENV).quiet();
     const cleanHead = (await $`git rev-parse HEAD`.cwd(repositoryDir).text()).trim();
 
     const cleanPush = await runHook(repositoryDir, `refs/heads/main ${cleanHead} refs/heads/main ${remoteHead}\n`);
 
     await writeFile(join(repositoryDir, "settings.json"), `{ "awsKeyId": "${FAKE_AWS_ACCESS_KEY_ID}" }\n`);
-    await $`git add . && git commit --quiet -m leak`.cwd(repositoryDir).quiet();
+    await $`git add . && git commit --quiet -m leak`.cwd(repositoryDir).env(ISOLATED_GIT_ENV).quiet();
     const leakHead = (await $`git rev-parse HEAD`.cwd(repositoryDir).text()).trim();
 
     const leakingPush = await runHook(repositoryDir, `refs/heads/feature ${leakHead} refs/heads/feature ${NULL_OBJECT_ID}\n`);

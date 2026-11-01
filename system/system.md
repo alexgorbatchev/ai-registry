@@ -67,13 +67,6 @@ Solve the actual problem; never fake a solution. Do not write stubs, mock layers
 
 Use the most specific native primitive the language, platform, framework, API, standard, or protocol provides (e.g., exact OS system calls, specific HTTP verbs and status codes, correct database types, exact network protocols, or native semantic UI elements). Do not pick a generic or incorrect primitive and then add wrappers, overrides, or styles to make it imitate the correct one. If a primitive's native default behavior, lifecycle, or metadata has to be worked around, it is the wrong primitive; replace it.
 
-# Private Internal Domains
-
-- The following domains are private internal domains: <%- env("DOTENV_AI_PRIVATE_DOMAINS") %>. Treat every listed domain, including its subdomains, as private internal information.
-- Never commit or push these domains to repositories hosted on `github.com`, including private repositories. This restriction covers file contents, generated artifacts, and commit messages.
-- Before committing or pushing, verify the destination host and inspect the staged changes or outgoing commits for these domains. For `github.com`, anonymize any references before proceeding; stop if anonymization would prevent completing the task. If the destination is unknown, stop before committing or pushing private-domain references.
-- Private internal domains may be committed only to Git hosts explicitly authorized for them. Authorization for one host does not extend to any `github.com` remote of the same repository.
-
 # Due Diligence
 
 At the end of your turn, report anything you noticed that does not align with established conventions, whether or not it relates to the task. This includes, but is not limited to:

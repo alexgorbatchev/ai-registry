@@ -174,7 +174,7 @@ test.each(['120', '60', '40', '20'])('human help keeps all of its text at width 
 test('COLUMNS sets the wrap width and continuation lines keep their column', () => {
   const lines = cli(rootPath, ['--help'], '0', '70').stdout.split('\n');
   const isTreeRow = (line: string): boolean => /[├╰]─ /.test(line);
-  const treeSection = lines.slice(lines.findIndex(isTreeRow), lines.findLastIndex(isTreeRow));
+  const treeSection = lines.slice(lines.findIndex(isTreeRow), lines.lastIndexOf(lines.filter(isTreeRow).at(-1) ?? ''));
   const continuations = treeSection.filter((line) => !isTreeRow(line) && line.trim() !== '');
   expect(continuations.length).toBeGreaterThan(0);
   expect(new Set(continuations.map((line) => line.search(/[^│ ]/)))).toEqual(new Set([37]));

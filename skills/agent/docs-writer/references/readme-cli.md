@@ -22,7 +22,7 @@ For published CLI tools, omit `# Prerequisites`. Place `# Installation` first, f
 
 In `# Setup`, list only requirements for running the published artifact — credentials, accounts, external binaries, or runtimes actually required by that artifact. Link each requirement and explain which operation needs it and how to configure it. Omit this section when no runtime setup is required.
 
-Do not list compilers, SDKs, task runners, or test tooling merely because the source project uses them. Put development prerequisites in `AGENTS.md` or contributor docs alongside build-from-source instructions; do not put them before or inside the README's installation or setup sections. Do not infer runtime requirements from the project's implementation language. Never list the `gh` CLI as an installation prerequisite.
+Do not list compilers, SDKs, task runners, or test tooling merely because the source project uses them. Put development prerequisites in `AGENTS.md` or contributor docs alongside build-from-source instructions; do not put them before or inside the README's installation or setup sections. Do not infer runtime requirements from the project's implementation language. Never list the `gh` CLI as an installation prerequisite. List it in `# Setup` only when the tool is built on `gh` and needs it at runtime.
 
 ---
 

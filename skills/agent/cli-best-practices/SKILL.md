@@ -8,7 +8,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-11-01 09:51
+  last_modified: 2026-11-01 12:26
   status: current
 ---
 
@@ -27,7 +27,7 @@ Web frontends and non-CLI services are outside this skill's scope. README-only w
 3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it. Human help wraps to the active terminal width with aligned continuation lines. Help text is never truncated in any mode.
 4. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
 5. **Mandatory Task Automation (`justfile`)**: Every CLI project must use `just` with a `justfile`. It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`. When the repository's primary deliverable is an application (such as a desktop app or service) that ships a companion CLI, `run` launches the application and the CLI recipes are `cli` and `cli-ai` instead (see section 4). In multi-package repositories or workspaces, the root `justfile` must link all nested child `justfile`s as modules (`mod <name> '<path>'`).
-6. **GitHub Releases Distribution Only**: Ship end users prebuilt binaries from GitHub Releases. Never require them to build from source, and never use the `gh` CLI in end-user instructions.
+6. **GitHub Releases Distribution Only**: Ship end users prebuilt binaries from GitHub Releases. Never require them to build from source, and never use the `gh` CLI in installation instructions. A CLI built on `gh` documents its `gh` login and runtime use under `# Setup`; any other CLI never mentions `gh` to end users.
 7. **README Content Is Owned By `docs-writer`**: Do not write or restate README structure, section order, or tone rules here. Load the `docs-writer` skill and read its `references/readme.md` plus `references/readme-cli.md` before touching a CLI `README.md`.
 8. **Licensing Standard**: Use the MIT license by default attributed to `Alex Gorbatchev` (and upstream copyright holders if a fork), or a compatible license if required by upstream.
 9. **Agent Skill (`<cli> skill`)**: Every CLI must maintain its agent skill at `skills/<cli>/SKILL.md` in the repository root and ship a top-level `skill` command that prints the Skills CLI install command and the skill URL. Every agent-mode help screen must start with an alert directing agents to read `AGENT=1 <cli> skill` first. Apply the contract below when building or scaffolding CLI tools.

@@ -6,7 +6,6 @@
   "workspaces": [
     "vendor/*",
     "packages/*",
-    "skills/agent/github-fix-issues/scripts",
     "skills/user/disk-cleanup"
   ],
   "scripts": {

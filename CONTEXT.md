@@ -11,7 +11,7 @@ Shared terminology for the registry's reusable skills and workflows.
 ## Language
 
 **GitHub issue workflow**:
-The workflow provided by the `github-fix-issues` skill, encompassing issue creation, implementation through review and merge, post-merge cleanup, and repair of historical issue-integration merges.
+The workflow provided by the private overlay's `github-issues` skill, encompassing issue creation, implementation through review and merge, post-merge cleanup, and repair of historical issue-integration merges.
 _Avoid_: Using "issue workflow" to mean implementation alone.
 
 **Implementing agent**:

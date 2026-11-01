@@ -1,4 +1,0 @@
-scripts/node_modules/
-scripts/__tests__/
-scripts/bun.lock
-justfile

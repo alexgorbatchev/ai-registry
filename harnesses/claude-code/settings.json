@@ -92,6 +92,16 @@
           }
         ],
         "matcher": "*"
+      },
+      {
+        "hooks": [
+          {
+            "command": "bun \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/guardGitBypass.ts\"",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
       }
     ],
     "SessionEnd": [

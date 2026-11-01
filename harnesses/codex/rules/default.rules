@@ -34,3 +34,54 @@ prefix_rule(
         "git reset --pathspec-from-file=owned-paths.txt",
     ],
 )
+
+prefix_rule(
+    pattern = ["git", ["commit", "am"], ["--no-verify", "-n"]],
+    decision = "forbidden",
+    justification = "Skipping hooks skips the secret and private-domain gate. Fix the finding, or ask the user to run this themselves.",
+    match = [
+        "git commit --no-verify -m skip",
+        "git commit -n -m skip",
+        "git am -n patch",
+    ],
+    not_match = [
+        "git commit -m normal",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "--no-verify"],
+    decision = "forbidden",
+    justification = "Skipping hooks skips the secret and private-domain gate. Fix the finding, or ask the user to run this themselves.",
+    match = [
+        "git push --no-verify origin main",
+    ],
+    not_match = [
+        "git push origin main",
+        "git push -n origin main",
+    ],
+)
+
+prefix_rule(
+    pattern = ["gh", "gist", ["create", "edit", "new", "rename"]],
+    decision = "forbidden",
+    justification = "No scanner inspects gists. Keep the content in a scanned repository.",
+    match = [
+        "gh gist create notes.txt",
+        "gh gist edit 123",
+    ],
+    not_match = [
+        "gh gist list",
+        "gh gist view 123",
+    ],
+)
+
+prefix_rule(
+    pattern = [["gitleaks-disable--all", "gitleaks-disable--private-internal-domain"]],
+    decision = "forbidden",
+    justification = "Gitleaks exceptions require the user's explicit request. Ask the user to run this themselves.",
+    match = [
+        "gitleaks-disable--all",
+        "gitleaks-disable--private-internal-domain",
+    ],
+)

@@ -4,7 +4,7 @@ import { pullWithRebase } from "./pullWithRebase";
 import type { IScheduledUpdateRunner } from "./pullWithRebase";
 import { pushScheduledCommits } from "./pushScheduledCommits";
 
-type IScheduledUpdateResult = "bootstrapped" | "bootstrapped-and-pushed";
+type IScheduledUpdateResult = "bootstrapped" | "bootstrapped-and-pushed" | "bootstrapped-without-pull";
 
 function createRunner(repositoryRoot: string, bunExecutable: string): IScheduledUpdateRunner {
   const env: NodeJS.ProcessEnv = {
@@ -36,10 +36,14 @@ export async function scheduledUpdate(
   run: IScheduledUpdateRunner = createRunner(repositoryRoot, bunExecutable),
 ): Promise<IScheduledUpdateResult> {
   const before = await run(["git", "rev-parse", "HEAD"], true);
-  await pullWithRebase(repositoryRoot, before, run);
+  const hasPulled = await pullWithRebase(repositoryRoot, before, run);
   // Bootstrap on every run, not only after incoming commits: the build also syncs
   // settings the harnesses changed on this machine, leaving those edits uncommitted.
   await run([bunExecutable, "run", "bootstrap", "--", "-y"]);
+  if (!hasPulled) {
+    // An unreconciled branch can only be rejected, so outgoing commits wait for a clean run.
+    return "bootstrapped-without-pull";
+  }
   const hasPushed = await pushScheduledCommits(run);
   return hasPushed ? "bootstrapped-and-pushed" : "bootstrapped";
 }

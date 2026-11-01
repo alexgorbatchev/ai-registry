@@ -83,6 +83,7 @@ describe("scheduledUpdate", () => {
     ]) {
       await Bun.write(join(repositoryPath, sourcePath), Bun.file(resolve(REPOSITORY_ROOT, sourcePath)));
     }
+    await Bun.write(join(repositoryPath, ".git/info/exclude"), "packages/\n");
     await Bun.write(join(repositoryPath, ".tmp/scheduled-update.log"), "[2000-01-01 00:00] expired\n");
     expect(await run(remotePath, [process.execPath, join(repositoryPath,
       "packages/registry-cli/src/bin/scheduled-update.ts")])).toBe(
@@ -117,68 +118,65 @@ describe("scheduledUpdate", () => {
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("2");
   });
 
-  it("rolls back HEAD and local edits when restoring the stash conflicts", async () => {
+  it("skips the pull and bootstraps when uncommitted edits would conflict", async () => {
     const { remotePath, repositoryPath } = await createRepository();
     await advanceRemote(remotePath);
-    await run(repositoryPath, ["git", "config", "merge.autostash", "true"]);
     await Bun.write(join(repositoryPath, "content.txt"), "local\n");
     const before = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
     const status = await run(repositoryPath, ["git", "status", "--porcelain"]);
-    await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow(
-      "Command failed (exit code 1): git",
-    );
+    const modified = Bun.file(join(repositoryPath, "content.txt")).lastModified;
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-without-pull");
     expect(await run(repositoryPath, ["git", "rev-parse", "HEAD"])).toBe(before);
     expect(await run(repositoryPath, ["git", "status", "--porcelain"])).toBe(status);
-    expect(await run(repositoryPath, ["git", "stash", "list"])).toBe("");
-    expect(await run(repositoryPath, ["git", "diff", "--name-only", "--diff-filter=U"])).toBe("");
     expect(await Bun.file(join(repositoryPath, "content.txt")).text()).toBe("local\n");
-    expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).exists()).toBe(false);
+    // The commit sweep's quiet window depends on this timestamp standing still.
+    expect(Bun.file(join(repositoryPath, "content.txt")).lastModified).toBe(modified);
+    expect(await run(repositoryPath, ["git", "reflog", "refs/stash"]).catch(() => "")).toBe("");
+    expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
   });
 
-  it("updates a dirty checkout while preserving staged, unstaged and untracked changes", async () => {
+  it.each([
+    ["staged", "local.txt", true],
+    ["unstaged", "local.txt", false],
+    ["untracked", "new.txt", false],
+  ])("does not pull with %s changes", async (_kind, path, shouldStage) => {
     const { remotePath, repositoryPath } = await createRepository();
-    await Bun.write(join(repositoryPath, "local.txt"), "staged\n");
-    await run(repositoryPath, ["git", "add", "local.txt"]);
-    await Bun.write(join(repositoryPath, "local.txt"), "unstaged\n");
-    await Bun.write(join(repositoryPath, "untracked.txt"), "untracked\n");
-    const staged = await run(repositoryPath, ["git", "diff", "--cached"]);
-    const unstaged = await run(repositoryPath, ["git", "diff"]);
+    await Bun.write(join(repositoryPath, path), "local\n");
+    if (shouldStage) await run(repositoryPath, ["git", "add", path]);
     const status = await run(repositoryPath, ["git", "status", "--porcelain"]);
+    const before = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
     await advanceRemote(remotePath);
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-without-pull");
+    expect(await run(repositoryPath, ["git", "rev-parse", "HEAD"])).toBe(before);
+    expect(await run(repositoryPath, ["git", "status", "--porcelain"])).toBe(status);
+  });
+
+  it("pulls again once the checkout is clean", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    await Bun.write(join(repositoryPath, "local.txt"), "local\n");
+    await advanceRemote(remotePath);
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-without-pull");
+    await run(repositoryPath, ["git", "restore", "local.txt"]);
     expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
     expect(await Bun.file(join(repositoryPath, "content.txt")).text()).toBe("updated\n");
-    expect(await run(repositoryPath, ["git", "diff", "--cached"])).toBe(staged);
-    expect(await run(repositoryPath, ["git", "diff"])).toBe(unstaged);
-    expect(await run(repositoryPath, ["git", "status", "--porcelain"])).toBe(status);
-    expect(await Bun.file(join(repositoryPath, "untracked.txt")).text()).toBe("untracked\n");
-    expect(await run(repositoryPath, ["git", "stash", "list"])).toBe("");
-    expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
+  });
+
+  it("holds outgoing commits while uncommitted edits block the pull", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "--allow-empty", "-m", "local"]);
+    await Bun.write(join(repositoryPath, "local.txt"), "local\n");
+    const remoteHead = await run(remotePath, ["git", "rev-parse", "HEAD"]);
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-without-pull");
+    expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(remoteHead);
   });
 
   it("bootstraps a dirty checkout without touching local edits when no new commits arrive", async () => {
     const { repositoryPath } = await createRepository();
     await Bun.write(join(repositoryPath, "content.txt"), "local\n");
-    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-without-pull");
     expect(await Bun.file(join(repositoryPath, "content.txt")).text()).toBe("local\n");
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
-  });
-
-  it("refuses incoming files that would overwrite untracked files", async () => {
-    const { remotePath, repositoryPath } = await createRepository();
-    await Bun.write(join(repositoryPath, "new.txt"), "local untracked\n");
-    await Bun.write(join(remotePath, "new.txt"), "incoming\n");
-    await run(remotePath, ["git", "add", "new.txt"]);
-    await run(remotePath, ["git", "commit", "-m", "new file"]);
-    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
-      "commit", "--allow-empty", "-m", "local"]);
-    await Bun.write(join(repositoryPath, "local.txt"), "dirty local\n");
-    const before = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
-    await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow("Command failed (exit code 1): git");
-    expect(await run(repositoryPath, ["git", "rev-parse", "HEAD"])).toBe(before);
-    expect(await Bun.file(join(repositoryPath, "new.txt")).text()).toBe("local untracked\n");
-    expect(await Bun.file(join(repositoryPath, "local.txt")).text()).toBe("dirty local\n");
-    expect(await run(repositoryPath, ["git", "stash", "list"])).toBe("");
-    expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).exists()).toBe(false);
   });
 
   it("does not bootstrap after a failed pull", async () => {
@@ -214,34 +212,13 @@ describe("scheduledUpdate", () => {
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
   });
 
-  it("rebases with dirty staged and unstaged edits while retaining an existing stash", async () => {
-    const { remotePath, repositoryPath } = await createRepository();
-    await Bun.write(join(repositoryPath, "local.txt"), "older stash\n");
-    await run(repositoryPath, ["git", "stash", "push", "-m", "user stash"]);
-    const previousStash = await run(repositoryPath, ["git", "stash", "list", "--format=%H"]);
-    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
-      "commit", "--allow-empty", "-m", "local"]);
-    await Bun.write(join(repositoryPath, "local.txt"), "staged\n");
-    await run(repositoryPath, ["git", "add", "local.txt"]);
-    await Bun.write(join(repositoryPath, "local.txt"), "unstaged\n");
-    const staged = await run(repositoryPath, ["git", "diff", "--cached"]);
-    const unstaged = await run(repositoryPath, ["git", "diff"]);
-    await advanceRemote(remotePath);
-    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-and-pushed");
-    expect(await run(repositoryPath, ["git", "diff", "--cached"])).toBe(staged);
-    expect(await run(repositoryPath, ["git", "diff"])).toBe(unstaged);
-    expect(await run(repositoryPath, ["git", "stash", "list", "--format=%H"])).toBe(previousStash);
-  });
-
   it("bootstraps and pushes local commits when the pull has no new commits", async () => {
     const { remotePath, repositoryPath } = await createRepository();
     await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
       "commit", "--allow-empty", "-m", "local"]);
-    await Bun.write(join(repositoryPath, "local.txt"), "uncommitted\n");
     const head = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
     expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped-and-pushed");
     expect(await run(remotePath, ["git", "rev-parse", "HEAD"])).toBe(head);
-    expect(await Bun.file(join(repositoryPath, "local.txt")).text()).toBe("uncommitted\n");
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
     expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
   });
@@ -402,62 +379,20 @@ describe("scheduledUpdate", () => {
     },
   );
 
-  it("merges non-overlapping local and incoming edits within the same file", async () => {
-    const { remotePath, repositoryPath } = await createRepository();
-    const initial = "first\n" + "unchanged\n".repeat(12) + "last\n";
-    await Bun.write(join(remotePath, "content.txt"), initial);
-    await run(remotePath, ["git", "add", "content.txt"]);
-    await run(remotePath, ["git", "commit", "-m", "multiline"]);
-    await run(repositoryPath, ["git", "pull", "--ff-only"]);
-    await Bun.write(join(repositoryPath, "content.txt"), initial.replace("first", "local"));
-    await Bun.write(join(remotePath, "content.txt"), initial.replace("last", "incoming"));
-    await run(remotePath, ["git", "add", "content.txt"]);
-    await run(remotePath, ["git", "commit", "-m", "incoming"]);
-    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
-    expect(await Bun.file(join(repositoryPath, "content.txt")).text()).toBe(
-      initial.replace("first", "local").replace("last", "incoming"),
-    );
-    expect(await run(repositoryPath, ["git", "stash", "list"])).toBe("");
-  });
-
-  it("aborts a conflicting rebase and restores dirty edits without bootstrapping", async () => {
+  it("aborts a conflicting rebase without bootstrapping", async () => {
     const { remotePath, repositoryPath } = await createRepository();
     await Bun.write(join(repositoryPath, "content.txt"), "local committed\n");
     await run(repositoryPath, ["git", "add", "content.txt"]);
     await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
       "commit", "-m", "local"]);
-    await Bun.write(join(repositoryPath, "local.txt"), "dirty\n");
     const before = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
-    const status = await run(repositoryPath, ["git", "status", "--porcelain"]);
     await advanceRemote(remotePath);
     await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow("Command failed (exit code 1): git");
     expect(await run(repositoryPath, ["git", "rev-parse", "HEAD"])).toBe(before);
-    expect(await run(repositoryPath, ["git", "status", "--porcelain"])).toBe(status);
+    expect(await run(repositoryPath, ["git", "status", "--porcelain"])).toBe("");
     expect(await Bun.file(join(repositoryPath, "content.txt")).text()).toBe("local committed\n");
-    expect(await Bun.file(join(repositoryPath, "local.txt")).text()).toBe("dirty\n");
-    expect(await run(repositoryPath, ["git", "stash", "list"])).toBe("");
     expect(await run(repositoryPath, ["git", "diff", "--name-only", "--diff-filter=U"])).toBe("");
     expect(await Bun.file(join(repositoryPath, ".tmp/scheduled-update-recovery.json")).exists()).toBe(false);
-    expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).exists()).toBe(false);
-  });
-
-  it("preserves staged and unstaged edits and older stashes after restoration fails", async () => {
-    const { remotePath, repositoryPath } = await createRepository();
-    await Bun.write(join(repositoryPath, "local.txt"), "older stash\n");
-    await run(repositoryPath, ["git", "stash", "push", "-m", "user stash"]);
-    const previousStash = await run(repositoryPath, ["git", "stash", "list", "--format=%H"]);
-    await Bun.write(join(repositoryPath, "content.txt"), "staged local\n");
-    await run(repositoryPath, ["git", "add", "content.txt"]);
-    await Bun.write(join(repositoryPath, "content.txt"), "unstaged local\n");
-    const before = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
-    const staged = await run(repositoryPath, ["git", "diff", "--cached"]);
-    const unstaged = await run(repositoryPath, ["git", "diff"]);
-    await advanceRemote(remotePath);
-    await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow("rolled back");
-    expect(await run(repositoryPath, ["git", "rev-parse", "HEAD"])).toBe(before);
-    expect(await run(repositoryPath, ["git", "diff", "--cached"])).toBe(staged);
-    expect(await run(repositoryPath, ["git", "diff"])).toBe(unstaged);
-    expect(await run(repositoryPath, ["git", "stash", "list", "--format=%H"])).toBe(previousStash);
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).exists()).toBe(false);
   });
 
@@ -494,23 +429,20 @@ describe("scheduledUpdate", () => {
     expect(await Bun.file(join(repositoryPath, ".tmp/scheduled-update-recovery.json")).exists()).toBe(false);
   });
 
-  it("keeps the saved stash and stops future runs when rollback cannot restore it", async () => {
+  it("stops future runs when rollback fails", async () => {
     const { remotePath, repositoryPath } = await createRepository();
-    await Bun.write(join(repositoryPath, "local.txt"), "saved dirty edits\n");
+    await Bun.write(join(repositoryPath, "content.txt"), "local committed\n");
+    await run(repositoryPath, ["git", "add", "content.txt"]);
+    await run(repositoryPath, ["git", "-c", "user.name=Test Author", "-c", "user.email=test@example.invalid",
+      "commit", "-m", "local"]);
     const before = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
     await advanceRemote(remotePath);
-    const rejectedCommands = new Map([
-      ["apply", () => Promise.reject(new Error("stash application failed"))],
-    ]);
-    await expect(scheduledUpdate(repositoryPath, process.execPath, async (cmd) => (
-      rejectedCommands.get(cmd[cmd.indexOf("stash") + 1] ?? "")?.() ?? run(repositoryPath, cmd)
-    ))).rejects.toThrow("Recovery failed: stash application failed");
-    expect(await run(repositoryPath, ["git", "rev-parse", "HEAD"])).toBe(before);
-    const stash = await run(repositoryPath, ["git", "rev-parse", "refs/stash"]);
-    expect(await Bun.file(join(repositoryPath, ".tmp/scheduled-update-recovery.json")).json()).toEqual({
-      before, label: expect.any(String), stash,
-    });
-    expect(await run(repositoryPath, ["git", "show", `${stash}:local.txt`])).toBe("saved dirty edits");
+    await expect(scheduledUpdate(repositoryPath, process.execPath, async (cmd) => {
+      if (cmd.includes("--abort")) throw new Error("rebase abort failed");
+      return run(repositoryPath, cmd);
+    })).rejects.toThrow("Recovery failed: rebase abort failed");
+    expect(await Bun.file(join(repositoryPath, ".tmp/scheduled-update-recovery.json")).json()).toEqual({ before });
+    await run(repositoryPath, ["git", "rebase", "--abort"]);
     await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow(
       "An interrupted update needs recovery.",
     );

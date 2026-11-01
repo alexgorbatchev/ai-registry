@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-10-29 15:47
+  last_modified: 2026-11-01 12:18
   status: current
 ---
 
@@ -271,7 +271,8 @@ On the first removal or verification failure, stop the batch and retain its part
 ## Output and maintenance
 
 Set `AGENT=1`, `true`, or `yes` for compact JSON and untruncated help/errors. Other values use indented JSON,
-tree help trimmed to terminal width (100-column fallback), and concise errors. Agent help begins with the skill alert.
+tree help wrapped to `COLUMNS` or the terminal width (unwrapped when neither is known), and concise errors. Help text
+is never truncated. Agent help begins with the skill alert.
 Rust inspection inherits Cargo configuration and environment overrides, and disables rustup auto-installation
 with `RUSTUP_AUTO_INSTALL=0`. Other commands have no additional cleanup environment settings.
 Each nonempty artifact/worktree execution creates `.tmp/cleanup-*/execution.json` under root,

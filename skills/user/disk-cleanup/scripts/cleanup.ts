@@ -1,4 +1,4 @@
-import { Command, InvalidArgumentError, Option } from 'commander';
+import { Command, InvalidArgumentError, Option, type Help } from 'commander';
 import { assessDisk } from './assessDisk';
 import { realpath } from 'node:fs/promises';
 import { inspectDisk } from './inspectDisk';
@@ -304,32 +304,70 @@ scoped(
   );
 });
 
+const TREE_DESCRIPTION_COLUMN = 37;
+const MIN_DESCRIPTION_CELLS = 20;
+const STACKED_INDENT = '    ';
+// The indent and spacer Commander's formatItem puts around an option term.
+const OPTION_FRAME_CELLS = 4;
+
 if (isAgent)
   program.addHelpText('beforeAll', 'ALERT: Agents must read `AGENT=1 cleanup skill` before using this tool.\n');
+
+/** Human help wraps to COLUMNS or the terminal; with neither, it stays unwrapped. */
+function getHelpWidth(): number {
+  const columns = Number.parseInt(process.env.COLUMNS ?? '', 10);
+  return columns > 0 ? columns : (process.stdout.columns ?? Number.MAX_SAFE_INTEGER);
+}
+
+/** Lays out one tree row, moving the description under its label when its column is too narrow to read. */
+function formatTreeRow(helper: Help, width: number, label: string, rail: string, description: string): string[] {
+  const columnRoom = width - TREE_DESCRIPTION_COLUMN;
+  if (columnRoom < MIN_DESCRIPTION_CELLS || helper.displayWidth(label) >= TREE_DESCRIPTION_COLUMN) {
+    const indent = `${rail}${STACKED_INDENT}`;
+    const room = width - helper.displayWidth(indent);
+    const wrapped = helper.boxWrap(description, room).split('\n');
+    const [firstLabel = '', ...restLabel] = helper.boxWrap(label, room).split('\n');
+    return [firstLabel, ...restLabel.map((line) => `${indent}${line}`), ...wrapped.map((line) => `${indent}${line}`)];
+  }
+  const [first = '', ...rest] = helper.boxWrap(description, columnRoom).split('\n');
+  const padding = TREE_DESCRIPTION_COLUMN - helper.displayWidth(label);
+  return [
+    `${label}${' '.repeat(padding)}${first}`,
+    ...rest.map((line) => `${rail.padEnd(TREE_DESCRIPTION_COLUMN)}${line}`),
+  ];
+}
 
 function configureHelp(command: Command): void {
   command.configureHelp({
     formatHelp: (current, helper) => {
-      const width = process.stdout.columns || 100;
-      const lines = [`Usage: ${helper.commandUsage(current)}`, '', current.description(), ''];
+      const width = getHelpWidth();
+      helper.helpWidth = width;
+      helper.minWidthToWrap = 1;
+      const wrap = (text: string): string => (isAgent ? text : helper.boxWrap(text, width));
+      const lines = [wrap(`Usage: ${helper.commandUsage(current)}`), '', wrap(current.description()), ''];
       function tree(parent: Command, prefix: string): void {
         const children = helper.visibleCommands(parent);
         for (const [index, child] of children.entries()) {
           const isLast = index === children.length - 1;
           const marker = isAgent ? '* ' : isLast ? '╰─ ' : '├─ ';
           const label = `${prefix}${marker}${helper.subcommandTerm(child)}`;
-          lines.push(isAgent ? `${label}: ${child.description()}` : `${label.padEnd(36)} ${child.description()}`);
-          tree(child, `${prefix}${isAgent ? '  ' : isLast ? '   ' : '│  '}`);
+          const rail = `${prefix}${isAgent ? '  ' : isLast ? '   ' : '│  '}`;
+          if (isAgent) lines.push(`${label}: ${child.description()}`);
+          else lines.push(...formatTreeRow(helper, width, label, rail, child.description()));
+          tree(child, rail);
         }
       }
       tree(current, '');
+      const termWidth = helper.longestOptionTermLength(current, helper);
       for (const option of helper.visibleOptions(current)) {
-        lines.push(`${helper.optionTerm(option)}: ${helper.optionDescription(option)}`);
+        const term = helper.optionTerm(option);
+        const description = helper.optionDescription(option);
+        if (isAgent) lines.push(`${term}: ${description}`);
+        else if (width - termWidth - OPTION_FRAME_CELLS >= MIN_DESCRIPTION_CELLS) {
+          lines.push(helper.formatItem(term, termWidth, description, helper));
+        } else lines.push(...formatTreeRow(helper, width, `  ${term}`, '', description));
       }
-      return (
-        lines.map((line) => (isAgent || line.length <= width ? line : `${line.slice(0, width - 3)}...`)).join('\n') +
-        '\n'
-      );
+      return `${lines.join('\n')}\n`;
     },
   });
   for (const child of command.commands) configureHelp(child);

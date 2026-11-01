@@ -156,6 +156,38 @@ test('human help has no agent alert', () => {
   expect(result.stdout.split('\n')[0]).toBe('Usage: cleanup dependencies [options] [command]');
 });
 
+const words = (text: string): string[] => text.split(/[\s│├╰─]+/).filter(Boolean);
+
+test.each(['120', '60', '40', '20'])('human help keeps all of its text at width %s', (columns) => {
+  for (const args of [['--help'], ['disk', '--help'], ['dependencies', '--help']]) {
+    const unwrapped = cli(rootPath, args, '0');
+    const wrapped = cli(rootPath, args, '0', columns);
+    expect(wrapped.exitCode).toBe(0);
+    expect(words(wrapped.stdout)).toEqual(words(unwrapped.stdout));
+    expect(wrapped.stdout).toBe(cli(rootPath, args, '0', columns).stdout);
+    for (const line of wrapped.stdout.split('\n')) {
+      if (Bun.stringWidth(line) > Number(columns)) expect(words(line)).toHaveLength(1);
+    }
+  }
+});
+
+test('COLUMNS sets the wrap width and continuation lines keep their column', () => {
+  const lines = cli(rootPath, ['--help'], '0', '70').stdout.split('\n');
+  const isTreeRow = (line: string): boolean => /[├╰]─ /.test(line);
+  const treeSection = lines.slice(lines.findIndex(isTreeRow), lines.findLastIndex(isTreeRow));
+  const continuations = treeSection.filter((line) => !isTreeRow(line) && line.trim() !== '');
+  expect(continuations.length).toBeGreaterThan(0);
+  expect(new Set(continuations.map((line) => line.search(/[^│ ]/)))).toEqual(new Set([37]));
+  expect(lines.every((line) => Bun.stringWidth(line) <= 70)).toBe(true);
+});
+
+test('agent help is the same at every width', () => {
+  const baseline = cli(rootPath, ['--help'], '1').stdout;
+  for (const columns of ['20', '80', '500']) {
+    expect(cli(rootPath, ['--help'], '1', columns).stdout).toBe(baseline);
+  }
+});
+
 test('recent commits on another branch protect dependencies', async () => {
   const repositoryPath = await createRepository(rootPath, 'old');
   git(repositoryPath, ['checkout', '-b', 'recent-branch']);

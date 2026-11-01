@@ -43,10 +43,10 @@ export async function createRepository(rootPath: string, name: string, ageDays: 
   await Bun.write(join(repositoryPath, 'node_modules/package.txt'), 'dependency\n');
   return repositoryPath;
 }
-export function cli(rootPath: string, args: string[], agent: string = '1'): CliResult {
+export function cli(rootPath: string, args: string[], agent: string = '1', columns: string = ''): CliResult {
   const result = Bun.spawnSync(['bun', join(skillPath, 'scripts/cleanup.ts'), ...args], {
     cwd: rootPath,
-    env: { ...Bun.env, AGENT: agent },
+    env: { ...Bun.env, AGENT: agent, COLUMNS: columns },
     stdout: 'pipe',
     stderr: 'pipe',
   });

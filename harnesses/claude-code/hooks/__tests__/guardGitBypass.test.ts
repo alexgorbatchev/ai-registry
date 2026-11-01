@@ -40,6 +40,9 @@ const BLOCKED = [
   "bash -c 'git commit --no-verify -m skip'",
   "sh -lc 'git push --no-verify'",
   'eval "git push --no-verify"',
+  "bash <<'EOF'\ngit push --no-verify\nEOF",
+  "cat script | sh <<EOF\ngit push --no-verify\nEOF",
+  "cat > notes <<EOF\nsafe\nEOF\ngit push --no-verify",
 ];
 
 const ALLOWED = [
@@ -69,6 +72,10 @@ const ALLOWED = [
   "bash -c 'git status'",
   "just workspace test-gitleaks",
   "# git commit --no-verify",
+  "cat > script.sh <<'EOF'\ngit push --no-verify\nexport GIT_CONFIG_GLOBAL=/dev/null\nEOF",
+  "git commit -F- <<EOF\ngit push --no-verify\nEOF",
+  "python3 - <<'PY'\ngit push --no-verify\nPY",
+  "cat <<EOF\nEOF",
   "",
 ];
 

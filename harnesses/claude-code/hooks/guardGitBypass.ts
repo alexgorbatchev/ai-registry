@@ -10,6 +10,9 @@ const GISTS_PATH = /(?:^|\/)gists(?:\/|$)/;
 const API_INLINE_METHOD = /^(?:-X|--method=)(.+)$/;
 const API_BODY_OPTION = /^(?:-f|-F|--field|--raw-field|--input)(?:=|$)/;
 
+const HEREDOC = /^(.*<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\2.*)\n(?:[\s\S]*?\n)?[ \t]*\3[ \t]*$/gm;
+const SHELL_INPUT = /(?:^|[|;&]\s*)(?:\S*\/)?(?:bash|dash|sh|zsh)(?:\s|$)/;
+
 const WRAPPERS = new Set(["command", "env", "exec", "nohup", "sudo", "time", "xargs"]);
 const SHELLS = new Set(["bash", "dash", "sh", "zsh"]);
 const GIT_OPTIONS_WITH_VALUE = new Set(["-C", "--exec-path", "--git-dir", "--namespace", "--work-tree"]);
@@ -107,10 +110,16 @@ function checkCommand(words: string[]): string | undefined {
   return undefined;
 }
 
+/** Drop heredoc bodies, which are file content unless a shell reads them. */
+function stripHeredocs(command: string): string {
+  return command.replace(HEREDOC, (match, line: string) => (SHELL_INPUT.test(line) ? match : line));
+}
+
 /** Return why a shell command would skip the publication gate, if it would. */
 export function findViolation(command: string): string | undefined {
+  const script = stripHeredocs(command);
   // Shell lines end commands, but the parser treats newlines as plain whitespace.
-  for (const source of new Set([command, ...command.split("\n")])) {
+  for (const source of new Set([script, ...script.split("\n")])) {
     for (const words of splitCommands(source)) {
       const violation = checkCommand(words);
       if (violation !== undefined) return violation;

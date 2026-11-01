@@ -7,6 +7,8 @@ const HOOK_KEY = /^hook\./i;
 const SHORT_NO_VERIFY = /^-[A-Za-z]*n[A-Za-z]*$/;
 const SHELL_COMMAND_OPTION = /^-[A-Za-z]*c$/;
 const GISTS_PATH = /(?:^|\/)gists(?:\/|$)/;
+const API_INLINE_METHOD = /^(?:-X|--method=)(.+)$/;
+const API_BODY_OPTION = /^(?:-f|-F|--field|--raw-field|--input)(?:=|$)/;
 
 const WRAPPERS = new Set(["command", "env", "exec", "nohup", "sudo", "time", "xargs"]);
 const SHELLS = new Set(["bash", "dash", "sh", "zsh"]);
@@ -68,10 +70,21 @@ function checkGit(args: string[]): string | undefined {
   return undefined;
 }
 
+/** Resolve the gh api method: explicit when given, otherwise POST once a body field is present. */
+function getApiMethod(args: string[]): string {
+  for (const [index, word] of args.entries()) {
+    if (word === "-X" || word === "--method") return (args[index + 1] ?? "").toUpperCase();
+    const inline = word.match(API_INLINE_METHOD)?.[1];
+    if (inline !== undefined) return inline.toUpperCase();
+  }
+  return args.some((word) => API_BODY_OPTION.test(word)) ? "POST" : "GET";
+}
+
 function checkGitHub(args: string[]): string | undefined {
-  if (args[0] === "gist" && GIST_WRITES.has(args[1] ?? "")) return "publishing a gist, which no scanner inspects";
-  if (args[0] === "api" && args.some((word) => GISTS_PATH.test(word))) return "publishing a gist, which no scanner inspects";
-  return undefined;
+  const isGistWrite = args[0] === "gist"
+    ? GIST_WRITES.has(args[1] ?? "")
+    : args[0] === "api" && args.some((word) => GISTS_PATH.test(word)) && getApiMethod(args) !== "GET";
+  return isGistWrite ? "publishing a gist, which no scanner inspects" : undefined;
 }
 
 function checkCommand(words: string[]): string | undefined {

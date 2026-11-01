@@ -8,7 +8,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-24 09:47
-  last_modified: 2026-10-29 12:54
+  last_modified: 2026-11-01 09:51
   status: current
 ---
 
@@ -24,7 +24,7 @@ Web frontends and non-CLI services are outside this skill's scope. README-only w
 
 1. **Dual-Mode Output via `AGENT=1`**: Detect the `AGENT=1` environment variable. When unset or `0`, produce clean, polished human-facing output. When `1` (or truthy), switch to token-conservative agent-facing output.
 2. **Command Structure (`cli subject [subject] verb ...`)**: Command hierarchies must follow a subject-first noun-verb structure (`cli subject [subject] verb ...`) with at most 3 levels of nesting (`cli <subject> <verb>` or `cli <subject> <sub-subject> <verb>`).
-3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it. Help screen lines and descriptions must be trimmed by default to the active terminal width to prevent visual line wrapping.
+3. **Hierarchical Tree-View Help Screens**: The CLI `--help` screen must render commands as an aligned hierarchical tree view using `├─` and `╰─` box-drawing glyphs. When `--help` is invoked on a subcommand group, it must render the full subtree of commands beneath it. Human help wraps to the active terminal width with aligned continuation lines. Help text is never truncated in any mode.
 4. **Strict Ban on Custom or Stdlib Arg Parsers**: Never parse `argv` / `os.Args` / `sys.argv` manually with custom loops or regexes. Never use primitive stdlib parsers (e.g., Go `flag`, Python `getopt`). Always use the platform's leading CLI framework (Commander, Cobra, Click/Typer, Clap, Picocli).
 5. **Mandatory Task Automation (`justfile`)**: Every CLI project must use `just` with a `justfile`. It MUST define at least `run`, `run-ai` (with `AGENT=1`), and `test`. When the repository's primary deliverable is an application (such as a desktop app or service) that ships a companion CLI, `run` launches the application and the CLI recipes are `cli` and `cli-ai` instead (see section 4). In multi-package repositories or workspaces, the root `justfile` must link all nested child `justfile`s as modules (`mod <name> '<path>'`).
 6. **GitHub Releases Distribution Only**: Ship end users prebuilt binaries from GitHub Releases. Never require them to build from source, and never use the `gh` CLI in end-user instructions.
@@ -77,7 +77,7 @@ isAgent = (env.AGENT === "1" || env.AGENT === "true" || env.AGENT === "yes")
 | **Hierarchies / Trees** | ASCII / Box-drawing tree glyphs (`├──`, `└──`, `│`). | Indented bullets (`* `, `- `) with minimal nesting spaces. |
 | **Tabular Data** | Well-formatted box / ASCII tables using dedicated external table libraries. | Flat key-value pairs, TSV, or concise line-by-line output. **No tables**. |
 | **Whitespace & Padding** | Formatted spacing, aligned columns, visual breathing room. | Minimal whitespace. **No alignment spaces or padding**. |
-| **Descriptions & Help** | Non-technical language, user-friendly, trimmed to terminal width by default, no internal implementation details. | May include technical implementation details, exact types, error codes, and stack traces. Full untruncated content. |
+| **Descriptions & Help** | Non-technical language, user-friendly, wrapped to terminal width and never truncated, no internal implementation details. | May include technical implementation details, exact types, error codes, and stack traces. Full content, never truncated. |
 | **Error Handling** | Concise user-facing error message with actionable resolution hints. | Full error details, underlying cause, internal code, and stack trace if relevant. |
 
 For concrete implementation patterns in TypeScript, Go, Python, and Rust, see [references/dual-mode-patterns.md](references/dual-mode-patterns.md).
@@ -124,18 +124,20 @@ engine-cli
 
 The CLI help output (e.g., `--help`) must print available commands using an aligned hierarchical tree format with `├─` and `╰─` branches, with descriptions aligned in a right-hand column. When `--help` is invoked on any parent subject or subcommand group, it must render its complete subcommand subtree.
 
-#### Terminal Width Trimming by Default
+#### Terminal Width Wrapping
 
-- **Trim to Terminal Width**: Help screen lines and command descriptions must be trimmed/truncated by default to match the active terminal width (query `process.stdout.columns`, `COLUMNS`, `term.GetWinsize`, `shutil.get_terminal_size()`, or terminal width fallback such as 80 or 100 columns when stdout is not a TTY).
-- **Prevent Wrapping Breaks**: Descriptions that exceed the available terminal width must be truncated with a trailing ellipsis (`...`) so that multi-line text wrapping never breaks tree column alignment or visual structure.
-- **Agent Mode Exemption**: In token-conservative agent mode (`AGENT=1`), terminal-width truncation and padding are omitted in favor of compact, untruncated bulleted lines for machine inspection.
+- **Wrap to Terminal Width**: Wrap human help between words at the active terminal width (query `process.stdout.columns`, `COLUMNS`, `term.GetWinsize`, `shutil.get_terminal_size()`, or use a fallback such as 80 or 100 columns when stdout is not a TTY).
+- **Align Continuation Lines**: Start continuation lines at the description column and keep tree branches connected, so wrapping preserves column alignment and visual structure.
+- **Never Truncate**: Show all help text in full. Never clip lines, add an ellipsis, or offer an option to do either.
+- **Full Agent Help**: In agent mode (`AGENT=1`), always print complete help as compact, unwrapped bulleted lines. No option, `COLUMNS` value, or terminal size may shorten it.
 
 #### Root Help (`cli --help`) Example
 
 ```
 Available Commands:
   artwork                                              Manage and fix album cover artwork
-  ├─ normalize                                         Crop album cover art to 1:1 square for DJ jog wheels a...
+  ├─ normalize                                         Crop album cover art to 1:1 square for DJ jog wheels and
+  │                                                    media players
   ╰─ prune                                             Clean up unused cover art and reclaim disk space
   backup                                               Create a safety backup snapshot of your Engine DJ library
   playlist                                             Inspect and manage playlists and folders
@@ -148,14 +150,17 @@ Available Commands:
      ├─ add <playlist> <track...>                      Add track(s) to a playlist
      ├─ move <src-playlist> <dst-playlist> <track...>  Move track(s) from one playlist to another
      ╰─ rm <playlist> <track...>                       Remove track(s) from a playlist
-  restore <backup-dir>                                 Restore your Engine DJ library from a previous backup ...
-  sync                                                 Update song information in Engine DJ from audio files ...
+  restore <backup-dir>                                 Restore your Engine DJ library from a previous backup
+                                                       snapshot
+  sync                                                 Update song information in Engine DJ from audio files on
+                                                       disk
   track                                                Manage audio files and collection tracks
   ├─ add <file-path...>                                Import audio file(s) into your collection
   ├─ move <track-id|path> <dest-path>                  Move an audio file on disk and update its collection path
   ├─ relocate                                          Batch-fix audio file paths across drives or directories
   ╰─ rm <track-id|path...>                             Remove track(s) from your collection
-  verify                                               Check your library for missing songs, broken links, an...
+  verify                                               Check your library for missing songs, broken links, and
+                                                       duplicates
 ```
 
 #### Subcommand Group Help (`cli playlist --help`) Example
@@ -285,7 +290,7 @@ Before publishing or finalizing any CLI tool, verify:
 
 - [ ] Command hierarchy follows `cli subject [subject] verb ...` pattern with a maximum depth of 3 levels.
 - [ ] Root help screen prints available commands as an aligned hierarchical tree view using `├─` and `╰─`.
-- [ ] Help screen output and command descriptions are trimmed by default to the active terminal width to prevent line wrapping.
+- [ ] Human help wraps to the active terminal width with aligned continuation lines, and help text is never truncated in any mode.
 - [ ] Subcommand group help screens display their complete command subtree with aligned descriptions.
 - [ ] `AGENT=1` detection is implemented across all output pathways.
 - [ ] The agent skill lives at `skills/<cli>/SKILL.md` in the repository root, with no embedded or duplicate copy.

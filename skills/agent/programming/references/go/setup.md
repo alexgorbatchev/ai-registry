@@ -175,7 +175,7 @@ Cobra's default help screens have limitations that `cobra-help-tree/v4` replaces
    - When `AGENT=1` is present in the environment, help automatically switches from ASCII tree graphics to compact, structured YAML-like key-value output designed for AI agents and scripts.
    - Attach machine metadata via `TechInfo.Metadata` and `TechInfo.MutatesDB` in the catalog.
 5. **Dynamic Terminal Width Protection**:
-   - Detects terminal width and wraps long descriptions inside their column, never truncating them that breaks column alignment.
+   - Detects terminal width and wraps long descriptions inside their column, never truncating them.
 6. **Clean Output Stream Separation**:
    - User-requested `--help` writes to stdout (pipe-friendly: `mytool --help | less`).
    - Flag/argument syntax errors and usage write to stderr where diagnostics belong.

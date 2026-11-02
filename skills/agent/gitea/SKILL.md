@@ -4,7 +4,7 @@ description: Create and manage Gitea repositories and inspect Gitea Actions usin
 author: alexgorbatchev
 metadata:
   created_on: 2026-05-06 11:40
-  last_modified: 2026-10-16 16:42
+  last_modified: 2026-11-01 15:30
   status: current
 ---
 # gitea
@@ -15,6 +15,7 @@ Use this workflow for Gitea repository creation, initial push, and Gitea Actions
 
 - Always create repositories as **private**.
 - Do not create or suggest public repositories on self-hosted Gitea hosts.
+- Before a direct API call, read the instance's `/swagger.v1.json`. Self-hosted instances may run Forgejo, a Gitea fork whose API differs, so that document overrides Gitea's documentation.
 
 ## Tea CLI workflow
 

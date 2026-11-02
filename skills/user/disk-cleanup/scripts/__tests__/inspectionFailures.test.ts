@@ -3,6 +3,7 @@ import { chmod, mkdir, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { inspectDisk } from '../inspectDisk';
 import { assessDisk } from '../assessDisk';
+import { scanAssessment } from '../scanAssessment';
 import { systemAssessmentRoots } from '../systemAssessmentRoots';
 import { runInspectionCommand } from '../runInspectionCommand';
 import { resolveGnuCommand } from '../resolveGnuCommand';
@@ -83,10 +84,17 @@ test('system assessment includes temporary and library paths with explicit scope
     30,
     async (args) => {
       commands.push(args);
-      if (args.at(-1) === '/Library') return { stdout: '4096\t/Library/readable\0', stderr: 'restricted', exitCode: 1 };
       return runInspectionCommand(args);
     },
     ['/Library'],
+    async (path, size, days) => {
+      const data = await scanAssessment(root, size, days);
+      if (path === '/Library') {
+        data.largePaths = [{ bytes: 4096, path: '/Library/readable' }];
+        data.inventory.errors.push({ repository: '/Library', message: 'restricted' });
+      }
+      return data;
+    },
   );
   expect(roots).toEqual([
     '/private/var/folders/example/T',
@@ -100,7 +108,7 @@ test('system assessment includes temporary and library paths with explicit scope
     name: 'system:/Library',
     isComplete: false,
     data: [{ bytes: 4096, path: '/Library/readable' }],
-    errors: ['du exited 1: restricted'],
+    errors: ['/Library: restricted'],
   });
-  expect(commands.some((args) => args.includes('/Library'))).toBe(true);
+  expect(commands.some((args) => args[0] === 'du')).toBe(false);
 });

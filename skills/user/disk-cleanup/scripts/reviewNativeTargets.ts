@@ -1,33 +1,40 @@
 import { lstat, mkdir, mkdtemp, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { diskBytes, ensureNoRepositories, ensureUntracked, owningRepository, validatePath } from './filesystemUtils';
+import { ensureUntracked, owningRepository, validatePath } from './filesystemUtils';
 import { assertDisjoint } from './inventory';
 import { inspectNativeProcesses } from './inspectNativeProcesses';
 import { runInspectionCommand } from './runInspectionCommand';
 import type { NativeAction, NativeManifest, NativeReview } from './nativeTypes';
 import type { InspectionRunner, PreservedArtifact } from './types';
 
-export async function nativeIdentity(path: string): Promise<string> {
-  const hash = createHash('sha256');
-  const device = (await lstat(path)).dev;
-  async function walk(current: string): Promise<void> {
-    const info = await lstat(current);
-    if (info.dev !== device) throw new Error(`Target crosses a filesystem boundary: ${current}`);
-    hash.update(JSON.stringify([current, info.dev, info.ino, info.ctimeMs, info.mtimeMs, info.size]));
-    if (info.isDirectory()) for (const name of (await readdir(current)).sort()) await walk(join(current, name));
-  }
-  await walk(path);
-  return hash.digest('hex');
-}
-
-export async function validateNativeTarget(root: string, input: string): Promise<string> {
+export async function inspectNativeTarget(
+  root: string,
+  input: string,
+): Promise<{ path: string; identity: string; bytes: number }> {
   const path = await validatePath(root, input);
-  if (!(await lstat(path)).isDirectory()) throw new Error(`Native target must be a directory: ${path}`);
+  const rootInfo = await lstat(path);
+  if (!rootInfo.isDirectory()) throw new Error(`Native target must be a directory: ${path}`);
   const repository = await owningRepository(dirname(path));
   await ensureUntracked(repository, path);
-  await ensureNoRepositories(path);
-  return path;
+  const hash = createHash('sha256');
+  const links = new Set<number>();
+  let bytes = 0;
+  async function walk(current: string): Promise<void> {
+    const info = current === path ? rootInfo : await lstat(current);
+    if (info.dev !== rootInfo.dev) throw new Error(`Target crosses a filesystem boundary: ${current}`);
+    hash.update(JSON.stringify([current, info.dev, info.ino, info.ctimeMs, info.mtimeMs, info.size]));
+    if (info.nlink > 1 && !info.isDirectory()) {
+      if (!links.has(info.ino)) bytes += info.blocks * 512;
+      links.add(info.ino);
+    } else bytes += info.blocks * 512;
+    if (!info.isDirectory()) return;
+    const names = (await readdir(current)).sort();
+    if (names.includes('.git')) throw new Error(`Contains a Git repository: ${current}`);
+    for (const name of names) await walk(join(current, name));
+  }
+  await walk(path);
+  return { path, identity: hash.digest('hex'), bytes };
 }
 
 export async function createNativeLog(root: string): Promise<string> {
@@ -54,10 +61,9 @@ export async function reviewNativeTargets(
   if (paths.some((path) => path === join(root, '.tmp'))) throw new Error('Preserve the root .tmp log container');
   for (const path of paths) {
     try {
-      await validateNativeTarget(root, path);
-      const identity = await nativeIdentity(path);
-      const bytes = await diskBytes(path);
-      if (identity !== (await nativeIdentity(path))) throw new Error(`Target changed during review: ${path}`);
+      const { identity, bytes } = await inspectNativeTarget(root, path);
+      if (identity !== (await inspectNativeTarget(root, path)).identity)
+        throw new Error(`Target changed during review: ${path}`);
       actions.push({ path, identity, bytes, repository: null, kind: 'cache' });
     } catch (error) {
       preserved.push({ path, reason: String(error) });

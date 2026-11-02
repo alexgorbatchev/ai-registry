@@ -7,7 +7,7 @@ export type Dependency = {
   eligible: boolean;
   reason: string;
 };
-export type Workspace = { path: string; repository: string | null };
+export type Workspace = { path: string; repository: string | null; isSymlink?: boolean };
 export type Inventory = {
   repositories: string[];
   dependencies: Workspace[];

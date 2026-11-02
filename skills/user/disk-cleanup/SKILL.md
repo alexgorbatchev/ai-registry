@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-01 12:18
+  last_modified: 2026-11-02 11:28
   status: current
 ---
 
@@ -114,6 +114,10 @@ any recorded error returns exit code `1`.
 `staleFolders`, and `docker`. Overview and large-path data are arrays of `{bytes, path}` sorted largest first.
 The overview includes directories through depth three regardless of size; large paths include files and directories
 at every depth meeting `--size`. These are overlapping allocations, not independent reclaimable totals.
+Reuse one filesystem traversal per disjoint scope for overview, large paths, discovery, allocations, and stale folders.
+Coalesce overlapping roots on the same filesystem; keep explicitly selected mount roots separate. Git activity/status,
+filesystem capacity, and Docker queries remain separate. Assessment metadata is a snapshot; removal commands still
+revalidate their targets immediately before deletion.
 Filesystem data is raw `df` output. Dependency, worktree, and stale-folder data retain their list-command JSON.
 Docker data contains individual command reports for context, endpoint, data root, usage, verbose details, containers,
 container IDs, and mounts when containers exist. All daemon queries use the initially selected context; inspect its
@@ -179,24 +183,27 @@ browser staging clones, and application caches. A location or runtime-looking na
    selections, and deletion of root's `.tmp`. Tracked files, embedded repositories, and active targets are preserved
    with reasons. Inspection uncertainty aborts the review. It may record safe siblings alongside blocked entries.
 2. Read the saved manifest's `actions`, `preserved`, and `processWarnings`, or request it with `--verbose`. Actions contain allocation and a
-   SHA-256 identity derived from every entry's path, device, inode, size, and change/modification times. Parent
+   SHA-256 identity derived from every entry's path, device, inode, size, and change/modification times.
+   Allocation, identity, and embedded-repository checks share one traversal per validation. Parent
    entry lists establish the baseline for detecting later arrivals. The review writes only `.tmp/native-cleanup-*/manifest.json`.
 3. Run `native remove <manifest> --root <container>` to validate the saved batch without writing or deleting.
    Obtain missing user authorization for its concrete actions. Do not edit a manifest to expand authorization;
    create a fresh review when scope or contents change.
-4. Add `--execute` within existing authorization. Revalidate the entire batch before the first deletion, then
-   recheck each target's contents/identity, process use, and identity again before native GNU `rm -r -- <exact-path>`.
-   Preserve newly active targets. Stop at the first validation, process, removal, or verification failure.
+4. Add `--execute` within existing authorization. Revalidate the entire selection before the first deletion.
+   Process batches of at most 32 targets and 16 KiB of path arguments. Take one fresh process snapshot per batch,
+   preserve newly active targets, then revalidate every idle target before one native GNU `rm -r -- <exact-paths...>`.
+   A failed removal can still delete other targets in that batch; verify every operand and record all confirmed
+   removals. Stop before the next batch on any validation, process, removal, or verification failure.
    Save command exit statuses, selected actions, verified removals, preserved entries, failure, and before/after
    available-byte `df` output in a separate `.tmp/native-cleanup-*/execution.json`, replacing the receipt atomically
-   after each removal. Retain the original manifest and partial receipt on failure.
+   before and after each batch. Retain the original manifest and partial receipt on failure.
 5. Read the receipt or `--verbose` output and report `removed`, `preserved`, `newEntries` in reviewed parent directories, and `failure` separately. Verify
    removed paths are still absent. Report `freeBeforeBytes`, `freeAfterBytes`, and `reclaimedBytes` as the observed
    filesystem change, separate from allocation estimates. Concurrent writes may make this delta negative.
 
 Global `lsof -nP -F0pn` snapshots cover visible open/mapped files, executables, and working directories at review
-and immediately before each removal. Normalize macOS `/var` aliases and conservatively preserve ambiguous escaped
-names. Related mount warnings and malformed/failed snapshots block cleanup; unrelated mount warnings are recorded.
+and immediately before each batch's final validation and removal. Normalize macOS `/var` aliases and conservatively
+preserve ambiguous escaped names. Related mount warnings and malformed/failed snapshots block cleanup; unrelated mount warnings are recorded.
 Process visibility is limited by the invoking user's permissions. Snapshots and repeated identity checks cannot
 lock out a producer that starts or writes afterward; coordinate stopping the producer before cleanup when needed.
 Do not weaken Git guards to remove copied repositories. Review source changes through a separate authorized workflow.

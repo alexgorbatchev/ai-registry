@@ -1,7 +1,7 @@
 import { realpath } from 'node:fs/promises';
 import { diskBytes, git, isWithin, validatePath } from './filesystemUtils';
 import { inventory } from './inventory';
-import type { InspectionError, Worktree, WorktreeInspection, WorktreeReport } from './types';
+import type { InspectionError, Inventory, Worktree, WorktreeInspection, WorktreeReport } from './types';
 
 export async function registeredWorktrees(repository: string): Promise<Worktree[]> {
   const output = await git(repository, ['worktree', 'list', '--porcelain', '-z']);
@@ -42,8 +42,12 @@ async function statusEntries(path: string) {
   };
 }
 
-export async function inspectWorktrees(root: string): Promise<WorktreeInspection> {
-  const items = await inventory(root);
+export async function inspectWorktrees(
+  root: string,
+  sharedInventory?: Inventory,
+  measure: (path: string) => Promise<number> = diskBytes,
+): Promise<WorktreeInspection> {
+  const items = sharedInventory ?? (await inventory(root));
   const known = new Map<string, WorktreeReport>();
   const commonDirectories = new Set<string>();
   const errors: InspectionError[] = [...items.errors];
@@ -68,7 +72,7 @@ export async function inspectWorktrees(root: string): Promise<WorktreeInspection
         };
         try {
           if (!worktree.isPrunable) {
-            report.bytes = await diskBytes(worktree.path);
+            report.bytes = await measure(worktree.path);
             Object.assign(report, await statusEntries(worktree.path));
           }
         } catch (error) {
@@ -85,7 +89,7 @@ export async function inspectWorktrees(root: string): Promise<WorktreeInspection
     if (known.has(workspace.path)) continue;
     let bytes: number | null = null;
     try {
-      bytes = await diskBytes(workspace.path);
+      bytes = await measure(workspace.path);
     } catch (error) {
       errors.push({ repository: workspace.path, message: String(error) });
     }

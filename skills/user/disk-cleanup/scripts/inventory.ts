@@ -56,8 +56,10 @@ export async function inspectDependencies(
   root: string,
   days: number,
   onError: (error: InspectionError) => void = () => {},
+  sharedInventory?: Inventory,
+  measure: (path: string) => Promise<number> = diskBytes,
 ): Promise<Dependency[]> {
-  const items = await inventory(root);
+  const items = sharedInventory ?? (await inventory(root));
   for (const error of items.errors) onError(error);
   const activity = new Map<string, number | null>();
   const result: Dependency[] = [];
@@ -69,8 +71,8 @@ export async function inspectDependencies(
     let eligible: boolean = false;
     let reason: string = 'no owning Git repository';
     try {
-      isSymlink = (await lstat(item.path)).isSymbolicLink();
-      bytes = await diskBytes(item.path);
+      isSymlink = item.isSymlink ?? (await lstat(item.path)).isSymbolicLink();
+      bytes = await measure(item.path);
       if (isSymlink) reason = 'symbolic link';
       else if (item.repository) {
         if (!activity.has(item.repository)) activity.set(item.repository, await latestGitActivity(item.repository));

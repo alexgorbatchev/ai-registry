@@ -4,7 +4,7 @@ import { ensureAbsent, isWithin, validatePath } from './filesystemUtils';
 import { assertDisjoint } from './inventory';
 import { inspectNativeProcesses } from './inspectNativeProcesses';
 import { readNativeManifest } from './readNativeManifest';
-import { createNativeLog, nativeIdentity, validateNativeTarget } from './reviewNativeTargets';
+import { createNativeLog, inspectNativeTarget } from './reviewNativeTargets';
 import { runInspectionCommand } from './runInspectionCommand';
 import type { NativeAction, NativeRemoval } from './nativeTypes';
 import type { InspectionRunner } from './types';
@@ -31,8 +31,7 @@ export async function removeNativeTargets(
   }
   for (const scope of manifest.scopes) if (scope.path !== root) await validatePath(root, scope.path);
   async function validate(action: NativeAction): Promise<void> {
-    await validateNativeTarget(root, action.path);
-    if ((await nativeIdentity(action.path)) !== action.identity)
+    if ((await inspectNativeTarget(root, action.path)).identity !== action.identity)
       throw new Error(`Target changed since review: ${action.path}`);
   }
   // A replacement or newly embedded repository invalidates the entire batch before the first removal.
@@ -75,20 +74,36 @@ export async function removeNativeTargets(
     result.before = await capacity();
     result.freeBeforeBytes = Number(result.before.trim().split(/\s+/).at(-1));
     await persist();
-    for (const action of manifest.actions) {
-      await validate(action);
-      const processes = await inspectNativeProcesses([action.path], recordedRunner);
-      if (processes.active.length) {
-        result.preserved.push({ path: action.path, reason: 'Became active since review' });
-        await persist();
-        continue;
+    for (const batch of nativeBatches(manifest.actions)) {
+      const processes = await inspectNativeProcesses(
+        batch.map((action) => action.path),
+        recordedRunner,
+      );
+      const active = new Set(processes.active);
+      const idle = batch.filter((action) => !active.has(action.path));
+      for (const path of processes.active) result.preserved.push({ path, reason: 'Became active since review' });
+      // Validate the whole idle batch after the snapshot, before launching a single removal command.
+      for (const action of idle) await validate(action);
+      await persist();
+      if (!idle.length) continue;
+      const failures: string[] = [];
+      try {
+        const removal = await recordedRunner(['rm', '-r', '--', ...idle.map((action) => action.path)]);
+        if (removal.exitCode !== 0)
+          failures.push(`rm failed (${removal.exitCode}) for batch: ${removal.stderr.trim()}`);
+      } catch (error) {
+        failures.push(`Removal command failed: ${String(error)}`);
       }
-      await validate(action);
-      const removal = await recordedRunner(['rm', '-r', '--', action.path]);
-      if (removal.exitCode !== 0)
-        throw new Error(`rm failed (${removal.exitCode}) for ${action.path}: ${removal.stderr.trim()}`);
-      await ensureAbsent(action.path);
-      result.removed.push(action.path);
+      // rm can remove some operands even when it fails. Reconcile all of them before stopping.
+      for (const action of idle) {
+        try {
+          await ensureAbsent(action.path);
+          result.removed.push(action.path);
+        } catch (error) {
+          failures.push(String(error));
+        }
+      }
+      if (failures.length) throw new Error(failures.join('; '));
       await persist();
     }
   } catch (error) {
@@ -109,4 +124,21 @@ export async function removeNativeTargets(
   }
   await persist();
   return result;
+}
+
+function* nativeBatches(actions: NativeAction[]): Generator<NativeAction[]> {
+  let batch: NativeAction[] = [];
+  let bytes = 0;
+  for (const action of actions) {
+    const pathBytes = Buffer.byteLength(action.path) + 1;
+    if (pathBytes > 16384) throw new Error(`Target path exceeds batch argument limit: ${action.path}`);
+    if (batch.length && (batch.length === 32 || bytes + pathBytes > 16384)) {
+      yield batch;
+      batch = [];
+      bytes = 0;
+    }
+    batch.push(action);
+    bytes += pathBytes;
+  }
+  if (batch.length) yield batch;
 }

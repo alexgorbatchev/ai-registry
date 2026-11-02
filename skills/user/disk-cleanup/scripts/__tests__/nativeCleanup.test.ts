@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
-import { mkdir, open, rename, readdir, symlink } from 'node:fs/promises';
+import { link, mkdir, open, rename, readdir, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { cli, createRepository, createRoot, disposeRoot } from './helpers';
-import { reviewNativeTargets } from '../reviewNativeTargets';
+import { inspectNativeTarget, reviewNativeTargets } from '../reviewNativeTargets';
 import { removeNativeTargets } from '../removeNativeTargets';
 import { runInspectionCommand } from '../runInspectionCommand';
+import { diskBytes } from '../filesystemUtils';
 
 let root: string;
 beforeEach(async () => {
@@ -67,27 +68,31 @@ test('native removal rejects replacement targets from a recorded preview', async
   expect(await Bun.file(join(root, 'cache/new-data')).text()).toBe('new');
 });
 
-test('native removal stops at the first partial deletion and retains its receipt and new entries', async () => {
-  await mkdir(join(root, 'cache/first'), { recursive: true });
-  await mkdir(join(root, 'cache/second'));
-  await mkdir(join(root, 'cache/third'));
-  await Bun.write(join(root, 'cache/second/data'), 'keep');
-  const review = await reviewNativeTargets(root, ['cache/first', 'cache/second', 'cache/third']);
+test('native removal reconciles a partially failed batch and leaves later batches untouched', async () => {
+  const paths = Array.from({ length: 35 }, (_, index) => join(root, `cache/${index}`));
+  for (const path of paths) await mkdir(path, { recursive: true });
+  await Bun.write(join(paths[1]!, 'data'), 'keep');
+  const review = await reviewNativeTargets(root, paths);
+  let removals = 0;
   const result = await removeNativeTargets(root, review.manifestPath, true, async (args) => {
-    if (args[0] === 'rm' && args.at(-1) === join(root, 'cache/second')) {
+    if (args[0] === 'rm') {
+      removals++;
+      await runInspectionCommand(['rm', '-r', '--', ...args.slice(3).filter((path) => path !== paths[1])]);
       await mkdir(join(root, 'cache/new-runtime'));
       return { stdout: '', stderr: 'permission denied', exitCode: 1 };
     }
     return runInspectionCommand(args);
   });
-  expect(result.removed).toEqual([join(root, 'cache/first')]);
-  expect(result.failure).toBe(`Error: rm failed (1) for ${root}/cache/second: permission denied`);
+  expect(removals).toBe(1);
+  expect(result.removed).toEqual(paths.slice(0, 32).filter((path) => path !== paths[1]));
+  expect(result.failure).toContain('rm failed (1) for batch: permission denied');
+  expect(result.failure).toContain(`Removal verification failed: ${paths[1]}`);
   expect(result.newEntries).toEqual([join(root, 'cache/new-runtime')]);
-  expect((await readdir(join(root, 'cache'))).sort()).toEqual(['new-runtime', 'second', 'third']);
+  expect((await readdir(join(root, 'cache'))).sort()).toEqual(['1', '32', '33', '34', 'new-runtime']);
   expect(await Bun.file(result.logPath ?? '').json()).toEqual(result);
   expect(result.before).not.toBeNull();
   expect(result.after).not.toBeNull();
-});
+}, 20000);
 
 test('native removal preserves a target opened after review and removes its idle sibling', async () => {
   await mkdir(join(root, 'cache/active'), { recursive: true });
@@ -126,4 +131,80 @@ test('native review rejects symlink ancestors and aborts on uncertain process in
     reviewNativeTargets(root, ['cache'], async () => ({ stdout: '', stderr: 'access denied', exitCode: 1 })),
   ).rejects.toThrow('Process inspection is incomplete: access denied');
   expect((await readdir(root)).sort()).toEqual(['alias', 'cache']);
+});
+
+test('native removal batches process snapshots and commands while refreshing activity for later batches', async () => {
+  const paths = Array.from({ length: 35 }, (_, index) => join(root, `cache/${index}`));
+  for (const path of paths) {
+    await mkdir(path, { recursive: true });
+    await Bun.write(join(path, 'data'), 'cache');
+  }
+  const review = await reviewNativeTargets(root, paths);
+  let snapshots = 0;
+  const removals: string[][] = [];
+  const result = await removeNativeTargets(root, review.manifestPath, true, async (args) => {
+    if (args[0] === 'lsof') {
+      snapshots++;
+      return { stdout: `p123\0n${snapshots === 2 ? paths[34] : '/outside'}/data\0`, stderr: '', exitCode: 0 };
+    }
+    if (args[0] === 'rm') removals.push(args.slice(3));
+    return runInspectionCommand(args);
+  });
+  expect(result.failure).toBeNull();
+  expect(snapshots).toBe(2);
+  expect(removals.map((batch) => batch.length)).toEqual([32, 2]);
+  expect(result.removed).toEqual(paths.slice(0, 34));
+  expect(result.preserved).toEqual([{ path: paths[34]!, reason: 'Became active since review' }]);
+  expect(await Bun.file(join(paths[34]!, 'data')).text()).toBe('cache');
+  expect(await Bun.file(result.logPath!).json()).toEqual(result);
+}, 20000);
+
+test('a change during the batch process snapshot stops every removal in that batch', async () => {
+  await mkdir(join(root, 'first'));
+  await mkdir(join(root, 'second'));
+  const review = await reviewNativeTargets(root, ['first', 'second']);
+  let removals = 0;
+  const result = await removeNativeTargets(root, review.manifestPath, true, async (args) => {
+    if (args[0] === 'lsof') {
+      await mkdir(join(root, 'second/.git'));
+      return { stdout: 'p123\0n/outside/data\0', stderr: '', exitCode: 0 };
+    }
+    if (args[0] === 'rm') removals++;
+    return runInspectionCommand(args);
+  });
+  expect(result.failure).toContain('Contains a Git repository');
+  expect(removals).toBe(0);
+  expect((await readdir(root)).sort()).toEqual(['.tmp', 'first', 'second']);
+});
+
+test('native target inspection shares identity, repository checks, and hard-link-aware allocation', async () => {
+  const path = join(root, 'cache');
+  await mkdir(join(path, 'nested'), { recursive: true });
+  await Bun.write(join(path, 'data'), Buffer.alloc(8192));
+  await link(join(path, 'data'), join(path, 'nested/linked'));
+  await symlink(root, join(path, 'cycle'));
+  const inspection = await inspectNativeTarget(root, path);
+  expect(inspection.bytes).toBe(await diskBytes(path));
+  expect((await inspectNativeTarget(root, path)).identity).toBe(inspection.identity);
+  await Bun.write(join(path, 'new-data'), 'new');
+  expect((await inspectNativeTarget(root, path)).identity).not.toBe(inspection.identity);
+  await mkdir(join(path, 'nested/.git'));
+  await expect(inspectNativeTarget(root, path)).rejects.toThrow('Contains a Git repository');
+});
+
+test('native removal reconciles actual deletions even when its runner throws', async () => {
+  await mkdir(join(root, 'first'));
+  await mkdir(join(root, 'second'));
+  const review = await reviewNativeTargets(root, ['first', 'second']);
+  const result = await removeNativeTargets(root, review.manifestPath, true, async (args) => {
+    if (args[0] === 'rm') {
+      await runInspectionCommand(['rm', '-r', '--', join(root, 'first')]);
+      throw new Error('lost command result');
+    }
+    return runInspectionCommand(args);
+  });
+  expect(result.removed).toEqual([join(root, 'first')]);
+  expect(result.failure).toContain('lost command result');
+  expect(await Bun.file(result.logPath!).json()).toEqual(result);
+  expect((await readdir(root)).sort()).toEqual(['.tmp', 'second']);
 });

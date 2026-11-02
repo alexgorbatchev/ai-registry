@@ -3,6 +3,7 @@ import { lstat, mkdir, symlink, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { cli, createRepository, createRoot, disposeRoot, git } from './helpers';
 import { assessDisk } from '../assessDisk';
+import { scanAssessment } from '../scanAssessment';
 import { runInspectionCommand } from '../runInspectionCommand';
 
 let rootPath: string;
@@ -282,7 +283,12 @@ test('disk assessment includes deep project artifacts alongside caches and all i
       expect.objectContaining({ path: join(rootPath, '.cache/compiler/cache.bin'), bytes: 64 * 1024 }),
     ]),
   );
-  expect(report.sections[3].data.dependencies[0].path).toBe(join(repositoryPath, 'node_modules'));
+  expect(report.sections[3].isComplete).toBe(true);
+  expect(report.sections[3].data.dependencies[0]).toMatchObject({
+    path: join(repositoryPath, 'node_modules'),
+    eligible: true,
+    bytes: expect.any(Number),
+  });
   expect(await Bun.file(artifactPath).size).toBe(128 * 1024);
 });
 
@@ -300,17 +306,16 @@ test('disk assessment retains successful sections when Git inspection fails', as
   expect(await Bun.file(join(rootPath, 'keep.txt')).text()).toBe('keep\n');
 });
 
-test('disk assessment waits for slow sections and preserves partial du output on failure', async () => {
+test('disk assessment waits for the shared scan and preserves readable partial results', async () => {
   const started = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
   let hasFinished = false;
-  const assessment = assessDisk(rootPath, 1, 30, async (args) => {
-    if (args.includes('--max-depth=3')) {
-      started.resolve();
-      await release.promise;
-      return { stdout: `4096\t${rootPath}\0`, stderr: 'unreadable child', exitCode: 1 };
-    }
-    return runInspectionCommand(args);
+  const assessment = assessDisk(rootPath, 1, 30, runInspectionCommand, [], async (...args) => {
+    started.resolve();
+    await release.promise;
+    const data = await scanAssessment(...args);
+    data.inventory.errors.push({ repository: rootPath, message: 'unreadable child' });
+    return data;
   }).then((report) => {
     hasFinished = true;
     return report;
@@ -320,11 +325,11 @@ test('disk assessment waits for slow sections and preserves partial du output on
   release.resolve();
   const report = await assessment;
   expect(report.isComplete).toBe(false);
-  expect(report.sections[1]).toEqual({
+  expect(report.sections[1]).toMatchObject({
     name: 'overview',
     isComplete: false,
-    data: [{ bytes: 4096, path: rootPath }],
-    errors: ['du exited 1: unreadable child'],
+    data: expect.arrayContaining([expect.objectContaining({ path: rootPath })]),
+    errors: [`${rootPath}: unreadable child`],
   });
   expect(report.sections.map((section) => section.name)).toEqual([
     'filesystem',

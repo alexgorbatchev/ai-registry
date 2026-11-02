@@ -4,7 +4,7 @@ description: Read, write, rewrite, reorganize, and archive project and internal 
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-04 11:44
-  last_modified: 2026-10-24 10:52
+  last_modified: 2026-11-02 14:06
   status: current
 ---
 
@@ -30,7 +30,7 @@ status: current
 
 - **Timestamps:** Must use the strict `YYYY-MM-DD HH:MM` format in the user's local timezone. Verify the current time and timezone with a clock tool or system command before writing. Use the user's stated timezone when supplied; otherwise verify the machine's configured local timezone. Do not default to UTC or copy a UTC tool result into these timezone-less fields. If the local timezone cannot be established, ask for it before writing timestamps. Set both to the current local timestamp on file creation; update only `last_modified` when editing. Preserve existing `created_on` values; do not convert historical timestamps whose timezone is unknown.
 - **Status Schema:** Use only `current` (active guidance) or `archived` (superseded historical reference). Do not invent other values unless explicitly requested.
-- **Protect Sensitive Data:** Never write secrets, raw tokens, credentials, or private internal hostnames into any document.
+- **Protect Sensitive Data:** Never write secrets, raw tokens, credentials, or private internal hostnames into a document in a public repository. Private repositories have no such restriction.
 - **Write for Readers:** Put purpose and target audience near the top. Keep procedures ordered, concrete, and copy-pasteable. Use clear headings for scannability.
 
 ---

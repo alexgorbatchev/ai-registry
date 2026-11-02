@@ -144,6 +144,13 @@ test('a running target executable is protected even with an external working dir
   const executable = join(project, 'target/running');
   await Bun.write(executable, Bun.file('/bin/sleep'));
   await chmod(executable, 0o700);
+  if (process.platform === 'darwin') {
+    const signed = Bun.spawnSync(['codesign', '--force', '--sign', '-', executable], {
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+    if (!signed.success) throw new Error(`Could not sign executable fixture: ${signed.stderr.toString()}`);
+  }
   const child = Bun.spawn([executable, '30'], { cwd: root, stdout: 'ignore', stderr: 'pipe' });
   try {
     const reports = await inspectRustProjects(root, idleMs, now);

@@ -3,12 +3,13 @@ name: github-pr
 description: >-
   Use when preparing, writing, creating, or updating GitHub pull requests with
   the gh CLI, including PR titles and descriptions, attaching screenshots or
-  videos to PR descriptions and comments, or when reviewing and responding to
-  review comments on a GitHub pull request.
+  videos to PR descriptions and comments, when reviewing and responding to
+  review comments on a GitHub pull request, or when merging, closing, or
+  superseding a GitHub pull request.
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-01 21:08
-  last_modified: 2026-10-24 10:32
+  last_modified: 2026-11-03 10:15
   status: current
 ---
 
@@ -18,6 +19,8 @@ Choose the mode from the request and follow its reference.
 | -------------------------------------------------- | ------------------------------------ |
 | Draft, create, or update a PR title or description | [Creating](references/creating.md)   |
 | Review or respond to comments left on a PR         | [Reviewing](references/reviewing.md) |
+
+Every mode also applies [External Contributors](#external-contributors) whenever a PR is merged, closed, or replaced by another PR.
 
 ## Attachments
 
@@ -48,6 +51,23 @@ Every commit made in either mode, including commits that address review feedback
 - Describe the behavior each commit changes, not the review process; never title a commit `address review comments` or similar.
 - When the repository shows no convention, use Conventional Commits (`<type>(<scope>): <summary>`) and state that choice in the report.
 - When a `commit-msg` hook rejects a message, rewrite the message; never bypass the hook with `--no-verify`.
+
+## External Contributors
+
+Thank the author of an external PR on that PR once its outcome is final.
+
+1. Read the author with `gh api repos/<owner>/<repo>/pulls/<number> --jq '.user.login, .user.type, .author_association'`. The author is external when `.user.type` is not `Bot` and `.author_association` is not `OWNER`, `MEMBER`, or `COLLABORATOR`. GitHub reports `CONTRIBUTOR` for any account with earlier commits in the repository; it still counts as external.
+2. Post the comment when the outcome is final:
+   - Merged: right after the merge.
+   - Closed in favor of another PR that carries its work: after that PR merges, not when it opens. If it closes unmerged, the external PR is not superseded; report that instead of thanking.
+   - Closed without landing: when closing it.
+3. Read the PR conversation first and skip posting when the account owner has already thanked the author for this outcome.
+4. In two or three sentences, thank the author and state where the work landed: the merge itself, or the superseding PR and the landed commit SHAs, and whether the original commits kept the author's authorship. For closure without landing, give the concrete reason. Follow the [writing rules](#writing-rules).
+5. Post with `gh pr comment <number> --body-file <file>`. Authorization to merge, close, or supersede the PR covers this comment. If posting fails, report the error and the drafted text.
+
+Example for a PR closed in favor of `#75`:
+
+> Thank you for this fix! It landed on `main` through #75, which rebased it onto the current prompt and development workflow. Your commits (`e947b19`, `f4520d0`) kept your authorship. Closing this one in favor of #75.
 
 ## Writing Rules
 

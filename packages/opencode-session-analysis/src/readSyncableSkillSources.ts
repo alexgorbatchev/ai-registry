@@ -6,7 +6,7 @@ export interface ISyncableSkillSource {
   name: string;
   owner: string;
   sourceDirPath: string;
-  sourceKind: "registry" | "harness" | "profile-local";
+  sourceKind: "registry" | "harness";
 }
 
 async function readSkillDirectories(
@@ -57,37 +57,10 @@ async function readSkillDirectories(
   return results.sort((left, right) => left.name.localeCompare(right.name));
 }
 
-async function readProfileLocalSkillDirectories(registryRootPath: string): Promise<ISyncableSkillSource[]> {
-  const profilesDirPath = join(registryRootPath, "profiles");
-  if (!existsSync(profilesDirPath)) {
-    return [];
-  }
-
-  const profileEntries = await readdir(profilesDirPath, { withFileTypes: true });
-  const sources: ISyncableSkillSource[] = [];
-
-  for (const profileEntry of profileEntries) {
-    if (!profileEntry.isDirectory()) {
-      continue;
-    }
-
-    sources.push(
-      ...(await readSkillDirectories(
-        join(profilesDirPath, profileEntry.name, "skills"),
-        "profile-local",
-        profileEntry.name,
-      )),
-    );
-  }
-
-  return sources.sort((left, right) => left.name.localeCompare(right.name) || left.owner.localeCompare(right.owner));
-}
-
 export async function readSyncableSkillSources(registryRootPath: string): Promise<Map<string, ISyncableSkillSource>> {
   const sources = [
     ...(await readSkillDirectories(join(registryRootPath, "skills"), "registry", "skills")),
     ...(await readSkillDirectories(join(registryRootPath, "harnesses", "opencode", "skills"), "harness", "harnesses/opencode")),
-    ...(await readProfileLocalSkillDirectories(registryRootPath)),
   ];
 
   const sourceByName = new Map<string, ISyncableSkillSource>();

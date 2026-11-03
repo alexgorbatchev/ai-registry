@@ -3,12 +3,8 @@ import { join } from "path";
 import { getRegistryPaths } from "../lib/getRegistryPaths";
 import { runCommand } from "../lib/runCommand";
 
-// Runs `bun run bootstrap -- <arguments>` in the smoke clone with the given environment.
-export type ISmokeBootstrapRunner = (
-  repositoryDir: string,
-  bootstrapArguments: string[],
-  environment: NodeJS.ProcessEnv,
-) => Promise<void>;
+// Runs `bun run bootstrap` in the smoke clone with the given environment.
+export type ISmokeBootstrapRunner = (repositoryDir: string, environment: NodeJS.ProcessEnv) => Promise<void>;
 
 export type ISmokeBootstrapDependencies = {
   root: string;
@@ -73,13 +69,9 @@ async function assertNoBackups(parentDir: string, prefix: string): Promise<void>
   }
 }
 
-async function runRealBootstrap(
-  repositoryDir: string,
-  bootstrapArguments: string[],
-  environment: NodeJS.ProcessEnv,
-): Promise<void> {
+async function runRealBootstrap(repositoryDir: string, environment: NodeJS.ProcessEnv): Promise<void> {
   await runCommand({
-    cmd: bootstrapArguments.length === 0 ? ["bun", "run", "bootstrap"] : ["bun", "run", "bootstrap", "--", ...bootstrapArguments],
+    cmd: ["bun", "run", "bootstrap"],
     cwd: repositoryDir,
     env: environment,
     description: "run bootstrap in the smoke clone",
@@ -94,18 +86,13 @@ export async function smokeBootstrapCommand(
   const SMOKE_HOME = join(root, ".tmp", "bootstrap-smoke");
   const SMOKE_REPO_DIR = join(SMOKE_HOME, "development", "ai-registry");
   const CONFIG_HOME = join(SMOKE_HOME, ".config");
-  const DATA_HOME = join(SMOKE_HOME, ".local", "share");
   const PUBLIC_BIN_DIR = join(SMOKE_HOME, ".local", "bin");
   const OPENCODE_TARGET = join(CONFIG_HOME, "opencode");
   const OPENCODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "opencode");
   const PI_TARGET = join(SMOKE_HOME, ".pi", "agent");
-  const PI_SMOKE_PROFILE = "developer";
-  const PI_SOURCE = join(SMOKE_REPO_DIR, ".output", "pi", PI_SMOKE_PROFILE);
+  const PI_SOURCE = join(SMOKE_REPO_DIR, ".output", "pi");
   const CLAUDE_CODE_TARGET = join(SMOKE_HOME, ".claude");
-  const CLAUDE_CODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "claude-code", "default");
-  const CLAUDE_CODE_SMOKE_PROFILE = "developer";
-  const CLAUDE_CODE_PROFILE_SOURCE = join(SMOKE_REPO_DIR, ".output", "claude-code", CLAUDE_CODE_SMOKE_PROFILE);
-  const CLAUDE_CODE_PROFILE_HOME = join(DATA_HOME, "ai-registry", "claude-code", "profiles", CLAUDE_CODE_SMOKE_PROFILE);
+  const CLAUDE_CODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "claude-code");
   const OUTPUT_MANIFEST = join(SMOKE_REPO_DIR, ".output", "manifest.json");
 
   async function seedExistingTargets(): Promise<void> {
@@ -134,25 +121,10 @@ export async function smokeBootstrapCommand(
     ...process.env,
     HOME: SMOKE_HOME,
     XDG_CONFIG_HOME: CONFIG_HOME,
-    XDG_DATA_HOME: DATA_HOME,
   };
 
   async function runBootstrap(): Promise<void> {
-    await dependencies.runBootstrap(SMOKE_REPO_DIR, [], SMOKE_ENVIRONMENT);
-  }
-
-  async function runBootstrapWithPiProfile(): Promise<void> {
-    await dependencies.runBootstrap(SMOKE_REPO_DIR, ["--pi-profile", PI_SMOKE_PROFILE], {
-      ...SMOKE_ENVIRONMENT,
-      PI_CODING_AGENT_DIR: PI_TARGET,
-    });
-  }
-
-  async function runBootstrapWithClaudeCodeProfile(): Promise<void> {
-    await dependencies.runBootstrap(SMOKE_REPO_DIR, ["--claude-code-profile", CLAUDE_CODE_SMOKE_PROFILE], {
-      ...SMOKE_ENVIRONMENT,
-      CLAUDE_CONFIG_DIR: CLAUDE_CODE_TARGET,
-    });
+    await dependencies.runBootstrap(SMOKE_REPO_DIR, SMOKE_ENVIRONMENT);
   }
 
   // Harness homes stay real directories: existing runtime data remains in place and
@@ -168,25 +140,13 @@ export async function smokeBootstrapCommand(
     await assertSymlinkTarget(join(CLAUDE_CODE_TARGET, "CLAUDE.md"), join(CLAUDE_CODE_SOURCE, "CLAUDE.md"));
     await assertSymlinkTarget(join(CLAUDE_CODE_TARGET, "settings.json"), join(CLAUDE_CODE_SOURCE, "settings.json"));
     await assertNoBackups(SMOKE_HOME, ".claude.backup-");
-    await assertRealDirectory(CLAUDE_CODE_PROFILE_HOME);
-    await assertSymlinkTarget(join(CLAUDE_CODE_PROFILE_HOME, "CLAUDE.md"), join(CLAUDE_CODE_PROFILE_SOURCE, "CLAUDE.md"));
-    await assertSymlinkTarget(join(CLAUDE_CODE_PROFILE_HOME, "existing.txt"), join(CLAUDE_CODE_TARGET, "existing.txt"));
-    for (const scriptName of PUBLIC_SCRIPT_NAMES) {
-      await assertSymlinkTarget(join(PUBLIC_BIN_DIR, scriptName), join(SMOKE_REPO_DIR, ".output", "bin", scriptName));
-    }
-  }
-
-  async function verifyClaudeCodeBootstrapOutputs(): Promise<void> {
-    await assertRealDirectory(CLAUDE_CODE_TARGET);
-    await assertFileContent(join(CLAUDE_CODE_TARGET, "existing.txt"), "existing claude code data\n");
-    await assertSymlinkTarget(join(CLAUDE_CODE_TARGET, "CLAUDE.md"), join(CLAUDE_CODE_PROFILE_SOURCE, "CLAUDE.md"));
-  }
-
-  async function verifyPiBootstrapOutputs(): Promise<void> {
     await assertRealDirectory(PI_TARGET);
     await assertFileContent(join(PI_TARGET, "existing.txt"), "existing pi data\n");
     await assertSymlinkTarget(join(PI_TARGET, "APPEND_SYSTEM.md"), join(PI_SOURCE, "APPEND_SYSTEM.md"));
     await assertNoBackups(join(SMOKE_HOME, ".pi"), "agent.backup-");
+    for (const scriptName of PUBLIC_SCRIPT_NAMES) {
+      await assertSymlinkTarget(join(PUBLIC_BIN_DIR, scriptName), join(SMOKE_REPO_DIR, ".output", "bin", scriptName));
+    }
   }
 
   console.log("🚬 Running bootstrap smoke test...\n");
@@ -203,14 +163,6 @@ export async function smokeBootstrapCommand(
   console.log("Second bootstrap run: verify idempotent reuse of managed links.");
   await runBootstrap();
   await verifyBootstrapOutputs();
-
-  console.log("Third bootstrap run: verify optional Pi profile linking.");
-  await runBootstrapWithPiProfile();
-  await verifyPiBootstrapOutputs();
-
-  console.log("Fourth bootstrap run: verify optional Claude Code profile linking.");
-  await runBootstrapWithClaudeCodeProfile();
-  await verifyClaudeCodeBootstrapOutputs();
 
   console.log("\nBootstrap smoke test passed.");
   console.log(`Inspect artifacts at: ${SMOKE_HOME}`);

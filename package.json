@@ -1,7 +1,7 @@
 {
   "name": "@alexgorbatchev/ai-registry",
   "version": "1.0.0",
-  "description": "Canonical AI skills, commands, and harness profiles",
+  "description": "Canonical AI skills, commands, and harness configuration",
   "private": true,
   "workspaces": [
     "vendor/*",

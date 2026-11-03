@@ -29,7 +29,7 @@ These files are source-of-truth inputs for generated Codex homes; `<%- output_di
 
 ## Add A Codex-Only Skill
 
-1. Create `harnesses/codex/skills/<skill-name>/SKILL.md` when the skill should ship only with Codex profiles.
+1. Create `harnesses/codex/skills/<skill-name>/SKILL.md` when the skill should ship only with Codex.
 2. Use global `skills/<skill-name>/SKILL.md` instead when the skill is reusable across harnesses.
 3. Keep each skill self-contained. Do not assume another skill is present.
 4. Include YAML frontmatter with `name`, `description`, and `author: alexgorbatchev`.
@@ -37,10 +37,9 @@ These files are source-of-truth inputs for generated Codex homes; `<%- output_di
 6. Put detailed setup material in `references/setup.md`; put large reference material in `references/*.md`; add scripts or assets only when they materially improve reuse.
 7. Avoid private names, internal URLs, hostnames, secrets, and other non-public details.
 8. Validate changed skills with `bun <%- repo_root %>/skills/skill-writer/scripts/quick-validate.ts harnesses/codex/skills/<skill-name>` when practical.
-9. Run `bun run build` and inspect `<%- output_dir %>/codex/default/skills/<skill-name>/` or another affected generated profile.
+9. Run `bun run build` and inspect `<%- output_dir %>/codex/skills/<skill-name>/`.
 
 ## Generated Output Contract
 
-- The Codex build merges `harnesses/codex/skills/` into each generated Codex profile skills directory.
-- Non-default Codex profiles keep their own `AGENTS.md` and `skills/` directory, and inherit shared top-level entries from generated `default/`.
-- Never repair generated Codex output by editing `<%- output_dir %>/codex/` directly; fix the source under `harnesses/codex/`, `skills/`, `commands/`, or `profiles/`, then rebuild.
+- The Codex build merges `harnesses/codex/skills/` into the generated Codex skills directory, and copies `system/system.md` to the generated `AGENTS.md`.
+- Never repair generated Codex output by editing `<%- output_dir %>/codex/` directly; fix the source under `harnesses/codex/`, `skills/`, `commands/`, or `system/`, then rebuild.

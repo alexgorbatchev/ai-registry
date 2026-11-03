@@ -1,6 +1,6 @@
 ---
 name: ai-registry-integration
-description: Add or update content in the AI registry. Use when a user needs to create or modify skills, commands, profiles, harness overrides, vendored skills, or related registry documentation in this repository.
+description: Add or update content in the AI registry. Use when a user needs to create or modify skills, commands, the shared system prompt, harness overrides, vendored skills, or related registry documentation in this repository.
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
@@ -17,12 +17,12 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 ## EJS Templates
 
 - Use template tokens when checked-in guidance or generated text needs canonical repository paths that would otherwise be machine-specific.
-- Keep existing filenames and use native EJS raw output tags for path variables. Available path tokens are `repo_root`, `overlay_dir`, `skills_dir`, `commands_dir`, `profiles_dir`, `output_dir`, `file_path`, and `file_dir`.
+- Keep existing filenames and use native EJS raw output tags for path variables. Available path tokens are `repo_root`, `overlay_dir`, `skills_dir`, `commands_dir`, `output_dir`, `file_path`, and `file_dir`.
 - Use native EJS include calls with a leading slash for repository-root-relative file inclusion; relative paths resolve against the source filename.
 - Use the env(name, fallback?) helper to read environment variables, with an optional fallback when the variable may be absent.
 - Use EJS literal opening delimiters when documenting EJS syntax. Foreign curly-brace syntax, including justfile and Go templates, passes through unchanged without backslash escaping. Render each file once.
 - Treat EJS templates as trusted JavaScript. Edit includes, expressions, and control flow at their source; sync-back reconstructs only canonical raw path-variable tags.
-- Prefer the most specific path token available. Use `skills_dir`, `commands_dir`, `profiles_dir`, and `output_dir` for those canonical folders. Use `repo_root` for canonical folders that do not have a dedicated token.
+- Prefer the most specific path token available. Use `skills_dir`, `commands_dir`, and `output_dir` for those canonical folders. Use `repo_root` for canonical folders that do not have a dedicated token.
 
 ## Core Rules
 
@@ -37,15 +37,15 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Keep new content anonymized and reusable. Do not introduce private company names, internal URLs, secrets, or personal details.
 - Use `prompt-writer` whenever generating, writing, or revising AI agent instructions in any artifact. `skill-writer` adds skill-bundle conventions and validation; `docs-writer` owns project documentation structure and maintenance.
 - When checked-in guidance or generated text refers to repository paths, use template tokens instead of machine-specific absolute paths.
-- Put reusable assets under the directories referenced by the repo_root token: `skills/`, `commands/`, `profiles/`, or `harnesses/`.
+- Put reusable assets under the directories referenced by the repo_root token: `skills/`, `commands/`, or `harnesses/`.
 - Keep executable repo entrypoints under `packages/registry-cli/src/bin/` beneath the repo_root token and use dash-based filenames. Put imported TypeScript helper modules that are not direct entrypoints under `packages/registry-cli/src/lib/`.
-- Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `claude-*`, `codex-*`, `pi-*`, or `cll` wrappers) MUST NOT be checked into `packages/registry-cli/src/bin/` beneath the repo_root token. Generate them through `packages/registry-cli/src/commands/buildCommand.ts` and its harness plugins into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
+- Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `pi-*`, or `cll` wrappers) MUST NOT be checked into `packages/registry-cli/src/bin/` beneath the repo_root token. Generate them through `packages/registry-cli/src/commands/buildCommand.ts` and its harness plugins into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
 - Put publishable standalone packages under `packages/<package-name>/` beneath the repo_root token.
 - Put vendored third-party code packages that need Bun workspace installs under `vendor/` beneath the repo_root token.
 - Register bundled skill packages needed by repository-wide typechecking as root Bun workspaces so normal installs include their dependencies. Exclude installed dependencies, local lockfiles, and scratch directories from generated copies through the skill's `.registry-ignore`.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
 - Make intentional registry edits in source; treat subsequent harness-written changes in `.output/` beneath the repo_root token as expected. Automatically recover supported generated edits into their mapped source only when the generated baseline, source fingerprint, and exact reversal establish that source changes will not be overwritten, then regenerate all affected outputs. Preserve both versions and suspend dependent output application on source conflicts, unsupported recovery, or save failures. Reconcile existing drift without source fingerprints into source before establishing a fresh baseline. Do not request confirmation or investigate ownership merely because a harness changed a generated file; `-y` does not bypass reconciliation. Preserve all session/runtime data and unmanaged harness-owned files.
-- After modifying any file under `skills/`, `commands/`, `profiles/`, `harnesses/`, or `skills-lock.json` beneath the repo_root token, run `bun run build` from the repo_root token.
+- After modifying any file under `skills/`, `commands/`, `system/`, `harnesses/`, or `skills-lock.json` beneath the repo_root token, run `bun run build` from the repo_root token.
 - If a change alters repo structure, build architecture, or workflow contracts, update `AGENTS.md` and `README.md` beneath the repo_root token in the same change.
 - **USE SOURCE REFERENCE FIRST:** When diagnosing harness issues, analyzing behavioral contracts, or updating configurations, ALWAYS consult the local checked-out harness source code under the respective `harnesses/<target>/.tmp/<target>-source/` folder first. Never guess, assume, or rely on memory. If the source is not yet checked out on disk, run that harness's `./harnesses/<target>/fetch-source.sh` script first to pull it down.
 
@@ -60,10 +60,10 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 ## Private Overlay Registries
 
-- Work-specific, proprietary skills, commands, and profiles that cannot be committed to this public repository live in a separate private repository.
+- Work-specific, proprietary skills and commands that cannot be committed to this public repository live in a separate private repository.
 - Configure `AI_REGISTRY_OVERLAY` in shell configuration or git-ignored `.env` as a PATH-style list of overlay roots (`:` on Linux/macOS, `;` on Windows). Paths support home expansion and registry-relative resolution. Empty entries are ignored; missing paths warn and are skipped. Repeated normalized paths keep their last occurrence.
-- The overlay repository should mirror standard registry folders: `skills/`, `commands/`, and `profiles/`.
-- Build and bootstrap merge overlays left to right; the last matching skill, command, or profile wins. Replace complete bundles and profile directories. Inspect skill conflict notes for the selected and replaced sources. Preserve harness-specific override precedence. The overlay_dir template variable identifies the last active overlay; use file_dir for resources relative to assets in other overlays.
+- The overlay repository should mirror standard registry folders: `skills/` and `commands/`.
+- Build and bootstrap merge overlays left to right; the last matching skill or command wins. Replace complete bundles. Inspect skill conflict notes for the selected and replaced sources. Preserve harness-specific override precedence. The overlay_dir template variable identifies the last active overlay; use file_dir for resources relative to assets in other overlays.
 - Apply the same safe recovery checks to overlay-backed generated files. Recover supported edits to the mapped overlay source; preserve both versions and suspend application on conflicts or unsupported recovery.
 
 ## Add A Skill
@@ -95,7 +95,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Keep shared references, scripts, and assets at the bundle root. Only the root `SKILL.md` changes by hostname; the entire root `variants/` directory stays out of generated outputs. Link bundled resources by their generated locations.
 - Use existing repository-root-relative includes for shared text. Template expansion runs once, with `file_path` and `file_dir` identifying the selected variant's original source path.
 - Place actual private hostnames and environment instructions in the private overlay. Include all required resources there: overlays replace entire bundles, and a private default does not inherit public variants.
-- Preserve existing harness boundaries and override precedence. Put harness-specific variants inside harness-specific skill bundles; profile-local variants belong in that profile's skill bundle.
+- Preserve existing harness boundaries and override precedence. Put harness-specific variants inside harness-specific skill bundles.
 - Recover generated edits with the original hostname and overlay selection. Sync-back targets the selected variant and rejects a source mismatch recorded in the manifest. Edit include-based variants at their source because recovery does not reconstruct include directives.
 
 ## Add A Command
@@ -105,20 +105,14 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Create the command under the commands_dir token.
 - Use commands for slash-command prompts, reusable task blueprints, and prompt templates.
 - Keep the command self-contained rather than relying on unstated repo context.
-- If the command is meant to be available in a profile, make sure the profile manifest under the profiles_dir token includes it directly or via an existing glob.
-- For Codex, include YAML frontmatter with a non-empty `description`. The default profile's selected reusable and profile-local commands become native skill bundles in every Codex profile, with `policy.allow_implicit_invocation: false` in `agents/openai.yaml`; do not emit deprecated `prompts/` files. Invoke with `$<skill-name>` or `/skills`. An explicit `name` is honored; otherwise the build derives `command-<filename>` with leading hyphens removed and repeated hyphens collapsed, including the `default` namespace for profile-local commands. Use lowercase kebab-case names of at most 64 characters and avoid collisions with selected skills. Non-default Codex command selections are not emitted.
+- Every harness ships every registry command; there is no per-command selection.
+- For Codex, include YAML frontmatter with a non-empty `description`. Every command becomes a native skill bundle in the Codex `skills/` directory, with `policy.allow_implicit_invocation: false` in `agents/openai.yaml`; do not emit deprecated `prompts/` files. Invoke with `$<skill-name>` or `/skills`. An explicit `name` is honored; otherwise the build derives `command-<filename>` with leading hyphens removed and repeated hyphens collapsed. Use lowercase kebab-case names of at most 64 characters and avoid collisions with skill names.
 - Run `bun run build` from the repo_root token after the command change.
 
-## Add A Profile
+## Change The Shared System Prompt
 
-- Create a profile folder under the profiles_dir token.
-- Put the manifest in `profile.yaml` within that profile folder.
-- Use the manifest to select skills and commands, plus any tool toggles, permissions, or `system_prompt` overrides.
-- Optional profile-local commands live in the profile folder's `commands/` directory and are emitted as namespaced shared commands named `--<profile>-<filename>.md` in OpenCode outputs.
-- Optional profile-local skills live in the profile folder's `skills/<skill-name>/SKILL.md` path and must not collide with global skills or another profile's local skills.
-- Keep reusable knowledge in the skills_dir token and reusable prompts in the commands_dir token; profiles should assemble those pieces instead of duplicating them.
-- Run `bun run build` from the repo_root token after the profile change.
-- Check generated profile-local outputs when the selected targets write files inside that profile folder.
+- Edit `system/system.md` beneath the repo_root token. Every harness ships it: Codex as `AGENTS.md`, Pi as `APPEND_SYSTEM.md`, Claude Code as `CLAUDE.md`, and OpenCode through the `instructions` entry in `harnesses/opencode/opencode.jsonc`.
+- Run `bun run build` from the repo_root token after the change.
 
 ## Add Harness Overrides
 
@@ -132,8 +126,8 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Do not place repo-only notes inside a harness directory unless they are intentionally meant to ship.
 - Prefer the harness's native configuration surface over local wrappers when the harness already supports the feature directly.
 - Harness-specific skills under `harnesses/<target>/skills/` cleanly take precedence over global skills (`skills/` and overlay `skills/`) on name collision across all four harnesses.
-- For Codex-only shipped skills, place them under `harnesses/codex/skills/`; the Codex build merges that directory into each generated `skills/` root inside `.output/codex/<profile>/`.
-- For Claude Code-only shipped skills, place them under `harnesses/claude-code/skills/`; the Claude Code build merges that directory into each generated `skills/` root inside `.output/claude-code/<profile>/`. Everything else under `harnesses/claude-code/` is copied verbatim into the generated `default` profile root.
+- For Codex-only shipped skills, place them under `harnesses/codex/skills/`; the Codex build merges that directory into `.output/codex/skills/`.
+- For Claude Code-only shipped skills, place them under `harnesses/claude-code/skills/`; the Claude Code build merges that directory into `.output/claude-code/skills/`. Everything else under `harnesses/claude-code/` is copied verbatim into `.output/claude-code/`.
 - If a local file-based harness dependency needs installed runtime imports, vendor it under `vendor/<name>/` beneath the repo_root token, add it to the root Bun workspaces, and reference it from the harness config using the repo_root token.
 - When vendoring third-party code under `vendor/<name>/`, copy only the files the harness loads plus the upstream `LICENSE`, and record the upstream repository, pinned commit, and file checksum in that package's `README.md`. Fetch from the pinned commit URL, never from a moving branch.
 - When a harness needs a single vendored file inside its generated root, symlink it from the harness build plugin and fail the build when the source file is missing.
@@ -172,7 +166,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Generated outputs are written under the output_dir token.
 - Generated harness skills (`skills/` entries across OpenCode, Codex, Pi, and Claude Code outputs) are copies of the source files with template tags resolved, not symbolic links, so tags inside `SKILL.md` and bundled skill files reach the agent resolved.
 - The generated-output manifest tracks only registry-managed entries under the output_dir token, and `bun run build` overwrites only those managed paths instead of replacing the entire output tree.
-- Never create harness runtime state (session stores, logs, todo lists, databases) in generated output. Bootstrap links each generated profile's managed entries into a real harness home outside the repository, and the harness writes its runtime state there. A harness plugin returns home targets from `getBootstrapTargets()`, giving non-default profiles a `getProfileHomeDir(...)` home that shares the default home's runtime entries.
+- Never create harness runtime state (session stores, logs, todo lists, databases) in generated output. Bootstrap links each harness output's managed entries into a real harness home outside the repository, and the harness writes its runtime state there. A harness plugin returns its single home target from `getBootstrapTargets()`.
 - Verify generated files that match the change, especially:
   - `opencode/` beneath the output_dir token
   - `codex/` beneath the output_dir token
@@ -191,11 +185,10 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 - Add reusable agent behavior under the skills_dir token.
 - Add reusable slash command or prompt under the commands_dir token.
-- Add or adjust an assembled persona under the profiles_dir token.
 - Add harness-specific shipped config under `harnesses/<target>/` beneath the repo_root token.
 - Add a publishable standalone package under `packages/<package-name>/` beneath the repo_root token.
 - Add a vendored third-party code package for a harness under `vendor/<name>/` beneath the repo_root token.
-- Add shared system guidance under `system/` beneath the repo_root token.
+- Add shared system guidance under `system/` beneath the repo_root token; `system/system.md` is the system prompt every harness ships.
 - Add shared harness guidance under `harnesses/AGENTS.md` beneath the repo_root token.
 - Add or update a vendored third-party skill under the skills_dir token plus `skills-lock.json` beneath the repo_root token.
 - OpenCode configuration lives in `harnesses/opencode/opencode.jsonc` beneath the repo_root token.

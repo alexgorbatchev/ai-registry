@@ -8,7 +8,6 @@ describe("reverseTemplateContent", () => {
     repo_root: "/path/to/repo",
     skills_dir: "/path/to/repo/skills",
     commands_dir: "/path/to/repo/commands",
-    profiles_dir: "/path/to/repo/profiles",
     output_dir: "/path/to/repo/.output",
   };
 

@@ -24,7 +24,7 @@ describe("bootstrapCommand", () => {
   let logLines: string[];
 
   // Stands in for `bun install` and `bun run build`: the build step writes the
-  // generated profile, a public wrapper, and the manifest that bootstrap reads.
+  // generated harness output, a public wrapper, and the manifest that bootstrap reads.
   function createSpawn(buildExitCode = 0): (options: IRunCommandSpawnOptions) => IRunCommandSpawnedProcess {
     return (options) => {
       spawnedCommands.push(options.cmd);
@@ -37,40 +37,32 @@ describe("bootstrapCommand", () => {
   }
 
   async function writeGeneratedOutput(): Promise<void> {
-    await writeTestFile(join(registryPaths.output, "fake", "default", "AGENTS.md"), "instructions\n");
-    await writeTestFile(join(registryPaths.output, "fake", "default", "settings.json"), "{}\n");
-    await writeTestFile(join(registryPaths.output, "fake", "designer", "AGENTS.md"), "designer\n");
-    await writeTestFile(join(registryPaths.output, "bin", "claude-designer"), "#!/usr/bin/env bash\n");
+    await writeTestFile(join(registryPaths.output, "fake", "AGENTS.md"), "instructions\n");
+    await writeTestFile(join(registryPaths.output, "fake", "settings.json"), "{}\n");
+    await writeTestFile(join(registryPaths.output, "bin", "air-fake"), "#!/usr/bin/env bash\n");
     await writeTestFile(
       join(registryPaths.output, "manifest.json"),
       JSON.stringify({
         version: 2,
         generatedAt: "2026-10-26T00:00:00.000Z",
         entries: {
-          "bin/claude-designer": { kind: "file", checksum: "a" },
-          "fake/default/AGENTS.md": { kind: "file", checksum: "b" },
-          "fake/designer/AGENTS.md": { kind: "file", checksum: "c" },
+          "bin/air-fake": { kind: "file", checksum: "a" },
+          "fake/AGENTS.md": { kind: "file", checksum: "b" },
         },
-        syncedFilePaths: ["fake/default/settings.json"],
+        syncedFilePaths: ["fake/settings.json"],
       }),
     );
   }
 
   const fakePlugin: IUnifiedHarnessPlugin = {
     target: "fake",
+    async buildOutput(): Promise<void> {},
     async getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
       return [
-        { kind: "home", sourcePath: join(outputDir, "fake", "default"), targetPath: join(homeDir, ".fake"), description: "Fake home (default)" },
-        {
-          kind: "home",
-          sourcePath: join(outputDir, "fake", "designer"),
-          targetPath: join(homeDir, "profiles", "designer"),
-          description: "Fake profile home (designer)",
-          sharedHomePath: join(homeDir, ".fake"),
-        },
+        { kind: "home", sourcePath: join(outputDir, "fake"), targetPath: join(homeDir, ".fake"), description: "Fake home" },
         {
           kind: "link",
-          sourcePath: join(outputDir, "fake", "default", "settings.json"),
+          sourcePath: join(outputDir, "fake", "settings.json"),
           targetPath: join(homeDir, "fake-settings.json"),
           description: "Fake settings",
         },
@@ -104,7 +96,7 @@ describe("bootstrapCommand", () => {
       harnesses: join(root, "repo", "harnesses"),
       skills: join(root, "repo", "skills"),
       commands: join(root, "repo", "commands"),
-      profiles: join(root, "repo", "profiles"),
+      systemPrompt: join(root, "repo", "system", "system.md"),
       output: join(root, "repo", ".output"),
       temp: join(root, "repo", ".tmp"),
     };
@@ -128,38 +120,30 @@ describe("bootstrapCommand", () => {
     expect(spawnedCommands).toEqual([["bun", "install"], ["bun", "run", "build", "--", "-y"]]);
     expect((await lstat(join(homeDir, ".fake"))).isDirectory()).toBe(true);
     expect(await readFile(join(homeDir, ".fake", "history.jsonl"), "utf-8")).toBe("kept\n");
-    expect(await readlink(join(homeDir, ".fake", "AGENTS.md"))).toBe(join(registryPaths.output, "fake", "default", "AGENTS.md"));
-    expect(await readlink(join(homeDir, "profiles", "designer", "history.jsonl"))).toBe(join(homeDir, ".fake", "history.jsonl"));
-    expect(await readlink(join(homeDir, "fake-settings.json"))).toBe(join(registryPaths.output, "fake", "default", "settings.json"));
-    expect(await readlink(join(homeDir, ".local", "bin", "claude-designer"))).toBe(
-      join(registryPaths.output, "bin", "claude-designer"),
-    );
+    expect(await readlink(join(homeDir, ".fake", "AGENTS.md"))).toBe(join(registryPaths.output, "fake", "AGENTS.md"));
+    expect(await readlink(join(homeDir, "fake-settings.json"))).toBe(join(registryPaths.output, "fake", "settings.json"));
+    expect(await readlink(join(homeDir, ".local", "bin", "air-fake"))).toBe(join(registryPaths.output, "bin", "air-fake"));
     expect(getLog()).toMatchInlineSnapshot(`
 "🚀 Bootstrapping ai-registry...
 
 Installing dependencies...
 Building generated outputs...
 Applying generated outputs...
-  applied Fake home (default): <root>/home/.fake
+  applied Fake home: <root>/home/.fake
     linked: AGENTS.md, settings.json
-  applied Fake profile home (designer): <root>/home/profiles/designer
-    linked: AGENTS.md
-    shared runtime entries: history.jsonl
   linked Fake settings: <root>/home/fake-settings.json
 Syncing repo-local public scripts...
-  linked claude-designer: <root>/home/.local/bin/claude-designer
+  linked air-fake: <root>/home/.local/bin/air-fake
 
 Ready.
-Fake home (default) now reads from: <root>/home/.fake
-Fake profile home (designer) now reads from: <root>/home/profiles/designer
+Fake home now reads from: <root>/home/.fake
 Fake settings now reads from: <root>/home/fake-settings.json
 Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: <root>/home/.local/bin
 Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, and CLAUDE_CONFIG_DIR if needed."
 `);
   });
 
-  it("reports reused, repointed, backed-up, removed, and diverged entries on a later run", async () => {
-    await writeTestFile(join(homeDir, ".fake", "history.jsonl"), "shared\n");
+  it("reports reused, repointed, backed-up, and removed entries on a later run", async () => {
     await bootstrapCommand(createDependencies());
     const otherCheckout = join(root, "other-checkout");
     await writeTestFile(join(otherCheckout, "AGENTS.md"), "other\n");
@@ -167,13 +151,11 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
     await symlink(join(otherCheckout, "AGENTS.md"), join(homeDir, ".fake", "AGENTS.md"));
     await rm(join(homeDir, ".fake", "settings.json"));
     await writeTestFile(join(homeDir, ".fake", "settings.json"), "{\"local\":true}\n");
-    await symlink(join(registryPaths.output, "fake", "default", "removed"), join(homeDir, ".fake", "removed"));
-    await rm(join(homeDir, "profiles", "designer", "history.jsonl"));
-    await writeTestFile(join(homeDir, "profiles", "designer", "history.jsonl"), "designer only\n");
+    await symlink(join(registryPaths.output, "fake", "removed"), join(homeDir, ".fake", "removed"));
     await rm(join(homeDir, "fake-settings.json"));
     await writeTestFile(join(homeDir, "fake-settings.json"), "{\"local\":true}\n");
-    await rm(join(homeDir, ".local", "bin", "claude-designer"));
-    await symlink(join(otherCheckout, "claude-designer"), join(homeDir, ".local", "bin", "claude-designer"));
+    await rm(join(homeDir, ".local", "bin", "air-fake"));
+    await symlink(join(otherCheckout, "air-fake"), join(homeDir, ".local", "bin", "air-fake"));
     logLines = [];
 
     await bootstrapCommand(createDependencies({ argv: ["bun", "bootstrap.ts"] }));
@@ -185,21 +167,18 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
 Installing dependencies...
 Building generated outputs...
 Applying generated outputs...
-  applied Fake home (default): <root>/home/.fake
+  applied Fake home: <root>/home/.fake
     relinked: AGENTS.md
     backed up settings.json to: <root>/home/.fake/settings.json.backup-20261026T000000Z
     removed stale links: removed
-  applied Fake profile home (designer): <root>/home/profiles/designer
-    own copies hiding the shared home's entries (move them aside to share again): history.jsonl
   linked Fake settings: <root>/home/fake-settings.json
     backed up previous contents to: <root>/home/fake-settings.json.backup-20261026T000000Z
 Syncing repo-local public scripts...
-  removed broken link: <root>/home/.local/bin/claude-designer
-  linked claude-designer: <root>/home/.local/bin/claude-designer
+  removed broken link: <root>/home/.local/bin/air-fake
+  linked air-fake: <root>/home/.local/bin/air-fake
 
 Ready.
-Fake home (default) now reads from: <root>/home/.fake
-Fake profile home (designer) now reads from: <root>/home/profiles/designer
+Fake home now reads from: <root>/home/.fake
 Fake settings now reads from: <root>/home/fake-settings.json
 Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: <root>/home/.local/bin
 Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, and CLAUDE_CONFIG_DIR if needed."
@@ -220,16 +199,14 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
 Installing dependencies...
 Building generated outputs...
 Applying generated outputs...
-  applied Fake home (default): <root>/home/.fake
-  applied Fake profile home (designer): <root>/home/profiles/designer
+  applied Fake home: <root>/home/.fake
   reused Fake settings: <root>/home/fake-settings.json
 Syncing repo-local public scripts...
-  reused claude-designer: <root>/home/.local/bin/claude-designer
+  reused air-fake: <root>/home/.local/bin/air-fake
 
 Ready.
 Overlay merged: <root>/overlay
-Fake home (default) now reads from: <root>/home/.fake
-Fake profile home (designer) now reads from: <root>/home/profiles/designer
+Fake home now reads from: <root>/home/.fake
 Fake settings now reads from: <root>/home/fake-settings.json
 Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: <root>/home/.local/bin
 Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, and CLAUDE_CONFIG_DIR if needed."

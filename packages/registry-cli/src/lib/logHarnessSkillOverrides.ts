@@ -1,11 +1,11 @@
 import { existsSync } from "fs";
 import { join } from "path";
 
-import type { IUnifiedHarnessBuildContext } from "./harnessBuild";
+import type { IHarnessBuildContext } from "./harnessBuild";
 import { readHarnessSkillEntries } from "./userSkillUtils";
 
 export async function logHarnessSkillOverrides(
-  context: IUnifiedHarnessBuildContext,
+  context: IHarnessBuildContext,
   targetName: string,
   logger: (message: string) => void = console.log,
 ): Promise<string[]> {

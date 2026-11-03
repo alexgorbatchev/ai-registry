@@ -1,6 +1,6 @@
 # @alexgorbatchev/ai-registry
 
-This repository serves as a canonical registry for my AI tooling. It keeps reusable skills, commands, profiles, harness overrides, and setup workflow in one repo, then generates the harness-specific outputs from that source of truth.
+This repository serves as a canonical registry for my AI tooling. It keeps reusable skills, commands, the shared system prompt, harness overrides, and setup workflow in one repo, then generates the harness-specific outputs from that source of truth.
 
 ## Structure
 
@@ -14,7 +14,7 @@ The reusable source-of-truth layer.
 - **Writer skills**: `prompt-writer` applies whenever generating, writing, or revising AI agent instructions in any artifact. `skill-writer` adds skill-bundle routing, frontmatter, resources, and validation. `docs-writer` owns project documentation structure and maintenance; both relevant writers apply when documentation contains agent instructions.
 - **Matt Pocock skills**: All skills authored by `mattpocock` live under `skills/user/` and require explicit user invocation. These workflows may depend on other bundled user skills.
   Preserve third-party-authored skill content; keep local policies in registry-owned guidance and record unresolved upstream findings.
-- **`system/`**: Shared repo-level instruction fragments and persistent-memory guidance that harness configs and profiles can reference via template includes.
+- **`system/`**: Shared repo-level instruction fragments and persistent-memory guidance. `system/system.md` is the system prompt every generated harness ships: Codex `AGENTS.md`, Pi `APPEND_SYSTEM.md`, Claude Code `CLAUDE.md`, and OpenCode `instructions`.
   Models choose search and code-navigation tools according to the task and available capabilities; the registry does not mandate a search tool or tool ordering.
   Dependency investigation and library integration stay within the authorized task's required capabilities, using supported interfaces and intended usage patterns.
   Red/green and isolated test-sensitivity checks apply to changes in executable behavior; non-executable changes use applicable validators.
@@ -26,31 +26,19 @@ The reusable source-of-truth layer.
 - **`packages/`**: Publishable repo-local packages distributed independently from the generated harness outputs.
 - **`packages/opencode-session-analysis/`**: Bun CLI package for OpenCode session and skill-usage reporting.
 
-### 2. The Profiles (`profiles/`)
-The assembled agents. These folders contain `profile.yaml` manifests that cherry-pick from the reusable assets using globs to create specific AI personas. You can also define custom tool toggles and granular tool permissions in these files.
-- Profiles may also define top-level local assets:
-  - `profiles/<name>/commands/*.md` for profile-owned commands
-  - `profiles/<name>/skills/<skill-name>/SKILL.md` for profile-owned skills
-- Profile-local commands are emitted into OpenCode as namespaced shared commands named `--<profile>-<filename>.md`.
-- Profile-local skills keep their normal skill names and therefore must not collide with global skills or another profile's local skills.
-- For skills, `['*']` expands to the global skill set only. A profile also receives its own `profiles/<name>/skills/*` skills, and OpenCode additionally auto-allows harness-local skills that match `<harness-name>-*`, but it does not gain access to another profile's local skills.
-- **`personal-assistant/`**: General-purpose personal assistant with stronger defaults for practical consumer tasks such as showtime searches.
-- **`designer/`**: UI/UX focused agent.
-- **`developer/`**: Backend/Fullstack focused agent.
-
-### 3. Setup (`bun run bootstrap`)
+### 2. Setup (`bun run bootstrap`)
 `bun run bootstrap` is the repo-local clone-and-run entrypoint for this repository.
 
 Root script entrypoints live directly under `packages/registry-cli/src/bin/` and use dash-based filenames. Helper modules that are imported by those entrypoints and are not intended to be executed directly belong under `packages/registry-cli/src/lib/`.
 
-### 4. Generated Outputs (`.output/`)
+### 3. Generated Outputs (`.output/`)
 The final generated harness artifacts. The registry updates only the files and paths it manages there, writes a manifest for those managed entries, and leaves unrelated harness-owned files in place.
 
 ## Building and Usage
 
-This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that resolves the profiles and builds generated harness outputs directly from the checked-in source tree.
+This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that collects every skill and command and builds generated harness outputs directly from the checked-in source tree. Every harness ships every registry skill and command.
 
-Generated harness outputs are compiled by plugins at `packages/registry-cli/src/harnesses/<target>/build.ts`. The root build statically imports those plugins and lets them stage per-profile artifacts plus finalize the generated harness output.
+Generated harness outputs are compiled by plugins at `packages/registry-cli/src/harnesses/<target>/build.ts`. The root build statically imports those plugins and calls each one's `buildOutput` hook to write that harness's output root.
 
 Source files keep their filenames and use [EJS](https://ejs.co/docs/) syntax. `bun run build` renders generated text outputs exactly once. Templates support native JavaScript expressions and control flow; only trusted templates should be built. Unknown variables, invalid JavaScript, failed includes, and missing environment values without defaults fail the build. Use raw output tags for paths and plain text; `<%= value %>` performs HTML escaping. Use `<%%` to emit a literal opening delimiter. Foreign `{{...}}` syntax passes through unchanged. Available locals:
 
@@ -58,7 +46,6 @@ Source files keep their filenames and use [EJS](https://ejs.co/docs/) syntax. `b
 - `<%- overlay_dir %>`: Absolute path to the last active private overlay directory, or empty string if none is configured. Use file_dir for resources relative to an asset in another overlay.
 - `<%- skills_dir %>`: Absolute path to the repository's `skills/` directory.
 - `<%- commands_dir %>`: Absolute path to the repository's `commands/` directory.
-- `<%- profiles_dir %>`: Absolute path to the repository's `profiles/` directory.
 - `<%- output_dir %>`: Absolute path to the generated output root at `.output/`.
 - `<%- file_path %>`: Absolute path to the original source file being rendered, even inside nested includes.
 - `<%- file_dir %>`: Absolute path to the directory containing the original source file being rendered, even inside nested includes.
@@ -68,7 +55,7 @@ Source files keep their filenames and use [EJS](https://ejs.co/docs/) syntax. `b
 
 When the build stages files from `skills/`, `commands/`, or `harnesses/<target>/`, it also honors nested `.registry-ignore` files using `.gitignore`-style matching. Use those files to keep repo-local scratch assets, harness build scripts, or other non-shipping files out of generated outputs.
 
-When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `<%- skills_dir %>/...`, `<%- commands_dir %>/...`, `<%- profiles_dir %>/...`, and `<%- output_dir %>/...` for those canonical folders. Use `<%- repo_root %>/...` for canonical folders that do not have a dedicated token, such as `<%- repo_root %>/harnesses/...`, `<%- repo_root %>/system/...`, `<%- repo_root %>/vendor/...`, and `<%- repo_root %>/packages/registry-cli/...`. Relative includes resolve against the source file; a leading slash selects the repository root, so `<%- include("/system/system.md") %>` resolves from the repo root no matter which source file contains it. Resolved include paths outside the repository fail. Sync-back reconstructs canonical raw path-variable tags; edit expressions, includes, and control flow at their source.
+When checked-in guidance or generated text refers to files inside this repository, use these variables instead of machine-specific absolute paths. Prefer `<%- skills_dir %>/...`, `<%- commands_dir %>/...`, and `<%- output_dir %>/...` for those canonical folders. Use `<%- repo_root %>/...` for canonical folders that do not have a dedicated token, such as `<%- repo_root %>/harnesses/...`, `<%- repo_root %>/system/...`, `<%- repo_root %>/vendor/...`, and `<%- repo_root %>/packages/registry-cli/...`. Relative includes resolve against the source file; a leading slash selects the repository root, so `<%- include("/system/system.md") %>` resolves from the repo root no matter which source file contains it. Resolved include paths outside the repository fail. Sync-back reconstructs canonical raw path-variable tags; edit expressions, includes, and control flow at their source.
 
 For Vim, the project-local `.exrc` assigns `filetype=ejs` to Markdown files in this repository. Enable local configuration with `set exrc` in your vimrc and load the repository's `.exrc` when prompted by your editor. EJS syntax highlighting requires an EJS syntax plugin; filetype detection alone does not install one. EditorConfig does not provide a standard filetype property.
 
@@ -80,7 +67,7 @@ bun run bootstrap
 
 ### Private Overlay Registries
 
-For proprietary or work-specific skills, commands, and profiles that cannot be committed to a public repository, use the overlay registry feature:
+For proprietary or work-specific skills and commands that cannot be committed to a public repository, use the overlay registry feature:
 
 1. Create a separate, private git repository for your work assets (e.g. `~/work/ai-registry`).
 2. Mirror the standard directory structure:
@@ -89,21 +76,18 @@ For proprietary or work-specific skills, commands, and profiles that cannot be c
    ├── skills/
    │   ├── agent/internal-tool/SKILL.md
    │   └── user/manual-task/SKILL.md
-   ├── commands/
-   │   └── jira-ticket.md
-   └── profiles/
-       └── work/
-           └── profile.yaml
+   └── commands/
+       └── jira-ticket.md
    ```
 3. Set the overlay paths in shell configuration or `.env` (automatically loaded by Bun and git-ignored):
    ```bash
    AI_REGISTRY_OVERLAY=~/work/ai-registry:~/personal/ai-registry
    ```
-4. Run `bun run build` or `bun run bootstrap`. The build merges assets from left to right; the last matching skill, command, or profile wins. Both build and bootstrap print skill conflict notes with the selected and replaced source paths.
+4. Run `bun run build` or `bun run bootstrap`. The build merges assets from left to right; the last matching skill or command wins. Both build and bootstrap print skill conflict notes with the selected and replaced source paths.
 
 Separate paths with the platform PATH separator (`:` on Linux/macOS, `;` on Windows). Each entry supports `~`; relative paths resolve from the registry checkout. Empty entries are ignored. Repeated normalized paths keep their last occurrence, so `A:B:A` is processed as `B:A`. Missing paths produce warnings and are skipped.
 
-Each overlay may contain any subset of `skills/`, `commands/`, and `profiles/`. Skill bundles and profile directories are replaced as a whole, not merged file by file. Profile patterns still determine which assets are selected. Harness-specific skill overrides retain their precedence over all overlays.
+Each overlay may contain `skills/`, `commands/`, or both. Skill bundles are replaced as a whole, not merged file by file. Harness-specific skill overrides retain their precedence over all overlays.
 
 ### Hostname Skill Variants
 
@@ -126,7 +110,7 @@ AI_REGISTRY_HOSTNAME=workstation-a bun run build
 
 Hostnames must start with a letter or digit and contain only letters, digits, dots, underscores, or hyphens. An empty or invalid override fails the build. If no matching variant directory exists, the build uses the default `SKILL.md`. A matching directory must contain a regular `SKILL.md` file with valid YAML frontmatter, a non-empty description and body, and the same name and author as the default; an invalid matching variant fails the build.
 
-Selection happens within each resolved skill bundle, after private overlay and harness override precedence. This applies to reusable, profile-local, and harness-local skills across all four harnesses. The selected file is emitted as the normal `SKILL.md`; existing author prefixes and user-skill invocation rules still apply. References, scripts, and assets come from the bundle root. The entire root `variants/` directory is excluded from generated output, and selected variant source paths appear in build output.
+Selection happens within each resolved skill bundle, after private overlay and harness override precedence. This applies to reusable and harness-local skills across all four harnesses. The selected file is emitted as the normal `SKILL.md`; existing author prefixes and user-skill invocation rules still apply. References, scripts, and assets come from the bundle root. The entire root `variants/` directory is excluded from generated output, and selected variant source paths appear in build output.
 
 Use the existing repository-root-relative `include` directive to share instructions between variants. Template expansion runs once, and `file_path` and `file_dir` refer to the selected variant's original source file and directory. Markdown links to bundled references should use their generated locations, such as `references/shared.md`.
 
@@ -134,7 +118,7 @@ Keep actual private hostnames and environment instructions in the private overla
 
 The generated-output manifest records skill source paths. Generated-edit recovery writes changes to the selected variant and rejects recovery when the recorded source differs from the current selection, such as after switching hostnames. Rebuild with the original hostname and overlay before recovering those edits. Recovery reverses path tokens but does not reconstruct include directives; edit include-based skills in their source files to preserve those directives.
 
-Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, reapply the generated OpenCode config, the generated `default` Codex, Pi, and Claude Code profiles to `~/.codex`, `~/.pi/agent`, and `~/.claude`, and every non-default profile to its profile home (see [Harness Homes](#harness-homes)), and resync the repo-local `air-*`, `claude-*`, `codex-*`, `pi-*`, and `cll` wrappers into `~/.local/bin`. Add `-- --codex-profile <profile>`, `-- --pi-profile <profile>`, and/or `-- --claude-code-profile <profile>` when you want to apply a different generated profile to those homes.
+Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, reapply the generated OpenCode, Codex, Pi, and Claude Code outputs to their homes (see [Harness Homes](#harness-homes)), and resync the repo-local `air-*`, `pi-*`, and `cll` wrappers into `~/.local/bin`.
 
 To smoke test that flow without touching your real XDG config paths, run:
 
@@ -152,15 +136,14 @@ That command:
 - automatically recovers supported harness-written generated-file edits into their mapped source and regenerates outputs when the manifest baseline confirms that source changes will not be overwritten; conflicts, unsupported recovery, or save failures preserve both versions and suspend output application, including with `-y`
 - syncs harness settings files (Claude Code and Pi `settings.json`, OpenCode `opencode.jsonc`, Codex `config.toml`) both ways instead of treating them as drift: changes the harness made are written back to `harnesses/<name>/` and committed when the file had no other uncommitted edits, and registry changes are applied to the live file
 - links the managed entries of `.output/opencode` into the real `${XDG_CONFIG_HOME:-~/.config}/opencode` directory
-- links the managed entries of `.output/codex/default` into the real `${CODEX_HOME:-~/.codex}` directory by default, or of `.output/codex/<profile>` when you pass `-- --codex-profile <profile>`
-- links the managed entries of `.output/pi/default` into the real `${PI_CODING_AGENT_DIR:-~/.pi/agent}` directory by default, or of `.output/pi/<profile>` when you pass `-- --pi-profile <profile>`
-- links the managed entries of `.output/claude-code/default` into the real `${CLAUDE_CONFIG_DIR:-~/.claude}` directory by default, or of `.output/claude-code/<profile>` when you pass `-- --claude-code-profile <profile>`
-- applies every non-default Codex, Pi, and Claude Code profile to its home under `${XDG_DATA_HOME:-~/.local/share}/ai-registry/<harness>/profiles/` and links the default home's runtime entries into it
-- symlinks every `air-*`, `claude-*`, `codex-*`, `pi-*`, and `cll` helper from `.output/bin` into `~/.local/bin`
+- links the managed entries of `.output/codex` into the real `${CODEX_HOME:-~/.codex}` directory
+- links the managed entries of `.output/pi` into the real `${PI_CODING_AGENT_DIR:-~/.pi/agent}` directory
+- links the managed entries of `.output/claude-code` into the real `${CLAUDE_CONFIG_DIR:-~/.claude}` directory
+- symlinks every `air-*`, `pi-*`, and `cll` helper from `.output/bin` into `~/.local/bin`
 - removes broken public-wrapper symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
 
-After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps generated outputs, the default Codex, Pi, and Claude Code links, and the repo-local wrapper symlinks refreshed. Add `-- --codex-profile <profile>`, `-- --pi-profile <profile>`, and/or `-- --claude-code-profile <profile>` when you need non-default linked targets. The checked-in `pre-push` hook scans every commit a push would publish with [gitleaks](https://github.com/gitleaks/gitleaks) and blocks the push on findings, so `gitleaks` must be installed and on `PATH`; record a reviewed false positive in `.gitleaksignore`.
+After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps generated outputs, the harness home links, and the repo-local wrapper symlinks refreshed. The checked-in `pre-push` hook scans every commit a push would publish with [gitleaks](https://github.com/gitleaks/gitleaks) and blocks the push on findings, so `gitleaks` must be installed and on `PATH`; record a reviewed false positive in `.gitleaksignore`.
 
 ### Scheduled updates
 
@@ -274,109 +257,71 @@ Avoid plain `npx skills update` in this repo. The upstream project-update flow d
 
 The build script generates unified final outputs in `.output/` for the targets that belong there:
 
-- `.output/opencode`: OpenCode config with skills (copied from source with template tags resolved), commands, plugin specs, and generated persona files. The OpenCode-specific final shaping now lives in `packages/registry-cli/src/harnesses/opencode/build.ts`.
-- `.output/codex/<profile>`: Codex profile root for one ai-registry profile. Each profile has its own `AGENTS.md` and generated `skills/`, including the default profile's commands packaged as native skills that require explicit invocation. Non-default roots symlink shared entries such as `config.toml` from `default/`. Runtime files such as `auth.json` stay Codex-owned under the active `CODEX_HOME` instead of being registry-managed.
-- `.output/pi/<profile>`: Pi profile root for one ai-registry profile. Each generated profile renders its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json` and `prompts/`, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Pi-specific final shaping lives in `packages/registry-cli/src/harnesses/pi/build.ts`.
-- `.output/claude-code/<profile>`: Claude Code config root for one ai-registry profile, matching the layout Claude Code expects at `CLAUDE_CONFIG_DIR`. Each generated profile renders its own `CLAUDE.md` from `profiles/<name>/profile.yaml`; the generated `default` root provides the shared `settings.json` and `commands/`, while non-default roots symlink those shared entries from `default/` and keep their own generated `skills/` (copied from source with template tags resolved). The Claude Code-specific shaping lives in `packages/registry-cli/src/harnesses/claude-code/build.ts`.
+- `.output/opencode`: OpenCode config with skills (copied from source with template tags resolved), commands, and plugin specs; it generates no agents, and `opencode.jsonc` loads `system/system.md` through `instructions`. The OpenCode-specific final shaping now lives in `packages/registry-cli/src/harnesses/opencode/build.ts`.
+- `.output/codex`: Codex home root with `AGENTS.md` from `system/system.md`, `config.toml`, `rules/`, and generated `skills/`, including every command packaged as a native skill that requires explicit invocation. Runtime files such as `auth.json` stay Codex-owned under `CODEX_HOME` instead of being registry-managed.
+- `.output/pi`: Pi agent root with `APPEND_SYSTEM.md` from `system/system.md`, `settings.json`, `prompts/`, and generated `skills/` (copied from source with template tags resolved). The Pi-specific shaping lives in `packages/registry-cli/src/harnesses/pi/build.ts`.
+- `.output/claude-code`: Claude Code config root matching the layout Claude Code expects at `CLAUDE_CONFIG_DIR`, with `CLAUDE.md` from `system/system.md`, `settings.json`, `commands/`, and generated `skills/` (copied from source with template tags resolved). The Claude Code-specific shaping lives in `packages/registry-cli/src/harnesses/claude-code/build.ts`.
 - `.output/manifest.json`: SHA-256 manifest for managed generated files, directories, symlinks, mapped source paths, and source fingerprints under `.output/`. Builds automatically recover supported harness edits when source fingerprints and fresh generated output match their recorded baselines and supported transformations reverse exactly. Recovery supports plain text, canonical raw path tags, and generated skill name/invocation metadata; EJS includes, expressions, control flow, and other transformations require source edits. Conflicts, missing baselines/mappings, or save failures preserve the edits and stop output application without an overwrite prompt. Existing drift in older manifests without source fingerprints must be reconciled into source before a clean generation can establish a fresh baseline; `-y` does not discard it. After recovery, a fresh generation pass updates all copies; further drift suspends application for reconciliation. Unmanaged files are preserved. Synced harness settings files are listed under `syncedFilePaths` instead of the managed entries and reconciled key by key with source, using previous merged values under `.tmp/settings-sync/`.
 
 The build writes only final generated outputs into `.output/` and updates only the managed paths recorded in the manifest.
 
 ### Harness Homes
 
-Harness runtime state never lives in `.output/`. Each harness home is a real directory outside the repository, and bootstrap links the generated profile's managed entries into it:
+Harness runtime state never lives in `.output/`. Each harness home is a real directory outside the repository, and bootstrap links the harness output's managed entries into it:
 
-| Profile | Home |
+| Harness | Home |
 | --- | --- |
-| Claude Code `default` | `${CLAUDE_CONFIG_DIR:-~/.claude}` |
-| Codex `default` | `${CODEX_HOME:-~/.codex}` |
-| Pi `default` | `${PI_CODING_AGENT_DIR:-~/.pi/agent}` |
+| Claude Code | `${CLAUDE_CONFIG_DIR:-~/.claude}` |
+| Codex | `${CODEX_HOME:-~/.codex}` |
+| Pi | `${PI_CODING_AGENT_DIR:-~/.pi/agent}` |
 | OpenCode | `${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-~/.config}/opencode}` |
-| Any non-default Claude Code, Codex, or Pi profile | `${XDG_DATA_HOME:-~/.local/share}/ai-registry/<harness>/profiles/<profile>` |
 
-- bootstrap links only the top-level entries the manifest records for the generated profile, such as `CLAUDE.md`, `skills/`, `commands/`, and the synced settings file
+- bootstrap links only the top-level entries the manifest records for the harness output, such as `CLAUDE.md`, `skills/`, `commands/`, and the synced settings file
 - sessions, transcripts, history, databases, logs, worktrees, installed plugins, and credentials stay where the harness writes them, in the home itself, so deleting `.output/` or moving the checkout never hides or splits them
 - rerunning bootstrap from a relocated checkout repoints the managed links and leaves runtime state untouched
 - a real file or directory that occupies a managed name is kept as `<name>.backup-<timestamp>` before the link replaces it
-- non-default profile homes link every runtime entry of the default home they do not hold themselves, except bootstrap's own backups, so profiles share history, sessions, and Codex's databases
-- bootstrap reports a real entry in a profile home that hides the shared entry of the same name as diverged; move it aside and rerun bootstrap to share again
+- links into the harness output whose target the build no longer generates are removed
 - bootstrap refuses a home that is still a symlink; move the state it points at into a real directory first
 
 For local file-based OpenCode plugins that need runtime dependencies from this repo, keep the OpenCode config entry in `harnesses/opencode/opencode.jsonc` and vendor the plugin package itself under `vendor/`. The generated config can then point at `file://<%- repo_root %>/vendor/<name>/...` while `bun install` satisfies its imports from the repo workspace install.
 
 ### Using with Codex
 
-The Codex harness compiles the generated `default` profile into the shared Codex root under `.output/codex/default/`. Every generated Codex profile root renders its own `AGENTS.md` from that profile manifest's `system_prompt`, while non-default roots symlink the remaining shared entries from `default/` and keep only their own `skills/` directory.
+The Codex harness compiles `.output/codex/`, which bootstrap applies to `${CODEX_HOME:-~/.codex}`.
 
-- each generated profile contributes its own home-level `AGENTS.md` from `profiles/<name>/profile.yaml`
-- the generated `default` profile contributes the shared command set and `config.toml`
+- `AGENTS.md` is a copy of `system/system.md`
 - `config.toml` syncs both ways with `harnesses/codex/config.toml` on every build, keeping comments; trusted projects, hook trust, notices, and MCP credentials stay local to the machine
-- each profile's `skills/` contains its selected skills, Codex-only harness skills, and copies of the default profile's selected commands as native skill bundles, with template tags resolved
+- `skills/` contains every registry skill, Codex-only harness skills, and every command as a native skill bundle, with template tags resolved
 - command bundles preserve their Markdown instructions and description and disable implicit invocation through `agents/openai.yaml`; invoke `--commit-changed-files.md` as `$command-commit-changed-files` or select it through `/skills`
-- commands with an explicit YAML `name` use that skill name; otherwise names use `command-<filename>` with leading hyphens removed and repeated hyphens collapsed; default profile-local commands use `command-default-<filename>`
-- commands require YAML frontmatter with a non-empty `description`; invalid skill names, duplicate command names, and collisions with selected skills stop the build
-- non-default profiles inherit the default command set; their own command selections are not emitted
-- non-default roots symlink every shared top-level entry from `default/` except `AGENTS.md` and `skills/`, keeping their own instructions and skills; Codex outputs have no managed `prompts/` directory
-
-To apply one generated Codex profile to your active Codex home, run:
-
-```bash
-bun run bootstrap -- --codex-profile developer
-```
-
-Codex uses one active home directory at a time. Plain bootstrap applies the generated `default` profile to `${CODEX_HOME:-~/.codex}`, and `-- --codex-profile <profile>` applies a different generated profile there instead.
-
-Bootstrap also links generated Codex launchers into `~/.local/bin`:
-
-- `codex-<profile>` launches any non-default generated Codex profile by setting `CODEX_HOME` to its profile home
-- no bare `codex` wrapper is generated, so the real `codex` binary stays on `PATH` untouched and reads `${CODEX_HOME:-~/.codex}`
+- commands with an explicit YAML `name` use that skill name; otherwise names use `command-<filename>` with leading hyphens removed and repeated hyphens collapsed
+- commands require YAML frontmatter with a non-empty `description`; invalid skill names, duplicate command names, and collisions with skills stop the build
+- Codex outputs have no managed `prompts/` directory, and no `codex` wrapper is generated, so the real `codex` binary stays on `PATH` untouched
 
 ### Using with Pi
 
-The Pi harness compiles the generated `default` profile into the shared Pi root under `.output/pi/default/`. Every generated Pi profile root renders its own `APPEND_SYSTEM.md` from that profile manifest's `system_prompt`, while non-default roots symlink the remaining shared entries from `default/` and keep only their own `skills/` directory.
+The Pi harness compiles `.output/pi/`, which bootstrap applies to `${PI_CODING_AGENT_DIR:-~/.pi/agent}`.
 
-- each generated profile contributes its own `APPEND_SYSTEM.md` from `profiles/<name>/profile.yaml`
-- the generated `default` profile contributes the shared `settings.json` and `prompts/`
-- `skills/` plus any Pi-only harness skills under `harnesses/pi/skills/` (grouped into `agent/` and `user/`) are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Pi payload
-- non-default generated Pi profile roots symlink every shared top-level entry from `default/` except `APPEND_SYSTEM.md` and `skills/`, so they inherit the default commands and settings while keeping their own instructions and skills
+- `APPEND_SYSTEM.md` is a copy of `system/system.md`
+- `prompts/` holds every registry command plus `harnesses/pi/prompts/`; a name collision stops the build
+- `skills/` holds every registry skill plus Pi-only harness skills under `harnesses/pi/skills/` (grouped into `agent/` and `user/`), copied with template tags resolved
+- `settings.json` syncs both ways with `harnesses/pi/settings.json`; `models.json`, `web-search.json`, and `extensions/` are copied when the harness ships them
 
-To apply one generated Pi profile to your active Pi config directory, run:
+Bootstrap also links generated Pi helpers into `~/.local/bin`:
 
-```bash
-bun run bootstrap -- --pi-profile developer
-```
-
-Pi uses one active config root at a time. Plain bootstrap applies the generated `default` profile to `${PI_CODING_AGENT_DIR:-~/.pi/agent}`, and `-- --pi-profile <profile>` applies a different generated profile there instead.
-
-Bootstrap also links generated Pi launchers into `~/.local/bin`:
-
-- `pi-<profile>` launches any non-default generated Pi profile by setting `PI_CODING_AGENT_DIR` to its profile home
 - `pi-install`, `pi-update`, and `pi-uninstall` manage Pi packages in `harnesses/pi/settings.json` and rebuild afterward
-- no bare `pi` wrapper is generated, so the real `pi` binary stays on `PATH` untouched and reads `${PI_CODING_AGENT_DIR:-~/.pi/agent}`
+- no `pi` wrapper is generated, so the real `pi` binary stays on `PATH` untouched and reads `${PI_CODING_AGENT_DIR:-~/.pi/agent}`
 
 ### Using with Claude Code
 
-The Claude Code harness compiles the generated `default` profile into the shared Claude Code config root under `.output/claude-code/default/`. Every generated Claude Code profile root renders its own `CLAUDE.md` from that profile manifest's `system_prompt`, while non-default roots symlink the remaining shared entries from `default/` and keep only their own `skills/` directory.
+The Claude Code harness compiles `.output/claude-code/`, which bootstrap applies to `${CLAUDE_CONFIG_DIR:-~/.claude}`.
 
-- each generated profile contributes its own user-global `CLAUDE.md` from `profiles/<name>/profile.yaml`
-- the generated `default` profile contributes the shared `settings.json` and `commands/`
+- `CLAUDE.md` is a copy of `system/system.md`; `commands/` holds every registry command
 - per-project memory files and transcripts (`projects/`), session history, todo lists, file history, and installed plugins live in the real Claude Code home, never in the generated output
-- every file shipped under `harnesses/claude-code/` other than `skills/` is copied into the generated `default` root, so new native config surfaces such as `agents/` or `output-styles/` need no build changes
-- `skills/` plus any Claude Code-only harness skills under `harnesses/claude-code/skills/` (grouped into `agent/` and `user/`) are generated per profile as copies with template tags resolved and remain the only non-default profile-specific Claude Code payload
-- non-default generated Claude Code profile roots symlink every shared top-level entry from `default/` except `CLAUDE.md` and `skills/`, so they inherit the default commands and settings while keeping their own instructions and skills
-- the Claude Code harness has no native equivalent for the manifest's `tools` and `permission` fields, so the build fails instead of silently dropping them
+- every file shipped under `harnesses/claude-code/` other than `skills/` is copied into the output root, so new native config surfaces such as `agents/` or `output-styles/` need no build changes
+- `skills/` holds every registry skill plus Claude Code-only harness skills under `harnesses/claude-code/skills/` (grouped into `agent/` and `user/`), copied with template tags resolved
 
-To apply one generated Claude Code profile to your active Claude Code config directory, run:
+Bootstrap also links generated Claude Code helpers into `~/.local/bin`:
 
-```bash
-bun run bootstrap -- --claude-code-profile developer
-```
-
-Claude Code uses one active config directory at a time. Plain bootstrap applies the generated `default` profile to `${CLAUDE_CONFIG_DIR:-~/.claude}`, and `-- --claude-code-profile <profile>` applies a different generated profile there instead.
-
-Bootstrap also links generated Claude Code launchers into `~/.local/bin`:
-
-- `claude-<profile>` launches any non-default generated Claude Code profile by setting `CLAUDE_CONFIG_DIR` to its profile home
 - `cll` launches Claude Code routed through LiteLLM (reading `ANTHROPIC_BASE_URL` or `LITELLM_BASE_URL`, and `ANTHROPIC_AUTH_TOKEN` or `LITELLM_API_KEY`), defaulting to `gemini-3.7-flash` (or a custom model name passed as the first argument)
 - no `claude` wrapper is generated, so the real `claude` binary stays on `PATH` untouched and reads `~/.claude`
 
@@ -391,8 +336,6 @@ Override the default target locations with:
 
 The smoke test uses `.tmp/bootstrap-smoke/` inside this repository for that path.
 Treat `.tmp/bootstrap-smoke/` as a fake `HOME`, with a fresh repo copy staged at `.tmp/bootstrap-smoke/development/ai-registry`.
-
-Once activated, you can open OpenCode and use the `Tab` key to seamlessly switch between generated personas on the fly. Codex, Pi, and Claude Code use one linked profile at a time, selected during bootstrap.
 
 ### Other Harnesses
 

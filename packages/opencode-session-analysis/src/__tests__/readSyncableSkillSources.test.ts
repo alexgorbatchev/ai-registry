@@ -28,18 +28,13 @@ afterEach(() => {
 });
 
 describe("readSyncableSkillSources", () => {
-  it("discovers registry, harness, and profile-local skills", async () => {
+  it("discovers registry and harness skills", async () => {
     const registryRootPath = createFixtureRoot("discovers-sources");
     writeSkill(registryRootPath, "skills/bun", "---\nname: bun\ndescription: bun\n---\n");
     writeSkill(
       registryRootPath,
       "harnesses/opencode/skills/opencode-config",
       "---\nname: opencode-config\ndescription: config\n---\n",
-    );
-    writeSkill(
-      registryRootPath,
-      "profiles/developer/skills/project-local",
-      "---\nname: project-local\ndescription: local\n---\n",
     );
 
     const sources = await readSyncableSkillSources(registryRootPath);
@@ -63,15 +58,6 @@ describe("readSyncableSkillSources", () => {
           owner: "harnesses/opencode",
         },
       ],
-      [
-        "project-local",
-        {
-          name: "project-local",
-          sourceDirPath: join(registryRootPath, "profiles", "developer", "skills", "project-local"),
-          sourceKind: "profile-local",
-          owner: "developer",
-        },
-      ],
     ]);
   });
 
@@ -80,12 +66,12 @@ describe("readSyncableSkillSources", () => {
     writeSkill(registryRootPath, "skills/bun", "---\nname: bun\ndescription: bun\n---\n");
     writeSkill(
       registryRootPath,
-      "profiles/developer/skills/bun",
+      "harnesses/opencode/skills/bun",
       "---\nname: bun\ndescription: duplicated bun\n---\n",
     );
 
     await expect(readSyncableSkillSources(registryRootPath)).rejects.toThrow(
-      "Duplicate syncable skill name bun found in developer and skills",
+      "Duplicate syncable skill name bun found in harnesses/opencode and skills",
     );
   });
 

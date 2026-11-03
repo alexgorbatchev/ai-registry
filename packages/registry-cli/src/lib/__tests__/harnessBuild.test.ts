@@ -7,9 +7,9 @@ import {
   applyTemplateVariablesToGeneratedOutput,
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
-  stageProfileAssets,
-  type IBuildSupport,
-  type IProfileBuildContext,
+  stageRegistryAssets,
+  type IHarnessBuildContext,
+  type IRegistryAssets,
   type ITemplateContext,
 } from "../harnessBuild";
 
@@ -35,8 +35,33 @@ function createTemplateContext(repositoryRoot: string): ITemplateContext {
     repo_root: repositoryRoot,
     skills_dir: join(repositoryRoot, "skills"),
     commands_dir: join(repositoryRoot, "commands"),
-    profiles_dir: join(repositoryRoot, "profiles"),
     output_dir: join(repositoryRoot, ".output"),
+  };
+}
+
+function createRegistryAssetContext(repositoryRoot: string, assets: Partial<IRegistryAssets>): IHarnessBuildContext {
+  return {
+    harnessDir: join(repositoryRoot, "harnesses", "test"),
+    overlayDirs: [],
+    outputDir: join(repositoryRoot, "staged"),
+    systemPromptPath: join(repositoryRoot, "system", "system.md"),
+    assets: {
+      skills: [],
+      skillSourcePaths: {},
+      userSkillNames: new Set(),
+      commands: [],
+      commandSourcePaths: {},
+      ...assets,
+    },
+    templateContext: { ...createTemplateContext(repositoryRoot), output_dir: join(repositoryRoot, "output") },
+    buildSupport: {
+      copyDirectoryWithTemplateVariables: (source, target, ctx) => copyDirectoryWithTemplateVariables(source, target, ctx),
+      copyPathWithTemplateVariables: (source, target, ctx) => copyPathWithTemplateVariables(source, target, ctx),
+      mergeDirectory: async () => {},
+      stageRegistryAssets: async () => {},
+      writeBinScript: async () => {},
+      syncSettingsFile: () => {},
+    },
   };
 }
 
@@ -162,7 +187,6 @@ describe("harnessBuild template rendering", () => {
       repo_root: repositoryRoot,
       skills_dir: join(repositoryRoot, "skills"),
       commands_dir: join(repositoryRoot, "commands"),
-      profiles_dir: join(repositoryRoot, "profiles"),
       output_dir: join(repositoryRoot, "output"),
     };
 
@@ -187,7 +211,6 @@ describe("harnessBuild template rendering", () => {
       repo_root: repositoryRoot,
       skills_dir: join(repositoryRoot, "skills"),
       commands_dir: join(repositoryRoot, "commands"),
-      profiles_dir: join(repositoryRoot, "profiles"),
       output_dir: join(repositoryRoot, "output"),
     };
 
@@ -225,50 +248,20 @@ describe("harnessBuild template rendering", () => {
     const targetSkillsDir = join(repositoryRoot, "staged", "skills");
     const targetCommandsDir = join(repositoryRoot, "staged", "commands");
 
-    const templateContext: ITemplateContext = {
-      repo_root: repositoryRoot,
-      skills_dir: join(repositoryRoot, "skills"),
-      commands_dir: join(repositoryRoot, "commands"),
-      profiles_dir: join(repositoryRoot, "profiles"),
-      output_dir: join(repositoryRoot, "output"),
-    };
-
-    const buildSupport: IBuildSupport = {
-      copyDirectoryWithTemplateVariables: async (source, target, ctx) => {
-        await copyDirectoryWithTemplateVariables(source, target, ctx);
-      },
-      copyPathWithTemplateVariables: async (source, target, ctx) => {
-        await copyPathWithTemplateVariables(source, target, ctx);
-      },
-      mergeDirectory: async () => {},
-      stageProfileAssets: async () => {},
-      writeBinScript: async () => {},
-      syncSettingsFile: () => {},
-    };
-
-    const context: IProfileBuildContext = {
-      harnessDir: join(repositoryRoot, "harnesses", "test"),
-      profileName: "test-profile",
-      profileDir: join(repositoryRoot, "profiles", "test-profile"),
-      manifest: {},
-      globalMatchedSkills: ["base-skill", "overlay-skill"],
-      globalMatchedCommands: ["base-cmd.md", "overlay-cmd.md"],
-      globalSkillSourcePaths: {
+    const context = createRegistryAssetContext(repositoryRoot, {
+      skills: ["base-skill", "overlay-skill"],
+      skillSourcePaths: {
         "base-skill": baseSkillDir,
         "overlay-skill": overlaySkillDir,
       },
-      globalCommandSourcePaths: {
+      commands: ["base-cmd.md", "overlay-cmd.md"],
+      commandSourcePaths: {
         "base-cmd.md": baseCommandFile,
         "overlay-cmd.md": overlayCommandFile,
       },
-      profileLocalSkills: [],
-      profileLocalCommands: [],
-      outputDir: join(repositoryRoot, "staged"),
-      templateContext,
-      buildSupport,
-    };
+    });
 
-    await stageProfileAssets(context, {
+    await stageRegistryAssets(context, {
       skillsDir: targetSkillsDir,
       commandsDir: targetCommandsDir,
     });
@@ -290,47 +283,16 @@ describe("harnessBuild template rendering", () => {
 
     const targetSkillsDir = join(repositoryRoot, "staged", "skills");
 
-    const templateContext: ITemplateContext = {
-      repo_root: repositoryRoot,
-      skills_dir: join(repositoryRoot, "skills"),
-      commands_dir: join(repositoryRoot, "commands"),
-      profiles_dir: join(repositoryRoot, "profiles"),
-      output_dir: join(repositoryRoot, "output"),
-    };
-
-    const buildSupport: IBuildSupport = {
-      copyDirectoryWithTemplateVariables: async (source, target, ctx) => {
-        await copyDirectoryWithTemplateVariables(source, target, ctx);
-      },
-      copyPathWithTemplateVariables: async (source, target, ctx) => {
-        await copyPathWithTemplateVariables(source, target, ctx);
-      },
-      mergeDirectory: async () => {},
-      stageProfileAssets: async () => {},
-      writeBinScript: async () => {},
-      syncSettingsFile: () => {},
-    };
-
-    const context: IProfileBuildContext = {
-      harnessDir: join(repositoryRoot, "harnesses", "test"),
-      profileName: "test-profile",
-      profileDir: join(repositoryRoot, "profiles", "test-profile"),
-      manifest: {},
-      globalMatchedSkills: ["bun", "continue-session"],
-      globalMatchedCommands: [],
-      globalSkillSourcePaths: {
+    const context = createRegistryAssetContext(repositoryRoot, {
+      skills: ["bun", "continue-session"],
+      skillSourcePaths: {
         bun: agentSkillDir,
         "continue-session": userSkillDir,
       },
-      globalUserSkillNames: new Set(["continue-session"]),
-      profileLocalSkills: [],
-      profileLocalCommands: [],
-      outputDir: join(repositoryRoot, "staged"),
-      templateContext,
-      buildSupport,
-    };
+      userSkillNames: new Set(["continue-session"]),
+    });
 
-    await stageProfileAssets(context, {
+    await stageRegistryAssets(context, {
       skillsDir: targetSkillsDir,
     });
 
@@ -362,47 +324,16 @@ describe("harnessBuild template rendering", () => {
 
     const targetSkillsDir = join(repositoryRoot, "staged", "skills");
 
-    const templateContext: ITemplateContext = {
-      repo_root: repositoryRoot,
-      skills_dir: join(repositoryRoot, "skills"),
-      commands_dir: join(repositoryRoot, "commands"),
-      profiles_dir: join(repositoryRoot, "profiles"),
-      output_dir: join(repositoryRoot, "output"),
-    };
-
-    const buildSupport: IBuildSupport = {
-      copyDirectoryWithTemplateVariables: async (source, target, ctx) => {
-        await copyDirectoryWithTemplateVariables(source, target, ctx);
-      },
-      copyPathWithTemplateVariables: async (source, target, ctx) => {
-        await copyPathWithTemplateVariables(source, target, ctx);
-      },
-      mergeDirectory: async () => {},
-      stageProfileAssets: async () => {},
-      writeBinScript: async () => {},
-      syncSettingsFile: () => {},
-    };
-
-    const context: IProfileBuildContext = {
-      harnessDir: join(repositoryRoot, "harnesses", "test"),
-      profileName: "test-profile",
-      profileDir: join(repositoryRoot, "profiles", "test-profile"),
-      manifest: {},
-      globalMatchedSkills: ["triage", "git-commit"],
-      globalMatchedCommands: [],
-      globalSkillSourcePaths: {
+    const context = createRegistryAssetContext(repositoryRoot, {
+      skills: ["triage", "git-commit"],
+      skillSourcePaths: {
         triage: mattSkillDir,
         "git-commit": alexSkillDir,
       },
-      globalUserSkillNames: new Set(["triage"]),
-      profileLocalSkills: [],
-      profileLocalCommands: [],
-      outputDir: join(repositoryRoot, "staged"),
-      templateContext,
-      buildSupport,
-    };
+      userSkillNames: new Set(["triage"]),
+    });
 
-    await stageProfileAssets(context, {
+    await stageRegistryAssets(context, {
       skillsDir: targetSkillsDir,
     });
 
@@ -419,5 +350,29 @@ describe("harnessBuild template rendering", () => {
     const alexSkillContent = await readFile(join(targetSkillsDir, "git-commit", "SKILL.md"), "utf-8");
     expect(alexSkillContent).toContain("name: git-commit");
     expect(alexSkillContent).toContain("author: alexgorbatchev");
+  });
+
+  it("keeps a skill already staged at the output path and rejects a command collision", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const registrySkillDir = join(repositoryRoot, "skills", "agent", "shared");
+    await writeTestFile(registrySkillDir, "SKILL.md", "---\nname: shared\n---\n# Registry\n");
+    const commandFile = await writeTestFile(repositoryRoot, "commands/review.md", "# Registry review");
+    const skillsDir = join(repositoryRoot, "staged", "skills");
+    const commandsDir = join(repositoryRoot, "staged", "commands");
+    await writeTestFile(skillsDir, "shared/SKILL.md", "# Harness override");
+
+    await stageRegistryAssets(createRegistryAssetContext(repositoryRoot, {
+      skills: ["shared"],
+      skillSourcePaths: { shared: registrySkillDir },
+    }), { skillsDir });
+    expect(await readFile(join(skillsDir, "shared", "SKILL.md"), "utf-8")).toBe("# Harness override");
+
+    await writeTestFile(commandsDir, "review.md", "# Harness review");
+    await expect(stageRegistryAssets(createRegistryAssetContext(repositoryRoot, {
+      commands: ["review.md"],
+      commandSourcePaths: { "review.md": commandFile },
+    }), { skillsDir, commandsDir })).rejects.toThrow(
+      `Cannot stage command review.md because the output path already exists: ${join(commandsDir, "review.md")}`,
+    );
   });
 });

@@ -10,9 +10,9 @@ import {
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
   mergeDirectory,
-  stageProfileAssets,
+  stageRegistryAssets,
   writeBinScript,
-  type IUnifiedHarnessBuildContext,
+  type IHarnessBuildContext,
 } from "../../lib/harnessBuild";
 import { createSettingsSyncRegistry } from "../../lib/settingsSync/createSettingsSyncRegistry";
 
@@ -26,33 +26,24 @@ beforeAll(async () => {
   fixtureDirectory = mkdtempSync(resolve(TMP_DIR, "air-opencode-fixture-"));
   const outputDir = resolve(fixtureDirectory, "output");
   scriptsDirectory = resolve(outputDir, "bin");
-  const context: IUnifiedHarnessBuildContext = {
+  const context: IHarnessBuildContext = {
     harnessDir: resolve(fixtureDirectory, "harness"),
+    overlayDirs: [],
     outputDir,
+    systemPromptPath: resolve(REPO_ROOT, "system", "system.md"),
+    assets: { skills: [], skillSourcePaths: {}, userSkillNames: new Set(), commands: [], commandSourcePaths: {} },
     templateContext: { repo_root: REPO_ROOT },
     buildSupport: {
       copyDirectoryWithTemplateVariables,
       copyPathWithTemplateVariables,
       mergeDirectory,
-      stageProfileAssets,
+      stageRegistryAssets,
       writeBinScript,
       syncSettingsFile: createSettingsSyncRegistry(outputDir).syncSettingsFile,
     },
   };
   mkdirSync(context.harnessDir, { recursive: true });
-  assert(plugin.stageProfile);
-  assert(plugin.finalizeOutput);
-  await plugin.stageProfile({
-    ...context,
-    profileName: "default",
-    profileDir: resolve(fixtureDirectory, "profile"),
-    manifest: {},
-    globalMatchedSkills: [],
-    globalMatchedCommands: [],
-    profileLocalSkills: [],
-    profileLocalCommands: [],
-  });
-  await plugin.finalizeOutput(context);
+  await plugin.buildOutput(context);
   await applyTemplateVariablesToGeneratedOutput(outputDir, context.templateContext);
 });
 

@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { logHarnessSkillOverrides } from "../logHarnessSkillOverrides";
-import type { IUnifiedHarnessBuildContext } from "../harnessBuild";
+import type { IHarnessBuildContext } from "../harnessBuild";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "log-harness-skill-overrides-tests");
 const createdDirectories: string[] = [];
@@ -25,22 +25,23 @@ function createUnifiedContext(
   repositoryRoot: string,
   target: string,
   options: { hasOverlay?: boolean } = {},
-): IUnifiedHarnessBuildContext {
+): IHarnessBuildContext {
   return {
     harnessDir: join(repositoryRoot, "harnesses", target),
     overlayDirs: options.hasOverlay ? [join(repositoryRoot, "overlay"), join(repositoryRoot, "empty-overlay")] : [],
     outputDir: join(repositoryRoot, ".output"),
+    systemPromptPath: join(repositoryRoot, "system", "system.md"),
+    assets: { skills: [], skillSourcePaths: {}, userSkillNames: new Set(), commands: [], commandSourcePaths: {} },
     templateContext: {
       repo_root: repositoryRoot,
       skills_dir: join(repositoryRoot, "skills"),
       commands_dir: join(repositoryRoot, "commands"),
-      profiles_dir: join(repositoryRoot, "profiles"),
       output_dir: join(repositoryRoot, ".output"),
       ...(options.hasOverlay ? { overlay_dir: join(repositoryRoot, "overlay") } : {}),
     },
     buildSupport: {
       mergeDirectory: async () => {},
-      stageProfileAssets: async () => {},
+      stageRegistryAssets: async () => {},
       writeBinScript: async () => {},
       copyDirectoryWithTemplateVariables: async () => {},
       copyPathWithTemplateVariables: async () => {},

@@ -1,21 +1,10 @@
-import { copyFile, mkdir, readFile, readdir, rm, symlink, writeFile } from "fs/promises";
+import { mkdir, readFile, rm, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import { parseArgs } from "node:util";
 
-import { renderTemplate } from "@alexgorbatchev/template-resolver";
-
-import type {
-  IBootstrapTarget,
-  IProfileBuildContext,
-  IUnifiedHarnessBuildContext,
-  IUnifiedHarnessPlugin,
-} from "../../lib/harnessBuild";
-import { createExternalProfileHelper } from "../../lib/createExternalProfileHelper";
+import type { IBootstrapTarget, IHarnessBuildContext, IUnifiedHarnessPlugin } from "../../lib/harnessBuild";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
-import { getProfileHomeDir, getProfileHomeShellPath } from "../../lib/profileHomeUtils";
-import { assertSupportedPiManifest } from "./lib/profileOutputRules";
 import {
   getOutputSkillName,
   injectDisableModelInvocation,
@@ -24,51 +13,10 @@ import {
   updateSkillName,
 } from "../../lib/userSkillUtils";
 
-const PROFILE_STAGING_DIR_NAME = ".pi-profiles";
 const APPEND_SYSTEM_FILE_NAME = "APPEND_SYSTEM.md";
-const DEFAULT_PROFILE_NAME = "default";
 const PI_OUTPUT_DIR_NAME = "pi";
 
-function getProfileStagingRoot(outputDir: string): string {
-  return join(outputDir, PROFILE_STAGING_DIR_NAME);
-}
-
-function getProfileStagingDir(outputDir: string, profileName: string): string {
-  return join(getProfileStagingRoot(outputDir), profileName);
-}
-
-async function stageProfileSkills(context: IProfileBuildContext, skillsOutputDir: string): Promise<void> {
-  await context.buildSupport.stageProfileAssets(context, { skillsDir: skillsOutputDir });
-}
-
-async function renderSystemPrompt(context: IProfileBuildContext): Promise<string> {
-  const systemPrompt = typeof context.manifest.system_prompt === "string"
-    ? context.manifest.system_prompt
-    : "";
-
-  if (systemPrompt.trim().length === 0) {
-    return "";
-  }
-
-  return renderTemplate({
-    content: systemPrompt,
-    sourcePath: join(context.profileDir, "profile.yaml"),
-    repositoryRoot: context.templateContext.repo_root,
-    variables: context.templateContext,
-    environment: process.env,
-  });
-}
-
-async function stageProfileAppendSystemFile(context: IProfileBuildContext, profileStagingDir: string): Promise<void> {
-  const renderedSystemPrompt = await renderSystemPrompt(context);
-  if (renderedSystemPrompt.trim().length === 0) {
-    return;
-  }
-
-  await writeFile(join(profileStagingDir, APPEND_SYSTEM_FILE_NAME), `${renderedSystemPrompt.trim()}\n`, "utf-8");
-}
-
-async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir: string): Promise<void> {
+async function stageHarnessLocalSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void> {
   const harnessSkillsDir = join(context.harnessDir, "skills");
   if (!existsSync(harnessSkillsDir)) {
     return;
@@ -108,234 +56,62 @@ async function stageHarnessLocalSkills(context: IProfileBuildContext, skillsDir:
   }
 }
 
-async function stageProfile(context: IProfileBuildContext): Promise<void> {
-  assertSupportedPiManifest(context.manifest, context.profileName);
-
-  const profileStagingDir = getProfileStagingDir(context.outputDir, context.profileName);
-  const skillsOutputDir = join(profileStagingDir, "skills");
-  const isDefaultProfile = context.profileName === DEFAULT_PROFILE_NAME;
-
-  await mkdir(profileStagingDir, { recursive: true });
-  await mkdir(skillsOutputDir, { recursive: true });
-  await stageProfileAppendSystemFile(context, profileStagingDir);
-
-  await stageHarnessLocalSkills(context, skillsOutputDir);
-
-  if (isDefaultProfile) {
-    const promptsOutputDir = join(profileStagingDir, "prompts");
-
-    await context.buildSupport.stageProfileAssets(context, {
-      commandsDir: promptsOutputDir,
-      skillsDir: skillsOutputDir,
-    });
-    return;
-  }
-
-  await stageProfileSkills(context, skillsOutputDir);
-}
-
-async function generatePiHelpers(context: IUnifiedHarnessBuildContext, profiles: string[]): Promise<void> {
-  const piInstallPath = join(context.harnessDir, "templates", "pi-install.sh");
-  const piUninstallPath = join(context.harnessDir, "templates", "pi-uninstall.sh");
-  const piUpdatePath = join(context.harnessDir, "templates", "pi-update.sh");
-
-  const installTemplate = await readFile(piInstallPath, "utf-8");
-  const uninstallTemplate = await readFile(piUninstallPath, "utf-8");
-  const updateTemplate = await readFile(piUpdatePath, "utf-8");
-
-  for (const profile of profiles) {
-    // The default profile is applied to `~/.pi/agent` by bootstrap, so only non-default
-    // profiles need a launcher that overrides PI_CODING_AGENT_DIR with their own home.
-    // Nothing generated here shadows the real `pi` binary.
-    if (profile === DEFAULT_PROFILE_NAME) {
-      continue;
-    }
-
-    const content = createExternalProfileHelper(
-      "pi",
-      "PI_CODING_AGENT_DIR",
-      getProfileHomeShellPath(PI_OUTPUT_DIR_NAME, profile),
-    );
-
-    await context.buildSupport.writeBinScript(context.outputDir, `pi-${profile}`, content);
-  }
-
-  await context.buildSupport.writeBinScript(context.outputDir, "pi-install", installTemplate);
-  await context.buildSupport.writeBinScript(context.outputDir, "pi-uninstall", uninstallTemplate);
-  await context.buildSupport.writeBinScript(context.outputDir, "pi-update", updateTemplate);
-}
-
-async function finalizeOutput(context: IUnifiedHarnessBuildContext): Promise<void> {
-  const profileStagingRoot = getProfileStagingRoot(context.outputDir);
-  const visibleOutputDir = join(context.outputDir, "pi");
-  const finalVisibleOutputDir = join(context.templateContext.output_dir, "pi");
-  const masterSettingsPath = join(context.harnessDir, "settings.json");
-
-  try {
-    await mkdir(visibleOutputDir, { recursive: true });
-
-    if (!existsSync(profileStagingRoot)) {
-      return;
-    }
-
-    const stagedProfiles = await readdir(profileStagingRoot, { withFileTypes: true });
-    const stagedProfileNames = stagedProfiles
-      .filter((stagedProfile) => stagedProfile.isDirectory())
-      .map((stagedProfile) => stagedProfile.name);
-    const defaultProfileDir = join(visibleOutputDir, DEFAULT_PROFILE_NAME);
-    if (!stagedProfileNames.includes(DEFAULT_PROFILE_NAME)) {
-      throw new Error(`Generated Pi default profile does not exist: ${defaultProfileDir}`);
-    }
-
-    const profileNames: string[] = [];
-    const nonDefaultProfileDirs: string[] = [];
-
-    for (const stagedProfile of stagedProfiles) {
-      if (!stagedProfile.isDirectory()) continue;
-
-      profileNames.push(stagedProfile.name);
-      const stagedProfileDir = join(profileStagingRoot, stagedProfile.name);
-      const visibleProfileDir = join(visibleOutputDir, stagedProfile.name);
-      const isDefaultProfile = stagedProfile.name === DEFAULT_PROFILE_NAME;
-      await mkdir(visibleProfileDir, { recursive: true });
-
-      await context.buildSupport.mergeDirectory(join(stagedProfileDir, "skills"), join(visibleProfileDir, "skills"));
-
-      const stagedAppendSystemPath = join(stagedProfileDir, APPEND_SYSTEM_FILE_NAME);
-      if (existsSync(stagedAppendSystemPath)) {
-        // This prompt is generated from the profile, not an editable source file.
-        await Bun.write(
-          join(visibleProfileDir, APPEND_SYSTEM_FILE_NAME),
-          Bun.file(stagedAppendSystemPath),
-        );
-      }
-
-      if (isDefaultProfile) {
-        await context.buildSupport.copyPathWithTemplateVariables(
-          masterSettingsPath,
-          join(visibleProfileDir, "settings.json"),
-          context.templateContext,
-        );
-        // Pi saves model, theme, and thinking-level choices here and stamps the
-        // last-seen version after every update; only the preferences sync back.
-        context.buildSupport.syncSettingsFile(join(visibleProfileDir, "settings.json"), {
-          liveOnlyKeyPaths: [["lastChangelogVersion"]],
-        });
-        const masterModelsPath = join(context.harnessDir, "models.json");
-        if (existsSync(masterModelsPath)) {
-          await context.buildSupport.copyPathWithTemplateVariables(
-            masterModelsPath,
-            join(visibleProfileDir, "models.json"),
-            context.templateContext,
-          );
-        }
-        const masterWebSearchPath = join(context.harnessDir, "web-search.json");
-        if (existsSync(masterWebSearchPath)) {
-          await context.buildSupport.copyPathWithTemplateVariables(
-            masterWebSearchPath,
-            join(visibleProfileDir, "web-search.json"),
-            context.templateContext,
-          );
-        }
-        const masterExtensionsDir = join(context.harnessDir, "extensions");
-        if (existsSync(masterExtensionsDir)) {
-          await context.buildSupport.copyPathWithTemplateVariables(
-            masterExtensionsDir,
-            join(visibleProfileDir, "extensions"),
-            context.templateContext,
-          );
-        }
-        await context.buildSupport.mergeDirectory(join(stagedProfileDir, "prompts"), join(visibleProfileDir, "prompts"));
-        await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), join(visibleProfileDir, "prompts"));
-        continue;
-      }
-
-      nonDefaultProfileDirs.push(visibleProfileDir);
-    }
-
-    const defaultProfileEntries = await readdir(defaultProfileDir, { withFileTypes: true });
-    for (const nonDefaultProfileDir of nonDefaultProfileDirs) {
-      for (const defaultProfileEntry of defaultProfileEntries) {
-        if (defaultProfileEntry.name === "skills" || defaultProfileEntry.name === APPEND_SYSTEM_FILE_NAME) {
-          continue;
-        }
-
-        await symlink(
-          join(finalVisibleOutputDir, DEFAULT_PROFILE_NAME, defaultProfileEntry.name),
-          join(nonDefaultProfileDir, defaultProfileEntry.name),
-        );
-      }
-    }
-
-    await generatePiHelpers(context, profileNames);
-    await logHarnessSkillOverrides(context, "pi");
-  } finally {
-    await rm(profileStagingRoot, { force: true, recursive: true });
+async function generatePiHelpers(context: IHarnessBuildContext): Promise<void> {
+  for (const helperName of ["pi-install", "pi-uninstall", "pi-update"]) {
+    const template = await readFile(join(context.harnessDir, "templates", `${helperName}.sh`), "utf-8");
+    await context.buildSupport.writeBinScript(context.outputDir, helperName, template);
   }
 }
 
-function getRequestedPiProfile(argv: string[]): string | null {
-  const { values } = parseArgs({
-    args: argv.slice(2),
-    options: {
-      "pi-profile": { type: "string" },
-    },
-    strict: false,
-  });
-
-  const value = values["pi-profile"];
-  if (value === true || (typeof value === "string" && value.trim().length === 0)) {
-    throw new Error("Missing Pi profile name after --pi-profile.");
+async function copyOptionalHarnessPath(context: IHarnessBuildContext, piOutputDir: string, name: string): Promise<void> {
+  const sourcePath = join(context.harnessDir, name);
+  if (existsSync(sourcePath)) {
+    await context.buildSupport.copyPathWithTemplateVariables(sourcePath, join(piOutputDir, name), context.templateContext);
   }
-
-  if (typeof value === "string") {
-    return value.trim();
-  }
-
-  return null;
 }
 
-async function getGeneratedPiProfileNames(outputDir: string): Promise<string[]> {
-  const piOutputDir = join(outputDir, "pi");
-  if (!existsSync(piOutputDir)) {
-    return [];
-  }
+async function buildOutput(context: IHarnessBuildContext): Promise<void> {
+  const piOutputDir = join(context.outputDir, PI_OUTPUT_DIR_NAME);
+  const skillsDir = join(piOutputDir, "skills");
+  const promptsDir = join(piOutputDir, "prompts");
 
-  const profileEntries = await readdir(piOutputDir, { withFileTypes: true });
-  return profileEntries
-    .filter((profileEntry) => profileEntry.isDirectory())
-    .map((profileEntry) => profileEntry.name)
-    .sort();
-}
+  await mkdir(skillsDir, { recursive: true });
+  await context.buildSupport.copyPathWithTemplateVariables(
+    context.systemPromptPath,
+    join(piOutputDir, APPEND_SYSTEM_FILE_NAME),
+    context.templateContext,
+  );
 
-function formatMissingPiProfileMessage(sourcePath: string, availableProfiles: string[]): string {
-  if (availableProfiles.length === 0) {
-    return `Generated Pi profile does not exist: ${sourcePath}. No generated Pi profiles are available.`;
-  }
-  return `Generated Pi profile does not exist: ${sourcePath}. Available generated Pi profiles: ${availableProfiles.join(", ")}.`;
+  await stageHarnessLocalSkills(context, skillsDir);
+  await context.buildSupport.stageRegistryAssets(context, { commandsDir: promptsDir, skillsDir });
+  await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), promptsDir);
+
+  const settingsPath = join(piOutputDir, "settings.json");
+  await context.buildSupport.copyPathWithTemplateVariables(
+    join(context.harnessDir, "settings.json"),
+    settingsPath,
+    context.templateContext,
+  );
+  // Pi saves model, theme, and thinking-level choices here and stamps the
+  // last-seen version after every update; only the preferences sync back.
+  context.buildSupport.syncSettingsFile(settingsPath, { liveOnlyKeyPaths: [["lastChangelogVersion"]] });
+  await copyOptionalHarnessPath(context, piOutputDir, "models.json");
+  await copyOptionalHarnessPath(context, piOutputDir, "web-search.json");
+  await copyOptionalHarnessPath(context, piOutputDir, "extensions");
+
+  await generatePiHelpers(context);
+  await logHarnessSkillOverrides(context, "pi");
 }
 
 async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
-  const profile = getRequestedPiProfile(process.argv) ?? DEFAULT_PROFILE_NAME;
-  const availableProfiles = await getGeneratedPiProfileNames(outputDir);
-
-  const sourcePath = join(outputDir, PI_OUTPUT_DIR_NAME, profile);
-  if (!existsSync(sourcePath)) {
-    throw new Error(formatMissingPiProfileMessage(sourcePath, availableProfiles));
-  }
-
-  const homePath = process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent");
+  const sourcePath = join(outputDir, PI_OUTPUT_DIR_NAME);
   const targets: IBootstrapTarget[] = [
-    { kind: "home", sourcePath, targetPath: homePath, description: `Pi config (${profile})` },
-    ...availableProfiles
-      .filter((profileName) => profileName !== DEFAULT_PROFILE_NAME)
-      .map((profileName): IBootstrapTarget => ({
-        kind: "home",
-        sourcePath: join(outputDir, PI_OUTPUT_DIR_NAME, profileName),
-        targetPath: getProfileHomeDir(PI_OUTPUT_DIR_NAME, profileName, process.env),
-        description: `Pi profile home (${profileName})`,
-        sharedHomePath: homePath,
-      })),
+    {
+      kind: "home",
+      sourcePath,
+      targetPath: process.env.PI_CODING_AGENT_DIR?.trim() || join(homedir(), ".pi", "agent"),
+      description: "Pi config",
+    },
   ];
 
   const webSearchSource = join(sourcePath, "web-search.json");
@@ -352,10 +128,9 @@ async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[
 }
 
 const plugin: IUnifiedHarnessPlugin = {
-  finalizeOutput,
-  stageProfile,
+  target: PI_OUTPUT_DIR_NAME,
+  buildOutput,
   getBootstrapTargets,
-  target: "pi",
 };
 
 export default plugin;

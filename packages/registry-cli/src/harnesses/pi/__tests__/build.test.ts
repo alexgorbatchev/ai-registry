@@ -1,45 +1,20 @@
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { existsSync } from "fs";
-import { lstat, mkdir, mkdtemp, readFile, readdir, readlink, rm, writeFile } from "fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
 import { dirname, join } from "path";
 
 import plugin from "../../pi/build";
-import {
-  copyDirectoryWithTemplateVariables,
-  copyPathWithTemplateVariables,
-  mergeDirectory,
-  stageProfileAssets,
-  writeBinScript,
-  type IBuildSupport,
-  type IProfileBuildContext,
-  type ITemplateContext,
-  type IUnifiedHarnessBuildContext,
-} from "../../../lib/harnessBuild";
-import {
-  createSettingsSyncRegistry,
-  type ISettingsSyncRegistry,
-} from "../../../lib/settingsSync/createSettingsSyncRegistry";
+import { createSettingsSyncRegistry } from "../../../lib/settingsSync/createSettingsSyncRegistry";
+import { createHarnessBuildContext, type IHarnessBuildContextOptions } from "../../__tests__/createHarnessBuildContext";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "pi-build-tests");
-const originalArgv: string[] = [...process.argv];
 const originalPiCodingAgentDir: string | undefined = process.env.PI_CODING_AGENT_DIR;
-const originalXdgDataHome: string | undefined = process.env.XDG_DATA_HOME;
-const TEST_XDG_DATA_HOME = join(TEST_ROOT, "xdg-data-home");
-const createdDirectories: string[] = [];
 
 async function createOutputDirectory(): Promise<string> {
   await mkdir(TEST_ROOT, { recursive: true });
-  const outputDir = await mkdtemp(join(TEST_ROOT, "case-"));
-  createdDirectories.push(outputDir);
-  return outputDir;
-}
-
-async function createPiProfile(outputDir: string, profileName: string): Promise<string> {
-  const profileDir = join(outputDir, "pi", profileName);
-  await mkdir(profileDir, { recursive: true });
-  return profileDir;
+  return mkdtemp(join(TEST_ROOT, "case-"));
 }
 
 async function writeTestFile(rootDir: string, relativePath: string, content: string): Promise<string> {
@@ -49,73 +24,16 @@ async function writeTestFile(rootDir: string, relativePath: string, content: str
   return filePath;
 }
 
-function createTemplateContext(repositoryRoot: string): ITemplateContext {
-  return {
-    repo_root: repositoryRoot,
-    skills_dir: join(repositoryRoot, "skills"),
-    commands_dir: join(repositoryRoot, "commands"),
-    profiles_dir: join(repositoryRoot, "profiles"),
-    output_dir: join(repositoryRoot, ".output"),
-  };
+async function writeHarnessFixture(repositoryRoot: string): Promise<void> {
+  await writeTestFile(repositoryRoot, "system/system.md", "Follow the repo guidance.\nEscalate risky changes.\n");
+  await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
+  for (const helperName of ["pi-install", "pi-uninstall", "pi-update"]) {
+    await writeTestFile(repositoryRoot, `harnesses/pi/templates/${helperName}.sh`, `#!/usr/bin/env bash\n# ${helperName}\n`);
+  }
 }
 
-function createBuildSupport(
-  repositoryRoot: string,
-  settingsSyncRegistry: ISettingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output")),
-): IBuildSupport {
-  return {
-    mergeDirectory,
-    stageProfileAssets,
-    writeBinScript,
-    copyDirectoryWithTemplateVariables,
-    copyPathWithTemplateVariables,
-    syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
-  };
-}
-
-function createUnifiedContext(
-  repositoryRoot: string,
-  settingsSyncRegistry?: ISettingsSyncRegistry,
-): IUnifiedHarnessBuildContext {
-  return {
-    harnessDir: join(repositoryRoot, "harnesses", "pi"),
-    outputDir: join(repositoryRoot, ".output"),
-    templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot, settingsSyncRegistry),
-  };
-}
-
-type IProfileContextOverrides = {
-  globalMatchedCommands?: string[];
-  globalMatchedSkills?: string[];
-  profileLocalCommands?: string[];
-  profileLocalSkills?: string[];
-  systemPrompt?: string;
-};
-
-function createProfileContext(
-  repositoryRoot: string,
-  profileName: string,
-  overrides: IProfileContextOverrides = {},
-): IProfileBuildContext {
-  return {
-    harnessDir: join(repositoryRoot, "harnesses", "pi"),
-    profileName,
-    profileDir: join(repositoryRoot, "profiles", profileName),
-    manifest: {
-      commands: ["review.md"],
-      description: "Pi profile",
-      skills: ["shared-skill"],
-      system_prompt: overrides.systemPrompt ?? "Follow the repo guidance.\nEscalate risky changes.",
-    },
-    globalMatchedSkills: overrides.globalMatchedSkills ?? ["shared-skill"],
-    globalMatchedCommands: overrides.globalMatchedCommands ?? ["review.md"],
-    profileLocalSkills: overrides.profileLocalSkills ?? ["local-skill"],
-    profileLocalCommands: overrides.profileLocalCommands ?? ["local.md"],
-    outputDir: join(repositoryRoot, ".output"),
-    templateContext: createTemplateContext(repositoryRoot),
-    buildSupport: createBuildSupport(repositoryRoot),
-  };
+function buildOutput(repositoryRoot: string, options: IHarnessBuildContextOptions = {}): Promise<void> {
+  return plugin.buildOutput(createHarnessBuildContext(repositoryRoot, "pi", options));
 }
 
 function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
@@ -123,202 +41,91 @@ function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
   return plugin.getBootstrapTargets;
 }
 
-function getFinalizeOutput(): NonNullable<typeof plugin.finalizeOutput> {
-  assert(plugin.finalizeOutput);
-  return plugin.finalizeOutput;
-}
-
-function getStageProfile(): NonNullable<typeof plugin.stageProfile> {
-  assert(plugin.stageProfile);
-  return plugin.stageProfile;
-}
-
-describe("Pi harness bootstrap targets", () => {
+describe("Pi harness build", () => {
   beforeEach(() => {
-    process.argv = ["bun", "scripts/bootstrap.ts"];
     delete process.env.PI_CODING_AGENT_DIR;
-    process.env.XDG_DATA_HOME = TEST_XDG_DATA_HOME;
   });
 
   afterEach(async () => {
-    process.argv = [...originalArgv];
     if (originalPiCodingAgentDir === undefined) {
       delete process.env.PI_CODING_AGENT_DIR;
     } else {
       process.env.PI_CODING_AGENT_DIR = originalPiCodingAgentDir;
     }
-    if (originalXdgDataHome === undefined) {
-      delete process.env.XDG_DATA_HOME;
-    } else {
-      process.env.XDG_DATA_HOME = originalXdgDataHome;
-    }
 
     await rm(TEST_ROOT, { force: true, recursive: true });
-    createdDirectories.length = 0;
   });
 
-  it("applies the default Pi profile when bootstrap did not request an override", async () => {
+  it("applies the generated Pi root to ~/.pi/agent", async () => {
     const outputDir = await createOutputDirectory();
-    const profileDir = await createPiProfile(outputDir, "default");
 
-    const targets = await getBootstrapTargets()(outputDir);
-
-    expect(targets).toEqual([
+    expect(await getBootstrapTargets()(outputDir)).toEqual([
       {
         kind: "home",
-        description: "Pi config (default)",
-        sourcePath: profileDir,
+        description: "Pi config",
+        sourcePath: join(outputDir, "pi"),
         targetPath: join(homedir(), ".pi", "agent"),
       },
     ]);
   });
 
-  it("applies the explicitly requested Pi profile and gives it its own home", async () => {
+  it("uses PI_CODING_AGENT_DIR and links the generated web search config", async () => {
     const outputDir = await createOutputDirectory();
-    const profileDir = await createPiProfile(outputDir, "developer");
-    process.argv = ["bun", "scripts/bootstrap.ts", "--pi-profile", "developer"];
-
-    const targets = await getBootstrapTargets()(outputDir);
-
-    expect(targets).toEqual([
-      {
-        kind: "home",
-        description: "Pi config (developer)",
-        sourcePath: profileDir,
-        targetPath: join(homedir(), ".pi", "agent"),
-      },
-      {
-        kind: "home",
-        description: "Pi profile home (developer)",
-        sourcePath: profileDir,
-        targetPath: join(TEST_XDG_DATA_HOME, "ai-registry", "pi", "profiles", "developer"),
-        sharedHomePath: join(homedir(), ".pi", "agent"),
-      },
-    ]);
-  });
-
-  it("uses PI_CODING_AGENT_DIR for the explicitly requested Pi profile target", async () => {
-    const outputDir = await createOutputDirectory();
-    const profileDir = await createPiProfile(outputDir, "designer");
     const targetPath = join(outputDir, "custom-pi-agent");
-    process.argv = ["bun", "scripts/bootstrap.ts", "--pi-profile", "designer"];
+    await writeTestFile(outputDir, "pi/web-search.json", "{}\n");
     process.env.PI_CODING_AGENT_DIR = targetPath;
 
-    const targets = await getBootstrapTargets()(outputDir);
-
-    expect(targets).toEqual([
+    expect(await getBootstrapTargets()(outputDir)).toEqual([
+      { kind: "home", description: "Pi config", sourcePath: join(outputDir, "pi"), targetPath },
       {
-        kind: "home",
-        description: "Pi config (designer)",
-        sourcePath: profileDir,
-        targetPath,
-      },
-      {
-        kind: "home",
-        description: "Pi profile home (designer)",
-        sourcePath: profileDir,
-        targetPath: join(TEST_XDG_DATA_HOME, "ai-registry", "pi", "profiles", "designer"),
-        sharedHomePath: targetPath,
+        kind: "link",
+        description: "Pi web search config",
+        sourcePath: join(outputDir, "pi", "web-search.json"),
+        targetPath: join(homedir(), ".pi", "web-search.json"),
       },
     ]);
   });
 
-  it("uses PI_CODING_AGENT_DIR for the default Pi profile target", async () => {
-    const outputDir = await createOutputDirectory();
-    const profileDir = await createPiProfile(outputDir, "default");
-    const targetPath = join(outputDir, "custom-pi-agent");
-    process.env.PI_CODING_AGENT_DIR = targetPath;
-
-    const targets = await getBootstrapTargets()(outputDir);
-
-    expect(targets).toEqual([
-      {
-        kind: "home",
-        description: "Pi config (default)",
-        sourcePath: profileDir,
-        targetPath,
-      },
-    ]);
-  });
-
-  it("reports generated Pi profiles when the requested profile is missing", async () => {
-    const outputDir = await createOutputDirectory();
-    await createPiProfile(outputDir, "designer");
-    await createPiProfile(outputDir, "developer");
-    process.argv = ["bun", "scripts/bootstrap.ts", "--pi-profile", "removed"];
-
-    await expect(getBootstrapTargets()(outputDir)).rejects.toThrow(
-      `Generated Pi profile does not exist: ${join(outputDir, "pi", "removed")}. Available generated Pi profiles: designer, developer.`,
-    );
-  });
-
-  it("stages the default Pi profile as the shared root", async () => {
+  it("builds the Pi root from the system prompt, settings, prompts, and skills", async () => {
     const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/prompts/harness.md", "Harness prompt.\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/skills/harness-skill/SKILL.md", "# Harness skill\n");
-    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Local command.\n");
-    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Local skill\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/models.json", "{\"providers\":{}}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/web-search.json", "{\"provider\":\"none\"}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/extensions/timestamps.ts", "// timestamps extension\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
 
-    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+    await buildOutput(repositoryRoot, { skills: ["shared-skill"], commands: ["review.md"] });
 
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "APPEND_SYSTEM.md"), "utf-8")).toBe(
+    const outputDir = join(repositoryRoot, ".output", "pi");
+    expect(await readFile(join(outputDir, "APPEND_SYSTEM.md"), "utf-8")).toBe(
       "Follow the repo guidance.\nEscalate risky changes.\n",
     );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "settings.json"), "utf-8")).toBe("{}\n");
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "prompts", "review.md"), "utf-8")).toBe(
-      "Review the changes.\n",
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "prompts", "local.md"), "utf-8")).toBe(
-      "Local command.\n",
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "prompts", "harness.md"), "utf-8")).toBe(
-      "Harness prompt.\n",
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe(
-      "# Shared skill\n",
-    );
-    expect(
-      (await lstat(join(repositoryRoot, ".output", "pi", "default", "skills", "shared-skill", "SKILL.md"))).isSymbolicLink(),
-    ).toBe(false);
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "skills", "local-skill", "SKILL.md"), "utf-8")).toBe(
-      "# Local skill\n",
-    );
-    expect(
-      (await lstat(join(repositoryRoot, ".output", "pi", "default", "skills", "local-skill", "SKILL.md"))).isSymbolicLink(),
-    ).toBe(false);
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "default", "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe(
-      "# Harness skill\n",
-    );
-    expect(
-      (await lstat(join(repositoryRoot, ".output", "pi", "default", "skills", "harness-skill", "SKILL.md"))).isSymbolicLink(),
-    ).toBe(false);
+    expect(await readFile(join(outputDir, "settings.json"), "utf-8")).toBe("{}\n");
+    expect(await readFile(join(outputDir, "models.json"), "utf-8")).toBe("{\"providers\":{}}\n");
+    expect(await readFile(join(outputDir, "web-search.json"), "utf-8")).toBe("{\"provider\":\"none\"}\n");
+    expect(await readFile(join(outputDir, "extensions", "timestamps.ts"), "utf-8")).toBe("// timestamps extension\n");
+    expect(await readFile(join(outputDir, "prompts", "review.md"), "utf-8")).toBe("Review the changes.\n");
+    expect(await readFile(join(outputDir, "prompts", "harness.md"), "utf-8")).toBe("Harness prompt.\n");
+    for (const skillName of ["shared-skill", "harness-skill"]) {
+      expect((await lstat(join(outputDir, "skills", skillName, "SKILL.md"))).isSymbolicLink()).toBe(false);
+    }
+    expect(await readFile(join(outputDir, "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe("# Shared skill\n");
+    expect(await readFile(join(outputDir, "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe("# Harness skill\n");
   });
 
-  it("keeps runtime state out of the generated default Pi profile", async () => {
+  it("keeps runtime state and optional files out of a minimal Pi root", async () => {
     const repositoryRoot = await createOutputDirectory();
-    await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/skills/harness-skill/SKILL.md", "# Harness skill\n");
-    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default local command.\n");
-    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
 
-    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+    await buildOutput(repositoryRoot, { commands: ["review.md"] });
 
     // Sessions belong to the real `~/.pi/agent` home that bootstrap links these
     // entries into, so the build creates none of them.
-    expect((await readdir(join(repositoryRoot, ".output", "pi", "default"))).sort()).toEqual([
+    expect((await readdir(join(repositoryRoot, ".output", "pi"))).sort()).toEqual([
       "APPEND_SYSTEM.md",
       "prompts",
       "settings.json",
@@ -326,199 +133,59 @@ describe("Pi harness bootstrap targets", () => {
     ]);
   });
 
-  it("registers the shared Pi settings.json for settings sync with the version stamp kept live-only", async () => {
+  it("rejects a harness prompt that collides with a registry command", async () => {
     const repositoryRoot = await createOutputDirectory();
-    await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default local command.\n");
-    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "commands/review.md", "Registry review.\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/prompts/review.md", "Harness review.\n");
+
+    await expect(buildOutput(repositoryRoot, { commands: ["review.md"] })).rejects.toThrow(
+      `Cannot merge generated output because destination already exists: ${join(repositoryRoot, ".output", "pi", "prompts", "review.md")}`,
+    );
+  });
+
+  it("registers settings.json for settings sync with the version stamp kept live-only", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
 
     const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
-    await getStageProfile()(createProfileContext(repositoryRoot, "default"));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot, settingsSyncRegistry));
+    await buildOutput(repositoryRoot, { settingsSyncRegistry });
 
     expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
-      { relativePath: "pi/default/settings.json", liveOnlyKeyPaths: [["lastChangelogVersion"]] },
+      { relativePath: "pi/settings.json", liveOnlyKeyPaths: [["lastChangelogVersion"]] },
     ]);
   });
 
-  it("builds per-profile APPEND_SYSTEM.md and symlinks other shared Pi files", async () => {
+  it("generates the Pi install helpers without a bare pi wrapper", async () => {
     const repositoryRoot = await createOutputDirectory();
-    await writeTestFile(repositoryRoot, "commands/review.md", "Review the default changes.\n");
-    await writeTestFile(repositoryRoot, "commands/developer-only.md", "Developer-only command.\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/prompts/harness.md", "Harness prompt.\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/skills/harness-skill/SKILL.md", "# Harness skill\n");
-    await writeTestFile(repositoryRoot, "profiles/default/commands/local.md", "Default local command.\n");
-    await writeTestFile(repositoryRoot, "profiles/default/skills/local-skill/SKILL.md", "# Default local skill\n");
-    await writeTestFile(repositoryRoot, "profiles/developer/commands/local.md", "Developer local command.\n");
-    await writeTestFile(repositoryRoot, "profiles/developer/skills/local-skill/SKILL.md", "# Developer local skill\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
-    await writeTestFile(repositoryRoot, "skills/developer-shared-skill/SKILL.md", "# Developer shared skill\n");
+    await writeHarnessFixture(repositoryRoot);
 
-    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
-      systemPrompt: "Default instructions.\nStay shared.",
-    }));
-    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
-      globalMatchedCommands: ["developer-only.md"],
-      globalMatchedSkills: ["developer-shared-skill"],
-      profileLocalCommands: ["local.md"],
-      profileLocalSkills: ["local-skill"],
-      systemPrompt: "Developer-only instructions.\nShould ship here.",
-    }));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+    await buildOutput(repositoryRoot);
 
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "APPEND_SYSTEM.md"), "utf-8")).toBe(
-      "Developer-only instructions.\nShould ship here.\n",
-    );
-    expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "settings.json"))).toBe(
-      join(repositoryRoot, ".output", "pi", "default", "settings.json"),
-    );
-    expect(await readlink(join(repositoryRoot, ".output", "pi", "developer", "prompts"))).toBe(
-      join(repositoryRoot, ".output", "pi", "default", "prompts"),
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "prompts", "review.md"), "utf-8")).toBe(
-      "Review the default changes.\n",
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "prompts", "local.md"), "utf-8")).toBe(
-      "Default local command.\n",
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "prompts", "harness.md"), "utf-8")).toBe(
-      "Harness prompt.\n",
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "skills", "developer-shared-skill", "SKILL.md"), "utf-8")).toBe(
-      "# Developer shared skill\n",
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "skills", "local-skill", "SKILL.md"), "utf-8")).toBe(
-      "# Developer local skill\n",
-    );
-    expect(await readFile(join(repositoryRoot, ".output", "pi", "developer", "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe(
-      "# Harness skill\n",
-    );
-  });
-
-  it("generates named Pi launcher helpers without a bare pi wrapper", async () => {
-    const repositoryRoot = await createOutputDirectory();
-    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
-    await writeTestFile(repositoryRoot, ".output/.pi-profiles/default/APPEND_SYSTEM.md", "default\n");
-    await writeTestFile(repositoryRoot, ".output/.pi-profiles/developer/APPEND_SYSTEM.md", "developer\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
-
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
-
-    // No bare `pi` wrapper is generated: the default profile is reached through the
-    // `~/.pi/agent` symlink, so nothing shadows the real `pi` binary.
-    expect((await readdir(join(repositoryRoot, ".output", "bin"))).sort()).toEqual([
-      "pi-developer",
-      "pi-install",
-      "pi-uninstall",
-      "pi-update",
-    ]);
-
-        expect(await readFile(join(repositoryRoot, ".output", "bin", "pi-developer"), "utf-8")).toMatchInlineSnapshot(`
-"#!/usr/bin/env bash
-set -euo pipefail
-
-script_dir="$(cd "$(dirname "$0")" && pwd -P)"
-generated_bin_dir="<%- output_dir %>/bin"
-filtered_path=""
-
-IFS=':' read -r -a path_entries <<< "\${PATH:-}"
-for path_entry in "\${path_entries[@]}"; do
-  normalized_path="\${path_entry:-.}"
-  if [ "$normalized_path" = "$script_dir" ] || [ "$normalized_path" = "$generated_bin_dir" ]; then
-    continue
-  fi
-
-  if [ -n "$filtered_path" ]; then
-    filtered_path="\${filtered_path}:$normalized_path"
-  else
-    filtered_path="$normalized_path"
-  fi
-done
-
-PATH="$filtered_path"
-export PATH
-
-real_binary=""
-if command -v pi >/dev/null 2>&1; then
-  real_binary="pi"
-else
-  # Fallback to looking for backed-up shims in script_dir and generated_bin_dir
-  latest_backup=""
-  for backup_dir in "$script_dir" "$generated_bin_dir"; do
-    for backup_file in "$backup_dir"/pi.backup-*; do
-      if [ -x "$backup_file" ]; then
-        if [ -z "$latest_backup" ] || [ "$backup_file" -nt "$latest_backup" ]; then
-          latest_backup="$backup_file"
-        fi
-      fi
-    done
-  done
-
-  if [ -n "$latest_backup" ]; then
-    real_binary="$latest_backup"
-  fi
-fi
-
-if [ -z "$real_binary" ]; then
-  printf 'Could not find the real pi binary outside ai-registry wrapper paths.\\n' >&2
-  exit 1
-fi
-
-PI_CODING_AGENT_DIR="\${XDG_DATA_HOME:-\$HOME/.local/share}/ai-registry/pi/profiles/developer" exec "$real_binary" "$@"
-"
-`);
+    // No bare `pi` wrapper is generated: the real `pi` binary already reads
+    // `~/.pi/agent`, where bootstrap applies the generated root.
+    const binDir = join(repositoryRoot, ".output", "bin");
+    expect((await readdir(binDir)).sort()).toEqual(["pi-install", "pi-uninstall", "pi-update"]);
+    expect(await readFile(join(binDir, "pi-update"), "utf-8")).toBe("#!/usr/bin/env bash\n# pi-update\n");
   });
 
   it("overrides global skills with harness-specific skills on collision", async () => {
     const repositoryRoot = await createOutputDirectory();
-    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+    await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Global version\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/extra.txt", "global extra\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/skills/shared-skill/SKILL.md", "# Harness version\n");
 
-    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
-      globalMatchedSkills: ["shared-skill"],
-      globalMatchedCommands: [],
-      profileLocalSkills: [],
-      profileLocalCommands: [],
-    }));
-    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
-      globalMatchedSkills: ["shared-skill"],
-      globalMatchedCommands: [],
-      profileLocalSkills: [],
-      profileLocalCommands: [],
-    }));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+    await buildOutput(repositoryRoot, { skills: ["shared-skill"] });
 
-    const skillDir = join(repositoryRoot, ".output", "pi", "default", "skills", "shared-skill");
+    const skillDir = join(repositoryRoot, ".output", "pi", "skills", "shared-skill");
     expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
     expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
-
-    const devSkillDir = join(repositoryRoot, ".output", "pi", "developer", "skills", "shared-skill");
-    expect(await readFile(join(devSkillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
-    expect(existsSync(join(devSkillDir, "extra.txt"))).toBe(false);
   });
 
   it("stages grouped harness skills (agent and user), injecting disable-model-invocation for user skills", async () => {
     const repositoryRoot = await createOutputDirectory();
-    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
+    await writeHarnessFixture(repositoryRoot);
     await writeTestFile(
       repositoryRoot,
       "harnesses/pi/skills/agent/harness-agent-skill/SKILL.md",
@@ -530,52 +197,14 @@ PI_CODING_AGENT_DIR="\${XDG_DATA_HOME:-\$HOME/.local/share}/ai-registry/pi/profi
       "---\nname: harness-user-skill\n---\n# User\n",
     );
 
-    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
-      globalMatchedSkills: [],
-      globalMatchedCommands: [],
-      profileLocalSkills: [],
-      profileLocalCommands: [],
-    }));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
+    await buildOutput(repositoryRoot);
 
-    const agentSkillDir = join(repositoryRoot, ".output", "pi", "default", "skills", "harness-agent-skill");
-    const userSkillDir = join(repositoryRoot, ".output", "pi", "default", "skills", "harness-user-skill");
-
-    expect(await readFile(join(agentSkillDir, "SKILL.md"), "utf-8")).toBe(
+    const skillsDir = join(repositoryRoot, ".output", "pi", "skills");
+    expect(await readFile(join(skillsDir, "harness-agent-skill", "SKILL.md"), "utf-8")).toBe(
       "---\nname: harness-agent-skill\n---\n# Agent\n",
     );
-    expect(await readFile(join(userSkillDir, "SKILL.md"), "utf-8")).toBe(
+    expect(await readFile(join(skillsDir, "harness-user-skill", "SKILL.md"), "utf-8")).toBe(
       "---\ndisable-model-invocation: true\nname: harness-user-skill\n---\n# User\n",
     );
-  });
-
-  it("copies harnesses/pi/extensions to default profile and symlinks it in non-default profiles", async () => {
-    const repositoryRoot = await createOutputDirectory();
-    await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-install.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-uninstall.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/templates/pi-update.sh", "#!/usr/bin/env bash\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/extensions/timestamps.ts", "// timestamps extension\n");
-
-    await getStageProfile()(createProfileContext(repositoryRoot, "default", {
-      globalMatchedSkills: [],
-      globalMatchedCommands: [],
-      profileLocalSkills: [],
-      profileLocalCommands: [],
-    }));
-    await getStageProfile()(createProfileContext(repositoryRoot, "developer", {
-      globalMatchedSkills: [],
-      globalMatchedCommands: [],
-      profileLocalSkills: [],
-      profileLocalCommands: [],
-    }));
-    await getFinalizeOutput()(createUnifiedContext(repositoryRoot));
-
-    const defaultExt = join(repositoryRoot, ".output", "pi", "default", "extensions", "timestamps.ts");
-    expect(existsSync(defaultExt)).toBe(true);
-    expect(await readFile(defaultExt, "utf-8")).toBe("// timestamps extension\n");
-
-    const devExtLink = join(repositoryRoot, ".output", "pi", "developer", "extensions");
-    expect(await readlink(devExtLink)).toBe(join(repositoryRoot, ".output", "pi", "default", "extensions"));
   });
 });

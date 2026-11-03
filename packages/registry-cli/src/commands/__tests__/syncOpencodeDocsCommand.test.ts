@@ -70,7 +70,7 @@ describe("syncOpencodeDocsCommand", () => {
       harnesses: join(root, "harnesses"),
       skills: join(root, "skills"),
       commands: join(root, "commands"),
-      profiles: join(root, "profiles"),
+      systemPrompt: join(root, "system", "system.md"),
       output: join(root, ".output"),
       temp: join(root, ".tmp"),
     };

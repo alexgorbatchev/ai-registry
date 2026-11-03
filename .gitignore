@@ -12,16 +12,8 @@ bun.lockb
 .tmp/
 harnesses/*/.tmp/
 
-# Generated profile caches and outputs
+# Generated outputs
 .output/
-profiles/*/.claude/
-profiles/*/.cline/
-profiles/*/.cursor/
-profiles/*/.opencode/
-profiles/*/.roo/
-profiles/*/.rulesync/
-profiles/*/.agents/
-profiles/*/.generated/
 
 # OS/Editor
 .DS_Store

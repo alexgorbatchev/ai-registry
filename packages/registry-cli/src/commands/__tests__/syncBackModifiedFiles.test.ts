@@ -219,7 +219,7 @@ describe("syncBackModifiedFiles", () => {
     const otherPath = await writeTestFile(sourceDir, "variants/workstation-b/SKILL.md", "Host B.\n");
     const outputDir = join(repositoryRoot, ".output");
     const nextOutputDir = join(repositoryRoot, ".tmp/staging");
-    const relativePath = "codex/default/skills/example/SKILL.md";
+    const relativePath = "codex/skills/example/SKILL.md";
     const sourcePaths = new Map<string, string>();
     await copyDirectoryWithTemplateVariables(sourceDir, dirname(join(nextOutputDir, relativePath)), {}, sourcePaths, "workstation-a");
     expect(sourcePaths.get(join(nextOutputDir, relativePath))).toBe(variantPath);
@@ -241,7 +241,7 @@ describe("syncBackModifiedFiles", () => {
     const repositoryRoot = await createTestDirectory();
     const outputDir = join(repositoryRoot, ".output");
     const nextOutputDir = join(repositoryRoot, ".tmp/staging");
-    const relativePath = "codex/default/skills/example/SKILL.md";
+    const relativePath = "codex/skills/example/SKILL.md";
     const originalSource = await writeTestFile(repositoryRoot, "skills/agent/example/variants/workstation-a/SKILL.md", "Host A.\n");
     const nextSource = await writeTestFile(repositoryRoot, "skills/agent/example/variants/workstation-b/SKILL.md", "Host B.\n");
     const nextOutputPath = await writeTestFile(nextOutputDir, relativePath, "Host B.\n");
@@ -266,7 +266,7 @@ describe("syncBackModifiedFiles", () => {
     await writeTestFile(sourceDir, sourceFileRelativePath, "Original content with <%- skills_dir %>");
 
     // Output dir has the modified file with absolute path resolved
-    const outputRelativePath = "pi/default/skills/my-skill/SKILL.md";
+    const outputRelativePath = "pi/skills/my-skill/SKILL.md";
     const resolvedPathText = `Modified content with ${sourceDir}`;
     await writeTestFile(outputDir, outputRelativePath, resolvedPathText);
 
@@ -315,7 +315,7 @@ describe("syncBackModifiedFiles", () => {
     const sourceFilePath = join(sourceDir, sourceFileRelativePath);
     await writeTestFile(sourceDir, sourceFileRelativePath, "Original content");
 
-    const outputRelativePath = "pi/default/skills/my-skill/SKILL.md";
+    const outputRelativePath = "pi/skills/my-skill/SKILL.md";
     await writeTestFile(outputDir, outputRelativePath, "Modified content");
 
     const nextOutputPath = join(nextOutputDir, outputRelativePath);
@@ -346,7 +346,7 @@ describe("syncBackModifiedFiles", () => {
     const outputDir = join(repositoryRoot, ".output");
     const nextOutputDir = join(repositoryRoot, ".tmp", "staging");
 
-    const outputRelativePath = "pi/default/skills/my-skill/SKILL.md";
+    const outputRelativePath = "pi/skills/my-skill/SKILL.md";
     await writeTestFile(outputDir, outputRelativePath, "Modified content");
 
     const nextOutputPath = join(nextOutputDir, outputRelativePath);

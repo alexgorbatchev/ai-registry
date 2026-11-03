@@ -75,9 +75,8 @@ describe("generatedOutputUtils", () => {
     const outputDir = join(repositoryRoot, ".output");
 
     await writeTestFile(repositoryRoot, ".output/opencode/package.json", '{"name":"managed"}\n');
-    await mkdir(join(outputDir, "pi", "default", "sessions"), { recursive: true });
-    await mkdir(join(outputDir, "pi", "developer"), { recursive: true });
-    await symlink(join(outputDir, "pi", "default", "sessions"), join(outputDir, "pi", "developer", "sessions"));
+    await mkdir(join(outputDir, "pi", "sessions"), { recursive: true });
+    await symlink(join(outputDir, "pi", "sessions"), join(outputDir, "pi", "linked-sessions"));
     await writeTestFile(repositoryRoot, ".output/manifest.json", "ignored\n");
 
     const entries = await collectGeneratedOutputEntries(outputDir);
@@ -88,21 +87,19 @@ describe("generatedOutputUtils", () => {
       "opencode": { kind: "directory" },
       "opencode/package.json": { kind: "file", checksum: packageEntry.checksum },
       "pi": { kind: "directory" },
-      "pi/default": { kind: "directory" },
-      "pi/default/sessions": { kind: "directory" },
-      "pi/developer": { kind: "directory" },
-      "pi/developer/sessions": { kind: "symlink", target: join(outputDir, "pi", "default", "sessions") },
+      "pi/linked-sessions": { kind: "symlink", target: join(outputDir, "pi", "sessions") },
+      "pi/sessions": { kind: "directory" },
     });
   });
 
   it("ignores unmanaged current output entries during drift checks", () => {
     const manifest = createGeneratedOutputManifest({
-      "pi/default/APPEND_SYSTEM.md": { kind: "file", checksum: "managed" },
+      "pi/APPEND_SYSTEM.md": { kind: "file", checksum: "managed" },
     });
 
     const drift = getGeneratedOutputDrift(manifest, {
-      "pi/default/APPEND_SYSTEM.md": { kind: "file", checksum: "managed" },
-      "pi/default/TEST": { kind: "file", checksum: "unmanaged" },
+      "pi/APPEND_SYSTEM.md": { kind: "file", checksum: "managed" },
+      "pi/TEST": { kind: "file", checksum: "unmanaged" },
     });
 
     expect(drift).toEqual([]);
@@ -113,21 +110,21 @@ describe("generatedOutputUtils", () => {
     const outputDir = join(repositoryRoot, ".output");
     const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
 
-    await writeTestFile(repositoryRoot, ".output/pi/default/prompts/old.md", "old\n");
-    await writeTestFile(repositoryRoot, ".output/pi/default/prompts/TEST", "keep\n");
-    await writeTestFile(repositoryRoot, ".tmp/generated-output-staging/pi/default/prompts/new.md", "new\n");
+    await writeTestFile(repositoryRoot, ".output/pi/prompts/old.md", "old\n");
+    await writeTestFile(repositoryRoot, ".output/pi/prompts/TEST", "keep\n");
+    await writeTestFile(repositoryRoot, ".tmp/generated-output-staging/pi/prompts/new.md", "new\n");
 
     await syncManagedGeneratedOutputs({
       nextEntries: await collectGeneratedOutputEntries(stagingDir),
       nextOutputDir: stagingDir,
       outputDir,
       previousManifest: createGeneratedOutputManifest({
-        "pi/default/prompts/old.md": { kind: "file", checksum: "old-checksum" },
+        "pi/prompts/old.md": { kind: "file", checksum: "old-checksum" },
       }),
     });
 
-    expect(await readFile(join(outputDir, "pi", "default", "prompts", "new.md"), "utf-8")).toBe("new\n");
-    expect(await readFile(join(outputDir, "pi", "default", "prompts", "TEST"), "utf-8")).toBe("keep\n");
+    expect(await readFile(join(outputDir, "pi", "prompts", "new.md"), "utf-8")).toBe("new\n");
+    expect(await readFile(join(outputDir, "pi", "prompts", "TEST"), "utf-8")).toBe("keep\n");
   });
 
   it("materializes managed symlinks during sync", async () => {
@@ -135,9 +132,8 @@ describe("generatedOutputUtils", () => {
     const outputDir = join(repositoryRoot, ".output");
     const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
 
-    await mkdir(join(stagingDir, "pi", "default", "sessions"), { recursive: true });
-    await mkdir(join(stagingDir, "pi", "developer"), { recursive: true });
-    await symlink(join(stagingDir, "pi", "default", "sessions"), join(stagingDir, "pi", "developer", "sessions"));
+    await mkdir(join(stagingDir, "pi", "sessions"), { recursive: true });
+    await symlink(join(stagingDir, "pi", "sessions"), join(stagingDir, "pi", "linked-sessions"));
 
     await syncManagedGeneratedOutputs({
       nextEntries: await collectGeneratedOutputEntries(stagingDir),
@@ -146,32 +142,30 @@ describe("generatedOutputUtils", () => {
       previousManifest: null,
     });
 
-    expect(await readlink(join(outputDir, "pi", "developer", "sessions"))).toBe(
-      join(outputDir, "pi", "default", "sessions"),
-    );
+    expect(await readlink(join(outputDir, "pi", "linked-sessions"))).toBe(join(outputDir, "pi", "sessions"));
   });
 
   describe("synced settings files", () => {
-    const syncedFilePaths = ["claude-code/default/settings.json"];
+    const syncedFilePaths = ["claude-code/settings.json"];
 
     it("leaves synced settings files out of the collected entries", async () => {
       const repositoryRoot = await createTestDirectory();
-      await writeTestFile(repositoryRoot, "claude-code/default/settings.json", "{}\n");
-      await writeTestFile(repositoryRoot, "claude-code/default/CLAUDE.md", "# Memory\n");
+      await writeTestFile(repositoryRoot, "claude-code/settings.json", "{}\n");
+      await writeTestFile(repositoryRoot, "claude-code/CLAUDE.md", "# Memory\n");
 
       const entries = await collectGeneratedOutputEntries(repositoryRoot, { syncedFilePaths });
 
-      expect(Object.keys(entries)).toEqual(["claude-code", "claude-code/default", "claude-code/default/CLAUDE.md"]);
+      expect(Object.keys(entries)).toEqual(["claude-code", "claude-code/CLAUDE.md"]);
     });
 
     it("does not report drift when the harness edits a synced settings file an older manifest tracked", () => {
       const manifest = createGeneratedOutputManifest({
-        "claude-code/default/settings.json": { kind: "file", checksum: "generated" },
+        "claude-code/settings.json": { kind: "file", checksum: "generated" },
       });
 
       const drift = getGeneratedOutputDrift(
         manifest,
-        { "claude-code/default/settings.json": { kind: "file", checksum: "edited-by-harness" } },
+        { "claude-code/settings.json": { kind: "file", checksum: "edited-by-harness" } },
         { syncedFilePaths },
       );
 
@@ -183,10 +177,10 @@ describe("generatedOutputUtils", () => {
       const outputDir = join(repositoryRoot, ".output");
       const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
 
-      await writeTestFile(repositoryRoot, ".output/claude-code/default/settings.json", '{ "model": "opus" }\n');
-      await writeTestFile(repositoryRoot, ".tmp/generated-output-staging/claude-code/default/settings.json", "{}\n");
+      await writeTestFile(repositoryRoot, ".output/claude-code/settings.json", '{ "model": "opus" }\n');
+      await writeTestFile(repositoryRoot, ".tmp/generated-output-staging/claude-code/settings.json", "{}\n");
       const expectedCurrentEntries = await collectGeneratedOutputEntries(outputDir, { syncedFilePaths });
-      await writeTestFile(repositoryRoot, ".output/claude-code/default/settings.json", '{ "model": "sonnet" }\n');
+      await writeTestFile(repositoryRoot, ".output/claude-code/settings.json", '{ "model": "sonnet" }\n');
 
       await syncManagedGeneratedOutputs({
         nextEntries: await collectGeneratedOutputEntries(stagingDir, { syncedFilePaths }),
@@ -194,14 +188,13 @@ describe("generatedOutputUtils", () => {
         outputDir,
         previousManifest: createGeneratedOutputManifest({
           "claude-code": { kind: "directory" },
-          "claude-code/default": { kind: "directory" },
-          "claude-code/default/settings.json": { kind: "file", checksum: "generated" },
+          "claude-code/settings.json": { kind: "file", checksum: "generated" },
         }),
         syncedFilePaths,
         expectedCurrentEntries,
       });
 
-      expect(await readFile(join(outputDir, "claude-code", "default", "settings.json"), "utf-8")).toBe(
+      expect(await readFile(join(outputDir, "claude-code", "settings.json"), "utf-8")).toBe(
         '{ "model": "sonnet" }\n',
       );
     });

@@ -11,7 +11,7 @@ import type { ISettingsSourceRepository, SettingsKeyPath, SettingsSourceState } 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "sync-settings-files-tests");
 const createdDirectories: string[] = [];
 const JSONC_RELATIVE_PATH = "opencode/opencode.jsonc";
-const TOML_RELATIVE_PATH = "codex/default/config.toml";
+const TOML_RELATIVE_PATH = "codex/config.toml";
 
 interface ITestLayout {
   rootDir: string;

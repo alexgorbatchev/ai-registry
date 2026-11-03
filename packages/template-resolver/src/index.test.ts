@@ -38,7 +38,7 @@ test("renders variables, recursive includes, and environment values", async (): 
   const repositoryRoot = await createTestDirectory();
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
-    "profiles/developer/prompt.md",
+    "system/prompts/prompt.md",
     [
       "Agent root: <%- repo_root %>",
       '<%- include("/shared/intro.md") %>',
@@ -82,7 +82,7 @@ test("renders file_path as the original source file across includes", async (): 
   const repositoryRoot = await createTestDirectory();
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
-    "profiles/developer/prompt.md",
+    "system/prompts/prompt.md",
     '<%- include("/shared/intro.md") %>',
   );
 
@@ -107,7 +107,7 @@ test("renders file_dir as the original source directory across includes", async 
   const repositoryRoot = await createTestDirectory();
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
-    "profiles/developer/prompt.md",
+    "system/prompts/prompt.md",
     '<%- include("/shared/intro.md") %>',
   );
 
@@ -125,7 +125,7 @@ test("renders file_dir as the original source directory across includes", async 
     environment: {},
   });
 
-  expect(rendered).toBe(`Original dir: ${join(repositoryRoot, "profiles", "developer")}`);
+  expect(rendered).toBe(`Original dir: ${join(repositoryRoot, "system", "prompts")}`);
 });
 
 test("uses the default for missing environment variables", async (): Promise<void> => {

@@ -32,13 +32,13 @@ describe("readGeneratedOutputManifest", () => {
       version: 2,
       generatedAt: "2026-10-26T00:00:00.000Z",
       entries: {
-        "codex/default/AGENTS.md": { kind: "file", checksum: "abc" },
-        "codex/default/skills": { kind: "directory" },
-        "codex/designer/rules": { kind: "symlink", target: "/repo/.output/codex/default/rules" },
+        "codex/AGENTS.md": { kind: "file", checksum: "abc" },
+        "codex/skills": { kind: "directory" },
+        "pi/extensions": { kind: "symlink", target: "/repo/vendor/pi-extensions" },
       },
-      syncedFilePaths: ["codex/default/config.toml"],
-      sourcePaths: { "codex/default/AGENTS.md": "/repo/profiles/default/profile.yaml" },
-      sourceChecksums: { "codex/default/AGENTS.md": "def" },
+      syncedFilePaths: ["codex/config.toml"],
+      sourcePaths: { "codex/AGENTS.md": "/repo/system/system.md" },
+      sourceChecksums: { "codex/AGENTS.md": "def" },
     };
     await writeFile(join(outputDir, "manifest.json"), JSON.stringify(manifest), "utf-8");
 

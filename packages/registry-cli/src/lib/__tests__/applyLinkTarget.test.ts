@@ -31,7 +31,7 @@ afterAll(async () => {
 describe("applyLinkTarget", () => {
   it("links a missing target, creating its parent directory", async () => {
     const root = await createTestDirectory();
-    const sourcePath = await writeTestFile(root, "output/pi/default/web-search.json", "{}\n");
+    const sourcePath = await writeTestFile(root, "output/pi/web-search.json", "{}\n");
     const targetPath = join(root, "home", ".pi", "web-search.json");
 
     expect(await applyLinkTarget({ kind: "link", sourcePath, targetPath, description: "Pi web search config" }, BACKUP_SUFFIX))
@@ -41,7 +41,7 @@ describe("applyLinkTarget", () => {
 
   it("reuses an absolute link that already points at the source", async () => {
     const root = await createTestDirectory();
-    const sourcePath = await writeTestFile(root, "output/pi/default/web-search.json", "{}\n");
+    const sourcePath = await writeTestFile(root, "output/pi/web-search.json", "{}\n");
     const targetPath = join(root, "home", "web-search.json");
     await mkdir(dirname(targetPath), { recursive: true });
     await symlink(sourcePath, targetPath);

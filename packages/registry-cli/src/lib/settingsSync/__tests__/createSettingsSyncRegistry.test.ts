@@ -7,15 +7,15 @@ describe("createSettingsSyncRegistry", () => {
   it("records synced files relative to the staging root, sorted and de-duplicated", () => {
     const registry = createSettingsSyncRegistry("/staging");
 
-    registry.syncSettingsFile(join("/staging", "pi", "default", "settings.json"), {
+    registry.syncSettingsFile(join("/staging", "pi", "settings.json"), {
       liveOnlyKeyPaths: [["lastChangelogVersion"]],
     });
-    registry.syncSettingsFile(join("/staging", "claude-code", "default", "settings.json"));
-    registry.syncSettingsFile(join("/staging", "claude-code", "default", "settings.json"));
+    registry.syncSettingsFile(join("/staging", "claude-code", "settings.json"));
+    registry.syncSettingsFile(join("/staging", "claude-code", "settings.json"));
 
     expect(registry.getSyncedSettingsFiles()).toEqual([
-      { relativePath: "claude-code/default/settings.json", liveOnlyKeyPaths: [] },
-      { relativePath: "pi/default/settings.json", liveOnlyKeyPaths: [["lastChangelogVersion"]] },
+      { relativePath: "claude-code/settings.json", liveOnlyKeyPaths: [] },
+      { relativePath: "pi/settings.json", liveOnlyKeyPaths: [["lastChangelogVersion"]] },
     ]);
   });
 

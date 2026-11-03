@@ -144,7 +144,7 @@ describe("Pi harness build", () => {
     );
   });
 
-  it("registers settings.json for settings sync with the version stamp kept live-only", async () => {
+  it("registers settings.json for settings sync with the version stamps kept live-only", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
 
@@ -152,7 +152,7 @@ describe("Pi harness build", () => {
     await buildOutput(repositoryRoot, { settingsSyncRegistry });
 
     expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
-      { relativePath: "pi/settings.json", liveOnlyKeyPaths: [["lastChangelogVersion"]] },
+      { relativePath: "pi/settings.json", liveOnlyKeyPaths: [["lastChangelogVersion"], ["extensionChangelogVersions"]] },
     ]);
   });
 

@@ -46,8 +46,10 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
     context.templateContext,
   );
   // Pi saves model, theme, and thinking-level choices here and stamps the
-  // last-seen version after every update; only the preferences sync back.
-  context.buildSupport.syncSettingsFile(settingsPath, { liveOnlyKeyPaths: [["lastChangelogVersion"]] });
+  // last-seen Pi and extension versions after updates; only the preferences sync back.
+  context.buildSupport.syncSettingsFile(settingsPath, {
+    liveOnlyKeyPaths: [["lastChangelogVersion"], ["extensionChangelogVersions"]],
+  });
   await copyOptionalHarnessPath(context, piOutputDir, "models.json");
   await copyOptionalHarnessPath(context, piOutputDir, "web-search.json");
   await copyOptionalHarnessPath(context, piOutputDir, "extensions");

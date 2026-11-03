@@ -23,6 +23,7 @@ import {
   injectDisableModelInvocation,
   isUserSkillPath,
   parseSkillAuthor,
+  readHarnessSkillEntries,
   updateSkillName,
 } from "./userSkillUtils";
 const REGISTRY_IGNORE_FILE_NAME = ".registry-ignore";
@@ -48,6 +49,7 @@ export type IBuildSupport = {
     context: IHarnessBuildContext,
     destinations: { skillsDir: string; commandsDir?: string },
   ): Promise<void>;
+  stageHarnessSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void>;
   writeBinScript(outputDir: string, filename: string, content: string): Promise<void>;
   copyDirectoryWithTemplateVariables(
     sourceDir: string,
@@ -90,22 +92,6 @@ export type IUnifiedHarnessPlugin = {
 
 export function getObjectValue(object: object, key: string): unknown {
   return Reflect.get(object, key);
-}
-
-export function isUnifiedHarnessPlugin(value: unknown): value is IUnifiedHarnessPlugin {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-
-  const target = getObjectValue(value, "target");
-  const buildOutput = getObjectValue(value, "buildOutput");
-  const getBootstrapTargets = getObjectValue(value, "getBootstrapTargets");
-
-  return (
-    typeof target === "string" &&
-    typeof buildOutput === "function" &&
-    (getBootstrapTargets === undefined || typeof getBootstrapTargets === "function")
-  );
 }
 
 function normalizeRelativePath(filePath: string): string {
@@ -495,6 +481,48 @@ export async function stageRegistryAssets(
         content = updateSkillName(content, outputSkillName);
       }
       if (assets.userSkillNames.has(skill) || isUserSkillPath(sourceDir)) {
+        content = injectDisableModelInvocation(content);
+      }
+      await writeFile(generatedSkillFilePath, content, "utf-8");
+    }
+  }
+}
+
+// Copies harness-only skills from `harnesses/<target>/skills/` into a harness
+// output, replacing any skill already staged under the same output name.
+export async function stageHarnessSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void> {
+  const harnessSkillsDir = join(context.harnessDir, "skills");
+  if (!existsSync(harnessSkillsDir)) {
+    return;
+  }
+
+  const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
+  for (const harnessSkillEntry of harnessSkillEntries) {
+    const skillFilePath = join(harnessSkillEntry.sourcePath, "SKILL.md");
+    let skillAuthor: string | null = null;
+    if (existsSync(skillFilePath)) {
+      const content = await readFile(skillFilePath, "utf-8");
+      skillAuthor = parseSkillAuthor(content);
+    }
+    const outputSkillName = getOutputSkillName(harnessSkillEntry.name, skillAuthor);
+    const outputPath = join(skillsDir, outputSkillName);
+    if (existsSync(outputPath)) {
+      await rm(outputPath, { recursive: true, force: true });
+    }
+
+    await context.buildSupport.copyDirectoryWithTemplateVariables(
+      harnessSkillEntry.sourcePath,
+      outputPath,
+      context.templateContext,
+    );
+
+    const generatedSkillFilePath = join(outputPath, "SKILL.md");
+    if (existsSync(generatedSkillFilePath)) {
+      let content = await readFile(generatedSkillFilePath, "utf-8");
+      if (outputSkillName !== harnessSkillEntry.name) {
+        content = updateSkillName(content, outputSkillName);
+      }
+      if (harnessSkillEntry.isUser) {
         content = injectDisableModelInvocation(content);
       }
       await writeFile(generatedSkillFilePath, content, "utf-8");

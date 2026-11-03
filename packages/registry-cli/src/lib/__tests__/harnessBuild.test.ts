@@ -58,6 +58,7 @@ function createRegistryAssetContext(repositoryRoot: string, assets: Partial<IReg
       copyDirectoryWithTemplateVariables: (source, target, ctx) => copyDirectoryWithTemplateVariables(source, target, ctx),
       copyPathWithTemplateVariables: (source, target, ctx) => copyPathWithTemplateVariables(source, target, ctx),
       mergeDirectory: async () => {},
+      stageHarnessSkills: async () => {},
       stageRegistryAssets: async () => {},
       writeBinScript: async () => {},
       syncSettingsFile: () => {},

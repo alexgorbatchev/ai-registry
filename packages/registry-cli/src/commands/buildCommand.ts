@@ -19,6 +19,7 @@ import {
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
   mergeDirectory,
+  stageHarnessSkills,
   stageRegistryAssets,
   writeBinScript,
 } from "../lib/harnessBuild";
@@ -293,6 +294,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     mergeDirectory: (sourceDir, destinationDir, options) => {
       return mergeDirectory(sourceDir, destinationDir, options, sourcePathByOutputPath);
     },
+    stageHarnessSkills,
     stageRegistryAssets,
     writeBinScript,
     syncSettingsFile: settingsSyncRegistry.syncSettingsFile,

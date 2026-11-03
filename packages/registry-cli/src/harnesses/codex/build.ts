@@ -1,17 +1,10 @@
-import { mkdir, readFile, rm, writeFile } from "fs/promises";
+import { mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
 import type { IBootstrapTarget, IHarnessBuildContext, IUnifiedHarnessPlugin } from "../../lib/harnessBuild";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
-import {
-  getOutputSkillName,
-  injectDisableModelInvocation,
-  parseSkillAuthor,
-  readHarnessSkillEntries,
-  updateSkillName,
-} from "../../lib/userSkillUtils";
 import { getCommandSkillName } from "./getCommandSkillName";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
@@ -65,46 +58,6 @@ async function stageHarnessRules(context: IHarnessBuildContext, codexOutputDir: 
   );
 }
 
-async function stageHarnessLocalSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void> {
-  const harnessSkillsDir = join(context.harnessDir, "skills");
-  if (!existsSync(harnessSkillsDir)) {
-    return;
-  }
-
-  const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
-  for (const harnessSkillEntry of harnessSkillEntries) {
-    const skillFilePath = join(harnessSkillEntry.sourcePath, "SKILL.md");
-    let skillAuthor: string | null = null;
-    if (existsSync(skillFilePath)) {
-      const content = await readFile(skillFilePath, "utf-8");
-      skillAuthor = parseSkillAuthor(content);
-    }
-    const outputSkillName = getOutputSkillName(harnessSkillEntry.name, skillAuthor);
-    const outputPath = join(skillsDir, outputSkillName);
-    if (existsSync(outputPath)) {
-      await rm(outputPath, { recursive: true, force: true });
-    }
-
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      harnessSkillEntry.sourcePath,
-      outputPath,
-      context.templateContext,
-    );
-
-    const generatedSkillFilePath = join(outputPath, "SKILL.md");
-    if (existsSync(generatedSkillFilePath)) {
-      let content = await readFile(generatedSkillFilePath, "utf-8");
-      if (outputSkillName !== harnessSkillEntry.name) {
-        content = updateSkillName(content, outputSkillName);
-      }
-      if (harnessSkillEntry.isUser) {
-        content = injectDisableModelInvocation(content);
-      }
-      await writeFile(generatedSkillFilePath, content, "utf-8");
-    }
-  }
-}
-
 // Commands become native skills that only explicit invocation can load.
 async function stageCommandSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void> {
   const commandSkillNames = new Set<string>();
@@ -143,7 +96,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   );
   await stageCodexConfig(context, codexOutputDir);
   await stageHarnessRules(context, codexOutputDir);
-  await stageHarnessLocalSkills(context, skillsDir);
+  await context.buildSupport.stageHarnessSkills(context, skillsDir);
   await context.buildSupport.stageRegistryAssets(context, { skillsDir });
   await stageCommandSkills(context, skillsDir);
 

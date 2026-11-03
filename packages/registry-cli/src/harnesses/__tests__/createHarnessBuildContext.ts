@@ -4,6 +4,7 @@ import {
   copyDirectoryWithTemplateVariables,
   copyPathWithTemplateVariables,
   mergeDirectory,
+  stageHarnessSkills,
   stageRegistryAssets,
   writeBinScript,
   type IHarnessBuildContext,
@@ -53,6 +54,7 @@ export function createHarnessBuildContext(
     buildSupport: {
       mergeDirectory: (sourceDir, targetDir, mergeOptions) =>
         mergeDirectory(sourceDir, targetDir, mergeOptions, sourcePathByOutputPath),
+      stageHarnessSkills,
       stageRegistryAssets,
       writeBinScript,
       copyDirectoryWithTemplateVariables: (sourceDir, targetDir, templateContext) =>

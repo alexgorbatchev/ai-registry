@@ -41,6 +41,7 @@ function createUnifiedContext(
     },
     buildSupport: {
       mergeDirectory: async () => {},
+      stageHarnessSkills: async () => {},
       stageRegistryAssets: async () => {},
       writeBinScript: async () => {},
       copyDirectoryWithTemplateVariables: async () => {},

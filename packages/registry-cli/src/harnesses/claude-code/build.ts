@@ -1,17 +1,10 @@
-import { mkdir, readFile, rm, writeFile } from "fs/promises";
+import { mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
 import type { IBootstrapTarget, IHarnessBuildContext, IUnifiedHarnessPlugin } from "../../lib/harnessBuild";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
-import {
-  getOutputSkillName,
-  injectDisableModelInvocation,
-  parseSkillAuthor,
-  readHarnessSkillEntries,
-  updateSkillName,
-} from "../../lib/userSkillUtils";
 
 const CLAUDE_CODE_OUTPUT_DIR_NAME = "claude-code";
 const MEMORY_FILE_NAME = "CLAUDE.md";
@@ -33,46 +26,6 @@ async function stageHarnessFiles(context: IHarnessBuildContext, claudeCodeOutput
   const settingsPath = join(claudeCodeOutputDir, SETTINGS_FILE_NAME);
   if (existsSync(settingsPath)) {
     context.buildSupport.syncSettingsFile(settingsPath);
-  }
-}
-
-async function stageHarnessLocalSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void> {
-  const harnessSkillsDir = join(context.harnessDir, SKILLS_DIR_NAME);
-  if (!existsSync(harnessSkillsDir)) {
-    return;
-  }
-
-  const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
-  for (const harnessSkillEntry of harnessSkillEntries) {
-    const skillFilePath = join(harnessSkillEntry.sourcePath, "SKILL.md");
-    let skillAuthor: string | null = null;
-    if (existsSync(skillFilePath)) {
-      const content = await readFile(skillFilePath, "utf-8");
-      skillAuthor = parseSkillAuthor(content);
-    }
-    const outputSkillName = getOutputSkillName(harnessSkillEntry.name, skillAuthor);
-    const outputPath = join(skillsDir, outputSkillName);
-    if (existsSync(outputPath)) {
-      await rm(outputPath, { recursive: true, force: true });
-    }
-
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      harnessSkillEntry.sourcePath,
-      outputPath,
-      context.templateContext,
-    );
-
-    const generatedSkillFilePath = join(outputPath, "SKILL.md");
-    if (existsSync(generatedSkillFilePath)) {
-      let content = await readFile(generatedSkillFilePath, "utf-8");
-      if (outputSkillName !== harnessSkillEntry.name) {
-        content = updateSkillName(content, outputSkillName);
-      }
-      if (harnessSkillEntry.isUser) {
-        content = injectDisableModelInvocation(content);
-      }
-      await writeFile(generatedSkillFilePath, content, "utf-8");
-    }
   }
 }
 
@@ -176,7 +129,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
     context.templateContext,
   );
 
-  await stageHarnessLocalSkills(context, skillsDir);
+  await context.buildSupport.stageHarnessSkills(context, skillsDir);
   await stageHarnessFiles(context, claudeCodeOutputDir);
   await mkdir(commandsDir, { recursive: true });
   await context.buildSupport.stageRegistryAssets(context, { commandsDir, skillsDir });

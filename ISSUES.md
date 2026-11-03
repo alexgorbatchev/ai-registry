@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-14 10:29
-last_modified: 2026-10-25 08:17
+last_modified: 2026-11-03 10:42
 status: current
 ---
 
@@ -300,7 +300,7 @@ Live build/bootstrap and generated-output verification remain unrun because the 
 
 Finding A24 grouped four local instruction rules as potential unattended-work blockers. In response to Q33, the user clarified that this registry is maintained interactively with agent assistance; reusable guidance for unattended workers does not make interactive registry maintenance a defect. Root and registry-integration guidance now record that distinction, and the audit scope reflects it.
 
-The user explicitly requested removal of the approval rule in [profiles/AGENTS.md](profiles/AGENTS.md). That line is deleted rather than replaced with another approval checkpoint. Profile isolation and its technical conventions remain. The documentation collection rule in [wiki/prompt-writing/AGENTS.md](wiki/prompt-writing/AGENTS.md:25) is preserved: the user did not request its removal or replacement. The earlier blanket four-file Q33 proposal was not accepted as written.
+The user explicitly requested removal of the approval rule in `profiles/AGENTS.md`. That line is deleted rather than replaced with another approval checkpoint. Profile support, including that file, was later removed entirely. The documentation collection rule in [wiki/prompt-writing/AGENTS.md](wiki/prompt-writing/AGENTS.md:25) is preserved: the user did not request its removal or replacement. The earlier blanket four-file Q33 proposal was not accepted as written.
 
 The user explained that the policy-recording rules in [skills/AGENTS.md](skills/AGENTS.md) and [disk-cleanup/AGENTS.md](skills/user/disk-cleanup/AGENTS.md) mean explicit standing instructions, such as always doing or never doing something, should be saved automatically without a separate request to update policy. Those rules now say so. Update superseded rules in place and ask only when the intended scope or resolution of a material conflict is unclear. One-task directions, progress, handoffs, and session data stay out of policy files. The root guidance and registry-integration skill are aligned. Docs-writer's entrypoint, persistence reference, and three AGENTS template sections now carry the same automatic-recording requirement so new files retain this behavior. No task history is embedded in the policy updates.
 

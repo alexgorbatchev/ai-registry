@@ -59,7 +59,7 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 
 ## Pi
 
-- Keep shipped Pi skeleton files under `harnesses/pi/agent/`.
+- Keep shipped Pi files directly under `harnesses/pi/`: `settings.json`, `models.json`, `web-search.json`, `extensions/`, `prompts/`, `skills/`, and the `templates/` the helper scripts are generated from.
 - Keep the Pi unified-output plugin in `packages/registry-cli/src/harnesses/pi/build.ts`.
 - Map registry commands and `harnesses/pi/prompts/` to `prompts/`, copy `system/system.md` to `APPEND_SYSTEM.md`, and stage registry and Pi-only skills under `skills/`. Pi writes `sessions/` into the real `${PI_CODING_AGENT_DIR:-~/.pi/agent}` home.
 - `settings.json` is a synced settings file: model, theme, and thinking-level choices made in Pi flow back into `harnesses/pi/settings.json`. `lastChangelogVersion` is live-only because Pi stamps it after every update.

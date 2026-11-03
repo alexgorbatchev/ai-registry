@@ -3,7 +3,7 @@
     "lg-llm": {
       "baseUrl": "<%- env("LGLLM_API_URL") %>",
       "api": "openai-completions",
-      "apiKey": "$LGLLM_API_KEY",
+      "apiKey": "<%- env("LGLLM_API_KEY") %>",
       "models": [{
         "id": "qwen3.8-27b-uncensored-int8",
         "contextWindow": 250000,

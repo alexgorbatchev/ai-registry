@@ -1,46 +1,24 @@
 {
   "providers": {
+    "lg-llm": {
+      "baseUrl": "<%- env("LGLLM_API_URL") %>",
+      "api": "openai-completions",
+      "apiKey": "$LGLLM_API_KEY",
+      "models": [{
+        "id": "qwen3.8-27b-uncensored-int8",
+        "contextWindow": 250000,
+        "reasoning": true,
+        "input": ["text", "image"],
+        "thinkingLevelMap": { "off": null, "low": "low", "medium": "medium", "xhigh": "xhigh" }
+      }]
+    },
+
     "litellm": {
       "modelOverrides": {
         "gemini-4-argon": {
           "contextWindow": 1000000
         }
       }
-    },
-    "google": {
-      "models": [
-        {
-          "id": "gemini-3.5-flash",
-          "name": "Gemini 3.5 Flash",
-          "contextWindow": 1048576,
-          "maxTokens": 65536
-        },
-        {
-          "id": "gemini-3.6-flash",
-          "name": "Gemini 3.6 Flash",
-          "contextWindow": 1048576,
-          "maxTokens": 65536
-        },
-        {
-          "id": "gemini-3.7-flash",
-          "name": "Gemini 3.7 Flash",
-          "contextWindow": 1048576,
-          "maxTokens": 65536
-        },
-        {
-          "id": "gemini-3.8-flash",
-          "name": "Gemini 3.8 Flash",
-          "contextWindow": 1048576,
-          "maxTokens": 65536
-        },
-
-        {
-          "id": "gemini-4-argon",
-          "name": "Gemini 4 Argon",
-          "contextWindow": 1048576,
-          "maxTokens": 65536
-        }
-      ]
     }
   }
 }

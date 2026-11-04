@@ -8,7 +8,7 @@ import type { IRegistryPaths } from "../../lib/getRegistryPaths";
 import { getManagedEntryNames } from "../../lib/homeTargetUtils";
 import { readGeneratedOutputManifest } from "../../lib/readGeneratedOutputManifest";
 import { applySettingsChanges } from "../../lib/settingsSync/applySettingsChanges";
-import { copyRepositoryHarnesses } from "./helpers";
+import { copyRepositoryHarnesses, loadTestShellEnvironment } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-settings-sync-tests");
 
@@ -49,14 +49,14 @@ describe("buildCommand settings sync", () => {
   });
 
   it("syncs a harness-edited settings file into the registry without asking to overwrite", async () => {
-    await buildCommand({ hasAutoConfirm: true, registryPaths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
     const livePath = join(registryPaths.output, "claude-code", "settings.json");
     const sourcePath = join(registryPaths.harnesses, "claude-code", "settings.json");
     const liveSettings = JSON.parse(await readFile(livePath, "utf-8"));
     await writeFile(livePath, `${JSON.stringify({ ...liveSettings, harnessAddedSetting: true }, null, 2)}\n`);
 
     // No -y and no terminal: any reported drift would cancel the build.
-    await buildCommand({ hasAutoConfirm: false, registryPaths });
+    await buildCommand({ hasAutoConfirm: false, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
 
     expect(JSON.parse(await readFile(sourcePath, "utf-8")).harnessAddedSetting).toBe(true);
     expect(JSON.parse(await readFile(livePath, "utf-8")).harnessAddedSetting).toBe(true);
@@ -69,7 +69,7 @@ describe("buildCommand settings sync", () => {
     process.env.AI_REGISTRY_CODEX_TRUSTED_DIRS = projectsDir;
     const sourcePath = join(registryPaths.harnesses, "codex", "config.toml");
     const sourceBefore = await readFile(sourcePath, "utf-8");
-    await buildCommand({ hasAutoConfirm: true, registryPaths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
 
     const livePath = join(registryPaths.output, "codex", "config.toml");
     // Codex declines one listed project and trusts one outside the listed folders.
@@ -77,7 +77,7 @@ describe("buildCommand settings sync", () => {
       { keyPath: ["projects", join(projectsDir, "declined"), "trust_level"], value: "untrusted" },
       { keyPath: ["projects", "/elsewhere/codex-trusted", "trust_level"], value: "trusted" },
     ], livePath));
-    await buildCommand({ hasAutoConfirm: true, registryPaths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
 
     const live = Bun.TOML.parse(await readFile(livePath, "utf-8"));
     expect(Reflect.get(live, "projects")).toEqual({
@@ -89,7 +89,7 @@ describe("buildCommand settings sync", () => {
   }, 30_000);
 
   it("records synced settings files in the manifest so bootstrap links them into harness homes", async () => {
-    await buildCommand({ hasAutoConfirm: true, registryPaths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
 
     const manifest = await readGeneratedOutputManifest(registryPaths.output);
     assert(manifest !== null);

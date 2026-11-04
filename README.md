@@ -50,7 +50,7 @@ Source files keep their filenames and use [EJS](https://ejs.co/docs/) syntax. `b
 - `<%- file_path %>`: Absolute path to the original source file being rendered, even inside nested includes.
 - `<%- file_dir %>`: Absolute path to the directory containing the original source file being rendered, even inside nested includes.
 - `<%- include("/path/from/repo/root.md") %>`: Inserts another file using a repository-root-relative path.
-- `<%- env("VAR_NAME") %>`: Inserts the value of the named environment variable and fails the build if it is missing.
+- `<%- env("VAR_NAME") %>`: Inserts the value of the named environment variable and fails the build if it is missing. A variable the build process lacks, such as an API key that only your interactive shell startup files export, is read from your login shell, so cron-driven builds see it too.
 - `<%- env("VAR_NAME", "fallback") %>`: Inserts the named environment variable, or the fallback value when the variable is unavailable.
 
 When the build stages files from `skills/`, `commands/`, or `harnesses/<target>/`, it also honors nested `.registry-ignore` files using `.gitignore`-style matching. Use those files to keep repo-local scratch assets, harness build scripts, or other non-shipping files out of generated outputs.

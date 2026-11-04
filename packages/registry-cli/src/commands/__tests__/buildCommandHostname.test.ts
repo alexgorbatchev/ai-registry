@@ -6,7 +6,7 @@ import { hostname } from "node:os";
 import { buildCommand } from "../buildCommand";
 import type { IRegistryPaths } from "../../lib/getRegistryPaths";
 import type { IGeneratedOutputManifest } from "../../lib/generatedOutputUtils";
-import { REPOSITORY_ROOT } from "./helpers";
+import { REPOSITORY_ROOT, loadTestShellEnvironment } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "../../../../../.tmp/build-hostname-tests");
 
@@ -80,7 +80,7 @@ describe("hostname skill variants", () => {
       skillContent("example", 'Machine instructions. <%- include("/system/common.md") %> Source: <%- file_path %>. Literal: {{args}}.'),
     );
 
-    await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
 
     for (const skillsDir of outputSkills()) {
       expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(
@@ -100,7 +100,7 @@ describe("hostname skill variants", () => {
 
   it("falls back to the default without rendering unmatched variants", async () => {
     await write("repo/skills/agent/example/variants/workstation-b/SKILL.md", "{{unknown_variable}}\n");
-    await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
       expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text())
         .toBe(skillContent("example", "Default instructions."));
@@ -111,7 +111,7 @@ describe("hostname skill variants", () => {
   it("uses the operating system hostname when the override is absent", async () => {
     delete process.env.AI_REGISTRY_HOSTNAME;
     await write(`repo/skills/agent/example/variants/${hostname()}/SKILL.md`, skillContent("example", "Detected machine."));
-    await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text())
       .toBe(skillContent("example", "Detected machine."));
   });
@@ -119,7 +119,7 @@ describe("hostname skill variants", () => {
   it.each(["Workstation-a", "workstation-a.example.test"])("matches hostname %s exactly", async (buildHostname) => {
     process.env.AI_REGISTRY_HOSTNAME = buildHostname;
     await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Different machine."));
-    await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text())
       .toBe(skillContent("example", "Default instructions."));
   });
@@ -129,7 +129,7 @@ describe("hostname skill variants", () => {
     await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Public variant."));
     await write("overlay/skills/agent/example/SKILL.md", skillContent("example", "Private default."));
     await write("overlay/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Private variant."));
-    await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
       expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(skillContent("example", "Private variant."));
       expect(await Bun.file(join(skillsDir, "example/references/shared.md")).exists()).toBe(false);
@@ -140,7 +140,7 @@ describe("hostname skill variants", () => {
     paths.overlays = [join(tempDir, "overlay")];
     await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Public variant."));
     await write("overlay/skills/agent/example/SKILL.md", skillContent("example", "Private default."));
-    await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
       expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(skillContent("example", "Private default."));
     }
@@ -152,7 +152,7 @@ describe("hostname skill variants", () => {
       await write(`repo/harnesses/${target}/skills/agent/example/SKILL.md`, skillContent("example", "Harness default."));
       await write(`repo/harnesses/${target}/skills/agent/example/variants/workstation-a/SKILL.md`, skillContent("example", "Harness variant."));
     }
-    await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
       expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(skillContent("example", "Harness variant."));
     }
@@ -161,7 +161,7 @@ describe("hostname skill variants", () => {
   it("preserves author prefixes and user invocation policy", async () => {
     await write("repo/skills/user/manual-example/SKILL.md", skillContent("manual-example", "Manual default.", "upstream"));
     await write("repo/skills/user/manual-example/variants/workstation-a/SKILL.md", skillContent("manual-example", "Manual variant.", "upstream"));
-    await buildCommand({ hasAutoConfirm: true, registryPaths: paths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
       expect(await Bun.file(join(skillsDir, "upstream-manual-example/SKILL.md")).text()).toBe(
         "---\ndisable-model-invocation: true\nname: upstream-manual-example\ndescription: Use when testing manual-example.\nauthor: upstream\n---\nManual variant.\n",
@@ -180,18 +180,18 @@ describe("hostname skill variants", () => {
     ["empty body", skillContent("example", "")],
   ])("rejects a matching variant with %s instead of falling back", async (_label, content) => {
     await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", content);
-    await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths })).rejects.toThrow();
+    await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment })).rejects.toThrow();
     expect(await Bun.file(join(paths.output, "manifest.json")).exists()).toBe(false);
   });
 
   it("rejects a matching variant directory without SKILL.md", async () => {
     await write("repo/skills/agent/example/variants/workstation-a/notes.md", "Incomplete variant.");
-    await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths })).rejects.toThrow();
+    await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment })).rejects.toThrow();
   });
 
   it("rejects a matching variant path that is a file", async () => {
     await write("repo/skills/agent/example/variants/workstation-a", "Not a variant directory.");
-    await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths })).rejects.toThrow(
+    await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment })).rejects.toThrow(
       `Invalid hostname skill variant directory: ${join(paths.skills, "agent/example/variants/workstation-a")}`,
     );
   });
@@ -199,7 +199,7 @@ describe("hostname skill variants", () => {
   it.each(["", " ", "../escape", "nested/host", "nested\\host", ".", "..", "host\nname"])(
     "rejects unsafe or empty hostname overrides: %j", async (override) => {
       process.env.AI_REGISTRY_HOSTNAME = override;
-      await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths })).rejects.toThrow();
+      await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment })).rejects.toThrow();
     },
   );
 });

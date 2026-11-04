@@ -24,6 +24,7 @@ import {
   writeBinScript,
 } from "../lib/harnessBuild";
 import { resolveRegistryAssets } from "../lib/resolveRegistryAssets";
+import { createTemplateEnvironment, type ILoadShellEnvironment } from "../lib/createTemplateEnvironment";
 import {
   collectGeneratedOutputEntries,
   createGeneratedOutputManifest,
@@ -253,6 +254,7 @@ export async function buildCommand(options: IBuildOptions): Promise<void> {
 interface IBuildOptions {
   hasAutoConfirm: boolean;
   registryPaths?: IRegistryPaths;
+  loadShellEnvironment?: ILoadShellEnvironment;
 }
 
 async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): Promise<void> {
@@ -345,7 +347,12 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     });
   }
 
-  await applyTemplateVariablesToGeneratedOutput(GENERATED_OUTPUT_STAGING_DIR, TEMPLATE_CONTEXT, sourcePathByOutputPath);
+  await applyTemplateVariablesToGeneratedOutput(
+    GENERATED_OUTPUT_STAGING_DIR,
+    TEMPLATE_CONTEXT,
+    sourcePathByOutputPath,
+    createTemplateEnvironment(process.env, options.loadShellEnvironment),
+  );
   console.log("   ✅ Successfully compiled unified outputs!");
 
   const syncedSettingsFiles = settingsSyncRegistry.getSyncedSettingsFiles();

@@ -166,13 +166,14 @@ async function applyTemplateVariables(
   content: string,
   sourcePath: string,
   templateContext: ITemplateContext,
+  environment: NodeJS.ProcessEnv,
 ): Promise<string> {
   return renderTemplate({
     content,
     sourcePath,
     repositoryRoot: templateContext.repo_root,
     variables: templateContext,
-    environment: process.env,
+    environment,
   });
 }
 
@@ -328,6 +329,7 @@ export async function applyTemplateVariablesToGeneratedOutput(
   outputDir: string,
   templateContext: ITemplateContext,
   sourcePathByOutputPath?: ISourcePathByOutputPath,
+  environment: NodeJS.ProcessEnv = process.env,
 ): Promise<void> {
   if (!existsSync(outputDir)) {
     return;
@@ -342,7 +344,7 @@ export async function applyTemplateVariablesToGeneratedOutput(
     const entryPath = join(outputDir, entry.name);
 
     if (entry.isDirectory()) {
-      await applyTemplateVariablesToGeneratedOutput(entryPath, templateContext, sourcePathByOutputPath);
+      await applyTemplateVariablesToGeneratedOutput(entryPath, templateContext, sourcePathByOutputPath, environment);
       continue;
     }
 
@@ -360,6 +362,7 @@ export async function applyTemplateVariablesToGeneratedOutput(
       sourceContent,
       sourcePathByOutputPath?.get(entryPath) ?? entryPath,
       templateContext,
+      environment,
     );
 
     if (renderedContent !== sourceContent) {

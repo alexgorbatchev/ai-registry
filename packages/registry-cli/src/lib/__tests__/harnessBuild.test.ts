@@ -12,6 +12,7 @@ import {
   type IRegistryAssets,
   type ITemplateContext,
 } from "../harnessBuild";
+import { createTemplateEnvironment } from "../createTemplateEnvironment";
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "harness-build-tests");
 const createdDirectories: string[] = [];
@@ -153,6 +154,25 @@ describe("harnessBuild template rendering", () => {
     );
 
     expect(await Bun.file(outputPath).text()).toBe(`ROOT=${repositoryRoot}\n`);
+  });
+
+  it("renders env() values the build lacks from the login shell and fails on ones missing everywhere", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const stagingDir = join(repositoryRoot, ".tmp", "generated-output-staging");
+    const outputPath = await writeTestFile(
+      repositoryRoot,
+      ".tmp/generated-output-staging/pi/models.json",
+      '{ "baseUrl": "<%- env("AI_REGISTRY_TEST_SHELL_ONLY_URL") %>" }\n',
+    );
+    const environment = createTemplateEnvironment({}, () => ({ AI_REGISTRY_TEST_SHELL_ONLY_URL: "https://shell.example.invalid" }));
+
+    await applyTemplateVariablesToGeneratedOutput(stagingDir, createTemplateContext(repositoryRoot), undefined, environment);
+    expect(await Bun.file(outputPath).text()).toBe('{ "baseUrl": "https://shell.example.invalid" }\n');
+
+    await writeTestFile(repositoryRoot, ".tmp/generated-output-staging/pi/models.json", '<%- env("AI_REGISTRY_TEST_UNSET") %>\n');
+    await expect(
+      applyTemplateVariablesToGeneratedOutput(stagingDir, createTemplateContext(repositoryRoot), undefined, createTemplateEnvironment({}, () => ({}))),
+    ).rejects.toThrow("Missing environment variable: AI_REGISTRY_TEST_UNSET");
   });
 
   it("respects .registry-ignore when copying a directory", async () => {

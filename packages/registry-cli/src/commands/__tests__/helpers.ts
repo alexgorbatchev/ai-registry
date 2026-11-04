@@ -15,3 +15,8 @@ export async function copyRepositoryHarnesses(targetDir: string): Promise<void> 
     filter: (sourcePath) => !UNUSED_HARNESS_DIR_NAMES.has(basename(sourcePath)),
   });
 }
+
+// Stands in for the user's login shell, so builds never read real keys during tests.
+export function loadTestShellEnvironment(): Record<string, string> {
+  return { LGLLM_API_URL: "https://llm.example.invalid/v1", LGLLM_API_KEY: "test-key" };
+}

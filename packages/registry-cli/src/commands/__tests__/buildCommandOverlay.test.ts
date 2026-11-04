@@ -5,7 +5,7 @@ import { join } from "path";
 
 import { buildCommand } from "../buildCommand";
 import { type IRegistryPaths } from "../../lib/getRegistryPaths";
-import { copyRepositoryHarnesses } from "./helpers";
+import { copyRepositoryHarnesses, loadTestShellEnvironment } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-overlay-tests");
 
@@ -56,10 +56,7 @@ describe("buildCommand with overlay", () => {
   });
 
   it("builds outputs combining base assets and overlay assets", async () => {
-    await buildCommand({
-      hasAutoConfirm: true,
-      registryPaths,
-    });
+    await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
 
     const outputDir = registryPaths.output;
 
@@ -95,7 +92,7 @@ describe("buildCommand with overlay", () => {
     const messages: string[] = [];
     const logSpy = spyOn(console, "log").mockImplementation((message) => messages.push(String(message)));
     try {
-      await buildCommand({ hasAutoConfirm: true, registryPaths });
+      await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
     } finally {
       logSpy.mockRestore();
     }
@@ -115,7 +112,7 @@ describe("buildCommand with overlay", () => {
     const commandContent = "---\ndescription: Overlay review\n---\nReview <%- file_path %> in <%- repo_root %>. Keep {{args}} literal.\n";
     await Bun.write(commandPath, commandContent);
 
-    await buildCommand({ hasAutoConfirm: true, registryPaths });
+    await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
 
     const renderedContent = `---\ndescription: Overlay review\n---\nReview ${commandPath} in ${repoRoot}. Keep {{args}} literal.\n`;
     expect(await Bun.file(join(registryPaths.output, "codex/skills/command-base-cmd/SKILL.md")).text())

@@ -1,177 +1,225 @@
 ---
-created_on: 2026-10-14 10:29
-last_modified: 2026-11-04 11:19
+created_on: 2026-10-26 10:10
+last_modified: 2026-11-04 11:27
 status: current
 ---
 
-# Instruction issues and remediation
+# Review findings for commit e56e821
 
-This register tracks findings and fixes from the [autonomy audit](docs/internal/audit/autonomy.md) and subsequent user review. Entries record source evidence, remediation, verification, and unresolved decisions; they do not independently change operating policy. Private values are intentionally omitted. Resolved and obsolete entries are removed; their text remains in Git history.
+This register records the review of `e56e821` (`refactor(registry): apply autonomy interview decisions`, 2026-10-24) against `HEAD` at `0e138b9`. Entries record evidence, impact, and suggested remediation; they do not independently change operating policy. Finding IDs (`F1`–`F24`, `D2`–`D7`) match the review discussion. Fixed and obsolete findings are removed; their text remains in Git history. Audit entries (`I0xx`) live in the [autonomy audit's remediation log](docs/internal/audit/autonomy.md#remediation-log).
 
-Output verification: the last completed `bun run build`, through I025, passed typechecking and output application. The user paused rebuilds during the review; source changes from I026 onward have not been built or verified in generated outputs. Source validation is recorded per issue. The earlier settings-drift application blockers are resolved. Session data is preserved; no forced drift overwrite was performed.
+Method: the registry-cli code changes were reviewed directly, including a reproduction of the template-reversal behavior and a comparison of test results at the commit, its parent, and `HEAD`. The instruction changes were reviewed by two independent read-only passes; their highest-severity findings (F1, F2, F6, F7, F10) were re-verified. Entries marked *plausible* describe a confirmed mechanism whose real-world trigger was not observed.
 
-Third-party-authored skill content is protected by the user's subsequent instruction. Local content edits to Matt Pocock's `to-tickets` and `diagnosing-bugs` were restored to the repository's original versions; requested installations and user-only placement remain. Findings inside protected bundles are retained without rewriting or deleting those workflows.
+Test status: at `e56e821`, `bun test packages/registry-cli` reported 302 pass / 20 fail; its parent reported 7 failures, so the commit introduced 13. At `HEAD`, 387 pass / 0 fail. Nothing in this register has been remediated yet.
 
-## I001: Setup workflow installed; protected upstream inconsistencies remain
+## High
 
-[Triage](skills/user/triage/SKILL.md) and [to-tickets](skills/user/to-tickets/SKILL.md) reference `/setup-matt-pocock-skills`. The upstream [setup workflow](skills/user/setup-matt-pocock-skills/SKILL.md) is now installed under `skills/user/` through the registry's vendoring wrapper and recorded in `skills-lock.json`. Its tracker, label, and domain-documentation resources are bundled. The installed [grilling](skills/user/grilling/SKILL.md) and [domain-modeling](skills/user/domain-modeling/SKILL.md) dependencies remain available. All Matt Pocock skills are explicitly user-invoked workflows, and dependencies between them are intentional.
+### F1: Codex Git guard permits history rewrites and discarded changes
 
-The setup validator passes with the existing upstream metadata warning. The full build, including typechecking and active output application, and `git diff --check` pass. All seven source files match upstream, apart from the wrapper's attribution and source invocation-metadata normalization. All ten generated bundles match the installed content, including all 70 bundled files, the author-prefixed name `mattpocock-setup-matt-pocock-skills`, `disable-model-invocation: true`, and `allow_implicit_invocation: false`. These are installation and packaging checks; the interactive setup workflow was not run and no project tracker configuration or labels were changed. No session data was deleted.
+Status: open. Confidence: confirmed.
 
-Protected upstream findings remain: triage names a harness-specific Skill tool; workflow references use unprefixed skill names while generated names include the author prefix. The new setup tracker templates recommend heredocs, conflicting with the registry's operating rule, and its domain template still mentions the deliberately removed `grill-with-docs` workflow. Preserve these bundles under the user's ownership instruction. Use the installed author-prefixed names when invoking skills; higher-priority project and user instructions continue to govern execution. Any upstream content correction is suspended pending an upstream update or explicit permission to modify that content.
+[default.rules](harnesses/codex/rules/default.rules) previously forbade every `git checkout` and `git reset`. The commit narrowed both rules to specific flags in the third token position. Codex `prefix_rule` matches tokens in order from the start of the command, so any other form is no longer forbidden:
 
-The interactive checkpoints in these explicitly user-invoked workflows are intentional. They are not autonomous execution workflows. The former `grill-with-docs` bundle is removed.
+- `git reset HEAD~3` (rewrites branch history; `git reset HEAD~1` was an explicit `match` example and was removed)
+- `git checkout .`, `git checkout HEAD -- src/`, `git checkout main file.ts` (discard file changes)
+- `git checkout -q -f main`, `git reset -q --hard` (forbidden flag not in the third position)
 
-## I004: Blocker suspension aligned
+[config.toml](harnesses/codex/config.toml) sets `approval_policy = "never"` and `sandbox_mode = "danger-full-access"`, so these run without a prompt. This contradicts the rule that history resets and discarded changes require explicit authorization.
 
-[Shared guidance](system/system.md), the [issue skill](skills/agent/github-fix-issues/SKILL.md), its [scheduling](skills/agent/github-fix-issues/references/scheduling.md), [queue](skills/agent/github-fix-issues/references/queue.md), [checks](skills/agent/github-fix-issues/references/checks-and-ci.md), and [integration](skills/agent/github-fix-issues/references/integration.md) references now suspend only genuinely blocked work and its dependents. Agents record blocker evidence, attempted recovery, the unblock condition, and resume state, preserve artifacts, and continue the next independent issue within the authorized queue. Pending CI or a running review keeps the current issue active. Cleared blockers are rechecked at selection boundaries, with requirements, ownership, refs, checks, and review state refreshed before resuming existing work. Root guidance, the README, registry integration guidance, and the [workflow reference](docs/internal/references/github-issue-workflow.md) carry the same rule.
+Remediation: restore a blanket `forbidden` (or `prompt`) rule for `git checkout` and `git reset`, then add narrow allow rules for the routine forms (`git checkout <branch>`, `git checkout -b`, path-scoped `git reset -- <path>`). Verify with `codex execpolicy check` against both the allowed and the dangerous forms above.
 
-Both changed skill bundles validate; typechecking and output compilation pass. The blocker rules are verified in 50 staged skill files and nine generated system documents. These are instruction and packaging checks, not an executed end-to-end issue run. The current successful unified build also applies these source changes to active outputs.
+### F2: OpenCode Git guard changed from ask to allow for unlisted forms
 
-## I005: Prerequisite authority and compatibility defaults aligned
+Status: open. Confidence: confirmed.
 
-[Shared guidance](system/system.md), [github-fix-issues](skills/agent/github-fix-issues/SKILL.md), its queue and checks references, root guidance, registry integration guidance, and the workflow reference now authorize the smallest same-repository prerequisite repair needed to unblock required checks, as approved during this review. Agents reproduce the failure on the untouched base, record its dependency, and complete a separate repair ticket and change set through the same checks, review, and integration gates. Explicit exclusions, repository boundaries, unrelated improvements, and other owners' changes remain outside that authority.
+[opencode.jsonc](harnesses/opencode/opencode.jsonc) replaced `"git checkout *": "ask"` and `"git reset *": "ask"` with a list of `deny` patterns and no fallback. OpenCode permission rules are last-match-wins with a default of allow ([permissions](harnesses/opencode/docs/permissions.mdx)), so `git reset HEAD~1`, `git checkout .`, `git checkout HEAD path`, and `git checkout main path` now run silently where they previously prompted.
 
-Compatibility layers remain disabled by default in registry-owned guidance, as requested. Migration or prerequisite-repair approval alone does not authorize them. The expand–contract recommendation in upstream [to-tickets](skills/user/to-tickets/SKILL.md) is preserved under the user's third-party ownership instruction. This remaining inconsistency does not override the user's explicit no-compatibility default; editing the upstream workflow is suspended.
+Remediation: put `"git checkout *": "ask"` and `"git reset *": "ask"` first, keep the specific `deny` patterns after them, and add explicit `allow` entries only for the routine forms.
 
-Before upstream content restoration, the three changed skill bundles validated, with the existing upstream metadata warning for to-tickets, and typechecking and output compilation passed. Those historical checks do not verify the restored upstream wording; current restoration and build checks are recorded under I008. These are instruction and packaging checks, not an executed end-to-end issue run. The current successful unified build also applies these source changes to active outputs.
+### F3: Commit landed with failing tests and a crashing build; root cause remains
 
-## I006: Completion evidence aligned
+Status: symptom fixed in `fc2cf82`; root cause open. Confidence: confirmed.
 
-[Shared guidance](system/system.md) and the [issue checks reference](skills/agent/github-fix-issues/references/checks-and-ci.md) now require concise results grounded in actual checks for the relevant revision, with material limitations and native CI links or existing local log paths where applicable. Raw logs remain in the execution system without mandatory transcript publication or evidence bundles, as approved during this review. Local logs do not replace required CI, and failed, skipped, pending, or unrun required checks cannot be reported as passing. Root guidance, the README, registry integration guidance, and the workflow reference carry the same contract.
+The commit introduced 13 test failures (hostname variant, overlay, and Codex provenance suites). Each failed with `ENOENT` at `buildCommand.ts:513`: `copyFileWithTemplateVariables` fingerprinted files copied out of the staging directory (for example `.tmp/generated-output-staging/.opencode-agents/work.md`) as sources, and the pre-application fingerprint check then tried to re-read them after staging cleanup. A real `bun run build` failed the same way. The commit message records that the rebuild was deferred, which is how it was committed.
 
-Both changed skill bundles validate; typechecking and output compilation pass. The completion policy is verified in 20 staged skill files and nine generated system documents. These are instruction and packaging checks, not an executed end-to-end issue run. The current successful unified build also applies these source changes to active outputs. The prerequisite-repair authorization recorded under I005 remains in force.
+`fc2cf82` fixed the symptom by making the OpenCode and Pi plugins copy those files directly. [copyFileWithTemplateVariables](packages/registry-cli/src/lib/harnessBuild.ts) still fingerprints any path it receives, so the next plugin that copies a staged temporary file through it will reintroduce the crash.
 
-## I007: Search-tool mandates removed
+Remediation: fingerprint and map only paths inside registered source roots (repository and overlay, excluding `.tmp/` and the staging directory), and add a regression test that copies a staged file through the shared helper.
 
-[Shared guidance](system/system.md) now leaves search and code-navigation tool selection to the model, as requested. The Pi and Claude Code codegraph instruction bundles are removed, eliminating their mandatory tool ordering and failure stop rules. Registry-owned session discovery, implementation audits, Pi debugging, file transfer, remote-content inspection, skill authoring, and test-output guidance now state the required outcome without prescribing codegraph, find, rg, or grep. Root guidance, the README, and registry integration guidance preserve this policy for future edits. Matt Pocock's debugging-cleanup wording is restored and preserved under the user's third-party ownership instruction.
+### F4: Edits to unmapped generated files block every build
 
-Installed tool packages, storage-cleanup guidance, ignore entries, and unrelated API command examples remain available. Before upstream content restoration, eight changed skill bundles validated, with the existing upstream metadata warning for diagnosing-bugs; typechecking and output compilation passed, and packaging checks covered 78 staged skill files, nine system documents, and seven command copies. Those historical checks do not verify the restored upstream wording; current restoration and build checks are recorded under I008. The current successful unified build also applies these source changes to active outputs.
+Status: open. Confidence: mechanism confirmed; trigger plausible.
 
-## I015: Concurrent state preserved; only conflicting operations suspend
+Several managed generated files have no entry in `sourcePaths` in `.output/manifest.json`: `claude-code/default/CLAUDE.md`, `codex/default/AGENTS.md`, `pi/default/APPEND_SYSTEM.md`, and, since `fc2cf82`, OpenCode agents and Pi prompts. When any of them drifts, `syncBackModifiedFiles` throws `Cannot recover <path>: no mapped source` on every build. A plausible trigger is Claude Code writing user memory to `~/.claude/CLAUDE.md` through `/memory`. Scheduled updates then fail on every run and stop pushing.
 
-The concurrency section of [shared guidance](system/system.md) previously required an immediate execution pause on unowned Git state and a halt before any action once unowned staged files remained for 60 seconds. This is finding A02 in the autonomy audit. Staged-file age alone does not establish that another agent is stalled, and the whole-worker halt conflicted with the approved affected-work suspension policy.
+Before this commit, `-y` overwrote drift. It is now ignored (F19), and the error text ("resolve its source mapping") gives no actionable step, so the only recovery is manually reverting the generated file.
 
-The user selected preservation with affected-operation suspension. Shared guidance now requires ownership and Git-state inspection before mutations, an owned isolated worktree when concurrent state could conflict, and resynchronization before retry. Unowned changes, index state, locks, and refs remain protected. Worktree isolation grants no authority over shared refs or locks, and elapsed time grants no takeover authority. Record ownership blockers and resume conditions; continue independent authorized work when safe and report when none can proceed. Root guidance, the README, and registry integration guidance reflect this policy.
+Remediation: decide the intended behavior for unrecoverable drift. Options: a documented explicit discard command that backs up the generated edit before overwriting it, or mapping rendered prompts to their profile `system_prompt` source and reporting the include-based case with exact instructions. Update the error text and `AGENTS.md` to match.
 
-The registry integration skill validator, full build including typechecking, and `git diff --check` pass. Twelve generated system prompts contain the new isolation and ownership-blocker rules without the old staged-file timeout; ten generated registry integration copies contain the matching policy. Written review covers another actor staging for longer than 60 seconds (preserve and continue safe independent work), a shared ref or lock conflict (suspend the conflicting operation even in another worktree), and no safe independent authorized work (preserve state and report the unblock condition). These are instruction and packaging checks, not executed model evaluations. No locks, unowned changes, or session data were removed.
+### F6: Guidance cites shared rules that no longer exist
 
-## I017: Routine owned-worktree Git operations permitted with destructive-operation guards
+Status: open. Confidence: confirmed.
 
-[Codex command rules](harnesses/codex/rules/default.rules) previously forbade the entire `git checkout` and `git reset` command families. [OpenCode permissions](harnesses/opencode/opencode.jsonc) required approval for both families. This is finding A07 in the autonomy audit. The former Codex rule's own examples included branch creation, extending the restriction beyond operations that discard work or rewrite history.
+`AGENTS.md:87-91`, [README.md](README.md), and [ai-registry-integration](skills/agent/ai-registry-integration/SKILL.md) lines 30-35 refer agents to [system.md](system/system.md) for library-scope, red/green, test-sensitivity, ownership-blocker, and destructive-Git rules. `f5a079b` reduced `system.md` to 86 lines, and none of those rules remain. Parts of it now contradict the root guidance: `system.md:39` mandates codegraph while `AGENTS.md:86` says the registry does not mandate a search tool.
 
-Read-only `codex execpolicy check` runs against the checked-in rule file returned `forbidden` for both `git checkout -b feature/example` and `git reset -- package.json`. These checks evaluate command policy without executing the Git mutations. The official [rules documentation](https://learn.chatgpt.com/docs/agent-configuration/rules) confirms prefix matching and that a matching forbidden rule takes precedence over an allow rule; adding a narrower allow rule cannot override the existing blanket ban.
+The undefined "blocker protocol" is relied on by [gitea](skills/agent/gitea/SKILL.md) line 54, [termctrl](skills/agent/termctrl/SKILL.md) line 11, [continue-session](skills/user/continue-session/SKILL.md) line 14, and `github-fix-issues/references/{checks-and-ci.md:51, integration.md:74, setup.md:37}`; `scheduling.md:26` calls it "blocker procedure". Even at `e56e821`, depending on it violated the self-contained-skill rule, and the `personal-assistant` profile does not include `system.md`.
 
-The user approved routine owned-worktree operations with destructive-operation guards. Codex now forbids explicit force, existing-branch replacement, and selected file-restoration checkout prefixes plus explicit reset modes. OpenCode denies the corresponding command patterns, including modes after preceding arguments. Routine branch creation/switching and path-scoped unstaging no longer match the blanket restrictions. Shared guidance requires status/diff/ref ownership checks and explicit authorization for destructive actions, subject to active execution policy. It applies these requirements to all syntax and forbids bypass through flags, aliases, wrappers, or equivalent commands. Root guidance, the README, and registry integration guidance are aligned.
+Related: [agents-templates.md](skills/agent/docs-writer/assets/agents-templates.md) lines 60, 72, 84 and `docs-writer/references/agents.md:104,125` write "under the existing policy" into other repositories' `AGENTS.md`, where no such policy exists.
 
-Command-text guards cannot determine ownership or fully classify every Git invocation. Codex exact prefixes do not cover reordered flags, implicit path restoration, or implicit commit reset; OpenCode wildcard matching also cannot establish Git semantics. Those forms remain governed by the shared instructions. No blanket allow rules or sandbox/approval-mode changes were introduced.
+Remediation: decide whether the removed rules return to `system.md`. Then either restore them or remove the citations, and inline a minimal blocker procedure in each skill that needs one. Record the reversal of the I007/I018 decisions in `ISSUES.md` if they are dropped.
 
-Native Codex policy evaluation verifies six routine commands no longer match restrictions and eleven destructive forms remain forbidden. OpenCode pattern evaluation using its checked-out upstream wildcard matcher verifies six routine commands are unmatched and twenty-two destructive forms are denied, including later-position options. Repeating the routine cases against the preserved original rules produces forbidden/ask results, confirming the checks detect the former behavior. Unmatched means these guards impose no decision; other active policy still applies. These are read-only policy evaluations, not executed Git mutations or a full OpenCode runtime test.
+### F7: `pi-debug` instructs redaction but prints credentials
 
-The registry integration validator and full build, including typechecking and output application, pass. Generated Codex rules and OpenCode bash rules match source; twelve shared prompts and ten registry integration copies contain the revised instructions. Changed-file whitespace checks pass. The repository-wide check reports an unrelated extra blank line at EOF in another actor's `packages/template-resolver/src/index.test.ts`; that file was preserved. No session data or unowned changes were removed.
+Status: open. Confidence: confirmed.
 
-## I018: Library investigation and integration scoped to the task
+[pi-debug](harnesses/pi/skills/agent/pi-debug/SKILL.md) line 49 adds "Redact credential values before displaying diagnostics", but the required command block at line 30 still runs `cat ~/.pi/agent/auth.json`. API keys land in the transcript and session logs on every debug run.
 
-[Shared operating guidance](system/system.md) required online documentation checks, investigation of maintained libraries before every feature, and a “full and complete integration” of external libraries. This is finding A08 in the autonomy audit. The user rejected another standalone evidence paragraph and requested its removal, with the remaining guidance aligned around external-library integration.
+Remediation: replace the `cat` with a key-presence check that prints provider names only, for example a `jq` expression that emits keys.
 
-The standalone online-documentation paragraph is removed. Dependency investigation starts with relevant existing dependencies and native or standard-library capabilities; investigate maintained libraries when those options cannot meet the requirements. Integration uses supported interfaces and intended patterns, completing required capabilities and correctness checks within the authorized task. Unrelated library capabilities do not expand scope, and compatibility layers still require explicit authorization. Existing grounding and blocker requirements remain. Root guidance, the README, and registry integration guidance reflect the bounded scope.
+## Medium: generated-edit recovery
 
-The registry integration skill validator, full build including typechecking and output application, and repository-wide `git diff --check` pass. All twelve generated shared prompts contain both revised library paragraphs without either the former online-docs paragraph or the proposed replacement evidence paragraph; their existing grounding and blocker rules remain. Ten generated registry integration copies contain the matching scope guidance. No session data or unowned changes were removed.
+### F8: Recovery rewrites path tokens the edit did not touch
 
-Written review covers an existing dependency meeting the requirement (use it), an unmet capability (investigate suitable maintained libraries), missing required evidence (follow the existing blocker protocol), and unrelated library capabilities (keep them outside scope). These walkthroughs and packaging checks are instruction review, not executed model evaluations.
+Status: open. Confidence: reproduced.
 
-## I019: Behavioral testing scoped and sensitivity checks isolated
+[reverseTemplateContent](packages/registry-cli/src/lib/reverseTemplateContent.ts) now also reverses `file_path` and `file_dir`, longest path first, with no path-segment boundary. Recovery applies it to the whole file:
 
-[Shared testing guidance](system/system.md) formerly required red/green testing and temporarily disabling the implementation for all development. The [issue workflow](skills/agent/github-fix-issues/SKILL.md) already distinguished non-executable work but required an explanation for omitting behavioral regression tests. This is finding A10 in the autonomy audit.
+> `/repo/skills/agent/bun/references/x.md` → `<%- file_dir %>/references/x.md`
+>
+> `/repo/skills/agent/bun-tailwind/SKILL.md` → `<%- file_dir %>-tailwind/SKILL.md`
 
-The user approved scoping red/green to changes in executable behavior and isolating sensitivity checks, with the explanation clause removed. Shared guidance now requires a meaningful failing test before implementation, passing tests afterward, and an expected failure with the implementation disabled and tests enabled in an owned, isolated or disposable worktree. Restore the implementation and rerun relevant checks; preserve other actors' changes. Non-executable changes use applicable validators without a required justification paragraph. Static-value tests are not manufactured to satisfy the rule. The issue workflow, its checks reference, root guidance, README, and registry integration guidance are aligned. Coverage requirements are unchanged.
+The exact-reversal check in `syncBackModifiedFiles` reverses only the variables the original source already uses, so it does not catch the rewrite. Rendered output is identical; the effect is source churn and sibling references that break silently if the skill directory is renamed.
 
-Both changed skill bundles validate. The full build, including typechecking and output application, and repository-wide `git diff --check` pass. Twelve generated shared prompts contain the approved paragraph without the former blanket rule; ten generated issue-workflow bundles and their checks references contain the behavioral scope and isolation rules without the removed explanation clauses. Ten generated registry integration bundles contain the matching scope guidance. No session data or unowned changes were removed.
+Remediation: require a path-segment boundary (`/`, quote, whitespace, or end) after a replaced path, and recover only the changed regions or verify that reversing the unmodified render with the full context reproduces the original source.
 
-Written review covers a behavioral fix (red/green and isolated sensitivity check), an instruction edit (applicable validators), and another actor's concurrent changes (preserve them and isolate the check). These walkthroughs and packaging checks are instruction review, not executed model evaluations.
+### F9: Non-round-tripping edits leave the source half-recovered with a misleading error
 
-## I020: Per-package coverage policy corrected; enforcement gap open
+Status: open. Confidence: plausible.
 
-The [root testing policy](AGENTS.md#development-workflow), three package instruction files, and [docs-writer's AGENTS guidance](skills/agent/docs-writer/references/agents.md) required a test-file change and an undefined 90% coverage threshold. [agents-templates.md](skills/agent/docs-writer/assets/agents-templates.md) repeated it in three sections of one file: single-project root, monorepo root, and nested package. This is finding A11 in the autonomy audit.
+Recovery writes the source, then rebuilds with `canRecoverEdits = false`. If the edit does not round-trip, the second pass fails after the source is already written. Examples: a harness removes `disable-model-invocation` from a user skill (the build re-injects it), or edits the frontmatter `name` (`updateSkillName` forces it back). The second pass fails with "source … and generated output both changed", attributing the conflict to a concurrent edit the tool made. Every later build hits the same fingerprint mismatch until the user intervenes manually.
 
-The user approved meaningful behavioral tests for changes to executable behavior and at least 90% line coverage and 90% function coverage across each affected first-party package's non-test source, including unexecuted files and excluding `scripts/` directories. Commands, source scope, metrics, and exclusions must be documented and configured. Reproduce blocking baseline failures on the untouched base and use the existing bounded prerequisite-repair policy; do not weaken gates or make token test edits. The root policy, all three package files, docs-writer's reference/workflow/checklist and three template sections, registry integration guidance, and README are aligned. The historical preservation example in docs-writer remains intact: rewriting instructions alone never authorizes weakening an established project rule.
+Remediation: simulate the rebuild of the recovered content before saving the source, and reject edits that do not round-trip with an error naming the transformation.
 
-Both changed skill bundles validate. The full build, including typechecking and output application, and repository-wide `git diff --check` pass. Ten generated docs-writer bundles contain the updated reference and all three template rules without the former test-file-edit formulation; ten generated registry integration bundles contain the matching coverage scope. No executable behavior changed in this instruction remediation, and no session data or unowned changes were removed.
+## Medium: instruction correctness
 
-Open implementation gap: the root and three package manifests do not define a coverage command, and no package coverage configuration was found. Installed Bun is 1.4.0. Its documented native threshold is per file rather than a package aggregate ([official threshold guide](https://bun.sh/guides/test/coverage-threshold)); its standard report describes files executed by tests ([official coverage guide](https://bun.sh/guides/test/coverage)). Adding only `coverageThreshold = 0.9` would not establish the approved all-source per-package gate. No coverage command was executed and no coverage compliance is claimed. Repository coverage implementation requires a documented, configured command that independently evaluates each affected package, accounts for unexecuted source, applies both metrics and exclusions, and is verified with meaningful passing/failing cases. This remains open rather than being hidden by successful instruction/build checks.
+### F10: Decision record claims a change to a nonexistent file
 
-Written review covers a behavioral change (meaningful tests and both package metrics), a documentation-only edit (applicable validators), and a blocking baseline failure (untouched-base reproduction and the bounded prerequisite process). These are instruction walkthroughs, not executed model or coverage evaluations.
+Status: open. Confidence: confirmed.
 
-## I024: Publication reconciliation bounded and resumable without connectivity probes
+The audit log's I027 stated that `skills/agent/syncthing-transfer/SKILL.md` was changed and that the changed skill validator passed; I027 has since been removed as obsolete. That skill was deleted in `3a1730a` (2026-10-20), an ancestor of `e56e821`; the path does not exist at the commit. [autonomy.md](docs/internal/audit/autonomy.md) still lists A19 as an approved source change, and lines 83, 161, 250, 255 link to `pi-codegraph` and `claude-code-codegraph`, which this commit deletes. Line 83 recommends fixing the `pi-codegraph` fallback; the skill was deleted instead.
 
-The [integration reference](skills/agent/github-fix-issues/references/integration.md) formerly said to read native PR state until MERGED and to record a reconciliation blocker when a published head had not been marked merged, without defining the waiting boundary. This is the remaining reconciliation portion of finding A16; I023 already added protection-compatibility preflight.
+Remediation: update the audit report's disposition and links.
 
-The user approved Q24.1 with clarified commit-containment wording. After publication, persist the published head, observed remote main SHA, PR head and native state, first observation time, reconciliation deadline, and next poll. Follow documented repository policy or poll every 15 seconds for up to 120 seconds; a restart does not reset the window. Closure and cleanup require remote main to contain the published commit and the PR to have the expected head and native MERGED state. Use current fetch/API results without a separate connectivity check. If the window expires while the commit remains contained and native state is not MERGED, record the exact missing state and unblock condition, preserve work, and suspend affected actions under the blocker protocol. Never mark completion, manually close or recreate the PR, rewrite commits, or repeat publication solely to force the merged flag. Recheck at selection boundaries; investigate changed heads or a commit missing from remote main. The window does not limit ordinary pending CI or running review.
+### F11: Missing-CI repair depends on an impossible precondition
 
-The skill, integration/queue/scheduling references, root guidance, README, workflow reference, and registry integration skill are aligned. Pre-publication invalidation and already-published reconciliation are distinguished so resumption does not unnecessarily rebase or republish landed work. Both changed skill bundles validate. The full build, including typechecking and output application, and repository-wide `git diff --check` pass. All ten generated workflow bundles contain the clarified policy and their three changed references match source after whitespace normalization; ten generated registry integration copies carry matching guidance. No executable behavior changed, no live publication or API polling was performed, and no session data or unowned changes were removed.
+Status: open. Confidence: confirmed.
 
-Written review covers immediate native MERGED state (verify commit containment and expected head, then close/clean up), delayed state within the window (poll with persisted deadline), restart (resume the same window), expiry with confirmed publication but unavailable native state (suspend affected work and retain artifacts), and changed PR head or missing published commit (investigate without claiming success). These walkthroughs and packaging checks are instruction review, not executed model or live GitHub reconciliation evaluations.
+`checks-and-ci.md:17-20,75-77` routes missing CI configuration through the bounded prerequisite-repair policy, which applies only to a failure reproduced on untouched `main` (`AGENTS.md:19`, `github-fix-issues/SKILL.md:102-108`, `queue.md:107-112`). A repository with no CI has no failure to reproduce, and `checks-and-ci.md:20` says an absent check result never counts as success. An agent either authors CI workflows under existing authorization or blocks every issue.
 
-Retained limitation: repeated base advancement before publication still requires fresh CI and approval under the strict integration contract. This instruction change does not implement a cross-worker landing scheduler or guarantee progress under continuous contention. Checkpoint-driven wakeups and worker ownership remain a separate runtime concern under A17.
+Remediation: state explicitly how a repository without CI is handled (block and report, or a bounded authority to add CI).
 
-## I025: Queue ownership and restart contract clarified; runtime gap open
+### F12: Undefined queue state names
 
-The [queue reference](skills/agent/github-fix-issues/references/queue.md) required a sole implementing writer, and the [scheduler reference](skills/agent/github-fix-issues/references/scheduling.md) required checkpoint updates, without explicitly identifying the ownership record or distinguishing saved state from actual worker dispatch. This is finding A17 in the autonomy audit.
+Status: open. Confidence: confirmed.
 
-The user selected Q25.1. The queue now contains the exact approved ownership and restart wording: record task/worker identity, owned checkout/worktree paths, and any scheduler-provided ownership or lease reference; verify ownership before queue writes or resumed mutations. An old timestamp or expired lease alone does not authorize takeover, lock removal, or overwriting another worker's state. Preserve uncertain ownership, record its blocker, and continue only independent authorized work that cannot conflict. Checkpointing does not schedule or start a worker. Use only an authorized, configured scheduler's supported interface, record accepted resume triggers/times and external job references, and never invent leases, tools, or successful dispatch. Without configured or verified dispatch, preserve resume state and report the exact redispatch requirement. Reconcile live ownership, Git, issue/PR, CI, review, and publication state on actual restart.
+`scheduling.md:73` says to "Mark the row eligible", but `queue.md:14` does not define `eligible`. `scheduling.md:63` marks reconciliation suspension as `blocked`, while `queue.md:14` defines `reconciliation-pending`. Agents either write an undefined state or use `ready`, losing the resume stage.
 
-The skill, queue/scheduling references, root guidance, README, workflow reference, and registry integration skill are aligned. Both changed skill bundles validate. The full build, including typechecking and output application, and repository-wide `git diff --check` pass. All ten generated workflow bundles contain the exact approved ownership/restart paragraphs and their two changed references match source after whitespace normalization; ten generated registry integration copies contain matching guidance. No executable behavior changed, no scheduler configuration, leases, dispatch jobs, or runtime queues were created or modified, and no session data or unowned changes were removed.
+Remediation: use only the states enumerated in `queue.md`, or add the missing state there.
 
-Written review covers an established owner (update the queue and resume within authority), uncertain or concurrent ownership (preserve state and suspend conflicting writes), an expired lease alone (no takeover authority), verified scheduler acceptance (record the external reference and resume trigger), unavailable scheduler/dispatch evidence (preserve state and report redispatch), and an actual restart (reconcile live state before mutations). These are instruction walkthroughs and packaging checks, not executed model, concurrency, or scheduler-dispatch evaluations.
+### F13: Missing reviewer token accumulates open PRs
 
-Open runtime implementation gap: these instructions do not install a scheduler, provide leases, dispatch workers, or guarantee automatic wakeup. A factory runtime must supply those capabilities and verify their behavior before unattended resumption can be claimed. This remains open separately from the completed instruction change.
+Status: open. Confidence: plausible.
 
-## I028: Third-party shadcn checkpoints preserved; upstream finding open
+`setup.md:34-37` and `SKILL.md:28-29` suspend only dependent actions and continue eligible work; `scheduling.md:48` treats unavailable reviewer capacity as a blocker. Without a bot token, each issue reaches green CI, is suspended at review, and the next is selected. `scheduling.md:68` ("all authorized work shares the blocker") is evaluated per issue, so N PRs accumulate.
 
-The [shadcn skill](skills/agent/shadcn/SKILL.md:157), authored by `shadcn`, says: “If no registry is specified (e.g. user says \"add a login block\" without specifying `@shadcn`, `@tailark`, etc.), ask which registry to use. Never default to a registry on behalf of the user.” Its [CLI reference](skills/agent/shadcn/cli.md:132) also says: “User says \"just update everything\" → use `--overwrite`, but confirm first.” The [preset section](skills/agent/shadcn/cli.md:295) says: “Ask the user first: **overwrite**, **partial**, **merge**, or **skip** existing components?” These are finding A20 in the autonomy audit.
+Remediation: treat a missing reviewer identity as a queue-wide blocker detected during setup, before implementation starts.
 
-Those checkpoints can repeat a decision already supplied in approved project configuration or explicit task authorization. The user's standing instruction prohibits modifying third-party-authored skills. The bundle remains untouched; an audit does not authorize changing its content. Record this as an unresolved upstream finding and continue independent registry-owned instruction work. Upstream correction or explicit permission to edit the bundle is needed to change its instructions. No source remediation, CLI execution, build, or generated-output verification was performed for this finding.
+### F14: "Scheduler" and "lease" have no defined source
 
-## I031: Automatic generated-edit recovery implemented; integration verification deferred
+Status: open. Confidence: plausible.
 
-Finding A23 concerns bootstrap regeneration and subsequent harness-written changes in `.output/`. The user clarified that bootstrap and harnesses are the expected writers and selected Q31.1. The former Q30 proposal to investigate ownership and refuse all automatic drift was not approved and is superseded. No ownership ambiguity is inferred merely from a harness changing generated files.
+`queue.md:45-62`, `github-fix-issues/SKILL.md:88-90`, `AGENTS.md:27`, and `github-issue-workflow.md:34-47` refer to an "authorized, configured scheduler" and lease references without defining either. `ISSUES.md:231` acknowledges none exists. In Claude Code, an agent may treat the `schedule` or `loop` skills as the configured scheduler and create cloud routines; otherwise it reports a redispatch requirement at every checkpoint.
 
-The approved policy automatically recovers supported generated edits into their mapped source when source changes will not be overwritten, then regenerates outputs. Conflicts, unsupported recovery, and save failures preserve both versions and suspend dependent application. Harness-written drift alone does not require confirmation. Root guidance, README, harness maintenance guidance, registry-integration guidance, and bootstrap's failure hint now describe that policy; `-y` no longer bypasses reconciliation.
+Remediation: define what qualifies as a configured scheduler (or state that none exists and checkpoints only persist state).
 
-The [build command](packages/registry-cli/src/commands/buildCommand.ts) now preflights all recoveries before saving: mapped source selection, regular UTF-8 files, recorded generated baseline, source fingerprint, exact reversal, and agreement between edited harness copies. The [staging helper](packages/registry-cli/src/lib/harnessBuild.ts) fingerprints the bytes it copies and rejects inconsistent copies; the build rechecks captured source fingerprints before recovery. This detects source edits even when they produce identical rendered output. Supported reversal covers plain text, canonical raw path tags, and generated skill name/invocation metadata. Other EJS forms and transformations require source edits. Existing drift in older manifests without source fingerprints is preserved and must be reconciled into source before a clean generation establishes a fresh baseline.
+### F15: `gitea` removed credential capture but still uses its output
 
-Recovered source is saved through an owned temporary file and same-filesystem rename after a source recheck, preserving its mode. Save errors propagate instead of being swallowed. Recovery triggers one fresh staging pass so all copies derive from source; additional required recovery suspends application before another save. The [output sync helper](packages/registry-cli/src/lib/generatedOutputUtils.ts) rechecks affected generated entries against the preflight snapshot before applying outputs. Runtime directories and unmanaged harness files retain their existing protection. Source saves are not a multi-file transaction: a successful earlier recovery can remain if a later save fails, while live generated edits remain available for reconciliation. The rechecks do not establish atomic coordination with a harness writing during output application; this remains a concurrency limitation, not a verified guarantee against every write race.
+Status: open. Confidence: plausible.
 
-Verification: 82 fixture tests across six files pass with 245 assertions, and `bun run typecheck` passes. Coverage includes automatic recovery without a prompt, source/output conflicts, hidden source edits, missing fingerprints/mappings/baselines, conflicting harness copies, save failure, bounded regeneration, late output drift, unchanged runtime data, path reversal, and copied bytes/mode. New regressions fail against the untouched implementation in an owned isolated worktree for the relevant behavior; restoring the final implementation makes the six-file suite pass there. The owned sensitivity worktree was restored and removed without forced cleanup. Scheduled-update tests use disposable local repositories and a stub bootstrap; they do not run the real build or bootstrap.
+[gitea](skills/agent/gitea/SKILL.md) lines 49-59 still say to derive `user` and `pass` from the captured fields, and the curl examples at lines 80, 87, 94, 113, 119 use `$user:$pass`, but the `git credential fill` capture was removed. Each shell call is independent, so the agent must improvise the capture, which is where full helper output tends to be echoed.
 
-Live build/bootstrap and generated-output verification remain unrun because the user paused rebuilds. The all-source per-package coverage command/gate remains unconfigured under [I020](#i020-per-package-coverage-policy-corrected-enforcement-gap-open); no coverage compliance is claimed. These follow-up gaps do not prohibit independent source validation or authorized integration of this instruction-maintenance task. Resume live application and its verification when the user lifts that specific pause. No live `.output`, session/runtime data, scheduler, hook, or authentication state was changed or removed. The scheduled updater's tracked-dirty-checkout guard remains in place.
+Remediation: restore a single capture-and-use example that never prints the credential helper output.
 
-## I041: Remaining audit dispositions reconciled
+### F16: Pending CI has no overall wait limit
 
-The remaining policy review does not require additional decisions for the existing findings. A32's registry-owned authorization rule is already corrected in I010; protected third-party voice-skill wording remains an upstream finding. A33/A34 are intentional user-invoked third-party workflows (I001/I008). A35–A37 are removed or excluded workflows (I001/I033). A38 is corrected by I009. A39 remains a personal-intake requirement outside factory execution. A40 and A42–A45 retain destination checks, deletion ownership/preview checks, browser consent/2FA, explicit history-rewrite authority, and exact-revision CI/review gates. The shared blocker protocol scopes unavailable prerequisites to dependent work; these safeguards are not waived.
+Status: open. Confidence: plausible.
 
-The audit's current-disposition table distinguishes approved source changes, retained/excluded workflows, protected upstream findings, and implementation gaps. Historical recommendations do not override later user decisions: ordinary pending CI/review keeps the active issue; existing design/ticket review-until-clean loops remain; compatibility layers need explicit authorization; no blanket skill-reading rule is added.
+`checks-and-ci.md:59-62,86-87` and `scheduling.md:15-17` say pending CI never justifies suspension and specify only bounded polling batches. CI that never starts (fork approval gating, no runners, an environment awaiting approval, a path filter that never matches) leads to an indefinite wait. Audit finding A06 named this case; its disposition counts it as resolved.
 
-Open work remains: I020's executable coverage enforcement, I025's scheduler/runtime integration, I031's deferred live integration verification, and propagation/verification of changes since I026 after the user lifts the build pause. Protected third-party findings remain unresolved under the preservation policy. This closes the question-by-question review of the existing audit findings, not those implementation gaps or end-to-end unattended-workflow verification. No rebuild, cleanup, staging, commit, or runtime-data mutation is performed.
+Remediation: define a not-started condition (no run registered within a stated window) that is classified as a blocker.
 
-## I042: Instruction maintenance no longer creates an implicit enforcement project
+### F17: Contradictory review-stop rules
 
-The merge preparation incorrectly treated I020's unimplemented coverage gate as a prerequisite to landing the instruction audit and requested a waiver. The README compounded the ambiguity by saying that agent-instruction authoring itself required behavioral tests and 90% coverage. I031's progress entry also prohibited all integration verification until live rebuilding resumed, despite the user's pause applying to rebuilding rather than independent validation or source integration.
+Status: open. Confidence: plausible.
 
-The user clarified that the active objective is fixing instructions that prevent autonomous completion. Root and shared guidance, merge-to-main, registry integration, and docs-writer's authoring reference/templates now distinguish policy maintenance from enforcement implementation. Newly specified but unimplemented enforcement is recorded as follow-up work; it does not silently expand an instruction-maintenance task or block its commit/merge. Existing applicable checks, failing-check repairs, and behavior-changing implementation requirements remain intact. User-deferred operations suspend only themselves and actual dependents. Progress records do not create additional gates. The README's incorrect scope and I031's blanket hold are corrected; the waiver request is withdrawn.
+`skills/AGENTS.md` and [prompt-writer](skills/agent/prompt-writer/SKILL.md) line 37 cap instruction review at two rounds. `docs-writer/references/tickets.md:42` and `docs-writer/references/eng-designs.md:40` require review until completely clean (retained by I035). `README.md:22` applies both writers to documents containing agent instructions, so tickets written for agents get two conflicting stop rules.
 
-All three changed skill bundles validate, and the change's whitespace check passes. Written acceptance review covers an instruction audit with missing enforcement (record follow-up, validate, and land authorized work), an existing failing check (repair under prerequisite authority), a behavior-changing implementation task (retain meaningful tests and the coverage policy), and paused live regeneration (preserve runtime data and continue independent source verification/integration). These are instruction reviews, not claims of executed agent behavior or coverage compliance. The prepared code revision has 350 passing package tests, 67 passing cleanup tests, and 67 passing reviewer tests, plus root typechecking and cleanup type/lint/format checks. No live rebuild or bootstrap was run; I020 and live I031 verification remain open.
+Remediation: state which rule wins for agent-facing tickets and designs.
 
-## I043: PR review requests repeat approval for an already-approved queue
+## Low
 
-Post-integration review at `867f006` found a repeated approval gate in the registry-owned [PR review reference](skills/agent/github-pr/references/reviewing.md:49), introduced by the merged PR-feedback workflow. Step 6 says:
+### F19: Dead build confirmation code
 
-> Wait for the user's direction before replying, resolving threads, or changing code. When the user approves an action that needs code changes or other work, queue it and move on to the next comment; start queued work only after every comment and every issue reviewers did not raise has been reviewed, then confirm the full queue before starting.
+Status: open. Confidence: confirmed.
 
-The comment-by-comment interview can be intentional. The additional full-queue confirmation can nevertheless stop execution after each queued action has already been approved. Step 7 already honors approval of a reply action without another question.
+`IBuildOptions.hasAutoConfirm` is still parsed in `packages/registry-cli/src/bin/build.ts` and passed to `buildCommand`, but nothing reads it, so `-y` is a no-op in the build. `packages/registry-cli/src/lib/promptForYesNo.ts` is used only by its own test. `AGENTS.md` still describes scheduled updates invoking bootstrap with `-y` as if the flag mattered.
 
-Proposed replacement for step 6, pending Q45:
+Remediation: remove the option, the flag passthrough, and the prompt module and its test, or give `-y` a defined role tied to F4.
 
-> Use existing applicable authorization before replying, resolving threads, or changing code; ask only for actions or decisions it does not cover. During a comment-by-comment review, queue approved code changes and other work and continue to the next comment. After all comments and additional findings have been reviewed, summarize the approved queue and execute it without another confirmation. Honor an explicit request to wait for final approval. If the combined queue exposes conflicting decisions or requires additional scope, suspend only the affected actions, ask the exact unresolved question, and continue independent approved work.
+### F20: Missed policy updates
 
-Written acceptance review: individually approved actions execute after the interview; an explicit final-approval hold remains in force; a conflict or newly required scope suspends only dependent actions. This is a proposed instruction change, not executed agent behavior. The source workflow is unchanged pending the decision. No build, live output, session data, PR, or remote state is changed by this finding.
+Status: open. Confidence: confirmed.
+
+- [disk-cleanup AGENTS.md](skills/user/disk-cleanup/AGENTS.md) lines 26-27 still say "change a test file and maintain 90% coverage", although I020 states every package file now uses the per-package 90% line and function rule.
+- `AGENTS.md:67` says generated edits are recovered "During bootstrap"; recovery runs in `bun run build`, as `README.md` states.
+
+### F21: Convention violations in edited skills
+
+Status: open. Confidence: confirmed.
+
+- [github-release](skills/agent/github-release/SKILL.md) line 3 and [continue-session](skills/user/continue-session/SKILL.md) line 4 keep "do not use" clauses in their descriptions, which `skills/AGENTS.md` prohibits; the commit updated both files' `last_modified`.
+- `continue-session` (lines 4, 14, 63-71, 81) contains Pi and Claude Code session paths and harness-specific behavior in a generic skill.
+- [merge-to-main-baseline](skills/agent/merge-to-main-baseline/SKILL.md) line 13 adds an "instruction-maintenance task" carve-out, a concept defined only in this registry's `AGENTS.md`, to a skill that ships to every repository.
+
+### F23: Vendored setup skill references workflows that are not installed
+
+Status: open (upstream). Confidence: confirmed.
+
+`skills/user/setup-matt-pocock-skills/domain.md:11` references `/grill-with-docs` (removed) and `/improve-codebase-architecture` (never installed); `SKILL.md:40` names `to-spec` (not installed). The content matches upstream, and [I001](docs/internal/audit/autonomy.md#i001-setup-workflow-installed-protected-upstream-inconsistencies-remain) records only the `grill-with-docs` reference.
+
+Remediation: record the additional references under I001; do not edit the vendored content.
+
+### F24: Source checksums passed through a property attached to a Map
+
+Status: open. Confidence: confirmed.
+
+`buildCommand.ts` passes checksums via `Object.assign(new Map(), { sourceChecksums })`, and `harnessBuild.ts` widens `ISourcePathByOutputPath` into a `Map` subtype with an optional `sourceChecksums` field. This hidden side channel let staging-directory files be fingerprinted unnoticed (F3).
+
+Remediation: pass an explicit source-registry object with methods for registering mappings and checksums.
+
+## Due diligence
+
+- **D3:** `harnesses/opencode/skills/agent/opencode-conversation-analysis/scripts/extract.ts` lines 44 and 86 default to `.opencode-analysis`, while the skill now documents `.tmp/opencode-analysis`. The script default, `.gitignore:31`, and the `airOpencodeCommands.test.ts:160` fixture still use the old location.
+- **D4:** [rapid-demo](skills/user/rapid-demo/SKILL.md) spawns a `reviewer` subagent type, a harness-specific agent name in a generic skill with no generic definition.
+- **D5:** `programming/SKILL.md:22` routes all Tailwind work, including non-Bun projects, to the Bun-only `bun-tailwind` references.
+- **D6:** `pi-debug` hardcodes `~/.pi/agent`, ignoring `PI_CODING_AGENT_DIR`, and refers to the repository-relative `.output/pi/default/sessions/`, which only resolves when run inside this registry.
+- **D7:** [I017](docs/internal/audit/autonomy.md#i017-routine-owned-worktree-git-operations-permitted-with-destructive-operation-guards) cites `learn.chatgpt.com/docs/agent-configuration/rules` as the official Codex rules documentation, and the I-entry's conclusion depends on it. Replace it with the upstream `codex-rs/execpolicy` README, which confirms the prefix-matching semantics used in F1.
+
+## Suggested remediation order
+
+1. F1 and F2: restore ask/forbid fallbacks for `git checkout` and `git reset` in both harnesses.
+2. F7: stop printing `auth.json`.
+3. F4 with F19: define a supported path for unrecoverable generated edits.
+4. F3 and F24: restrict fingerprinting to registered source roots.
+5. F6 and F10: reconcile the instructions with the current `system.md` and correct the decision record.
+6. Remaining medium findings, then low findings.

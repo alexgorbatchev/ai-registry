@@ -38,11 +38,11 @@ async function script(name: string, body: string): Promise<string> {
 }
 
 /**
- * Install a fake sidebar CLI that records each argument on its own line; `knowsMarkdown` false makes it refuse
- * `--markdown` with a usage error, as a CLI from before the option does.
+ * Install a fake sidebar CLI that records each argument on its own line; it refuses the options in `unknown` with a
+ * usage error, as a CLI from before them does.
  */
-async function fakeSidebar(exitCode = 0, knowsMarkdown = true): Promise<void> {
-  const refuse = knowsMarkdown ? "" : `for a in "$@"; do [ "$a" = --markdown ] && exit 64; done; `;
+async function fakeSidebar(exitCode = 0, unknown: string[] = []): Promise<void> {
+  const refuse = unknown.map((option) => `for a in "$@"; do [ "$a" = ${option} ] && exit 64; done; `).join("");
   await script(
     "aerospace-sidebar",
     `${refuse}for a in "$@"; do printf '%s\\n' "$a" >> '${pushLog}'; done; exit ${exitCode}`,
@@ -188,6 +188,8 @@ test("pushes a card titled with the workspace label that shows the final message
     "claude",
     "--run",
     buildFocusCommand(env) ?? "",
+    "--key",
+    "herdr:w2Y:p1",
   ]);
 });
 
@@ -198,22 +200,33 @@ test("titles the card with the project folder when Herdr does not answer", async
   expect((await pushedArguments()).slice(2, 4)).toEqual(["--title", "aerospace-sidebar"]);
 });
 
-test("pushes the message as plain text to a CLI without --markdown", async () => {
-  await fakeSidebar(0, false);
+test("pushes without --key to a CLI that predates it, keeping the markdown", async () => {
+  await fakeSidebar(0, ["--key"]);
+  const herdr = await script("herdr", "exit 1");
+  expect(await runStop("claude", stopInput(), herdrEnv(herdr), spawnRunner)).toBe(true);
+  const pushed = await pushedArguments();
+  expect(pushed).toContain("--markdown");
+  expect(pushed).not.toContain("--key");
+});
+
+test("pushes the message as plain text to a CLI without --key or --markdown", async () => {
+  await fakeSidebar(0, ["--key", "--markdown"]);
   const herdr = await script("herdr", "exit 1");
   expect(await runStop("claude", stopInput(), herdrEnv(herdr), spawnRunner)).toBe(true);
   const pushed = await pushedArguments();
   expect(pushed).toContain("--body");
   expect(pushed).not.toContain("--markdown");
+  expect(pushed).not.toContain("--key");
 });
 
-test("does not retry a usage error that --markdown did not cause", async () => {
+test("stops retrying once a usage error has no option left to blame", async () => {
   await fakeSidebar(64);
   const herdr = await script("herdr", "exit 1");
   expect(await runStop("claude", stopInput({ last_assistant_message: null }), herdrEnv(herdr), spawnRunner)).toBe(
     false,
   );
-  expect((await pushedArguments()).filter((argument) => argument === "push")).toHaveLength(1);
+  // With a key, then without; without a message there is no --markdown to leave out as well.
+  expect((await pushedArguments()).filter((argument) => argument === "push")).toHaveLength(2);
 });
 
 test("does nothing outside Herdr or without the sidebar CLI", async () => {

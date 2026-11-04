@@ -11,6 +11,21 @@ export const MAX_BODY_LENGTH = 300;
 /** The exit status of an `aerospace-sidebar` that does not know an option, such as one older than `--markdown`. */
 const USAGE_ERROR = 64;
 
+/**
+ * The options a push tries, most first. A CLI older than one refuses it with a usage error, and the push goes
+ * again without it: `--key` came after `--markdown`, so it goes first.
+ */
+const PUSH_ATTEMPTS = [
+  { key: true, markdown: true },
+  { key: false, markdown: true },
+  { key: false, markdown: false },
+] as const;
+
+/** The key that keeps one card per Herdr pane: a later turn's card replaces the pane's earlier one. */
+function paneKey(paneId: string): string {
+  return `herdr:${paneId}`;
+}
+
 export type Agent = keyof typeof AGENT_NAMES;
 
 export function parseAgent(value: string | undefined): Agent | undefined {
@@ -103,6 +118,7 @@ export function buildPushArguments(options: {
   project: string | undefined;
   message: string | undefined;
   markdown: boolean;
+  key?: string;
 }): string[] {
   const body = options.message ? ["--body", options.message, ...(options.markdown ? ["--markdown"] : [])] : [];
   return [
@@ -115,14 +131,16 @@ export function buildPushArguments(options: {
     options.agent,
     "--run",
     options.focusCommand,
+    ...(options.key ? ["--key", options.key] : []),
   ];
 }
 
 /**
  * Push a sidebar card when the agent's turn ends in a Herdr pane: the project as its
- * title and the agent's final message as its markdown body. Outside Herdr, or without the
- * sidebar CLI on PATH, it does nothing. A CLI too old for `--markdown` gets the message as
- * plain text. Returns false when the push failed.
+ * title and the agent's final message as its markdown body, keyed to the pane so each pane
+ * keeps one card. Outside Herdr, or without the sidebar CLI on PATH, it does nothing. A CLI
+ * too old for `--key` or `--markdown` gets the push without them (`PUSH_ATTEMPTS`). Returns
+ * false when the push failed.
  */
 export async function runStop(
   agent: Agent,
@@ -137,10 +155,24 @@ export async function runStop(
   if (sidebar === null) return true;
   const project = await readProject(input, env, run);
   const message = finalMessage(input);
-  const pushed = async (markdown: boolean) =>
-    (await push([sidebar, ...buildPushArguments({ agent, focusCommand, project, message, markdown })], env)).status;
-  let status = await pushed(true);
-  if (status === USAGE_ERROR && message) status = await pushed(false);
+  const key = paneKey(env.HERDR_PANE_ID ?? "");
+  let status: number | undefined;
+  let previous: string[] = [];
+  for (const attempt of PUSH_ATTEMPTS) {
+    const args = buildPushArguments({
+      agent,
+      focusCommand,
+      project,
+      message,
+      markdown: attempt.markdown,
+      key: attempt.key ? key : undefined,
+    });
+    // Without a message there is no --markdown to leave out, so the last attempt would repeat the one before.
+    if (args.join("\0") === previous.join("\0")) continue;
+    previous = args;
+    status = (await push([sidebar, ...args], env)).status;
+    if (status !== USAGE_ERROR) break;
+  }
   return status === 0;
 }
 

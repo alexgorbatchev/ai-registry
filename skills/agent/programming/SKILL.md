@@ -4,7 +4,7 @@ description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Ta
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-04 10:21
+  last_modified: 2026-11-04 11:25
   status: current
 ---
 
@@ -22,7 +22,7 @@ Inspect the task's files, manifests, toolchain configuration, and repository ins
 | Tailwind integration, theme tokens, or utility scanning | [Bun/Tailwind integration](references/bun-tailwind/integration.md) and [setup](references/bun-tailwind/setup.md); apply Bun-specific wiring when the project uses Bun |
 | Creating, structuring, or refactoring justfiles | [Modular justfiles](references/just/modular-justfiles.md) |
 
-Swift and shell scripts have no language baseline here; for them, follow the project's own conventions and the work-tracking and POC sections below. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Select runtime commands from the actual project's tooling; Bun commands apply to Bun projects. Verify unfamiliar APIs against the installed version's source or official documentation.
+Swift and shell scripts have no language baseline here; for them, follow the project's own conventions and the shared sections below. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Select runtime commands from the actual project's tooling; Bun commands apply to Bun projects. Verify unfamiliar APIs against the installed version's source or official documentation.
 
 ## Topic references
 
@@ -50,6 +50,19 @@ Read each matching reference before reaching its domain:
 | Bun Redis/Valkey clients | [Bun Redis](references/bun/redis.md) |
 | Bun tar/gzip archives | [Bun archives](references/bun/archive.md) |
 | Bun utilities or cryptography | [Bun utilities](references/bun/utilities.md) |
+
+## Development artifacts
+
+- Use the project's git-ignored `.tmp/` directory only for development artifacts: scratch files, build and test intermediates, drafts, captured output, and toolchain temporary directories. Treat everything in it as disposable; it may not survive between sessions.
+- Never put files that must outlive the session in `.tmp/`, even when they are not checked in: caches that are expensive to rebuild, state, locks, logs or reports kept for later inspection. Put them in a git-ignored location the project documents for that purpose.
+- Give each task or command its own `.tmp/` child, and point the toolchain's temporary-directory variable at it (`TMPDIR`, `GOTMPDIR`, or the equivalent) so tools do not write to the system temp directory. Remove the child when its last consumer finishes, including on failure or cancellation. Remove only paths you created; never wipe `.tmp/` by name.
+
+## Test cleanup
+
+- Tests remove everything they produce, wherever it is created: files and directories in the project, the system temp directory, the home directory, or caches, and every process, process group, server, or browser they start. Cleanup runs on success, failure, timeout, and cancellation.
+- Stop child processes gracefully before forcing them: signal the process group to terminate, wait a bounded grace period, then kill it, so they can remove their own files.
+- The rule covers existing tests. A test that leaves artifacts or processes behind is a defect: fix it when the test is part of the task's change, otherwise record it under Work tracking.
+- After adding or changing tests, compare the system temp directory, the project's `.tmp/`, and the process list before and after a run, and report anything left behind.
 
 ## Work tracking
 

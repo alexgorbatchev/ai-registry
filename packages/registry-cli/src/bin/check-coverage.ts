@@ -5,21 +5,22 @@ import { checkCoverage, type ISourceFile } from "../lib/checkCoverage";
 import { getErrorMessage } from "../lib/getErrorMessage";
 
 const COVERAGE_THRESHOLD_PERCENT = 90;
-const SOURCE_PATTERN = "src/**/*.ts";
+const DEFAULT_SOURCE_PATTERN = "src/**/*.ts";
 const EXCLUDED_PATH_PATTERN = /(^|\/)(__tests__|scripts)\//;
 
-// Gates `bun test --coverage --coverage-reporter=lcov` output for this package:
+// Gates `bun test --coverage --coverage-reporter=lcov` output for a package:
 // at least 90% of lines and functions across all non-test source, counting files
-// no test loaded as uncovered. Run from the package root with the lcov path.
+// no test loaded as uncovered. Run from the package root with the lcov path and,
+// for packages without a `src/` tree, a source glob relative to that root.
 async function main(): Promise<void> {
-  const lcovPath = process.argv[2];
+  const [lcovPath, sourcePattern = DEFAULT_SOURCE_PATTERN] = process.argv.slice(2);
   if (lcovPath === undefined) {
-    throw new Error("Usage: check-coverage <lcov.info>");
+    throw new Error("Usage: check-coverage <lcov.info> [source-glob]");
   }
 
   const transpiler = new Bun.Transpiler({ loader: "ts" });
   const sourceFiles: ISourceFile[] = [];
-  for await (const path of new Glob(SOURCE_PATTERN).scan(".")) {
+  for await (const path of new Glob(sourcePattern).scan(".")) {
     if (EXCLUDED_PATH_PATTERN.test(path)) {
       continue;
     }

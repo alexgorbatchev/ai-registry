@@ -98,13 +98,13 @@ test('tmp cleanup preserves embedded clones, symlinks, tracked data, and increme
   expect(await Bun.file(join(project, '.tmp/tracked')).text()).toBe('tracked');
   expect(await Bun.file(join(project, '.tmp/source-link/lib.rs')).exists()).toBe(true);
   expect(await Bun.file(join(project, 'target/debug/incremental/state')).text()).toBe('incremental');
-}, 20_000);
+});
 
 test('coverage cleanup retains ordinary development artifacts', async () => {
   await removeRustArtifacts({ root, projects: ['sample'], artifacts: ['coverage'], idleMs, execute: true }, now);
   expect(await Bun.file(join(project, 'target/llvm-cov-target/debug/coverage')).exists()).toBe(false);
   expect(await Bun.file(join(project, 'target/debug/incremental/state')).text()).toBe('incremental');
-}, 20_000);
+});
 
 test('combined target and coverage scope deletes each path only once', async () => {
   const result = await removeRustArtifacts(
@@ -113,7 +113,7 @@ test('combined target and coverage scope deletes each path only once', async () 
   );
   expect(result).toMatchObject({ result: { removed: [join(project, '.tmp'), join(project, 'target')] } });
   expect(await Bun.file(join(project, 'src/lib.rs')).exists()).toBe(true);
-}, 20_000);
+});
 
 test('nonstandard Cargo target locations require manual review', async () => {
   await Bun.write(join(project, '.cargo/config.toml'), '[build]\ntarget-dir = "../shared-target"\n');
@@ -256,7 +256,7 @@ test('activity between removals stops the batch and logs the partial result', as
   const log = await Bun.file(join(root, '.state', logDirectory, 'execution.json')).json();
   expect(log.removed).toEqual([join(project, '.tmp')]);
   expect(log.failure).toBe(`Error: Project is no longer eligible: ${project}: recent filesystem or Git activity`);
-}, 20_000);
+});
 
 test('invalid selected project prevents any batch deletion', async () => {
   await expect(

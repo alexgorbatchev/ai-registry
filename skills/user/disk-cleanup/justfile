@@ -1,3 +1,7 @@
+# Tests spawn real Git, lsof, du, and the cleanup CLI, whose duration follows machine load. The timeout
+# only catches hung tests; it is not a performance budget.
+test_timeout := "120000"
+
 # Run the CLI in human mode
 [positional-arguments]
 run *args:
@@ -35,7 +39,7 @@ unused:
 
 # Run the test suite
 test:
-    bun test scripts/__tests__
+    bun test --timeout={{test_timeout}} scripts/__tests__
 
 # Validate without modifying source files
 check: fmt-check lint typecheck unused test

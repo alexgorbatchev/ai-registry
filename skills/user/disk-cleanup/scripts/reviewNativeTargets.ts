@@ -1,13 +1,7 @@
 import { lstat, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
-import {
-  createRecordDirectory,
-  ensureUntracked,
-  isRecordPath,
-  owningRepository,
-  validatePath,
-} from './filesystemUtils';
+import { createRecordDirectory, ensureUntrackedInParent, isRecordPath, validatePath } from './filesystemUtils';
 import { assertDisjoint } from './inventory';
 import { inspectNativeProcesses } from './inspectNativeProcesses';
 import { runInspectionCommand } from './runInspectionCommand';
@@ -21,8 +15,7 @@ export async function inspectNativeTarget(
   const path = await validatePath(root, input);
   const rootInfo = await lstat(path);
   if (!rootInfo.isDirectory()) throw new Error(`Native target must be a directory: ${path}`);
-  const repository = await owningRepository(dirname(path));
-  await ensureUntracked(repository, path);
+  await ensureUntrackedInParent(path);
   const hash = createHash('sha256');
   const links = new Set<number>();
   let bytes = 0;

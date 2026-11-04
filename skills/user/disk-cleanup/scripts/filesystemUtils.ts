@@ -1,5 +1,5 @@
 import { lstat, mkdir, mkdtemp, readdir, realpath } from 'node:fs/promises';
-import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { runInspectionCommand } from './runInspectionCommand';
 
 export async function run(args: string[]): Promise<string> {
@@ -63,17 +63,31 @@ export async function diskBytes(path: string): Promise<number> {
 }
 
 export async function owningRepository(path: string): Promise<string | null> {
-  const result = Bun.spawnSync(['git', '-C', path, 'rev-parse', '--show-toplevel'], {
-    stdout: 'pipe',
-    stderr: 'pipe',
-    env: { ...Bun.env, GIT_OPTIONAL_LOCKS: '0' },
-  });
-  if (!result.success) {
-    const message = result.stderr.toString();
-    if (message.includes('not a git repository')) return null;
-    throw new Error(message);
+  const { stdout, stderr, exitCode } = await runInspectionCommand(['git', '-C', path, 'rev-parse', '--show-toplevel']);
+  if (exitCode !== 0) {
+    if (stderr.includes('not a git repository')) return null;
+    throw new Error(stderr);
   }
-  return realpath(result.stdout.toString().trim());
+  return realpath(stdout.trim());
+}
+
+// One Git call answers both questions the separate repository lookup and tracked-file check would:
+// a parent outside any repository has nothing tracked.
+export async function ensureUntrackedInParent(path: string): Promise<void> {
+  const { stdout, stderr, exitCode } = await runInspectionCommand([
+    'git',
+    '-C',
+    dirname(path),
+    'ls-files',
+    '-z',
+    '--',
+    `:(literal)${basename(path)}`,
+  ]);
+  if (exitCode !== 0) {
+    if (stderr.includes('not a git repository')) return;
+    throw new Error(`git failed (${exitCode}): ${stderr.trim()}`);
+  }
+  if (stdout) throw new Error(`Contains Git-tracked files: ${path}`);
 }
 
 export async function ensureUntracked(repository: string | null, path: string): Promise<void> {

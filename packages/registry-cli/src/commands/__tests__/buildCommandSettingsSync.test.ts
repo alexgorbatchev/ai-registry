@@ -86,7 +86,7 @@ describe("buildCommand settings sync", () => {
 
     expect(JSON.parse(await readFile(sourcePath, "utf-8")).harnessAddedSetting).toBeUndefined();
     expect(JSON.parse(await readFile(livePath, "utf-8")).harnessAddedSetting).toBeUndefined();
-  }, 30_000);
+  });
 
   it("merges generated Codex project trust with trust Codex recorded itself, keeping both out of the source", async () => {
     const projectsDir = join(tempDir, "projects");
@@ -119,7 +119,7 @@ describe("buildCommand settings sync", () => {
       "/elsewhere/codex-trusted": { trust_level: "trusted" },
     });
     expect(await readFile(sourcePath, "utf-8")).toBe(sourceBefore);
-  }, 30_000);
+  });
 
   it("records synced settings files in the manifest so bootstrap links them into harness homes", async () => {
     await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });

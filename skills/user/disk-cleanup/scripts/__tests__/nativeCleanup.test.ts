@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
 import { link, mkdir, open, rename, readdir, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { cli, createRepository, createRoot, disposeRoot } from './helpers';
+import { cli, createRepository, createRoot, disposeRoot, git } from './helpers';
 import { inspectNativeTarget, reviewNativeTargets } from '../reviewNativeTargets';
 import { removeNativeTargets } from '../removeNativeTargets';
 import { runInspectionCommand } from '../runInspectionCommand';
@@ -105,7 +105,7 @@ test('native removal reconciles a partially failed batch and leaves later batche
   expect(await Bun.file(result.logPath ?? '').json()).toEqual(result);
   expect(result.before).not.toBeNull();
   expect(result.after).not.toBeNull();
-}, 20000);
+});
 
 test('native removal preserves a target opened after review and removes its idle sibling', async () => {
   await mkdir(join(root, 'cache/active'), { recursive: true });
@@ -170,7 +170,7 @@ test('native removal batches process snapshots and commands while refreshing act
   expect(result.preserved).toEqual([{ path: paths[34]!, reason: 'Became active since review' }]);
   expect(await Bun.file(join(paths[34]!, 'data')).text()).toBe('cache');
   expect(await Bun.file(result.logPath!).json()).toEqual(result);
-}, 20000);
+});
 
 test('a change during the batch process snapshot stops every removal in that batch', async () => {
   await mkdir(join(root, 'first'));
@@ -220,4 +220,17 @@ test('native removal reconciles actual deletions even when its runner throws', a
   expect(result.failure).toContain('lost command result');
   expect(await Bun.file(result.logPath!).json()).toEqual(result);
   expect((await readdir(root)).sort()).toEqual(['.state', 'second']);
+});
+test('native inspection rejects Git-tracked targets and accepts untracked ones', async () => {
+  const repositoryPath = await createRepository(root, 'repository');
+  const trackedPath = join(repositoryPath, '.tmp/tracked-cache');
+  const untrackedPath = join(repositoryPath, '.tmp/untracked-cache');
+  await mkdir(trackedPath, { recursive: true });
+  await mkdir(untrackedPath, { recursive: true });
+  await Bun.write(join(trackedPath, 'kept.txt'), 'keep\n');
+  git(repositoryPath, ['add', '-f', '.tmp/tracked-cache/kept.txt']);
+  git(repositoryPath, ['commit', '-m', 'tracked cache file']);
+
+  await expect(inspectNativeTarget(root, trackedPath)).rejects.toThrow(`Contains Git-tracked files: ${trackedPath}`);
+  expect((await inspectNativeTarget(root, untrackedPath)).path).toBe(untrackedPath);
 });

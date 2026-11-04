@@ -23,12 +23,12 @@ describe("bootstrapCommand", () => {
   let spawnedCommands: string[][];
   let logLines: string[];
 
-  // Stands in for `bun install` and `bun run build`: the build step writes the
+  // Stands in for `just setup` and `just build`: the build step writes the
   // generated harness output, a public wrapper, and the manifest that bootstrap reads.
   function createSpawn(buildExitCode = 0): (options: IRunCommandSpawnOptions) => IRunCommandSpawnedProcess {
     return (options) => {
       spawnedCommands.push(options.cmd);
-      const isBuild = options.cmd[2] === "build";
+      const isBuild = options.cmd[1] === "build";
       const exited = isBuild && buildExitCode === 0
         ? writeGeneratedOutput().then(() => 0)
         : Promise.resolve(isBuild ? buildExitCode : 0);
@@ -117,7 +117,7 @@ describe("bootstrapCommand", () => {
 
     await bootstrapCommand(createDependencies());
 
-    expect(spawnedCommands).toEqual([["bun", "install"], ["bun", "run", "build", "--", "-y"]]);
+    expect(spawnedCommands).toEqual([["just", "setup"], ["just", "build", "-y"]]);
     expect((await lstat(join(homeDir, ".fake"))).isDirectory()).toBe(true);
     expect(await readFile(join(homeDir, ".fake", "history.jsonl"), "utf-8")).toBe("kept\n");
     expect(await readlink(join(homeDir, ".fake", "AGENTS.md"))).toBe(join(registryPaths.output, "fake", "AGENTS.md"));
@@ -126,7 +126,7 @@ describe("bootstrapCommand", () => {
     expect(getLog()).toMatchInlineSnapshot(`
 "🚀 Bootstrapping ai-registry...
 
-Installing dependencies...
+Installing dependencies and Git hooks...
 Building generated outputs...
 Applying generated outputs...
   applied Fake home: <root>/home/.fake
@@ -160,11 +160,11 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
 
     await bootstrapCommand(createDependencies({ argv: ["bun", "bootstrap.ts"] }));
 
-    expect(spawnedCommands.slice(2)).toEqual([["bun", "install"], ["bun", "run", "build"]]);
+    expect(spawnedCommands.slice(2)).toEqual([["just", "setup"], ["just", "build"]]);
     expect(getLog()).toMatchInlineSnapshot(`
 "🚀 Bootstrapping ai-registry...
 
-Installing dependencies...
+Installing dependencies and Git hooks...
 Building generated outputs...
 Applying generated outputs...
   applied Fake home: <root>/home/.fake
@@ -196,7 +196,7 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
 
 📦 Using overlay: <root>/overlay
 
-Installing dependencies...
+Installing dependencies and Git hooks...
 Building generated outputs...
 Applying generated outputs...
   applied Fake home: <root>/home/.fake

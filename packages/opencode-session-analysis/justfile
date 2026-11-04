@@ -1,0 +1,24 @@
+# Run the CLI in human mode
+[positional-arguments]
+run *args:
+    bun src/cli.ts "$@"
+
+# Run the CLI in agent-facing mode
+[positional-arguments]
+run-ai *args:
+    AGENT=1 bun src/cli.ts "$@"
+
+# Type check
+typecheck:
+    bun run tsc -p tsconfig.json --noEmit
+
+# Confirm the CLI starts and renders help
+smoke:
+    bun src/cli.ts --help > /dev/null
+
+# Run the test suite
+test:
+    bun test src
+
+# Validate without modifying source files
+check: typecheck smoke test

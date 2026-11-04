@@ -16,7 +16,7 @@ describe("runCommand", () => {
     const recordedSpawnOptions: IRecordedSpawnOptions[] = [];
 
     await runCommand({
-      cmd: ["bun", "run", "build"],
+      cmd: ["just", "build"],
       cwd: "/repo",
       description: "build generated outputs",
       spawn: (options) => {
@@ -27,7 +27,7 @@ describe("runCommand", () => {
 
     expect(recordedSpawnOptions).toEqual([
       {
-        cmd: ["bun", "run", "build"],
+        cmd: ["just", "build"],
         cwd: "/repo",
         env: undefined,
         stderr: "inherit",
@@ -39,7 +39,7 @@ describe("runCommand", () => {
 
   it("throws a concise failure message with a hint", async () => {
     const result = runCommand({
-      cmd: ["bun", "run", "build"],
+      cmd: ["just", "build"],
       cwd: "/repo",
       description: "build generated outputs",
       failureHint: "If generated outputs drifted, rerun `bun bootstrap -- -y`.",

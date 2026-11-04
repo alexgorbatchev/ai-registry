@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  verify:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -22,24 +22,21 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Check module hygiene
-        run: go mod tidy -diff
+      - uses: extractions/setup-just@v4
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          install-only: true
 
       - name: Build
         run: go build ./...
 
-      - name: Vet
-        run: go vet ./...
-
-      - name: Test
-        run: go test -race ./...
-
-      - uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.11.4
+      - name: Check
+        run: just check
 
   release:
-    needs: [verify, lint]
+    needs: [check]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:

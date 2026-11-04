@@ -4,7 +4,7 @@ description: Configure Codex local clients, project `.codex/` layers, profiles, 
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-28 13:58
-  last_modified: 2026-10-16 13:58
+  last_modified: 2026-11-04 11:57
   status: current
 ---
 
@@ -45,7 +45,7 @@ Use this skill for Codex configuration work rather than generic prompting or ski
 - For built-in OpenAI routing changes, prefer `openai_base_url` instead of inventing a duplicate custom provider.
 - For hooks, note that a single layer can define either `hooks.json` or inline `[hooks]`; Codex loads both if present and warns.
 - For project trust, state plainly that untrusted projects skip project-local `.codex/config.toml`, hooks, and rules.
-- For this registry, edit Codex harness source under `<%- repo_root %>/harnesses/codex/`, then run `bun run build`; do not hand-edit `<%- output_dir %>/codex/`.
+- For this registry, edit Codex harness source under `<%- repo_root %>/harnesses/codex/`, then run `just build`; do not hand-edit `<%- output_dir %>/codex/`.
 
 ## Read this reference on demand
 

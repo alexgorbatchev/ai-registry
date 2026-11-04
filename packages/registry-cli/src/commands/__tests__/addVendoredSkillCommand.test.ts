@@ -38,7 +38,7 @@ describe("addVendoredSkillCommand", () => {
     expect(spawnedCommands).toEqual([
       ["npx", "skills", "add", "https://github.com/shadcn/ui", "--skill", "shadcn", "-a", "openclaw", "--copy", "-y"],
       ["npx", "skills", "add", "https://github.com/shadcn/ui", "--skill", "forms", "-a", "openclaw", "--copy", "-y"],
-      ["bun", "run", "build"],
+      ["just", "build"],
     ]);
     expect(relocations).toEqual([
       [ROOT, "shadcn", "https://github.com/shadcn/ui"],
@@ -78,18 +78,18 @@ describe("addVendoredSkillCommand", () => {
 
   it("rejects a missing command", async () => {
     await expect(addVendoredSkillCommand({ argv: ["bun", "add-vendored-skill.ts"], root: ROOT, relocate, spawn }))
-      .rejects.toThrow("Missing command. Example: bun run skills:add 'npx skills add https://github.com/shadcn/ui --skill shadcn'");
+      .rejects.toThrow("Missing command. Example: just skills-add 'npx skills add https://github.com/shadcn/ui --skill shadcn'");
   });
 
   it.each([
     ["owner/repo --skill 'open", "Unterminated quoted string in command: owner/repo --skill 'open"],
     ["owner/repo --skill", "Missing value for --skill"],
-    ["owner/repo --skill one -a codex", "-a is managed automatically by bun run skills:add. Pass only the original source and --skill options."],
-    ["owner/repo --skill one --global", "--global is not supported by bun run skills:add."],
-    ["owner/repo --skill one --branch main", "Unsupported option for bun run skills:add: --branch"],
+    ["owner/repo --skill one -a codex", "-a is managed automatically by just skills-add. Pass only the original source and --skill options."],
+    ["owner/repo --skill one --global", "--global is not supported by just skills-add."],
+    ["owner/repo --skill one --branch main", "Unsupported option for just skills-add: --branch"],
     ["owner/repo other/repo --skill one", "Unexpected extra positional argument: other/repo"],
     ["--skill one", "Missing source in skills add command."],
-    ["owner/repo", "bun run skills:add requires at least one --skill <name> option."],
+    ["owner/repo", "just skills-add requires at least one --skill <name> option."],
   ])("rejects %p", async (command, message) => {
     await expect(run(command)).rejects.toThrow(message);
     expect(spawnedCommands).toEqual([]);

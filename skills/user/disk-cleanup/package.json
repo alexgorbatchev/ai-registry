@@ -3,17 +3,6 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "scripts": {
-    "run": "bun scripts/cleanup.ts",
-    "run-ai": "AGENT=1 bun scripts/cleanup.ts",
-    "check": "bun run typecheck && bun run lint && bun test scripts/__tests__",
-    "fix": "oxlint --fix scripts && oxfmt scripts",
-    "fmt": "oxfmt scripts",
-    "fmt:check": "oxfmt --check scripts",
-    "lint": "oxlint --deny-warnings scripts && bun run fmt:check",
-    "test": "bun test scripts/__tests__",
-    "typecheck": "tsc --noEmit"
-  },
   "dependencies": {
     "commander": "15.0.0"
   },

@@ -10,4 +10,4 @@ if [ -f "$SETTINGS_FILE" ]; then
   pi update "$@"
 fi
 
-cd "<%- repo_root %>" && bun run build
+cd "<%- repo_root %>" && just build

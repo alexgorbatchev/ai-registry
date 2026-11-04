@@ -74,4 +74,4 @@ Validate every updated `AGENTS.md` file against the final quality checklist:
 - [ ] Standing project instructions and technical context remain; changed rules are updated in place, with no task history, progress, handoffs, or dated amendments.
 - [ ] Every original substantive rule and technical detail has a verified destination or evidenced removal reason; no scope, exception, contract, or restriction was lost.
 
-After updating the files, run `bun run build` from the repository root to regenerate all harness outputs.
+After updating the files, run `just build` from the repository root to regenerate all harness outputs.

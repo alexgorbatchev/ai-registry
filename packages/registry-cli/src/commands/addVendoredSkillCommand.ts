@@ -67,7 +67,7 @@ function getRawCommand(argv: string[]): string {
   const rawCommand = argv.slice(2).join(" ").trim();
   if (!rawCommand) {
     throw new Error(
-      "Missing command. Example: bun run skills:add 'npx skills add https://github.com/shadcn/ui --skill shadcn'",
+      "Missing command. Example: just skills-add 'npx skills add https://github.com/shadcn/ui --skill shadcn'",
     );
   }
   return rawCommand;
@@ -102,14 +102,14 @@ function parseAddCommand(command: string): IParsedAddCommand {
     }
     if (token === "--agent" || token === "-a" || token === "--copy" || token === "-y" || token === "--yes") {
       throw new Error(
-        `${token} is managed automatically by bun run skills:add. Pass only the original source and --skill options.`,
+        `${token} is managed automatically by just skills-add. Pass only the original source and --skill options.`,
       );
     }
     if (token === "--global" || token === "-g" || token === "--all" || token === "--list" || token === "-l") {
-      throw new Error(`${token} is not supported by bun run skills:add.`);
+      throw new Error(`${token} is not supported by just skills-add.`);
     }
     if (token.startsWith("-")) {
-      throw new Error(`Unsupported option for bun run skills:add: ${token}`);
+      throw new Error(`Unsupported option for just skills-add: ${token}`);
     }
     if (source) {
       throw new Error(`Unexpected extra positional argument: ${token}`);
@@ -121,7 +121,7 @@ function parseAddCommand(command: string): IParsedAddCommand {
     throw new Error("Missing source in skills add command.");
   }
   if (skillNames.length === 0) {
-    throw new Error("bun run skills:add requires at least one --skill <name> option.");
+    throw new Error("just skills-add requires at least one --skill <name> option.");
   }
 
   return { source, skillNames };
@@ -151,5 +151,5 @@ export async function addVendoredSkillCommand(
   }
 
   console.log("\nRebuilding generated outputs...");
-  await runCommand({ cmd: ["bun", "run", "build"], cwd: root, description: "build generated outputs", spawn: dependencies.spawn });
+  await runCommand({ cmd: ["just", "build"], cwd: root, description: "build generated outputs", spawn: dependencies.spawn });
 }

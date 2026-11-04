@@ -38,7 +38,7 @@ async function createRepository() {
   await Bun.write(join(remotePath, ".gitignore"), ".tmp/\n");
   await Bun.write(join(remotePath, "content.txt"), "initial\n");
   await Bun.write(join(remotePath, "local.txt"), "initial\n");
-  await Bun.write(join(remotePath, "package.json"), JSON.stringify({ scripts: { bootstrap: "bun bootstrap.ts" } }));
+  await Bun.write(join(remotePath, "justfile"), "bootstrap *args:\n    bun bootstrap.ts {{args}}\n");
   await Bun.write(join(remotePath, "bootstrap.ts"), [
     'await Bun.write(".tmp/bootstrap-args.json", JSON.stringify(process.argv.slice(2)));',
     'if (await Bun.file(".tmp/fail-bootstrap").exists()) process.exit(7);',
@@ -90,7 +90,7 @@ describe("scheduledUpdate", () => {
       `[OK] scheduled update: completed; log: ${repositoryPath}/.tmp/scheduled-update.log`,
     );
     expect(await readTimestampedLog(join(repositoryPath, ".tmp/scheduled-update.log"))).toBe(
-      "Already up to date.\n$ bun bootstrap.ts -y\n[OK] scheduled update: bootstrapped\n",
+      "Already up to date.\nbun bootstrap.ts -y\n[OK] scheduled update: bootstrapped\n",
     );
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
   });

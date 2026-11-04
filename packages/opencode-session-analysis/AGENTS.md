@@ -4,7 +4,8 @@ This package provides tools and CLI commands for analyzing OpenCode session logs
 
 ## Commands
 
-- Test: `bun test packages/opencode-session-analysis`
+- Test: `just session-analysis test` from the repository root, or `just test` in this package
+- Validate: `just session-analysis check` (type check, CLI help smoke run, tests)
 
 ## Boundaries & Quality Rules
 

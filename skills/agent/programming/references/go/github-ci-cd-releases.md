@@ -31,19 +31,13 @@ Before copying or updating a workflow, query each action's upstream latest stabl
 
 Use a CI workflow on `push` and `pull_request` for the main development branch. Start from [github-actions-ci.yml](./github-actions-ci.yml).
 
-Prefer this verification order:
+Run `go build ./...`, then validate with `just check` from the [Go justfile](justfile.md), so CI and local development run the same recipes. `check` covers formatting (`golangci-lint fmt --diff`), module hygiene (`go mod tidy -diff`), `go vet`, `golangci-lint run`, and `go test -race ./...`. Install `just` with `extractions/setup-just` and `golangci-lint` with `golangci-lint-action` in `install-only` mode before running it.
 
-1. `go mod tidy -diff`
-2. `go build ./...`
-3. `go vet ./...`
-4. `go test -race ./...`
-5. lint
-
-Why this order:
-- fail fast on module hygiene and compile errors
-- run `go vet` as a required static check, not an optional extra
-- use `-race` in CI for code that can run under the race detector
-- keep lint pinned and reproducible
+Why this shape:
+- fail fast on compile errors before the slower checks
+- keep CI from drifting away from the local `check` recipe
+- fail CI on unformatted files instead of leaving formatting to local discipline
+- keep `golangci-lint` pinned and reproducible
 
 ### Linting
 
@@ -52,7 +46,7 @@ Pin the linter version explicitly.
 For most Go tools, prefer `tool` directives in `go.mod`.
 For `golangci-lint`, make a deliberate exception when appropriate: the upstream project documents binary/action installation as the recommended path and warns that `go install` / `tool` directive installs are not guaranteed.
 
-In GitHub Actions, the safest default is the official `golangci-lint-action` with an explicit version.
+In GitHub Actions, the safest default is the official `golangci-lint-action` with an explicit `version` and `install-only: true`, so `just check` runs the pinned binary.
 For local development, either:
 - document a pinned binary install path, or
 - vendor the binary in a bootstrap workflow,
@@ -73,7 +67,7 @@ on:
   pull_request:
 ```
 
-Gate the release job with a tag check (such as `if: startsWith(github.ref, 'refs/tags/v')`) and require CI verification to pass first (`needs: [verify, lint]`).
+Gate the release job with a tag check (such as `if: startsWith(github.ref, 'refs/tags/v')`) and require CI validation to pass first (`needs: [check]`).
 Do not trigger production release artifacts from arbitrary branch pushes.
 Treat the Git tag as the release boundary.
 
@@ -206,7 +200,9 @@ See [github-actions-ci.yml](./github-actions-ci.yml).
 Use:
 - `actions/checkout`
 - `actions/setup-go` with `go-version-file: go.mod`
-- pinned linter action/version
+- `extractions/setup-just`
+- pinned `golangci-lint-action` version in `install-only` mode
+- `go build ./...` followed by `just check`
 
 ### Release
 
@@ -215,8 +211,8 @@ See [github-actions-release.yml](./github-actions-release.yml).
 Use:
 - `actions/checkout` with `fetch-depth: 0`
 - `actions/setup-go`
-- `verify` and `lint` running across all branches, pull requests, and tags
-- `release` gated with `if: startsWith(github.ref, 'refs/tags/v')` and `needs: [verify, lint]`
+- a `check` job running `go build ./...` and `just check` across all branches, pull requests, and tags
+- `release` gated with `if: startsWith(github.ref, 'refs/tags/v')` and `needs: [check]`
 - `goreleaser/goreleaser-action`
 
 ## Common failure modes

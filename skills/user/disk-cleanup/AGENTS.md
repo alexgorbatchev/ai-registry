@@ -1,15 +1,15 @@
 ---
 created_on: '2026-10-05 07:24'
-last_modified: '2026-10-29 15:47'
+last_modified: '2026-11-04 11:57'
 status: current
 ---
 
 Maintain the portable development-folder cleanup skill and its Bun scripts in this directory.
 
 - Install locked dependencies: `bun install --frozen-lockfile`.
-- Run type checks, lint, and behavioral tests: `bun run check`.
-- Use Oxlint and Oxfmt for linting and formatting: `bun run lint` checks both; `bun run fix` applies fixes.
-- Run the tool for agents: `bun run run-ai skill`, then `bun run run-ai disk assess --root <target> --system`
+- Run type checks, format and lint checks, and behavioral tests: `just check`.
+- Use Oxlint and Oxfmt for linting and formatting: `just lint` and `just fmt-check` check them; `just fix` applies fixes.
+- Run the tool for agents: `just run-ai skill`, then `just run-ai disk assess --root <target> --system`
   for machine-wide requests on macOS/Linux; omit `--system` for a selected project scope.
 - General disk-space requests require the combined assessment before cleanup recommendations or deletion questions.
   Await all sections, include large development paths alongside caches, preserve partial command output, and expose

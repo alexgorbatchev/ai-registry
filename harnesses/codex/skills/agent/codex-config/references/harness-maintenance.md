@@ -17,7 +17,7 @@ These files are source-of-truth inputs for generated Codex homes; `<%- output_di
 3. Edit or add `harnesses/codex/rules/default.rules` for command-prefix policy. Use `decision = "allow"`, `"prompt"`, or `"forbidden"`; include `match` and `not_match` examples so Codex validates the rule at startup.
 4. Prefer `forbidden` for commands the agent must not run, such as destructive Git state changes. Prefer `prompt` only when user review should remain possible.
 5. Run `codex execpolicy check --pretty --rules harnesses/codex/rules/default.rules -- <command...>` for important command rules.
-6. Run `bun run build` from `<%- repo_root %>` after any `harnesses/codex/` change.
+6. Run `just build` from `<%- repo_root %>` after any `harnesses/codex/` change.
 7. Restart Codex. Rules and config layers are loaded at startup.
 
 ## Approval And Sandbox Notes
@@ -37,7 +37,7 @@ These files are source-of-truth inputs for generated Codex homes; `<%- output_di
 6. Put detailed setup material in `references/setup.md`; put large reference material in `references/*.md`; add scripts or assets only when they materially improve reuse.
 7. Avoid private names, internal URLs, hostnames, secrets, and other non-public details.
 8. Validate changed skills with `bun <%- repo_root %>/skills/skill-writer/scripts/quick-validate.ts harnesses/codex/skills/<skill-name>` when practical.
-9. Run `bun run build` and inspect `<%- output_dir %>/codex/skills/<skill-name>/`.
+9. Run `just build` and inspect `<%- output_dir %>/codex/skills/<skill-name>/`.
 
 ## Generated Output Contract
 

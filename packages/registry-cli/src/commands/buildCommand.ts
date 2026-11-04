@@ -425,5 +425,5 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   console.log("\nTo test OpenCode instantly via CLI, run:");
   console.log(`  XDG_CONFIG_HOME=${join(root, ".output")} opencode\n`);
   console.log("To apply the generated outputs to your machine, run:");
-  console.log("  bun run bootstrap\n");
+  console.log("  just bootstrap\n");
 }

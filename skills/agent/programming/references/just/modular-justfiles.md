@@ -80,7 +80,7 @@ By default, `just` sets the working directory of a submodule's recipes to the di
    When a tool or script expects paths anchored to the repository root (e.g. workspace-wide database directories, shared cache, or root-relative paths), set `set working-directory` to the relative path back to root:
 
    ```justfile
-   # tools/cli/justfile
+   # tools/cli/justfile (excerpt: only the root-anchored recipes)
    set working-directory := "../.."
 
    [default]
@@ -90,18 +90,15 @@ By default, `just` sets the working directory of a submodule's recipes to the di
    run-ai *args:
        AGENT=1 bun tools/cli/src/cli.ts {{ args }}
 
-   typecheck:
-       bun run tsc --noEmit
-
-   check: typecheck test
-
    test:
        bun test tools/cli
    ```
 
+   Every path in a root-anchored recipe still belongs to the submodule's own directory. Define the rest of the required recipes as in [Standard Submodule Recipes](#standard-submodule-recipes).
+
 ## Standard Submodule Recipes
 
-Every submodule provides the recipes required by the [task automation contract](../cli/best-practices.md#task-automation-justfile), plus the language's required recipes from its `justfile.md`. Mark the primary entrypoint `[default]` so `just <module>` runs it without sub-recipe arguments.
+Every submodule provides the recipes required by the [task automation contract](../cli/best-practices.md#task-automation-justfile), plus the language's required recipes from its `justfile.md`. Mark the primary entrypoint `[default]` so `just <module>` runs it without sub-recipe arguments. This Bun submodule follows the [Bun justfile](../bun/justfile.md):
 
 ```justfile
 # tools/dashboard/justfile
@@ -112,13 +109,25 @@ run *args:
 run-ai *args:
     AGENT=1 bun scripts/serve.ts {{ args }}
 
+fmt:
+    bun run oxfmt
+
+fmt-check:
+    bun run oxfmt --check
+
+lint:
+    bun run oxlint --deny-warnings
+
 typecheck:
     bun run tsc --noEmit
 
-check: typecheck test
+unused:
+    bun run --bun ts-unused check tsconfig.json
 
 test:
     bun test
+
+check: fmt-check lint typecheck unused test
 ```
 
 ## Root Lifecycle Orchestration

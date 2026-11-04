@@ -1,0 +1,37 @@
+# Run the CLI in human mode
+[positional-arguments]
+run *args:
+    bun scripts/cleanup.ts "$@"
+
+# Run the CLI in agent-facing mode
+[positional-arguments]
+run-ai *args:
+    AGENT=1 bun scripts/cleanup.ts "$@"
+
+# Apply formatting
+fmt:
+    bun run oxfmt scripts
+
+# Fail on unformatted files without rewriting them
+fmt-check:
+    bun run oxfmt --check scripts
+
+# Lint
+lint:
+    bun run oxlint --deny-warnings scripts
+
+# Apply lint fixes and formatting
+fix:
+    bun run oxlint --fix scripts
+    bun run oxfmt scripts
+
+# Type check
+typecheck:
+    bun run tsc --noEmit
+
+# Run the test suite
+test:
+    bun test scripts/__tests__
+
+# Validate without modifying source files
+check: typecheck fmt-check lint test

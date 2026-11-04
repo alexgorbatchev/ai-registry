@@ -18,7 +18,7 @@ The reusable source-of-truth layer.
   Models choose search and code-navigation tools according to the task and available capabilities; the registry does not mandate a search tool or tool ordering.
   Dependency investigation and library integration stay within the authorized task's required capabilities, using supported interfaces and intended usage patterns.
   Red/green and isolated test-sensitivity checks apply to changes in executable behavior; non-executable changes use applicable validators.
-  Behavior-changing implementation work requires meaningful behavioral tests and at least 90% line and function coverage per affected first-party package, including unexecuted non-test source and excluding `scripts/` directories. Coverage commands and scope must be documented and configured; `bun run coverage` runs the `packages/registry-cli` gate, which counts files no test loads as uncovered. Instruction-maintenance tasks use applicable validators and existing checks; newly specified but unimplemented enforcement stays recorded as follow-up work and does not block committing or merging the maintenance task. Existing failing checks remain subject to prerequisite repair. User-deferred generation or application does not prohibit independent verification or authorized source integration; unrun verification remains explicit.
+  Behavior-changing implementation work requires meaningful behavioral tests and at least 90% line and function coverage per affected first-party package, including unexecuted non-test source and excluding `scripts/` directories. Coverage commands and scope must be documented and configured; `just coverage` runs the `packages/registry-cli` gate, which counts files no test loads as uncovered. Instruction-maintenance tasks use applicable validators and existing checks; newly specified but unimplemented enforcement stays recorded as follow-up work and does not block committing or merging the maintenance task. Existing failing checks remain subject to prerequisite repair. User-deferred generation or application does not prohibit independent verification or authorized source integration; unrun verification remains explicit.
   Concurrent-work guidance preserves other actors' changes, index state, locks, and refs. Only conflicting operations suspend; independent authorized work may continue in an owned, isolated worktree when safe. Staged-file age does not authorize takeover or a whole-worker halt.
   Routine branch and path-scoped index work uses existing task authorization after ownership checks. Codex and OpenCode guard explicit force/file-restoration checkout forms and reset modes; the shared instructions cover ownership, authorization, and equivalent syntax beyond those command-text matches.
 - **`harnesses/`**: Harness-specific config overrides, unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic lives under `packages/registry-cli/src/harnesses/<target>/` when excluded via `.registry-ignore`.
@@ -26,8 +26,8 @@ The reusable source-of-truth layer.
 - **`packages/`**: Publishable repo-local packages distributed independently from the generated harness outputs.
 - **`packages/opencode-session-analysis/`**: Bun CLI package for OpenCode session and skill-usage reporting.
 
-### 2. Setup (`bun run bootstrap`)
-`bun run bootstrap` is the repo-local clone-and-run entrypoint for this repository.
+### 2. Setup (`just bootstrap`)
+`just bootstrap` is the repo-local clone-and-run entrypoint for this repository.
 
 Root script entrypoints live directly under `packages/registry-cli/src/bin/` and use dash-based filenames. Helper modules that are imported by those entrypoints and are not intended to be executed directly belong under `packages/registry-cli/src/lib/`.
 
@@ -40,7 +40,7 @@ This repository includes a custom local compiler (`packages/registry-cli/src/bin
 
 Generated harness outputs are compiled by plugins at `packages/registry-cli/src/harnesses/<target>/build.ts`. The root build statically imports those plugins and calls each one's `buildOutput` hook to write that harness's output root.
 
-Source files keep their filenames and use [EJS](https://ejs.co/docs/) syntax. `bun run build` renders generated text outputs exactly once. Templates support native JavaScript expressions and control flow; only trusted templates should be built. Unknown variables, invalid JavaScript, failed includes, and missing environment values without defaults fail the build. Use raw output tags for paths and plain text; `<%= value %>` performs HTML escaping. Use `<%%` to emit a literal opening delimiter. Foreign `{{...}}` syntax passes through unchanged. Available locals:
+Source files keep their filenames and use [EJS](https://ejs.co/docs/) syntax. `just build` renders generated text outputs exactly once. Templates support native JavaScript expressions and control flow; only trusted templates should be built. Unknown variables, invalid JavaScript, failed includes, and missing environment values without defaults fail the build. Use raw output tags for paths and plain text; `<%= value %>` performs HTML escaping. Use `<%%` to emit a literal opening delimiter. Foreign `{{...}}` syntax passes through unchanged. Available locals:
 
 - `<%- repo_root %>`: Absolute path to the repository root during template expansion.
 - `<%- overlay_dir %>`: Absolute path to the last active private overlay directory, or empty string if none is configured. Use file_dir for resources relative to an asset in another overlay.
@@ -62,7 +62,7 @@ For Vim, the project-local `.exrc` assigns `filetype=ejs` to Markdown files in t
 For the normal machine setup flow after cloning, run:
 
 ```bash
-bun run bootstrap
+just bootstrap
 ```
 
 ### Private Overlay Registries
@@ -83,7 +83,7 @@ For proprietary or work-specific skills and commands that cannot be committed to
    ```bash
    AI_REGISTRY_OVERLAY=~/work/ai-registry:~/personal/ai-registry
    ```
-4. Run `bun run build` or `bun run bootstrap`. The build merges assets from left to right; the last matching skill or command wins. Both build and bootstrap print skill conflict notes with the selected and replaced source paths.
+4. Run `just build` or `just bootstrap`. The build merges assets from left to right; the last matching skill or command wins. Both build and bootstrap print skill conflict notes with the selected and replaced source paths.
 
 Separate paths with the platform PATH separator (`:` on Linux/macOS, `;` on Windows). Each entry supports `~`; relative paths resolve from the registry checkout. Empty entries are ignored. Repeated normalized paths keep their last occurrence, so `A:B:A` is processed as `B:A`. Missing paths produce warnings and are skipped.
 
@@ -105,7 +105,7 @@ skills/agent/example/
 The build detects the operating system hostname once and selects an exact match, preserving case and domain suffixes. Set `AI_REGISTRY_HOSTNAME` in your local environment or `.env` to select a different hostname:
 
 ```bash
-AI_REGISTRY_HOSTNAME=workstation-a bun run build
+AI_REGISTRY_HOSTNAME=workstation-a just build
 ```
 
 Hostnames must start with a letter or digit and contain only letters, digits, dots, underscores, or hyphens. An empty or invalid override fails the build. If no matching variant directory exists, the build uses the default `SKILL.md`. A matching directory must contain a regular `SKILL.md` file with valid YAML frontmatter, a non-empty description and body, and the same name and author as the default; an invalid matching variant fails the build.
@@ -118,19 +118,18 @@ Keep actual private hostnames and environment instructions in the private overla
 
 The generated-output manifest records skill source paths. Generated-edit recovery writes changes to the selected variant and rejects recovery when the recorded source differs from the current selection, such as after switching hostnames. Rebuild with the original hostname and overlay before recovering those edits. Recovery reverses path tokens but does not reconstruct include directives; edit include-based skills in their source files to preserve those directives.
 
-Rerun `bun run bootstrap` after pulling changes when you want to refresh generated outputs, reapply the generated OpenCode, Codex, Pi, and Claude Code outputs to their homes (see [Harness Homes](#harness-homes)), and resync the repo-local `air-*`, `pi-*`, and `cll` wrappers into `~/.local/bin`.
+Rerun `just bootstrap` after pulling changes when you want to refresh generated outputs, reapply the generated OpenCode, Codex, Pi, and Claude Code outputs to their homes (see [Harness Homes](#harness-homes)), and resync the repo-local `air-*`, `pi-*`, and `cll` wrappers into `~/.local/bin`.
 
 To smoke test that flow without touching your real XDG config paths, run:
 
 ```bash
-bun run bootstrap:smoke
+just bootstrap-smoke
 ```
 
 That command:
 
-- runs `bun install`
+- runs `just setup`, which runs `bun install` and installs the repo-local Git hooks from `.githooks`
 - installs dependencies for all root workspaces declared in `package.json`, including `vendor/*`, `packages/*`, the bundled GitHub reviewer helper, and the disk-cleanup skill
-- installs the repo-local Git hooks from `.githooks`
 - builds the generated outputs
 - verifies the previous generated-output manifest before overwriting managed generated paths in `.output/`
 - automatically recovers supported harness-written generated-file edits into their mapped source and regenerates outputs when the manifest baseline confirms that source changes will not be overwritten; conflicts, unsupported recovery, or save failures preserve both versions and suspend output application, including with `-y`
@@ -143,7 +142,7 @@ That command:
 - removes broken public-wrapper symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
 
-After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `bun run bootstrap -- -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps generated outputs, the harness home links, and the repo-local wrapper symlinks refreshed. The checked-in `pre-push` hook scans every commit a push would publish with [gitleaks](https://github.com/gitleaks/gitleaks) and blocks the push on findings, so `gitleaks` must be installed and on `PATH`; record a reviewed false positive in `.gitleaksignore`.
+After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `just bootstrap -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps generated outputs, the harness home links, and the repo-local wrapper symlinks refreshed. The checked-in `pre-push` hook scans every commit a push would publish with [gitleaks](https://github.com/gitleaks/gitleaks) and blocks the push on findings, so `gitleaks` must be installed and on `PATH`; record a reviewed false positive in `.gitleaksignore`.
 
 ### Scheduled updates
 
@@ -156,7 +155,7 @@ The repository's `.cronrc` schedules updates every five minutes through `cron-pe
 - `just cron-disable`: revoke this repository's authorization and remove its scheduled tasks.
 - `just cron-logs`: print the last 100 lines of scheduled-update output.
 
-Run `bun run scheduled:update` to pull the current branch's configured upstream and run `bun run bootstrap -- -y` on every run, so settings the harnesses changed on this machine are synced into the working tree without creating commits, even when the pull brings nothing new. Scheduled bootstrap sets `AI_REGISTRY_SETTINGS_AUTO_COMMIT=0`; manual build and bootstrap keep their settings auto-commit behavior. The pull rebases local commits onto the upstream branch and suppresses Git hooks so bootstrap runs once. A checkout with staged, unstaged, or untracked changes is left alone: the run skips the pull and push and still bootstraps, and it pulls again once the checkout is clean. If the rebase conflicts, the script restores the original HEAD and skips bootstrap. A failed bootstrap skips the push; the next run retries it. Failures return a nonzero exit status, while an overlapping run exits successfully without doing work.
+Run `just scheduled-update` to pull the current branch's configured upstream and run `just bootstrap -y` on every run, so settings the harnesses changed on this machine are synced into the working tree without creating commits, even when the pull brings nothing new. Scheduled bootstrap sets `AI_REGISTRY_SETTINGS_AUTO_COMMIT=0`; manual build and bootstrap keep their settings auto-commit behavior. The pull rebases local commits onto the upstream branch and suppresses Git hooks so bootstrap runs once. A checkout with staged, unstaged, or untracked changes is left alone: the run skips the pull and push and still bootstraps, and it pulls again once the checkout is clean. If the rebase conflicts, the script restores the original HEAD and skips bootstrap. A failed bootstrap skips the push; the next run retries it. Failures return a nonzero exit status, while an overlapping run exits successfully without doing work.
 
 After a successful pull and bootstrap, the updater pushes outgoing commits to the current branch's configured upstream, even when the pull brought in no new commits. It pushes only that branch, keeps push hooks enabled, and never force-pushes or publishes tags. Uncommitted edits remain local. A rejected push leaves commits intact for the next run to pull/rebase and retry. GitHub pushes are blocked when outgoing commit messages or patches contain restricted private domains; unknown push destinations also block the push. The `pre-push` gitleaks scan applies to these pushes too.
 
@@ -175,9 +174,11 @@ Use the account whose harness configuration should be refreshed. Git must be on 
 To compile the configurations, simply run:
 
 ```bash
-bun install
-bun run build
+just setup
+just build
 ```
+
+Development tasks live in `justfile` recipes; `package.json` files have no `scripts`. The root `justfile` links each package's own `justfile` as a module (`registry-cli`, `template-resolver`, `session-analysis`, `disk-cleanup`). Run `just check` to type check and validate every package, `just test` to run every package's tests, and `just --list --list-submodules` to see all recipes.
 
 ### Repo-local PATH commands
 
@@ -191,7 +192,7 @@ The repo-local OpenCode session tools are:
 
 Use `air-opencode-session-analysis skills --sync --pick` from a project directory to choose used skills and copy them into that project's `.opencode/skills/` directory. The command writes `.opencode/skills-manifest.json` so later runs can refresh the same selection automatically, warn about newly used skills that are not in the saved selection, and detect drift in the managed copied files before overwriting them. When the command cannot auto-detect this repository as the skill source, pass `--registry-dir <path>`.
 
-Run `bun run bootstrap` to symlink these wrappers into `~/.local/bin`. If you prefer to manage `PATH` directly, add `.output/bin/` to your `PATH` instead.
+Run `just bootstrap` to symlink these wrappers into `~/.local/bin`. If you prefer to manage `PATH` directly, add `.output/bin/` to your `PATH` instead.
 
 These wrappers execute the checked-in Bun source from this repository, so the clone and its installed dependencies must remain available on disk.
 
@@ -233,23 +234,23 @@ This repo can also vendor third-party skills into its canonical top-level `skill
 Use the repo wrapper as the normal interface:
 
 ```bash
-bun run skills:add 'npx skills add https://github.com/shadcn/ui --skill shadcn'
+just skills-add 'npx skills add https://github.com/shadcn/ui --skill shadcn'
 ```
 
 ```bash
 npx skills add https://github.com/shadcn/ui --skill shadcn -a openclaw --copy -y
 ```
 
-`bun run skills:add` parses the raw `npx skills add ...` command, forces the repo-safe vendoring flags behind the scenes, and rebuilds the generated outputs afterward.
+`just skills-add` parses the raw `npx skills add ...` command, forces the repo-safe vendoring flags behind the scenes, and rebuilds the generated outputs afterward.
 
 Why `-a openclaw` under the hood? The Skills CLI uses `skills/` as OpenClaw's project-local skill directory, so this is the cleanest way to copy an external skill straight into this repo's canonical `skills/` surface.
 
 When you vendor or update external skills:
 
 - commit both `skills/<name>/` and `skills-lock.json`
-- use `bun run skills:update` to refresh all vendored external skills safely
+- use `just skills-update` to refresh all vendored external skills safely
 - use `bun run packages/registry-cli/src/bin/update-vendored-skills.ts <name>` to refresh only one vendored skill
-- run `bun run build` afterward so generated outputs stay current
+- run `just build` afterward so generated outputs stay current
 
 Avoid plain `npx skills update` in this repo. The upstream project-update flow does not preserve the `openclaw --copy` target and may create extra agent directories such as `.claude/` or `.pi/`.
 

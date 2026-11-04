@@ -3,7 +3,7 @@ import { join } from "path";
 import { getRegistryPaths } from "../lib/getRegistryPaths";
 import { runCommand } from "../lib/runCommand";
 
-// Runs `bun run bootstrap` in the smoke clone with the given environment.
+// Runs `just bootstrap` in the smoke clone with the given environment.
 export type ISmokeBootstrapRunner = (repositoryDir: string, environment: NodeJS.ProcessEnv) => Promise<void>;
 
 export type ISmokeBootstrapDependencies = {
@@ -71,7 +71,7 @@ async function assertNoBackups(parentDir: string, prefix: string): Promise<void>
 
 async function runRealBootstrap(repositoryDir: string, environment: NodeJS.ProcessEnv): Promise<void> {
   await runCommand({
-    cmd: ["bun", "run", "bootstrap"],
+    cmd: ["just", "bootstrap"],
     cwd: repositoryDir,
     env: environment,
     description: "run bootstrap in the smoke clone",

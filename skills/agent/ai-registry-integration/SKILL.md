@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-01 12:26
+  last_modified: 2026-11-04 11:57
   status: current
 ---
 
@@ -45,7 +45,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Register bundled skill packages needed by repository-wide typechecking as root Bun workspaces so normal installs include their dependencies. Exclude installed dependencies, local lockfiles, and scratch directories from generated copies through the skill's `.registry-ignore`.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
 - Make intentional registry edits in source; treat subsequent harness-written changes in `.output/` beneath the repo_root token as expected. Automatically recover supported generated edits into their mapped source only when the generated baseline, source fingerprint, and exact reversal establish that source changes will not be overwritten, then regenerate all affected outputs. Preserve both versions and suspend dependent output application on source conflicts, unsupported recovery, or save failures. Reconcile existing drift without source fingerprints into source before establishing a fresh baseline. Do not request confirmation or investigate ownership merely because a harness changed a generated file; `-y` does not bypass reconciliation. Preserve all session/runtime data and unmanaged harness-owned files.
-- After modifying any file under `skills/`, `commands/`, `system/`, `harnesses/`, or `skills-lock.json` beneath the repo_root token, run `bun run build` from the repo_root token.
+- After modifying any file under `skills/`, `commands/`, `system/`, `harnesses/`, or `skills-lock.json` beneath the repo_root token, run `just build` from the repo_root token.
 - If a change alters repo structure, build architecture, or workflow contracts, update `AGENTS.md` and `README.md` beneath the repo_root token in the same change.
 - **USE SOURCE REFERENCE FIRST:** When diagnosing harness issues, analyzing behavioral contracts, or updating configurations, ALWAYS consult the local checked-out harness source code under the respective `harnesses/<target>/.tmp/<target>-source/` folder first. Never guess, assume, or rely on memory. If the source is not yet checked out on disk, run that harness's `./harnesses/<target>/fetch-source.sh` script first to pull it down.
 
@@ -55,7 +55,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 2. Create or edit the source-of-truth file in the matching section below.
 3. Update any dependent manifest or lock file.
 4. Run the narrowest relevant validation.
-5. Run `bun run build` from the repo_root token.
+5. Run `just build` from the repo_root token.
 6. Inspect the generated output under the output_dir token if the change affects shipped harness content.
 
 ## Private Overlay Registries
@@ -85,13 +85,13 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Keep the body procedural and specific for another AI agent.
 - Review agent instructions with concrete acceptance checks and at most two review-and-fix rounds, following `<%- skills_dir %>/AGENTS.md`; do not require numerical quality scores or waive unresolved blockers.
 - Validate every changed skill folder with `bun <%- skills_dir %>/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` and fix every reported error before building.
-- Run `bun run build` from the repo_root token after the skill change.
+- Run `just build` from the repo_root token after the skill change.
 
 ## Add Hostname Skill Variants
 
 - Keep the skill bundle's default `SKILL.md`. Add each machine-specific version at `variants/<hostname>/SKILL.md`, with normal skill frontmatter and the same `name` and `author` as the default.
 - Match the hostname exactly, including case and domain suffixes. Hostnames start with a letter or digit and contain only letters, digits, dots, underscores, or hyphens.
-- Use `AI_REGISTRY_HOSTNAME=workstation-a bun run build` to validate and generate a specific variant. The build otherwise detects the OS hostname once; an absent matching directory uses the default, and an invalid matching variant fails.
+- Use `AI_REGISTRY_HOSTNAME=workstation-a just build` to validate and generate a specific variant. The build otherwise detects the OS hostname once; an absent matching directory uses the default, and an invalid matching variant fails.
 - Keep shared references, scripts, and assets at the bundle root. Only the root `SKILL.md` changes by hostname; the entire root `variants/` directory stays out of generated outputs. Link bundled resources by their generated locations.
 - Use existing repository-root-relative includes for shared text. Template expansion runs once, with `file_path` and `file_dir` identifying the selected variant's original source path.
 - Place actual private hostnames and environment instructions in the private overlay. Include all required resources there: overlays replace entire bundles, and a private default does not inherit public variants.
@@ -107,12 +107,12 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Keep the command self-contained rather than relying on unstated repo context.
 - Every harness ships every registry command; there is no per-command selection.
 - For Codex, include YAML frontmatter with a non-empty `description`. Every command becomes a native skill bundle in the Codex `skills/` directory, with `policy.allow_implicit_invocation: false` in `agents/openai.yaml`; do not emit deprecated `prompts/` files. Invoke with `$<skill-name>` or `/skills`. An explicit `name` is honored; otherwise the build derives `command-<filename>` with leading hyphens removed and repeated hyphens collapsed. Use lowercase kebab-case names of at most 64 characters and avoid collisions with skill names.
-- Run `bun run build` from the repo_root token after the command change.
+- Run `just build` from the repo_root token after the command change.
 
 ## Change The Shared System Prompt
 
 - Edit `system/system.md` beneath the repo_root token. Every harness ships it: Codex as `AGENTS.md`, Pi as `APPEND_SYSTEM.md`, Claude Code as `CLAUDE.md`, and OpenCode through the `instructions` entry in `harnesses/opencode/opencode.jsonc`.
-- Run `bun run build` from the repo_root token after the change.
+- Run `just build` from the repo_root token after the change.
 
 ## Add Harness Overrides
 
@@ -131,7 +131,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - If a local file-based harness dependency needs installed runtime imports, vendor it under `vendor/<name>/` beneath the repo_root token, add it to the root Bun workspaces, and reference it from the harness config using the repo_root token.
 - When vendoring third-party code under `vendor/<name>/`, copy only the files the harness loads plus the upstream `LICENSE`, and record the upstream repository, pinned commit, and file checksum in that package's `README.md`. Fetch from the pinned commit URL, never from a moving branch.
 - When a harness needs a single vendored file inside its generated root, symlink it from the harness build plugin and fail the build when the source file is missing.
-- Run `bun run build` from the repo_root token and verify the corresponding files under the output_dir token.
+- Run `just build` from the repo_root token and verify the corresponding files under the output_dir token.
 - Existing harnesses:
   - OpenCode under `harnesses/opencode`.
   - Codex under `harnesses/codex`.
@@ -143,6 +143,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Create the package under `packages/<package-name>/` beneath the repo_root token.
 - Use this for publishable tools that are distributed independently from generated harness outputs.
 - Add the package folder to the root `package.json` workspaces beneath the repo_root token.
+- Give the package its own `justfile` with `test` and `check` recipes and link it from the root `justfile` with `mod`. Define development tasks there, never as `package.json` scripts, and reach the package from root recipes only through `just <module> <recipe>`.
 - Keep publishable package docs inside the package folder, such as `README.md`.
 - Run the package's narrowest validation plus any affected repo-level validation.
 
@@ -152,12 +153,12 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Preserve third-party-authored skill content. Keep local policies in registry-owned guidance and record unresolved upstream findings instead of rewriting those bundles.
 - Place every skill authored by `mattpocock` under `skills/user/`, including newly added skills. After vendoring, move an incorrectly classified bundle there before rebuilding. Existing user bundles retain their classification during updates.
 - Track the vendored source in `skills-lock.json` beneath the repo_root token.
-- Add a third-party skill with `bun run skills:add 'npx skills add <source> --skill <skill-name>'` from the repo_root token.
+- Add a third-party skill with `just skills-add 'npx skills add <source> --skill <skill-name>'` from the repo_root token.
 - Do not use plain `npx skills add ...` for vendoring into this repo; the wrapper enforces the repo's canonical destination and flags.
 - Vendored skills must have `author` set (derived from the source owner or upstream author) and kept up to date across additions and updates.
-- Update vendored skills with `bun run skills:update` from the repo_root token.
+- Update vendored skills with `just skills-update` from the repo_root token.
 - Commit both the vendored skill directory under the skills_dir token and `skills-lock.json` beneath the repo_root token when vendoring or updating an external skill.
-- Run `bun run build` from the repo_root token afterward.
+- Run `just build` from the repo_root token afterward.
 
 ## Build And Generated Output
 
@@ -165,7 +166,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Unified harness plugins are located at `packages/registry-cli/src/harnesses/<target>/build.ts` beneath the repo_root token.
 - Generated outputs are written under the output_dir token.
 - Generated harness skills (`skills/` entries across OpenCode, Codex, Pi, and Claude Code outputs) are copies of the source files with template tags resolved, not symbolic links, so tags inside `SKILL.md` and bundled skill files reach the agent resolved.
-- The generated-output manifest tracks only registry-managed entries under the output_dir token, and `bun run build` overwrites only those managed paths instead of replacing the entire output tree.
+- The generated-output manifest tracks only registry-managed entries under the output_dir token, and `just build` overwrites only those managed paths instead of replacing the entire output tree.
 - Never create harness runtime state (session stores, logs, todo lists, databases) in generated output. Bootstrap links each harness output's managed entries into a real harness home outside the repository, and the harness writes its runtime state there. A harness plugin returns its single home target from `getBootstrapTargets()`.
 - Verify generated files that match the change, especially:
   - `opencode/` beneath the output_dir token

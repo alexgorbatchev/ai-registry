@@ -4,9 +4,6 @@
   "description": "Recursive template tag resolver for repository-root includes, environment lookups, and string variables",
   "type": "module",
   "private": true,
-  "scripts": {
-    "test": "bun test"
-  },
   "exports": {
     ".": "./src/index.ts"
   },

@@ -7,7 +7,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-10-24 10:17
+  last_modified: 2026-11-04 11:57
   status: current
 ---
 
@@ -236,7 +236,7 @@ Skill writing and maintenance involve these steps:
 
 1. Understand the skill with concrete examples
 2. Plan reusable skill contents (scripts, references, assets)
-3. Initialize the skill (create the folder and `SKILL.md` manually, or use `bun run skills:add` for vendoring)
+3. Initialize the skill (create the folder and `SKILL.md` manually, or use `just skills-add` for vendoring)
 4. Edit the skill (implement resources and write SKILL.md)
 5. Validate the skill's formatting and frontmatter against project requirements
 6. Iterate based on real usage

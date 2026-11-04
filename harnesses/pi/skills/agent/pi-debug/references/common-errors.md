@@ -11,7 +11,7 @@
 | **`no credentials for litellm. Run /login litellm or set env vars.`** | `auth.json` lacks entry for `litellm` AND `LITELLM_API_KEY` is not exported in shell. | Save credentials in `~/.pi/agent/auth.json` or export `LITELLM_API_KEY`. |
 | **`Invalid model name passed in model=X`** | Selected model exists in global `/model/info`, but virtual key lacks permissions in `/v1/models`. | Update key model permissions on LiteLLM admin dashboard (`/key/update`). |
 | **`HTTP 303 See Other` on `/mcp-rest/tools/list`** | PocketID or SSO proxy protecting LiteLLM MCP endpoints. | Set `litellm.mcp.enabled: false` and `litellm.skills.enabled: false` in `settings.json`. |
-| **`Build cancelled. Generated outputs changed outside the build`** | Hand-edited files in `.output/pi/` directly without modifying `harnesses/pi/`. | Edit source files under `harnesses/pi/` and run `bun run build -- --yes && bun run bootstrap`. |
+| **`Build cancelled. Generated outputs changed outside the build`** | Hand-edited files in `.output/pi/` directly without modifying `harnesses/pi/`. | Edit source files under `harnesses/pi/` and run `just build --yes && just bootstrap`. |
 
 ---
 
@@ -34,7 +34,7 @@ In `harnesses/pi/settings.json`:
 ```
 Run build and bootstrap:
 ```bash
-bun run build -- --yes && bun run bootstrap
+just build --yes && just bootstrap
 ```
 
 ### 2. Fixing Corrupted Credential Store

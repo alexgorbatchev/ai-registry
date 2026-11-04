@@ -16,6 +16,6 @@ This package renders trusted repository text with EJS, preserving source filenam
 
 ## Validation
 
-- Run bun test packages/template-resolver and bun test packages/registry-cli from the repository root.
-- Run bun run build after resolver behavior changes and inspect generated outputs.
+- Run `just template-resolver test` and `just registry-cli test` from the repository root.
+- Run `just build` after resolver behavior changes and inspect generated outputs.
 - For executable behavior changes, add or update meaningful behavioral tests and apply the root [testing and coverage policy](../../AGENTS.md#development-workflow): at least 90% line coverage and 90% function coverage across this package's non-test source, including unexecuted files and excluding `scripts/` directories. Document and configure the command, source scope, metrics, and exclusions; handle blocking baseline failures under the prerequisite-repair policy. Do not weaken gates or make token test edits.

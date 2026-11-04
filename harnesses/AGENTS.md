@@ -5,7 +5,7 @@ This directory contains source-of-truth harness overrides and maintenance notes 
 ## General Rules
 
 - Keep harness-specific behavior inside `harnesses/<name>/`.
-- Only files under `harnesses/<name>/` are copied into that harness output during `bun run build`.
+- Only files under `harnesses/<name>/` are copied into that harness output during `just build`.
 - Shared repo-level system instruction fragments live under `system/`; they are referenced from harness configs, not copied verbatim into `.output/` unless a harness explicitly ships them. Each plugin receives `system/system.md` as `context.systemPromptPath` and copies it into its native memory file with `buildSupport.copyPathWithTemplateVariables(...)`, so generated edits recover into that source.
 - Do not place repo-only maintenance notes inside a harness subdirectory unless they are intentionally meant to ship into generated output.
 - If a unified harness needs custom output shaping beyond raw file copying, put the repo-local build plugin at `packages/registry-cli/src/harnesses/<name>/build.ts`.
@@ -27,7 +27,7 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 - Put Claude Code-only shipped skills under `harnesses/claude-code/skills/` (grouped into `agent/` and `user/`); they override registry skills of the same name.
 - Map registry commands to `commands/` and copy `system/system.md` to `CLAUDE.md`.
 - Claude Code writes `projects/`, `sessions/`, `todos/`, `history.jsonl`, `file-history/`, `plugins/`, and the rest of its runtime state into the real `~/.claude` home, never into `.output/`.
-- `bun run bootstrap` applies `.output/claude-code/` to `${CLAUDE_CONFIG_DIR:-~/.claude}`.
+- `just bootstrap` applies `.output/claude-code/` to `${CLAUDE_CONFIG_DIR:-~/.claude}`.
 - Do not generate a `claude` wrapper: the real `claude` binary already reads `~/.claude`, so nothing needs to shadow it.
 
 ## Codex
@@ -42,7 +42,7 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 - `config.toml` is a synced settings file: `/model`, MCP, and feature changes Codex saves flow back into `harnesses/codex/config.toml`, with comments preserved. each `projects` entry, `skills.config`, and `hooks.state` (keyed by local paths), `notify`, `marketplaces.openai-bundled`, `marketplaces.openai-primary-runtime`, `mcp_servers.node_repl` (except registry entries in `env.NODE_REPL_TRUSTED_SERVICES`, merged into its JSON object after live-only preservation while retaining app-added services), and `mcp_servers.cua_repl` (Codex and the ChatGPT desktop app point them at machine-local binaries and caches), `notice` and `tui.model_availability_nux` (acknowledgements and counters Codex stamps itself), and `mcp_servers.*.env` and `mcp_servers.*.http_headers` (credentials) are live-only. Runtime files such as `auth.json` remain Codex-owned under `CODEX_HOME` instead of being registry-managed.
 - The build trusts every git checkout under the folders listed in `AI_REGISTRY_CODEX_TRUSTED_DIRS` by adding `projects` entries to the generated `config.toml` (see Codex Project Trust in the root `AGENTS.md`). Keep `projects` live-only per entry so generated and Codex-recorded trust merge.
 - Codex writes sessions, SQLite state, worktrees, logs, and its app-server packages into the real `${CODEX_HOME:-~/.codex}` home, never into `.output/`. Codex adds system skills under the linked `skills/.system/`; the build leaves that unmanaged directory alone.
-- `bun run bootstrap` applies `.output/codex/` to `${CODEX_HOME:-~/.codex}`.
+- `just bootstrap` applies `.output/codex/` to `${CODEX_HOME:-~/.codex}`.
 - Do not generate a `codex` wrapper: the real `codex` binary already reads `${CODEX_HOME:-~/.codex}`, so nothing needs to shadow it.
 
 ## OpenCode
@@ -64,7 +64,7 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 - Keep the Pi unified-output plugin in `packages/registry-cli/src/harnesses/pi/build.ts`.
 - Map registry commands and `harnesses/pi/prompts/` to `prompts/`, copy `system/system.md` to `APPEND_SYSTEM.md`, and stage registry and Pi-only skills under `skills/`. Pi writes `sessions/` into the real `${PI_CODING_AGENT_DIR:-~/.pi/agent}` home.
 - `settings.json` is a synced settings file: model, theme, and thinking-level choices made in Pi flow back into `harnesses/pi/settings.json`. `lastChangelogVersion` and `extensionChangelogVersions` are live-only because Pi stamps them after Pi and extension updates.
-- `bun run bootstrap` applies `.output/pi/` to `${PI_CODING_AGENT_DIR:-~/.pi/agent}`.
+- `just bootstrap` applies `.output/pi/` to `${PI_CODING_AGENT_DIR:-~/.pi/agent}`.
 - Generate the `pi-install`, `pi-update`, and `pi-uninstall` helpers under `.output/bin/`. Do not generate a `pi` wrapper: the real `pi` binary already reads `${PI_CODING_AGENT_DIR:-~/.pi/agent}`, so nothing needs to shadow it.
 
 ## Local Source Code References
@@ -84,5 +84,5 @@ For each harness, we maintain its upstream source code locally in a `.tmp/` scra
 
 ## Maintenance
 
-- After editing anything in `harnesses/`, run `bun run build`.
+- After editing anything in `harnesses/`, run `just build`.
 - Verify the generated copies in `.output/`.

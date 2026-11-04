@@ -11,7 +11,7 @@ Active time is heuristic: it merges workflow activity intervals using a default 
 From this repository root:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts --help
+just session-analysis run --help
 ```
 
 After publishing:
@@ -23,43 +23,43 @@ bunx @alexgorbatchev/opencode-session-analysis --help
 Show session summaries for the current project:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts sessions
+just session-analysis run sessions
 ```
 
 Show one skill-usage table for the current project:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts skills
+just session-analysis run skills
 ```
 
 Aggregate all projects into one skill-usage table:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts skills --all
+just session-analysis run skills --all
 ```
 
 Aggregate root sessions across all projects into one table:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts sessions --all
+just session-analysis run sessions --all
 ```
 
 Show details for one root session in the current scope:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts sessions --session <id>
+just session-analysis run sessions --session <id>
 ```
 
 Interactively choose used skills from the current project and sync them into the project's `.opencode/skills` directory:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts skills --sync --pick
+just session-analysis run skills --sync --pick
 ```
 
 Reuse the saved selection manifest and refresh the synced copies without reopening the picker:
 
 ```bash
-bun run --cwd packages/opencode-session-analysis src/cli.ts skills --sync
+just session-analysis run skills --sync
 ```
 
 ## Commands

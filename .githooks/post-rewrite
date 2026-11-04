@@ -10,5 +10,5 @@ fi
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-printf '%s\n' "post-rewrite (rebase): running bun run bootstrap -- -y"
-bun run bootstrap -- -y
+printf '%s\n' "post-rewrite (rebase): running just bootstrap -y"
+just bootstrap -y

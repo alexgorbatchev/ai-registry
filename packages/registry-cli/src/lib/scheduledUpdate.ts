@@ -39,7 +39,7 @@ export async function scheduledUpdate(
   const hasPulled = await pullWithRebase(repositoryRoot, before, run);
   // Bootstrap on every run, not only after incoming commits: the build also syncs
   // settings the harnesses changed on this machine, leaving those edits uncommitted.
-  await run([bunExecutable, "run", "bootstrap", "--", "-y"]);
+  await run(["just", "bootstrap", "-y"]);
   if (!hasPulled) {
     // An unreconciled branch can only be rejected, so outgoing commits wait for a clean run.
     return "bootstrapped-without-pull";

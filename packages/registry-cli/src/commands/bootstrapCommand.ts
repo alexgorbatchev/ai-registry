@@ -124,17 +124,17 @@ export async function bootstrapCommand(dependencies: IBootstrapDependencies = cr
     console.log(`📦 Using overlay: ${overlay}\n`);
   }
 
-  console.log("Installing dependencies...");
+  console.log("Installing dependencies and Git hooks...");
   await runCommand({
-    cmd: ["bun", "install"],
+    cmd: ["just", "setup"],
     cwd: root,
-    description: "install dependencies",
+    description: "install dependencies and Git hooks",
     spawn: dependencies.spawn,
   });
 
   console.log("Building generated outputs...");
   await runCommand({
-    cmd: hasAutoConfirmFlag(dependencies.argv) ? ["bun", "run", "build", "--", "-y"] : ["bun", "run", "build"],
+    cmd: hasAutoConfirmFlag(dependencies.argv) ? ["just", "build", "-y"] : ["just", "build"],
     cwd: root,
     description: "build generated outputs",
     spawn: dependencies.spawn,

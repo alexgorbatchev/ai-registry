@@ -45,8 +45,8 @@ Review instructions for AI agent execution with concrete acceptance checks and a
 
 Write skill frontmatter descriptions using positive trigger conditions only. Never include negative triggers or exclusion clauses in `description`; place excluded tasks and operational boundaries in the skill body instead.
 
-Vendored skills must maintain their upstream `author` in `SKILL.md` frontmatter, which is automatically resolved and preserved during `bun run skills:add` and `bun run skills:update`. In generated harness outputs, skills not authored by `alexgorbatchev` are automatically prefixed as `<author>-<skill>`.
+Vendored skills must maintain their upstream `author` in `SKILL.md` frontmatter, which is automatically resolved and preserved during `just skills-add` and `just skills-update`. In generated harness outputs, skills not authored by `alexgorbatchev` are automatically prefixed as `<author>-<skill>`.
 
-After skill changes, validate the changed skill folders with `bun skills/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` from the repository root, then run `bun run build`.
+After skill changes, validate the changed skill folders with `bun skills/agent/skill-writer/scripts/quick-validate.ts <skill-dir>` from the repository root, then run `just build`.
 
 Automatically record explicit standing user instructions about skill authoring in this file without requiring a separate request to save them. Update an existing rule in place when the user clearly changes it. Keep one-task directions and session history out of this file. Ask only when the intended policy scope or resolution of a material conflict is unclear.

@@ -14,11 +14,6 @@
     "src",
     "tsconfig.json"
   ],
-  "scripts": {
-    "check": "bun run src/cli.ts --help",
-    "lint": "tsc -p tsconfig.json",
-    "test": "bun test src"
-  },
   "keywords": [
     "bun",
     "cli",

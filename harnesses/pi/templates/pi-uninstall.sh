@@ -12,4 +12,4 @@ export PI_CODING_AGENT_DIR="<%- repo_root %>/harnesses/pi"
 pi uninstall "$@"
 
 # Run build to update generated outputs
-cd "<%- repo_root %>" && bun run build
+cd "<%- repo_root %>" && just build

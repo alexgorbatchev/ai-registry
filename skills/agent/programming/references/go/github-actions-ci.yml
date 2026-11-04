@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  verify:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -16,27 +16,15 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Check module hygiene
-        run: go mod tidy -diff
+      - uses: extractions/setup-just@v4
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          install-only: true
 
       - name: Build
         run: go build ./...
 
-      - name: Vet
-        run: go vet ./...
-
-      - name: Test
-        run: go test -race ./...
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.11.4
+      - name: Check
+        run: just check

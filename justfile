@@ -63,6 +63,20 @@ test:
     just session-analysis test
     just disk-cleanup test
 
+# Apply formatting in every package
+fmt:
+    just registry-cli fmt
+    just template-resolver fmt
+    just session-analysis fmt
+    just disk-cleanup fmt
+
+# Apply lint fixes and formatting in every package
+fix:
+    just registry-cli fix
+    just template-resolver fix
+    just session-analysis fix
+    just disk-cleanup fix
+
 # Validate without modifying source files
 check: typecheck
     just registry-cli check

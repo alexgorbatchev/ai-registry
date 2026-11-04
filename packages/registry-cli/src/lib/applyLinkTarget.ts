@@ -28,7 +28,7 @@ async function getSymlinkType(sourcePath: string): Promise<"dir" | "file"> {
   try {
     const stat = await lstat(sourcePath);
     return stat.isDirectory() ? "dir" : "file";
-  } catch (error) {
+  } catch {
     return "dir";
   }
 }
@@ -36,7 +36,7 @@ async function getSymlinkType(sourcePath: string): Promise<"dir" | "file"> {
 async function resolveRealPathOrSelf(targetPath: string): Promise<string> {
   try {
     return await realpath(targetPath);
-  } catch (error) {
+  } catch {
     return targetPath;
   }
 }

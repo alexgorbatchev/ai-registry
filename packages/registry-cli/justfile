@@ -44,6 +44,31 @@ skills-add *args:
 skills-update:
     bun packages/registry-cli/src/bin/update-vendored-skills.ts
 
+# Apply formatting
+fmt:
+    bun run oxfmt src
+
+# Fail on unformatted files without rewriting them
+fmt-check:
+    bun run oxfmt --check src
+
+# Lint
+lint:
+    bun run oxlint --deny-warnings src
+
+# Apply lint fixes and formatting
+fix:
+    bun run oxlint --fix src
+    bun run oxfmt src
+
+# Type check
+typecheck:
+    bun run tsc -p tsconfig.json
+
+# Report unused exports, properties, and types
+unused:
+    bun run --bun ts-unused check tsconfig.json
+
 # Run the test suite
 test:
     bun test
@@ -54,4 +79,4 @@ coverage:
     bun src/bin/check-coverage.ts .tmp/coverage/lcov.info
 
 # Validate without modifying source files
-check: coverage
+check: fmt-check lint typecheck unused coverage

@@ -51,16 +51,8 @@ export type IBuildSupport = {
   ): Promise<void>;
   stageHarnessSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void>;
   writeBinScript(outputDir: string, filename: string, content: string): Promise<void>;
-  copyDirectoryWithTemplateVariables(
-    sourceDir: string,
-    targetDir: string,
-    templateContext: ITemplateContext,
-  ): Promise<void>;
-  copyPathWithTemplateVariables(
-    sourcePath: string,
-    targetPath: string,
-    templateContext: ITemplateContext,
-  ): Promise<void>;
+  copyDirectoryWithTemplateVariables(sourceDir: string, targetDir: string): Promise<void>;
+  copyPathWithTemplateVariables(sourcePath: string, targetPath: string): Promise<void>;
   // Marks a staged settings file the harness edits at runtime. The build keeps it
   // out of the manifest and reconciles it with its registry source on every run.
   syncSettingsFile(filePath: string, options?: ISyncedSettingsFileOptions): void;
@@ -238,7 +230,6 @@ function moveOriginalSourcePathForDirectory(
 async function copyFileWithTemplateVariables(
   sourcePath: string,
   targetPath: string,
-  templateContext: ITemplateContext,
   sourcePathByOutputPath?: ISourcePathByOutputPath,
 ): Promise<void> {
   await mkdir(dirname(targetPath), { recursive: true });
@@ -259,7 +250,6 @@ async function copyFileWithTemplateVariables(
 export async function copyDirectoryWithTemplateVariables(
   sourceDir: string,
   targetDir: string,
-  templateContext: ITemplateContext,
   sourcePathByOutputPath?: ISourcePathByOutputPath,
   hostname?: string,
 ): Promise<void> {
@@ -287,7 +277,7 @@ export async function copyDirectoryWithTemplateVariables(
       continue;
     }
 
-    await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath);
+    await copyFileWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath);
     await chmod(targetPath, sourceStats.mode);
   }
   if (skillSourcePath && skillSourcePath !== join(sourceDir, "SKILL.md")) {
@@ -298,7 +288,6 @@ export async function copyDirectoryWithTemplateVariables(
 export async function copyPathWithTemplateVariables(
   sourcePath: string,
   targetPath: string,
-  templateContext: ITemplateContext,
   sourcePathByOutputPath?: ISourcePathByOutputPath,
   hostname?: string,
 ): Promise<void> {
@@ -309,7 +298,7 @@ export async function copyPathWithTemplateVariables(
   }
 
   if (sourceStats.isDirectory()) {
-    await copyDirectoryWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath, hostname);
+    await copyDirectoryWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath, hostname);
     return;
   }
 
@@ -317,7 +306,7 @@ export async function copyPathWithTemplateVariables(
     return;
   }
 
-  await copyFileWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath);
+  await copyFileWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath);
   await chmod(targetPath, sourceStats.mode);
 }
 
@@ -451,7 +440,6 @@ export async function stageRegistryAssets(
       await context.buildSupport.copyPathWithTemplateVariables(
         assets.commandSourcePaths[command] ?? join(context.templateContext.commands_dir, command),
         outputPath,
-        context.templateContext,
       );
     }
   }
@@ -467,7 +455,7 @@ export async function stageRegistryAssets(
     const outputSkillName = getOutputSkillName(skill, skillAuthor);
     const outputPath = join(skillsDir, outputSkillName);
     if (existsSync(outputPath)) continue;
-    await context.buildSupport.copyDirectoryWithTemplateVariables(sourceDir, outputPath, context.templateContext);
+    await context.buildSupport.copyDirectoryWithTemplateVariables(sourceDir, outputPath);
 
     const generatedSkillFilePath = join(outputPath, "SKILL.md");
     if (existsSync(generatedSkillFilePath)) {
@@ -505,11 +493,7 @@ export async function stageHarnessSkills(context: IHarnessBuildContext, skillsDi
       await rm(outputPath, { recursive: true, force: true });
     }
 
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      harnessSkillEntry.sourcePath,
-      outputPath,
-      context.templateContext,
-    );
+    await context.buildSupport.copyDirectoryWithTemplateVariables(harnessSkillEntry.sourcePath, outputPath);
 
     const generatedSkillFilePath = join(outputPath, "SKILL.md");
     if (existsSync(generatedSkillFilePath)) {

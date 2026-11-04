@@ -56,9 +56,8 @@ function createRegistryAssetContext(repositoryRoot: string, assets: Partial<IReg
     },
     templateContext: { ...createTemplateContext(repositoryRoot), output_dir: join(repositoryRoot, "output") },
     buildSupport: {
-      copyDirectoryWithTemplateVariables: (source, target, ctx) =>
-        copyDirectoryWithTemplateVariables(source, target, ctx),
-      copyPathWithTemplateVariables: (source, target, ctx) => copyPathWithTemplateVariables(source, target, ctx),
+      copyDirectoryWithTemplateVariables: (source, target) => copyDirectoryWithTemplateVariables(source, target),
+      copyPathWithTemplateVariables: (source, target) => copyPathWithTemplateVariables(source, target),
       mergeDirectory: async () => {},
       stageHarnessSkills: async () => {},
       stageRegistryAssets: async () => {},
@@ -83,7 +82,7 @@ describe("harnessBuild template rendering", () => {
     const sourceChecksums = new Map<string, string>();
     const sourcePaths = Object.assign(new Map<string, string>(), { sourceChecksums });
 
-    await copyPathWithTemplateVariables(sourcePath, outputPath, {}, sourcePaths);
+    await copyPathWithTemplateVariables(sourcePath, outputPath, sourcePaths);
 
     const copiedBytes = await Bun.file(outputPath).bytes();
     expect(copiedBytes).toEqual(await Bun.file(sourcePath).bytes());
@@ -98,10 +97,10 @@ describe("harnessBuild template rendering", () => {
     const firstOutput = join(repositoryRoot, "staging", "first.json");
     const secondOutput = await writeTestFile(repositoryRoot, "staging/second.json", "previous copy");
     const sourcePaths = Object.assign(new Map<string, string>(), { sourceChecksums: new Map<string, string>() });
-    await copyPathWithTemplateVariables(sourcePath, firstOutput, {}, sourcePaths);
+    await copyPathWithTemplateVariables(sourcePath, firstOutput, sourcePaths);
     await Bun.write(sourcePath, "concurrent source edit");
 
-    await expect(copyPathWithTemplateVariables(sourcePath, secondOutput, {}, sourcePaths)).rejects.toThrow(
+    await expect(copyPathWithTemplateVariables(sourcePath, secondOutput, sourcePaths)).rejects.toThrow(
       `Source changed while staging generated outputs: ${sourcePath}`,
     );
     expect(await Bun.file(firstOutput).text()).toBe("original");
@@ -128,7 +127,7 @@ describe("harnessBuild template rendering", () => {
     );
     const sourcePathByOutputPath = new Map<string, string>();
 
-    await copyPathWithTemplateVariables(sourcePath, outputPath, templateContext, sourcePathByOutputPath);
+    await copyPathWithTemplateVariables(sourcePath, outputPath, sourcePathByOutputPath);
     await applyTemplateVariablesToGeneratedOutput(
       join(repositoryRoot, ".tmp", "generated-output-staging"),
       templateContext,
@@ -195,7 +194,6 @@ describe("harnessBuild template rendering", () => {
 
   it("respects .registry-ignore when copying a directory", async () => {
     const repositoryRoot = await createTestDirectory();
-    const templateContext = createTemplateContext(repositoryRoot);
 
     const sourceDir = join(repositoryRoot, "harness-source");
     const targetDir = join(repositoryRoot, "harness-target");
@@ -205,7 +203,7 @@ describe("harnessBuild template rendering", () => {
     await writeTestFile(sourceDir, ".tmp/some-source/file.txt", "source content");
     await writeTestFile(sourceDir, ".registry-ignore", "./fetch-source.sh\n./.tmp/\n");
 
-    await copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext);
+    await copyDirectoryWithTemplateVariables(sourceDir, targetDir);
 
     expect(existsSync(join(targetDir, "should-be-kept.txt"))).toBe(true);
     expect(existsSync(join(targetDir, "fetch-source.sh"))).toBe(false);
@@ -233,7 +231,7 @@ describe("harnessBuild template rendering", () => {
       output_dir: join(repositoryRoot, "output"),
     };
 
-    await copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext);
+    await copyDirectoryWithTemplateVariables(sourceDir, targetDir);
     await applyTemplateVariablesToGeneratedOutput(targetDir, templateContext);
 
     expect(await readFile(join(targetDir, "SKILL.md"), "utf-8")).toBe(
@@ -257,7 +255,7 @@ describe("harnessBuild template rendering", () => {
       output_dir: join(repositoryRoot, "output"),
     };
 
-    await copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext);
+    await copyDirectoryWithTemplateVariables(sourceDir, targetDir);
     await applyTemplateVariablesToGeneratedOutput(targetDir, templateContext);
 
     // Real files, not symlinks, so the generated copy can carry resolved tags.

@@ -5,7 +5,7 @@ This package provides tools and CLI commands for analyzing OpenCode session logs
 ## Commands
 
 - Test: `just session-analysis test` from the repository root, or `just test` in this package
-- Validate: `just session-analysis check` (type check, CLI help smoke run, tests)
+- Validate: `just session-analysis check` (Oxfmt and Oxlint checks, type check, ts-unused, CLI help smoke run, tests); `just session-analysis fix` applies formatting and lint fixes
 
 ## Boundaries & Quality Rules
 

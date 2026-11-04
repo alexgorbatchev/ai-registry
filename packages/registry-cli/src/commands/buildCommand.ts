@@ -313,23 +313,11 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   const settingsSyncRegistry = createSettingsSyncRegistry(GENERATED_OUTPUT_STAGING_DIR);
 
   const wrappedBuildSupport: IBuildSupport = {
-    copyDirectoryWithTemplateVariables: (sourceDir, targetDir, templateContext) => {
-      return copyDirectoryWithTemplateVariables(
-        sourceDir,
-        targetDir,
-        templateContext,
-        sourcePathByOutputPath,
-        buildHostname,
-      );
+    copyDirectoryWithTemplateVariables: (sourceDir, targetDir) => {
+      return copyDirectoryWithTemplateVariables(sourceDir, targetDir, sourcePathByOutputPath, buildHostname);
     },
-    copyPathWithTemplateVariables: (sourcePath, targetPath, templateContext) => {
-      return copyPathWithTemplateVariables(
-        sourcePath,
-        targetPath,
-        templateContext,
-        sourcePathByOutputPath,
-        buildHostname,
-      );
+    copyPathWithTemplateVariables: (sourcePath, targetPath) => {
+      return copyPathWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath, buildHostname);
     },
     mergeDirectory: (sourceDir, destinationDir, options) => {
       return mergeDirectory(sourceDir, destinationDir, options, sourcePathByOutputPath);

@@ -47,11 +47,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   const skillsDir = join(visibleOutputDir, "skills");
 
   await mkdir(visibleOutputDir, { recursive: true });
-  await context.buildSupport.copyDirectoryWithTemplateVariables(
-    context.harnessDir,
-    visibleOutputDir,
-    context.templateContext,
-  );
+  await context.buildSupport.copyDirectoryWithTemplateVariables(context.harnessDir, visibleOutputDir);
   // OpenCode's config updates and `mcp add` edit this file in place. MCP headers
   // and environment can carry credentials, so they stay out of the registry.
   const configPath = join(visibleOutputDir, CONFIG_FILE_NAME);

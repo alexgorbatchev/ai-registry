@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-04 12:10
+  last_modified: 2026-11-04 12:30
   status: current
 ---
 
@@ -142,7 +142,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Create the package under `packages/<package-name>/` beneath the repo_root token.
 - Use this for publishable tools that are distributed independently from generated harness outputs.
 - Add the package folder to the root `package.json` workspaces beneath the repo_root token.
-- Give the package its own `justfile` with `test` and `check` recipes and link it from the root `justfile` with `mod`. Define development tasks there, never as `package.json` scripts, and reach the package from root recipes only through `just <module> <recipe>`.
+- Give the package its own `justfile` with `test` and `check` recipes (for Bun packages, the quality recipes from the programming skill's Bun justfile) and link it from the root `justfile` with `mod`. Define development tasks there, never as `package.json` scripts, and reach the package from root recipes only through `just <module> <recipe>`.
 - Keep publishable package docs inside the package folder, such as `README.md`.
 - Run the package's narrowest validation plus any affected repo-level validation.
 

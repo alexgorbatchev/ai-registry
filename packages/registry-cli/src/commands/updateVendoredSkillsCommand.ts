@@ -9,7 +9,6 @@ import type { IVendoredSkillCommandDependencies } from "./addVendoredSkillComman
 type IVendoredSkillEntry = {
   source: string;
   ref?: string;
-  sourceType?: string;
 };
 
 type IVendoredSkillLock = {

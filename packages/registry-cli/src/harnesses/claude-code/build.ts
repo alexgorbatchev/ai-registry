@@ -16,11 +16,7 @@ async function stageHarnessFiles(context: IHarnessBuildContext, claudeCodeOutput
     return;
   }
 
-  await context.buildSupport.copyDirectoryWithTemplateVariables(
-    context.harnessDir,
-    claudeCodeOutputDir,
-    context.templateContext,
-  );
+  await context.buildSupport.copyDirectoryWithTemplateVariables(context.harnessDir, claudeCodeOutputDir);
 
   // Claude Code writes `/config`, `/model`, and installer changes back to this file.
   const settingsPath = join(claudeCodeOutputDir, SETTINGS_FILE_NAME);
@@ -40,18 +36,18 @@ filtered_path=""
 IFS=':' read -r -a path_entries <<< "\${PATH:-}"
 for path_entry in "\${path_entries[@]}"; do
   normalized_path="\${path_entry:-.}"
-  if [ "\$normalized_path" = "\$script_dir" ] || [ "\$normalized_path" = "\$generated_bin_dir" ]; then
+  if [ "$normalized_path" = "$script_dir" ] || [ "$normalized_path" = "$generated_bin_dir" ]; then
     continue
   fi
 
-  if [ -n "\$filtered_path" ]; then
-    filtered_path="\${filtered_path}:\$normalized_path"
+  if [ -n "$filtered_path" ]; then
+    filtered_path="\${filtered_path}:$normalized_path"
   else
-    filtered_path="\$normalized_path"
+    filtered_path="$normalized_path"
   fi
 done
 
-PATH="\$filtered_path"
+PATH="$filtered_path"
 export PATH
 
 real_binary=""
@@ -59,22 +55,22 @@ if command -v claude >/dev/null 2>&1; then
   real_binary="claude"
 else
   latest_backup=""
-  for backup_dir in "\$script_dir" "\$generated_bin_dir"; do
-    for backup_file in "\$backup_dir"/claude.backup-*; do
-      if [ -x "\$backup_file" ]; then
-        if [ -z "\$latest_backup" ] || [ "\$backup_file" -nt "\$latest_backup" ]; then
-          latest_backup="\$backup_file"
+  for backup_dir in "$script_dir" "$generated_bin_dir"; do
+    for backup_file in "$backup_dir"/claude.backup-*; do
+      if [ -x "$backup_file" ]; then
+        if [ -z "$latest_backup" ] || [ "$backup_file" -nt "$latest_backup" ]; then
+          latest_backup="$backup_file"
         fi
       fi
     done
   done
 
-  if [ -n "\$latest_backup" ]; then
-    real_binary="\$latest_backup"
+  if [ -n "$latest_backup" ]; then
+    real_binary="$latest_backup"
   fi
 fi
 
-if [ -z "\$real_binary" ]; then
+if [ -z "$real_binary" ]; then
   printf 'Could not find the real claude binary outside ai-registry wrapper paths.\\n' >&2
   exit 1
 fi
@@ -113,7 +109,7 @@ export ANTHROPIC_MODEL="$MODEL"
 export CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1
 export CLAUDE_CODE_MAX_CONTEXT_TOKENS="\${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-1000000}"
 
-exec "\$real_binary" --dangerously-skip-permissions --model "$MODEL" "\$@"
+exec "$real_binary" --dangerously-skip-permissions --model "$MODEL" "$@"
 `;
 }
 
@@ -126,7 +122,6 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await context.buildSupport.copyPathWithTemplateVariables(
     context.systemPromptPath,
     join(claudeCodeOutputDir, MEMORY_FILE_NAME),
-    context.templateContext,
   );
 
   await context.buildSupport.stageHarnessSkills(context, skillsDir);

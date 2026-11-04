@@ -2,6 +2,8 @@ import { existsSync } from "fs";
 import { readdir } from "fs/promises";
 import { join } from "path";
 
+import type { IAssetEntry } from "./userSkillUtils";
+
 export type IResolvedRegistryAssets = {
   names: string[];
   sourcePaths: Record<string, string>;
@@ -13,12 +15,6 @@ type IRegistryAssetConflict = {
   name: string;
   previousSource: string;
   selectedSource: string;
-};
-
-type IAssetEntry = {
-  name: string;
-  sourcePath: string;
-  isUser: boolean;
 };
 
 function isGroupedDirectory(targetDir: string): boolean {

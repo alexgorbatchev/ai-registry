@@ -23,11 +23,7 @@ async function copyOptionalHarnessPath(
 ): Promise<void> {
   const sourcePath = join(context.harnessDir, name);
   if (existsSync(sourcePath)) {
-    await context.buildSupport.copyPathWithTemplateVariables(
-      sourcePath,
-      join(piOutputDir, name),
-      context.templateContext,
-    );
+    await context.buildSupport.copyPathWithTemplateVariables(sourcePath, join(piOutputDir, name));
   }
 }
 
@@ -40,7 +36,6 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await context.buildSupport.copyPathWithTemplateVariables(
     context.systemPromptPath,
     join(piOutputDir, APPEND_SYSTEM_FILE_NAME),
-    context.templateContext,
   );
 
   await context.buildSupport.stageHarnessSkills(context, skillsDir);
@@ -48,11 +43,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), promptsDir);
 
   const settingsPath = join(piOutputDir, "settings.json");
-  await context.buildSupport.copyPathWithTemplateVariables(
-    join(context.harnessDir, "settings.json"),
-    settingsPath,
-    context.templateContext,
-  );
+  await context.buildSupport.copyPathWithTemplateVariables(join(context.harnessDir, "settings.json"), settingsPath);
   // Pi saves model, theme, and thinking-level choices here and stamps the
   // last-seen Pi and extension versions after updates; only the preferences sync back.
   context.buildSupport.syncSettingsFile(settingsPath, {

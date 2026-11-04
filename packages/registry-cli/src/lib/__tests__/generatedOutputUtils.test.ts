@@ -1,6 +1,5 @@
 import assert from "node:assert";
 import { afterAll, describe, expect, it } from "bun:test";
-import { existsSync } from "fs";
 import { mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 

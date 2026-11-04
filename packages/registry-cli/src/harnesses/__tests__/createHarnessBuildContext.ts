@@ -57,10 +57,10 @@ export function createHarnessBuildContext(
       stageHarnessSkills,
       stageRegistryAssets,
       writeBinScript,
-      copyDirectoryWithTemplateVariables: (sourceDir, targetDir, templateContext) =>
-        copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext, sourcePathByOutputPath),
-      copyPathWithTemplateVariables: (sourcePath, targetPath, templateContext) =>
-        copyPathWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath),
+      copyDirectoryWithTemplateVariables: (sourceDir, targetDir) =>
+        copyDirectoryWithTemplateVariables(sourceDir, targetDir, sourcePathByOutputPath),
+      copyPathWithTemplateVariables: (sourcePath, targetPath) =>
+        copyPathWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath),
       syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
     },
   };

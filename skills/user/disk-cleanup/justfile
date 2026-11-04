@@ -29,9 +29,13 @@ fix:
 typecheck:
     bun run tsc --noEmit
 
+# Report unused exports, properties, and types
+unused:
+    bun run --bun ts-unused check tsconfig.json
+
 # Run the test suite
 test:
     bun test scripts/__tests__
 
 # Validate without modifying source files
-check: typecheck fmt-check lint test
+check: fmt-check lint typecheck unused test

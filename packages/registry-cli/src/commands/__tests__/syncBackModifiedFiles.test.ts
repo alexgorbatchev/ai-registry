@@ -1,7 +1,6 @@
 import { afterAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
-import { existsSync } from "fs";
 
 import { assertGeneratedOutputsAreSafeToReplace, syncBackModifiedFiles } from "../buildCommand";
 import type { IGeneratedOutputDrift } from "../../lib/generatedOutputUtils";
@@ -329,7 +328,6 @@ describe("syncBackModifiedFiles", () => {
     await copyDirectoryWithTemplateVariables(
       sourceDir,
       dirname(join(nextOutputDir, relativePath)),
-      {},
       sourcePaths,
       "workstation-a",
     );

@@ -58,7 +58,6 @@ function isGeneratedOutputManifest(value: unknown): value is IGeneratedOutputMan
 }
 
 type ILegacyGeneratedOutputManifest = {
-  version: 1;
   generatedAt: string;
   files: Record<string, string>;
 };

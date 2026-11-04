@@ -3,14 +3,11 @@ import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import type { Option } from "@clack/prompts";
+
 import type { ISkillUsageCountEntry } from "./createSkillUsageReport";
 
-export interface ISkillSyncPickerOption {
-  disabled: boolean;
-  hint?: string;
-  label: string;
-  value: string;
-}
+export type ISkillSyncPickerOption = Option<string>;
 
 interface ISkillSyncManifest {
   version: number;

@@ -114,14 +114,14 @@ export function isUserSkillPath(targetPath: string): boolean {
   );
 }
 
-export type IHarnessSkillEntry = {
+export type IAssetEntry = {
   name: string;
   sourcePath: string;
   isUser: boolean;
 };
 
-export async function readHarnessSkillEntries(harnessSkillsDir: string): Promise<IHarnessSkillEntry[]> {
-  const assetMap = new Map<string, IHarnessSkillEntry>();
+export async function readHarnessSkillEntries(harnessSkillsDir: string): Promise<IAssetEntry[]> {
+  const assetMap = new Map<string, IAssetEntry>();
   if (!existsSync(harnessSkillsDir)) {
     return [];
   }

@@ -26,7 +26,7 @@ function fail(message: string): never {
 async function assertPathExists(path: string): Promise<void> {
   try {
     await lstat(path);
-  } catch (error) {
+  } catch {
     fail(`Expected path to exist: ${path}`);
   }
 }

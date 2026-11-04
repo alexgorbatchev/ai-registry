@@ -36,6 +36,9 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.12",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0",
+    "ts-unused": "^3.7.2",
     "typescript": "rc"
   }
 }

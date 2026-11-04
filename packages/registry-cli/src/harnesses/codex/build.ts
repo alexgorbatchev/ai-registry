@@ -65,7 +65,7 @@ async function stageCodexConfig(context: IHarnessBuildContext, codexOutputDir: s
   }
 
   const configPath = join(codexOutputDir, CONFIG_FILE_NAME);
-  await context.buildSupport.copyPathWithTemplateVariables(sourceConfigPath, configPath, context.templateContext);
+  await context.buildSupport.copyPathWithTemplateVariables(sourceConfigPath, configPath);
   await trustListedProjects(context, configPath);
   context.buildSupport.syncSettingsFile(configPath, {
     liveOnlyKeyPaths: CODEX_LIVE_ONLY_KEY_PATHS,
@@ -79,11 +79,7 @@ async function stageHarnessRules(context: IHarnessBuildContext, codexOutputDir: 
     return;
   }
 
-  await context.buildSupport.copyDirectoryWithTemplateVariables(
-    harnessRulesDir,
-    join(codexOutputDir, "rules"),
-    context.templateContext,
-  );
+  await context.buildSupport.copyDirectoryWithTemplateVariables(harnessRulesDir, join(codexOutputDir, "rules"));
 }
 
 // Commands become native skills that only explicit invocation can load.
@@ -103,11 +99,7 @@ async function stageCommandSkills(context: IHarnessBuildContext, skillsDir: stri
       throw new Error(`Codex command skill ${skillName} collides with a skill of the same name.`);
     }
 
-    await context.buildSupport.copyPathWithTemplateVariables(
-      sourcePath,
-      join(skillDir, "SKILL.md"),
-      context.templateContext,
-    );
+    await context.buildSupport.copyPathWithTemplateVariables(sourcePath, join(skillDir, "SKILL.md"));
     await mkdir(join(skillDir, "agents"), { recursive: true });
     await Bun.write(join(skillDir, "agents", "openai.yaml"), "policy:\n  allow_implicit_invocation: false\n");
   }
@@ -118,11 +110,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   const skillsDir = join(codexOutputDir, "skills");
 
   await mkdir(skillsDir, { recursive: true });
-  await context.buildSupport.copyPathWithTemplateVariables(
-    context.systemPromptPath,
-    join(codexOutputDir, "AGENTS.md"),
-    context.templateContext,
-  );
+  await context.buildSupport.copyPathWithTemplateVariables(context.systemPromptPath, join(codexOutputDir, "AGENTS.md"));
   await stageCodexConfig(context, codexOutputDir);
   await stageHarnessRules(context, codexOutputDir);
   await context.buildSupport.stageHarnessSkills(context, skillsDir);

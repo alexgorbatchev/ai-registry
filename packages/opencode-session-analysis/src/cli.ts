@@ -4,7 +4,7 @@ import { cancel, confirm, isCancel, multiselect } from "@clack/prompts";
 import { createSkillUsageReport } from "./createSkillUsageReport";
 import { formatSkillUsageReport } from "./formatSkillUsageReport";
 import { readSyncableSkillSources } from "./readSyncableSkillSources";
-import { syncProjectSkills } from "./syncProjectSkills";
+import { syncProjectSkills, type ISkillSyncPickerOption } from "./syncProjectSkills";
 import { Database } from "bun:sqlite";
 import { Command } from "commander";
 import { existsSync } from "node:fs";
@@ -26,25 +26,16 @@ interface ISessionsCommandOptions {
 
 interface ISessionRow {
   id: string;
-  project_id: string;
   parent_id: string | null;
-  slug: string;
   directory: string;
   title: string;
   time_created: number;
   time_updated: number;
-  time_archived: number | null;
   project_worktree: string;
 }
 
-interface IMessageRow {
-  session_id: string;
-  time_created: number;
-  time_updated: number;
-  data: string;
-}
-
-interface IPartRow {
+// A message or part row: session-scoped JSON data with its timestamps.
+interface ISessionDataRow {
   session_id: string;
   time_created: number;
   time_updated: number;
@@ -384,7 +375,7 @@ function getInteractiveSelectionErrorMessage(): string {
 
 async function promptForSkillSelection(args: {
   initialValues: readonly string[];
-  options: readonly { disabled: boolean; hint?: string; label: string; value: string }[];
+  options: readonly ISkillSyncPickerOption[];
 }): Promise<readonly string[]> {
   const selection = await multiselect({
     message: "Select used skills to sync into .opencode/skills",
@@ -428,14 +419,11 @@ function readSessions(database: Database): ISessionRow[] {
       `
         SELECT
           s.id,
-          s.project_id,
           s.parent_id,
-          s.slug,
           s.directory,
           s.title,
           s.time_created,
           s.time_updated,
-          s.time_archived,
           p.worktree AS project_worktree
         FROM session s
         JOIN project p ON p.id = s.project_id
@@ -445,9 +433,9 @@ function readSessions(database: Database): ISessionRow[] {
     .all();
 }
 
-function readAssistantMessages(database: Database): IMessageRow[] {
+function readAssistantMessages(database: Database): ISessionDataRow[] {
   return database
-    .query<IMessageRow, []>(
+    .query<ISessionDataRow, []>(
       `
         SELECT session_id, time_created, time_updated, data
         FROM message
@@ -458,9 +446,9 @@ function readAssistantMessages(database: Database): IMessageRow[] {
     .all();
 }
 
-function readToolParts(database: Database): IPartRow[] {
+function readToolParts(database: Database): ISessionDataRow[] {
   return database
-    .query<IPartRow, []>(
+    .query<ISessionDataRow, []>(
       `
         SELECT session_id, time_created, time_updated, data
         FROM part
@@ -584,20 +572,20 @@ function extractMcpServerNames(partData: unknown): string[] {
 function buildReports(
   rootSessions: ISessionRow[],
   allSessions: ISessionRow[],
-  assistantMessages: IMessageRow[],
-  toolParts: IPartRow[],
+  assistantMessages: ISessionDataRow[],
+  toolParts: ISessionDataRow[],
 ): ISessionReport[] {
   const sessionById = new Map(allSessions.map((session) => [session.id, session]));
   const childrenByParentId = buildChildrenMap(allSessions);
 
-  const assistantMessagesBySessionId = new Map<string, IMessageRow[]>();
+  const assistantMessagesBySessionId = new Map<string, ISessionDataRow[]>();
   for (const message of assistantMessages) {
     const sessionMessages = assistantMessagesBySessionId.get(message.session_id) ?? [];
     sessionMessages.push(message);
     assistantMessagesBySessionId.set(message.session_id, sessionMessages);
   }
 
-  const toolPartsBySessionId = new Map<string, IPartRow[]>();
+  const toolPartsBySessionId = new Map<string, ISessionDataRow[]>();
   for (const part of toolParts) {
     const sessionParts = toolPartsBySessionId.get(part.session_id) ?? [];
     sessionParts.push(part);

@@ -1,6 +1,31 @@
+# Apply formatting
+fmt:
+    bun run oxfmt src
+
+# Fail on unformatted files without rewriting them
+fmt-check:
+    bun run oxfmt --check src
+
+# Lint
+lint:
+    bun run oxlint --deny-warnings src
+
+# Apply lint fixes and formatting
+fix:
+    bun run oxlint --fix src
+    bun run oxfmt src
+
+# Type check
+typecheck:
+    bun run tsc -p tsconfig.json
+
+# Report unused exports, properties, and types
+unused:
+    bun run --bun ts-unused check tsconfig.json
+
 # Run the test suite
 test:
     bun test
 
 # Validate without modifying source files
-check: test
+check: fmt-check lint typecheck unused test

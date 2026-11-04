@@ -60,7 +60,7 @@ function isGitHubContentEntryList(value: unknown): value is IGitHubContentEntry[
   return Array.isArray(value) && value.every((entry) => isGitHubContentEntry(entry));
 }
 
-function getGitHubHeaders(token: string | undefined): HeadersInit {
+function getGitHubHeaders(token: string | undefined): Headers {
   const headers = new Headers({
     Accept: "application/vnd.github+json",
     "User-Agent": "ai-registry-opencode-docs-sync",

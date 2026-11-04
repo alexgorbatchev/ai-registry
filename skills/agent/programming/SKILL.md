@@ -1,10 +1,10 @@
 ---
 name: programming
-description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Tailwind, or justfiles.
+description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Tailwind, Swift, shell scripts, or justfiles.
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-04 10:13
+  last_modified: 2026-11-04 10:21
   status: current
 ---
 
@@ -22,7 +22,7 @@ Inspect the task's files, manifests, toolchain configuration, and repository ins
 | Tailwind integration, theme tokens, or utility scanning | [Bun/Tailwind integration](references/bun-tailwind/integration.md) and [setup](references/bun-tailwind/setup.md); apply Bun-specific wiring when the project uses Bun |
 | Creating, structuring, or refactoring justfiles | [Modular justfiles](references/just/modular-justfiles.md) |
 
-Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Select runtime commands from the actual project's tooling; Bun commands apply to Bun projects. Verify unfamiliar APIs against the installed version's source or official documentation.
+Swift and shell scripts have no language baseline here; for them, follow the project's own conventions and the work-tracking and POC sections below. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Select runtime commands from the actual project's tooling; Bun commands apply to Bun projects. Verify unfamiliar APIs against the installed version's source or official documentation.
 
 ## Topic references
 

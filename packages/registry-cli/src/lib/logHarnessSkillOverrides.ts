@@ -21,13 +21,13 @@ export async function logHarnessSkillOverrides(
   const overriddenSkills: string[] = [];
 
   for (const entry of harnessSkillEntries) {
-
     const isOverridingGlobal =
       existsSync(join(globalSkillsDir, "agent", entry.name)) ||
       existsSync(join(globalSkillsDir, "user", entry.name)) ||
       existsSync(join(globalSkillsDir, entry.name));
-    const isOverridingOverlay = overlaySkillsDirs.some((overlaySkillsDir) =>
-      existsSync(join(overlaySkillsDir, "agent", entry.name)) ||
+    const isOverridingOverlay = overlaySkillsDirs.some(
+      (overlaySkillsDir) =>
+        existsSync(join(overlaySkillsDir, "agent", entry.name)) ||
         existsSync(join(overlaySkillsDir, "user", entry.name)) ||
         existsSync(join(overlaySkillsDir, entry.name)),
     );

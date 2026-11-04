@@ -105,7 +105,10 @@ function getFallbackDownloadUrl(relativePath: string): string {
   return encodeURI(`${RAW_CONTENT_BASE_URL}/${SOURCE_DOCS_PATH}/${relativePath}`);
 }
 
-async function listDirectory(dependencies: ISyncOpencodeDocsDependencies, relativePath: string): Promise<IGitHubContentEntry[]> {
+async function listDirectory(
+  dependencies: ISyncOpencodeDocsDependencies,
+  relativePath: string,
+): Promise<IGitHubContentEntry[]> {
   const url = new URL(`${GITHUB_API_BASE_URL}/${getSourcePath(relativePath)}`);
   url.searchParams.set("ref", SOURCE_REF);
   const payload = await fetchJson(dependencies, url.toString());

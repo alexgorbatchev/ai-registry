@@ -38,9 +38,7 @@ export function getRegistryPaths(): IRegistryPaths {
   const uniqueOverlays = Array.from(new Set(resolvedOverlays.reverse())).reverse();
   for (const resolvedOverlay of uniqueOverlays) {
     if (!existsSync(resolvedOverlay)) {
-      console.warn(
-        `⚠️ Overlay directory does not exist: ${resolvedOverlay} (from AI_REGISTRY_OVERLAY)`,
-      );
+      console.warn(`⚠️ Overlay directory does not exist: ${resolvedOverlay} (from AI_REGISTRY_OVERLAY)`);
     } else {
       overlays.push(resolvedOverlay);
     }

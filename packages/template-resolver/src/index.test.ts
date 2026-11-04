@@ -13,11 +13,7 @@ async function createTestDirectory(): Promise<string> {
   return testDirectory;
 }
 
-async function writeRepositoryFile(
-  repositoryRoot: string,
-  relativePath: string,
-  content: string,
-): Promise<string> {
+async function writeRepositoryFile(repositoryRoot: string, relativePath: string, content: string): Promise<string> {
   const filePath = join(repositoryRoot, relativePath);
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, content, "utf-8");
@@ -39,25 +35,15 @@ test("renders variables, recursive includes, and environment values", async (): 
   const sourcePath = await writeRepositoryFile(
     repositoryRoot,
     "system/prompts/prompt.md",
-    [
-      "Agent root: <%- repo_root %>",
-      '<%- include("/shared/intro.md") %>',
-    ].join("\n"),
+    ["Agent root: <%- repo_root %>", '<%- include("/shared/intro.md") %>'].join("\n"),
   );
 
   await writeRepositoryFile(
     repositoryRoot,
     "shared/intro.md",
-    [
-      "Intro start",
-      '<%- include("/shared/footer.md") %>',
-    ].join("\n"),
+    ["Intro start", '<%- include("/shared/footer.md") %>'].join("\n"),
   );
-  await writeRepositoryFile(
-    repositoryRoot,
-    "shared/footer.md",
-    "Footer <%- env(\"TEST_TEMPLATE_VALUE\") %>",
-  );
+  await writeRepositoryFile(repositoryRoot, "shared/footer.md", 'Footer <%- env("TEST_TEMPLATE_VALUE") %>');
 
   const rendered = await renderTemplate({
     content: await Bun.file(sourcePath).text(),
@@ -71,11 +57,7 @@ test("renders variables, recursive includes, and environment values", async (): 
     },
   });
 
-  expect(rendered).toBe([
-    `Agent root: ${repositoryRoot}`,
-    "Intro start",
-    "Footer works",
-  ].join("\n"));
+  expect(rendered).toBe([`Agent root: ${repositoryRoot}`, "Intro start", "Footer works"].join("\n"));
 });
 
 test("renders file_path as the original source file across includes", async (): Promise<void> => {
@@ -86,11 +68,7 @@ test("renders file_path as the original source file across includes", async (): 
     '<%- include("/shared/intro.md") %>',
   );
 
-  await writeRepositoryFile(
-    repositoryRoot,
-    "shared/intro.md",
-    "Original file: <%- file_path %>",
-  );
+  await writeRepositoryFile(repositoryRoot, "shared/intro.md", "Original file: <%- file_path %>");
 
   const rendered = await renderTemplate({
     content: await Bun.file(sourcePath).text(),
@@ -111,11 +89,7 @@ test("renders file_dir as the original source directory across includes", async 
     '<%- include("/shared/intro.md") %>',
   );
 
-  await writeRepositoryFile(
-    repositoryRoot,
-    "shared/intro.md",
-    "Original dir: <%- file_dir %>",
-  );
+  await writeRepositoryFile(repositoryRoot, "shared/intro.md", "Original dir: <%- file_dir %>");
 
   const rendered = await renderTemplate({
     content: await Bun.file(sourcePath).text(),
@@ -149,64 +123,54 @@ test("uses the default for missing environment variables", async (): Promise<voi
 
 test("rejects includes that escape the repository root", async (): Promise<void> => {
   const repositoryRoot = await createTestDirectory();
-  const sourcePath = await writeRepositoryFile(
-    repositoryRoot,
-    "prompt.md",
-    '<%- include("../outside.md") %>',
-  );
+  const sourcePath = await writeRepositoryFile(repositoryRoot, "prompt.md", '<%- include("../outside.md") %>');
 
-  await expect(renderTemplate({
-    content: await Bun.file(sourcePath).text(),
-    sourcePath,
-    repositoryRoot,
-    variables: {},
-    environment: {},
-  })).rejects.toThrow("Include path escapes repository root");
+  await expect(
+    renderTemplate({
+      content: await Bun.file(sourcePath).text(),
+      sourcePath,
+      repositoryRoot,
+      variables: {},
+      environment: {},
+    }),
+  ).rejects.toThrow("Include path escapes repository root");
 });
 
 test("reports circular include chains", async (): Promise<void> => {
   const repositoryRoot = await createTestDirectory();
-  const sourcePath = await writeRepositoryFile(
-    repositoryRoot,
-    "a.md",
-    '<%- include("/b.md") %>',
-  );
+  const sourcePath = await writeRepositoryFile(repositoryRoot, "a.md", '<%- include("/b.md") %>');
 
   await writeRepositoryFile(repositoryRoot, "b.md", '<%- include("/a.md") %>');
 
-  await expect(renderTemplate({
-    content: await Bun.file(sourcePath).text(),
-    sourcePath,
-    repositoryRoot,
-    variables: {},
-    environment: {},
-  })).rejects.toThrow();
+  await expect(
+    renderTemplate({
+      content: await Bun.file(sourcePath).text(),
+      sourcePath,
+      repositoryRoot,
+      variables: {},
+      environment: {},
+    }),
+  ).rejects.toThrow();
 });
 
 test("reports the include stack for missing include files", async (): Promise<void> => {
   const repositoryRoot = await createTestDirectory();
-  const sourcePath = await writeRepositoryFile(
-    repositoryRoot,
-    "prompt.md",
-    '<%- include("/missing.md") %>',
-  );
+  const sourcePath = await writeRepositoryFile(repositoryRoot, "prompt.md", '<%- include("/missing.md") %>');
 
-  await expect(renderTemplate({
-    content: await Bun.file(sourcePath).text(),
-    sourcePath,
-    repositoryRoot,
-    variables: {},
-    environment: {},
-  })).rejects.toThrow("ENOENT");
+  await expect(
+    renderTemplate({
+      content: await Bun.file(sourcePath).text(),
+      sourcePath,
+      repositoryRoot,
+      variables: {},
+      environment: {},
+    }),
+  ).rejects.toThrow("ENOENT");
 });
 
 test("ignores GitHub Actions style expressions", async (): Promise<void> => {
   const repositoryRoot = await createTestDirectory();
-  const sourcePath = await writeRepositoryFile(
-    repositoryRoot,
-    "workflow.yml",
-    "token: ${{ secrets.GITHUB_TOKEN }}",
-  );
+  const sourcePath = await writeRepositoryFile(repositoryRoot, "workflow.yml", "token: ${{ secrets.GITHUB_TOKEN }}");
 
   const rendered = await renderTemplate({
     content: await Bun.file(sourcePath).text(),
@@ -221,11 +185,7 @@ test("ignores GitHub Actions style expressions", async (): Promise<void> => {
 
 test("ignores Go template expressions", async (): Promise<void> => {
   const repositoryRoot = await createTestDirectory();
-  const sourcePath = await writeRepositoryFile(
-    repositoryRoot,
-    "release.yml",
-    "ldflags: -X main.version={{.Version}}",
-  );
+  const sourcePath = await writeRepositoryFile(repositoryRoot, "release.yml", "ldflags: -X main.version={{.Version}}");
 
   const rendered = await renderTemplate({
     content: await Bun.file(sourcePath).text(),

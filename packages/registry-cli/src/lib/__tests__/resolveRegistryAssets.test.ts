@@ -35,7 +35,11 @@ describe("resolveRegistryAssets", () => {
     expect(result.sourcePaths).toEqual({ shared: join(last, "shared") });
     expect(Array.from(result.userSkillNames)).toEqual([]);
     expect(result.conflicts).toEqual([
-      { name: "shared", previousSource: join(baseSkills, "agent", "shared"), selectedSource: join(first, "user", "shared") },
+      {
+        name: "shared",
+        previousSource: join(baseSkills, "agent", "shared"),
+        selectedSource: join(first, "user", "shared"),
+      },
       { name: "shared", previousSource: join(first, "user", "shared"), selectedSource: join(last, "shared") },
     ]);
   });
@@ -49,7 +53,10 @@ describe("resolveRegistryAssets", () => {
     await Bun.write(join(first, "commands", "shared.md"), "first");
     await Bun.write(join(last, "commands", "shared.md"), "last");
 
-    const result = await resolveRegistryAssets(join(baseDir, "commands"), [join(first, "commands"), join(last, "commands")]);
+    const result = await resolveRegistryAssets(join(baseDir, "commands"), [
+      join(first, "commands"),
+      join(last, "commands"),
+    ]);
 
     expect(result.names).toEqual(["base-only.md", "shared.md"]);
     expect(await Bun.file(result.sourcePaths["shared.md"]!).text()).toBe("last");
@@ -125,7 +132,7 @@ describe("resolveRegistryAssets", () => {
     await mkdir(join(baseSkills, "user", "duplicate-skill"), { recursive: true });
 
     await expect(resolveRegistryAssets(baseSkills)).rejects.toThrow(
-      "Duplicate skill name \"duplicate-skill\" found in both agent and user",
+      'Duplicate skill name "duplicate-skill" found in both agent and user',
     );
   });
 

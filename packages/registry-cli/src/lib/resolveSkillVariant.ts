@@ -21,18 +21,23 @@ export function parseSkillIdentity(content: string, sourcePath: string): ISkillI
   const description: unknown = Reflect.get(frontmatter, "description");
   const author: unknown = Reflect.get(frontmatter, "author");
   if (
-    typeof name !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) ||
-    typeof description !== "string" || !description.trim() ||
-    typeof author !== "string" || !author.trim()
+    typeof name !== "string" ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) ||
+    typeof description !== "string" ||
+    !description.trim() ||
+    typeof author !== "string" ||
+    !author.trim()
   ) {
-    throw new Error(`Invalid hostname skill variant: ${sourcePath} requires a kebab-case name and non-empty description and author.`);
+    throw new Error(
+      `Invalid hostname skill variant: ${sourcePath} requires a kebab-case name and non-empty description and author.`,
+    );
   }
   return { name, author };
 }
 
 export async function resolveSkillVariant(sourceDir: string, hostname?: string): Promise<string | null> {
   const defaultPath = join(sourceDir, "SKILL.md");
-  if (!await Bun.file(defaultPath).exists()) return null;
+  if (!(await Bun.file(defaultPath).exists())) return null;
   if (hostname === undefined) return defaultPath;
 
   const variantsDir = join(sourceDir, "variants");

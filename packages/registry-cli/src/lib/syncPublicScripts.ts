@@ -23,7 +23,10 @@ export interface ISyncPublicScriptsResult {
 }
 
 function defaultGetTimestamp(): string {
-  return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  return new Date()
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
 }
 
 function getBackupPath(targetPath: string, getTimestamp: () => string): string {
@@ -31,7 +34,7 @@ function getBackupPath(targetPath: string, getTimestamp: () => string): string {
 }
 
 function isPublicScriptName(fileName: string): boolean {
-  return PUBLIC_SCRIPT_NAMES.has(fileName) || PUBLIC_SCRIPT_PREFIXES.some(prefix => fileName.startsWith(prefix));
+  return PUBLIC_SCRIPT_NAMES.has(fileName) || PUBLIC_SCRIPT_PREFIXES.some((prefix) => fileName.startsWith(prefix));
 }
 
 async function listPublicScriptNames(repositoryRoot: string): Promise<string[]> {
@@ -142,9 +145,12 @@ export async function syncPublicScripts(options: ISyncPublicScriptsOptions): Pro
   await mkdir(options.binDir, { recursive: true });
 
   const cleanedBrokenLinks = await cleanupBrokenPublicSymlinks(options.binDir);
-  
+
   const outputBinDir = join(options.repositoryRoot, ".output", "bin");
-  const publicScriptNames = await listPublicScriptNames(outputBinDir).catch((e) => { console.error("Caught error reading dir:", e); return []; });
+  const publicScriptNames = await listPublicScriptNames(outputBinDir).catch((e) => {
+    console.error("Caught error reading dir:", e);
+    return [];
+  });
 
   const linkedScripts: IPublicScriptLinkResult[] = [];
 

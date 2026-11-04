@@ -82,7 +82,13 @@ async function syncSettingsFile(file: ISyncedSettingsFile, options: ISyncSetting
   const liveText = await Bun.file(livePath).text();
   const live = parseSettingsText(liveText, livePath);
   const base = existsSync(basePath) ? parseSettingsText(await Bun.file(basePath).text(), basePath) : undefined;
-  const result = mergeSettingsValues({ base, live, source, liveOnlyKeyPaths: file.liveOnlyKeyPaths, sourceJsonObjectKeyPaths: file.sourceJsonObjectKeyPaths });
+  const result = mergeSettingsValues({
+    base,
+    live,
+    source,
+    liveOnlyKeyPaths: file.liveOnlyKeyPaths,
+    sourceJsonObjectKeyPaths: file.sourceJsonObjectKeyPaths,
+  });
 
   const nextLiveText = applySettingsChanges(liveText, listSettingsChanges(live, result.liveValue), livePath);
   if (nextLiveText !== liveText) {
@@ -132,12 +138,14 @@ export async function syncSettingsFiles(options: ISyncSettingsFilesOptions): Pro
     const writtenSourcePath = await syncSettingsFile(file, options);
     if (writtenSourcePath === null || options.shouldCommitSourceChanges === false) continue;
 
-    if (sourceState === "clean" && await options.sourceRepository.hasSecrets(writtenSourcePath)) {
+    if (sourceState === "clean" && (await options.sourceRepository.hasSecrets(writtenSourcePath))) {
       console.warn(`  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: gitleaks found possible secrets.`);
     } else if (sourceState === "clean") {
       committablePaths.push(writtenSourcePath);
     } else if (sourceState === "dirty") {
-      console.warn(`  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: it already had uncommitted edits.`);
+      console.warn(
+        `  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: it already had uncommitted edits.`,
+      );
     }
   }
 

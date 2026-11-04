@@ -123,10 +123,7 @@ async function getSourceCopyEntries(sourceDir: string): Promise<string[]> {
     .filter((entry) => !isIgnoredBySupplementalPrefixes(entry, supplementalIgnorePrefixes));
 }
 
-async function getSupplementalIgnorePrefixes(
-  sourceDir: string,
-  currentDir: string = sourceDir,
-): Promise<string[]> {
+async function getSupplementalIgnorePrefixes(sourceDir: string, currentDir: string = sourceDir): Promise<string[]> {
   const prefixes: string[] = [];
   const ignoreFilePath = join(currentDir, REGISTRY_IGNORE_FILE_NAME);
 
@@ -152,7 +149,7 @@ async function getSupplementalIgnorePrefixes(
       continue;
     }
 
-    prefixes.push(...await getSupplementalIgnorePrefixes(sourceDir, join(currentDir, entry.name)));
+    prefixes.push(...(await getSupplementalIgnorePrefixes(sourceDir, join(currentDir, entry.name))));
   }
 
   return prefixes;
@@ -218,7 +215,8 @@ function moveOriginalSourcePathForDirectory(
   const movedEntries: Array<{ currentOutputPath: string; nextOutputPath: string; originalSourcePath: string }> = [];
   for (const [currentOutputPath, originalSourcePath] of sourcePathByOutputPath.entries()) {
     const relativeOutputPath = relative(currentOutputDir, currentOutputPath);
-    const isDescendantPath = relativeOutputPath.length > 0 && !relativeOutputPath.startsWith("..") && !isAbsolute(relativeOutputPath);
+    const isDescendantPath =
+      relativeOutputPath.length > 0 && !relativeOutputPath.startsWith("..") && !isAbsolute(relativeOutputPath);
 
     if (!isDescendantPath) {
       continue;
@@ -271,9 +269,7 @@ export async function copyDirectoryWithTemplateVariables(
   const entries = await getSourceCopyEntries(sourceDir);
   for (const relativePath of entries) {
     if (skillSourcePath && (relativePath === "variants" || relativePath.startsWith("variants/"))) continue;
-    const sourcePath = skillSourcePath && relativePath === "SKILL.md"
-      ? skillSourcePath
-      : join(sourceDir, relativePath);
+    const sourcePath = skillSourcePath && relativePath === "SKILL.md" ? skillSourcePath : join(sourceDir, relativePath);
     const targetPath = join(targetDir, relativePath);
     const sourceStats = await lstat(sourcePath);
 
@@ -471,11 +467,7 @@ export async function stageRegistryAssets(
     const outputSkillName = getOutputSkillName(skill, skillAuthor);
     const outputPath = join(skillsDir, outputSkillName);
     if (existsSync(outputPath)) continue;
-    await context.buildSupport.copyDirectoryWithTemplateVariables(
-      sourceDir,
-      outputPath,
-      context.templateContext,
-    );
+    await context.buildSupport.copyDirectoryWithTemplateVariables(sourceDir, outputPath, context.templateContext);
 
     const generatedSkillFilePath = join(outputPath, "SKILL.md");
     if (existsSync(generatedSkillFilePath)) {
@@ -533,11 +525,7 @@ export async function stageHarnessSkills(context: IHarnessBuildContext, skillsDi
   }
 }
 
-export async function writeBinScript(
-  outputDir: string,
-  filename: string,
-  content: string
-): Promise<void> {
+export async function writeBinScript(outputDir: string, filename: string, content: string): Promise<void> {
   const binDir = join(outputDir, "bin");
   await mkdir(binDir, { recursive: true });
   const scriptPath = join(binDir, filename);

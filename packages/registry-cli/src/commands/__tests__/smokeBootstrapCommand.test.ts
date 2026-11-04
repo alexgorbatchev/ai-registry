@@ -5,7 +5,11 @@ import { dirname, join } from "path";
 import { smokeBootstrapCommand, type ISmokeBootstrapRunner } from "../smokeBootstrapCommand";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", ".tmp", "smoke-bootstrap-tests");
-const PUBLIC_SCRIPTS = ["air-opencode-conversation-extract", "air-opencode-session-analysis", "air-opencode-session-export"];
+const PUBLIC_SCRIPTS = [
+  "air-opencode-conversation-extract",
+  "air-opencode-session-analysis",
+  "air-opencode-session-export",
+];
 
 async function writeTestFile(filePath: string, content: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
@@ -36,7 +40,10 @@ async function emulateBootstrap(repositoryDir: string, environment: NodeJS.Proce
     await link(join(outputDir, "bin", scriptName), join(homeDir, ".local", "bin", scriptName));
   }
 
-  await link(join(outputDir, "opencode", "opencode.jsonc"), join(environment.XDG_CONFIG_HOME ?? "", "opencode", "opencode.jsonc"));
+  await link(
+    join(outputDir, "opencode", "opencode.jsonc"),
+    join(environment.XDG_CONFIG_HOME ?? "", "opencode", "opencode.jsonc"),
+  );
   await link(join(outputDir, "claude-code", "CLAUDE.md"), join(claudeHome, "CLAUDE.md"));
   await link(join(outputDir, "claude-code", "settings.json"), join(claudeHome, "settings.json"));
   await link(join(outputDir, "pi", "APPEND_SYSTEM.md"), join(piHome, "APPEND_SYSTEM.md"));

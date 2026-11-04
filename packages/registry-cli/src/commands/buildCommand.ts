@@ -1,12 +1,4 @@
-import {
-  lstat,
-  chmod,
-  mkdir,
-  mkdtemp,
-  rename,
-  rm,
-  writeFile,
-} from "fs/promises";
+import { lstat, chmod, mkdir, mkdtemp, rename, rm, writeFile } from "fs/promises";
 import { dirname, join, relative, sep } from "path";
 import { hostname } from "node:os";
 
@@ -83,13 +75,17 @@ export async function syncBackModifiedFiles(
       );
     }
     if (!nextSource) {
-      throw new Error(`Cannot recover ${entry.path}: no mapped source. Preserve the generated edit and resolve its source mapping before retrying.`);
+      throw new Error(
+        `Cannot recover ${entry.path}: no mapped source. Preserve the generated edit and resolve its source mapping before retrying.`,
+      );
     }
     const modifiedOutputPath = join(outputDir, entry.path);
     const filePaths = [nextSource, nextOutputPath, modifiedOutputPath];
     for (const path of filePaths) {
       if (!(await lstat(path)).isFile()) {
-        throw new Error(`Cannot recover ${entry.path}: ${path} is not a regular file. Preserve both versions and resolve the file type before retrying.`);
+        throw new Error(
+          `Cannot recover ${entry.path}: ${path} is not a regular file. Preserve both versions and resolve the file type before retrying.`,
+        );
       }
     }
     const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -103,26 +99,40 @@ export async function syncBackModifiedFiles(
         sourceTemplate = sourceTemplate.replaceAll(`<%- ${variable} %>`, "");
       }
       if (sourceTemplate.includes("<%")) {
-        throw new Error(`Cannot sync generated edits for ${entry.path}: edit the EJS template at ${nextSource} directly; expressions, includes, and control flow cannot be reconstructed from rendered output.`);
+        throw new Error(
+          `Cannot sync generated edits for ${entry.path}: edit the EJS template at ${nextSource} directly; expressions, includes, and control flow cannot be reconstructed from rendered output.`,
+        );
       }
     }
     const baseline = previousEntries[entry.path];
     const stagedEntry = stagedEntries[entry.path];
     if (baseline?.kind !== "file" || stagedEntry?.kind !== "file") {
-      throw new Error(`Cannot recover ${entry.path}: no verified file baseline. Preserve the generated edit and restore or reconcile the manifest before retrying.`);
+      throw new Error(
+        `Cannot recover ${entry.path}: no verified file baseline. Preserve the generated edit and restore or reconcile the manifest before retrying.`,
+      );
     }
     if (baseline.checksum !== stagedEntry.checksum) {
-      throw new Error(`Cannot recover ${entry.path}: source ${nextSource} and generated output both changed. Preserve both versions and reconcile their edits before retrying.`);
+      throw new Error(
+        `Cannot recover ${entry.path}: source ${nextSource} and generated output both changed. Preserve both versions and reconcile their edits before retrying.`,
+      );
     }
     const previousSourceChecksum = previousSourceChecksums[entry.path];
     if (previousSourceChecksum === undefined) {
-      throw new Error(`Cannot recover ${entry.path}: no source fingerprint in the manifest. Preserve the generated edit and reconcile it into source before establishing a fresh baseline.`);
+      throw new Error(
+        `Cannot recover ${entry.path}: no source fingerprint in the manifest. Preserve the generated edit and reconcile it into source before establishing a fresh baseline.`,
+      );
     }
     const sourceChecksum = new Bun.CryptoHasher("sha256").update(originalSource).digest("hex");
     if (sourceChecksum !== previousSourceChecksum) {
-      throw new Error(`Cannot recover ${entry.path}: source ${nextSource} changed since generation. Preserve both versions and reconcile their edits before retrying.`);
+      throw new Error(
+        `Cannot recover ${entry.path}: source ${nextSource} changed since generation. Preserve both versions and reconcile their edits before retrying.`,
+      );
     }
-    const context: Record<string, string> = { ...templateContext, file_path: nextSource, file_dir: dirname(nextSource) };
+    const context: Record<string, string> = {
+      ...templateContext,
+      file_path: nextSource,
+      file_dir: dirname(nextSource),
+    };
     const reverseContent = (content: string, variables: Record<string, string> = context): string => {
       let recovered = reverseTemplateContent(content, variables);
       if (isUserSkillPath(nextSource) && nextSource.endsWith("SKILL.md")) {
@@ -136,27 +146,47 @@ export async function syncBackModifiedFiles(
     const originalVariables = Object.fromEntries(
       Object.entries(context).filter(([name]) => originalSource.includes(`<%- ${name} %>`)),
     );
-    if (originalSource.includes("\0") || modifiedContent.includes("\0") || reverseContent(stagedContent, originalVariables) !== originalSource) {
-      throw new Error(`Cannot recover ${entry.path}: generated transformations cannot be reversed exactly into ${nextSource}. Preserve both versions and edit the source directly.`);
+    if (
+      originalSource.includes("\0") ||
+      modifiedContent.includes("\0") ||
+      reverseContent(stagedContent, originalVariables) !== originalSource
+    ) {
+      throw new Error(
+        `Cannot recover ${entry.path}: generated transformations cannot be reversed exactly into ${nextSource}. Preserve both versions and edit the source directly.`,
+      );
     }
     const recoveredContent = reverseContent(modifiedContent);
     const previousRecovery = recoveryBySource.get(nextSource);
     if (previousRecovery && previousRecovery.recoveredContent !== recoveredContent) {
-      throw new Error(`Cannot recover ${entry.path}: harness copies ${previousRecovery.outputPath} and ${entry.path} contain conflicting edits for ${nextSource}. Preserve both copies and reconcile them before retrying.`);
+      throw new Error(
+        `Cannot recover ${entry.path}: harness copies ${previousRecovery.outputPath} and ${entry.path} contain conflicting edits for ${nextSource}. Preserve both copies and reconcile them before retrying.`,
+      );
     }
-    recoveryBySource.set(nextSource, { sourcePath: nextSource, originalSource, recoveredContent, outputPath: entry.path });
+    recoveryBySource.set(nextSource, {
+      sourcePath: nextSource,
+      originalSource,
+      recoveredContent,
+      outputPath: entry.path,
+    });
   }
   if (recoveryBySource.size > 0 && !canRecoverEdits) {
-    throw new Error("Generated files changed again during regeneration. Output application is suspended; preserve the edits and retry after reconciliation.");
+    throw new Error(
+      "Generated files changed again during regeneration. Output application is suspended; preserve the edits and retry after reconciliation.",
+    );
   }
   for (const recovery of recoveryBySource.values()) {
-    if (await Bun.file(recovery.sourcePath).text() !== recovery.originalSource) {
-      throw new Error(`Cannot recover ${recovery.outputPath}: source ${recovery.sourcePath} changed during recovery. Preserve both versions and retry after reconciliation.`);
+    if ((await Bun.file(recovery.sourcePath).text()) !== recovery.originalSource) {
+      throw new Error(
+        `Cannot recover ${recovery.outputPath}: source ${recovery.sourcePath} changed during recovery. Preserve both versions and retry after reconciliation.`,
+      );
     }
     try {
       await saveSource(recovery.sourcePath, recovery.recoveredContent, recovery.originalSource);
     } catch (error) {
-      throw new Error(`Cannot save recovered edit for ${recovery.outputPath} to ${recovery.sourcePath}; generated output is preserved. Resolve the save failure before retrying.`, { cause: error });
+      throw new Error(
+        `Cannot save recovered edit for ${recovery.outputPath} to ${recovery.sourcePath}; generated output is preserved. Resolve the save failure before retrying.`,
+        { cause: error },
+      );
     }
   }
   return recoveryBySource.size > 0;
@@ -177,7 +207,7 @@ async function saveRecoveredSource(sourcePath: string, content: string, original
   try {
     await Bun.write(recoveryPath, content);
     const sourceStat = await lstat(sourcePath);
-    if (!sourceStat.isFile() || await Bun.file(sourcePath).text() !== originalContent) {
+    if (!sourceStat.isFile() || (await Bun.file(sourcePath).text()) !== originalContent) {
       throw new Error(`Source changed while preparing recovery: ${sourcePath}`);
     }
     await chmod(recoveryPath, sourceStat.mode);
@@ -239,11 +269,7 @@ async function writeGeneratedOutputManifest(
     }),
   );
 
-  await writeFile(
-    join(outputDir, GENERATED_OUTPUT_MANIFEST_NAME),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-    "utf-8",
-  );
+  await writeFile(join(outputDir, GENERATED_OUTPUT_MANIFEST_NAME), `${JSON.stringify(manifest, null, 2)}\n`, "utf-8");
   await rm(join(outputDir, LEGACY_GENERATED_OUTPUT_MANIFEST_NAME), { force: true });
 }
 
@@ -262,7 +288,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   const buildHostname = resolveBuildHostname(process.env.AI_REGISTRY_HOSTNAME, hostname());
   const { root, overlays, output, harnesses, skills, commands, systemPrompt, temp } =
     options.registryPaths ?? getRegistryPaths();
-  
+
   const GENERATED_OUTPUT_STAGING_DIR = join(temp, "generated-output-staging");
   const TEMPLATE_CONTEXT = {
     repo_root: root,
@@ -288,10 +314,22 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
 
   const wrappedBuildSupport: IBuildSupport = {
     copyDirectoryWithTemplateVariables: (sourceDir, targetDir, templateContext) => {
-      return copyDirectoryWithTemplateVariables(sourceDir, targetDir, templateContext, sourcePathByOutputPath, buildHostname);
+      return copyDirectoryWithTemplateVariables(
+        sourceDir,
+        targetDir,
+        templateContext,
+        sourcePathByOutputPath,
+        buildHostname,
+      );
     },
     copyPathWithTemplateVariables: (sourcePath, targetPath, templateContext) => {
-      return copyPathWithTemplateVariables(sourcePath, targetPath, templateContext, sourcePathByOutputPath, buildHostname);
+      return copyPathWithTemplateVariables(
+        sourcePath,
+        targetPath,
+        templateContext,
+        sourcePathByOutputPath,
+        buildHostname,
+      );
     },
     mergeDirectory: (sourceDir, destinationDir, options) => {
       return mergeDirectory(sourceDir, destinationDir, options, sourcePathByOutputPath);
@@ -310,7 +348,9 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   ]);
 
   for (const conflict of resolvedSkills.conflicts) {
-    console.log(`NOTE: Skill "${conflict.name}" conflict: ${conflict.selectedSource} replaces ${conflict.previousSource}`);
+    console.log(
+      `NOTE: Skill "${conflict.name}" conflict: ${conflict.selectedSource} replaces ${conflict.previousSource}`,
+    );
   }
 
   const assets: IRegistryAssets = {

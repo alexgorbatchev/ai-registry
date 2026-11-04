@@ -16,7 +16,9 @@ describe("applySettingsChanges", () => {
     );
 
     expect(nextText).toBe(
-      ["{", "  // shared theme", '  "theme": "light",', '  "plugin": [', '    "a",', '    "b"', "  ]", "}", ""].join("\n"),
+      ["{", "  // shared theme", '  "theme": "light",', '  "plugin": [', '    "a",', '    "b"', "  ]", "}", ""].join(
+        "\n",
+      ),
     );
   });
 
@@ -66,7 +68,9 @@ describe("applySettingsChanges", () => {
   });
 
   it("edits TOML in place and keeps comments", () => {
-    const text = ['# shared defaults', 'model = "gpt-5"', "", "[features]", "# experimental", "goals = true", ""].join("\n");
+    const text = ["# shared defaults", 'model = "gpt-5"', "", "[features]", "# experimental", "goals = true", ""].join(
+      "\n",
+    );
 
     const nextText = applySettingsChanges(
       text,

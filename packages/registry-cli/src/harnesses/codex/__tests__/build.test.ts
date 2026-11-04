@@ -30,7 +30,7 @@ async function writeTestFile(rootDir: string, relativePath: string, content: str
 
 async function writeHarnessFixture(repositoryRoot: string): Promise<void> {
   await writeTestFile(repositoryRoot, "system/system.md", "Follow the repo guidance.\nEscalate risky changes.\n");
-  await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", "model = \"gpt-5.5\"\n");
+  await writeTestFile(repositoryRoot, "harnesses/codex/config.toml", 'model = "gpt-5.5"\n');
 }
 
 function buildOutput(repositoryRoot: string, options: IHarnessBuildContextOptions = {}): Promise<void> {
@@ -65,8 +65,16 @@ describe("Codex harness build plugin", () => {
   it("builds the Codex root with instructions, config, rules, skills, and command skills", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);
-    await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Test workflow\n---\nReview the changes.\n");
-    await writeTestFile(repositoryRoot, "harnesses/codex/rules/default.rules", "prefix_rule(pattern = [\"git\", \"reset\"], decision = \"forbidden\")\n");
+    await writeTestFile(
+      repositoryRoot,
+      "commands/review.md",
+      "---\ndescription: Test workflow\n---\nReview the changes.\n",
+    );
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/codex/rules/default.rules",
+      'prefix_rule(pattern = ["git", "reset"], decision = "forbidden")\n',
+    );
     await writeTestFile(repositoryRoot, "harnesses/codex/skills/harness-skill/SKILL.md", "# Harness skill\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
 
@@ -74,8 +82,9 @@ describe("Codex harness build plugin", () => {
 
     const outputDir = join(repositoryRoot, ".output", "codex");
     expect(existsSync(join(outputDir, "prompts"))).toBe(false);
-    expect(await Bun.file(join(outputDir, "skills", "command-review", "agents", "openai.yaml")).text())
-      .toBe("policy:\n  allow_implicit_invocation: false\n");
+    expect(await Bun.file(join(outputDir, "skills", "command-review", "agents", "openai.yaml")).text()).toBe(
+      "policy:\n  allow_implicit_invocation: false\n",
+    );
     expect(await readFile(join(outputDir, "AGENTS.md"), "utf-8")).toBe(
       "Follow the repo guidance.\nEscalate risky changes.\n",
     );
@@ -91,9 +100,9 @@ describe("Codex harness build plugin", () => {
     expect(await readFile(join(outputDir, "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe("# Shared skill\n");
     expect(await readFile(join(outputDir, "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe("# Harness skill\n");
     expect(await readFile(join(outputDir, "rules", "default.rules"), "utf-8")).toBe(
-      "prefix_rule(pattern = [\"git\", \"reset\"], decision = \"forbidden\")\n",
+      'prefix_rule(pattern = ["git", "reset"], decision = "forbidden")\n',
     );
-    expect(await readFile(join(outputDir, "config.toml"), "utf-8")).toBe("model = \"gpt-5.5\"\n");
+    expect(await readFile(join(outputDir, "config.toml"), "utf-8")).toBe('model = "gpt-5.5"\n');
     expect(existsSync(join(repositoryRoot, ".output", "bin"))).toBe(false);
   });
 
@@ -143,7 +152,9 @@ describe("Codex harness build plugin", () => {
         [join(repositoryRoot, "projects", "tool")]: { trust_level: "trusted" },
       },
     });
-    expect(await readFile(join(repositoryRoot, "harnesses", "codex", "config.toml"), "utf-8")).toBe("model = \"gpt-5.5\"\n");
+    expect(await readFile(join(repositoryRoot, "harnesses", "codex", "config.toml"), "utf-8")).toBe(
+      'model = "gpt-5.5"\n',
+    );
   });
 
   it("fails when the harness config is missing", async () => {
@@ -228,27 +239,37 @@ describe("Codex harness build plugin", () => {
     await writeTestFile(repositoryRoot, "commands/--review.md", "---\ndescription: Review changes\n---\nReview.\n");
     await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Review changes\n---\nReview again.\n");
 
-    await expect(buildOutput(repositoryRoot, { commands: ["--review.md", "review.md"] }))
-      .rejects.toThrow("Duplicate Codex command skill name: command-review");
+    await expect(buildOutput(repositoryRoot, { commands: ["--review.md", "review.md"] })).rejects.toThrow(
+      "Duplicate Codex command skill name: command-review",
+    );
   });
 
   it("rejects a command that collides with a selected skill and keeps the skill", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Review changes\n---\nReview.\n");
-    await writeTestFile(repositoryRoot, "skills/command-review/SKILL.md", "---\nname: command-review\ndescription: Existing skill\n---\nInspect.\n");
+    await writeTestFile(
+      repositoryRoot,
+      "skills/command-review/SKILL.md",
+      "---\nname: command-review\ndescription: Existing skill\n---\nInspect.\n",
+    );
 
-    await expect(buildOutput(repositoryRoot, { skills: ["command-review"], commands: ["review.md"] }))
-      .rejects.toThrow("Codex command skill command-review collides with a skill of the same name.");
-    expect(await Bun.file(join(repositoryRoot, ".output", "codex", "skills", "command-review", "SKILL.md")).text())
-      .toBe("---\nname: command-review\ndescription: Existing skill\n---\nInspect.\n");
+    await expect(buildOutput(repositoryRoot, { skills: ["command-review"], commands: ["review.md"] })).rejects.toThrow(
+      "Codex command skill command-review collides with a skill of the same name.",
+    );
+    expect(
+      await Bun.file(join(repositoryRoot, ".output", "codex", "skills", "command-review", "SKILL.md")).text(),
+    ).toBe("---\nname: command-review\ndescription: Existing skill\n---\nInspect.\n");
   });
 
   it("preserves original command provenance through template rendering and sync-back", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);
-    const commandPath = await writeTestFile(repositoryRoot, "overlay/commands/review.md",
-      "---\ndescription: Review\n---\nInspect <%- file_path %> under <%- repo_root %>. Keep {{args}}.\n");
+    const commandPath = await writeTestFile(
+      repositoryRoot,
+      "overlay/commands/review.md",
+      "---\ndescription: Review\n---\nInspect <%- file_path %> under <%- repo_root %>. Keep {{args}}.\n",
+    );
     const sourcePathByOutputPath = new Map<string, string>();
     const context = createHarnessBuildContext(repositoryRoot, "codex", {
       commands: ["review.md"],
@@ -261,18 +282,32 @@ describe("Codex harness build plugin", () => {
     const relativePath = "codex/skills/command-review/SKILL.md";
     const outputPath = join(context.outputDir, relativePath);
     expect(sourcePathByOutputPath.get(outputPath)).toBe(commandPath);
-    expect(await Bun.file(outputPath).text())
-      .toBe(`---\ndescription: Review\n---\nInspect ${commandPath} under ${repositoryRoot}. Keep {{args}}.\n`);
+    expect(await Bun.file(outputPath).text()).toBe(
+      `---\ndescription: Review\n---\nInspect ${commandPath} under ${repositoryRoot}. Keep {{args}}.\n`,
+    );
     const editedOutputDir = join(repositoryRoot, ".tmp", "edited-output");
     const baseline = await collectGeneratedOutputEntries(context.outputDir);
     const sourceChecksum = new Bun.CryptoHasher("sha256").update(await Bun.file(commandPath).text()).digest("hex");
-    await writeTestFile(editedOutputDir, relativePath, `---\ndescription: Updated review\n---\nInspect changes under ${repositoryRoot}.\n`);
+    await writeTestFile(
+      editedOutputDir,
+      relativePath,
+      `---\ndescription: Updated review\n---\nInspect changes under ${repositoryRoot}.\n`,
+    );
 
-    await syncBackModifiedFiles([{ path: relativePath, reason: "modified" }], editedOutputDir,
-      context.outputDir, sourcePathByOutputPath, context.templateContext,
-      { [relativePath]: commandPath }, baseline, { [relativePath]: sourceChecksum });
+    await syncBackModifiedFiles(
+      [{ path: relativePath, reason: "modified" }],
+      editedOutputDir,
+      context.outputDir,
+      sourcePathByOutputPath,
+      context.templateContext,
+      { [relativePath]: commandPath },
+      baseline,
+      { [relativePath]: sourceChecksum },
+    );
 
-    expect(await Bun.file(commandPath).text()).toBe("---\ndescription: Updated review\n---\nInspect changes under <%- repo_root %>.\n");
+    expect(await Bun.file(commandPath).text()).toBe(
+      "---\ndescription: Updated review\n---\nInspect changes under <%- repo_root %>.\n",
+    );
   });
 
   it("maps AGENTS.md back to the shared system prompt for generated-edit recovery", async () => {
@@ -283,7 +318,8 @@ describe("Codex harness build plugin", () => {
 
     await plugin.buildOutput(context);
 
-    expect(sourcePathByOutputPath.get(join(context.outputDir, "codex", "AGENTS.md")))
-      .toBe(join(repositoryRoot, "system", "system.md"));
+    expect(sourcePathByOutputPath.get(join(context.outputDir, "codex", "AGENTS.md"))).toBe(
+      join(repositoryRoot, "system", "system.md"),
+    );
   });
 });

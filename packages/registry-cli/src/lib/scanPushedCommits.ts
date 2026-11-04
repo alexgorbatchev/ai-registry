@@ -32,7 +32,7 @@ function getPushedCommitRanges(input: string, remoteName: string): string[] {
 // Blocks a push when gitleaks finds secrets in any commit it would publish.
 export async function scanPushedCommits(options: IScanPushedCommitsOptions): Promise<void> {
   for (const range of getPushedCommitRanges(options.input, options.remoteName)) {
-    if (await options.scanCommitRange(range) === "leaks") {
+    if ((await options.scanCommitRange(range)) === "leaks") {
       throw new Error(
         `Push blocked: gitleaks found secrets in ${range}. Remove them from the outgoing commits, or record a reviewed false positive in .gitleaksignore, before pushing.`,
       );

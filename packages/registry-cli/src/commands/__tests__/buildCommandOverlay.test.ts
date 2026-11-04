@@ -37,7 +37,10 @@ describe("buildCommand with overlay", () => {
     await writeFile(join(overlayDir, "skills", "work-skill", "SKILL.md"), "---\nname: work-skill\n---\n# Work Skill\n");
 
     await mkdir(join(overlayDir, "commands"), { recursive: true });
-    await writeFile(join(overlayDir, "commands", "work-cmd.md"), "---\ndescription: Work command\n---\n# Work Command\n");
+    await writeFile(
+      join(overlayDir, "commands", "work-cmd.md"),
+      "---\ndescription: Work command\n---\n# Work Command\n",
+    );
 
     registryPaths = {
       root: repoRoot,
@@ -109,20 +112,24 @@ describe("buildCommand with overlay", () => {
 
   it("renders overlay command skills for Codex without changing the source commands", async () => {
     const commandPath = join(overlayDir, "commands", "base-cmd.md");
-    const commandContent = "---\ndescription: Overlay review\n---\nReview <%- file_path %> in <%- repo_root %>. Keep {{args}} literal.\n";
+    const commandContent =
+      "---\ndescription: Overlay review\n---\nReview <%- file_path %> in <%- repo_root %>. Keep {{args}} literal.\n";
     await Bun.write(commandPath, commandContent);
 
     await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
 
     const renderedContent = `---\ndescription: Overlay review\n---\nReview ${commandPath} in ${repoRoot}. Keep {{args}} literal.\n`;
-    expect(await Bun.file(join(registryPaths.output, "codex/skills/command-base-cmd/SKILL.md")).text())
-      .toBe(renderedContent);
-    expect(await Bun.file(join(registryPaths.output, "codex/skills/command-base-cmd/agents/openai.yaml")).text())
-      .toBe("policy:\n  allow_implicit_invocation: false\n");
+    expect(await Bun.file(join(registryPaths.output, "codex/skills/command-base-cmd/SKILL.md")).text()).toBe(
+      renderedContent,
+    );
+    expect(await Bun.file(join(registryPaths.output, "codex/skills/command-base-cmd/agents/openai.yaml")).text()).toBe(
+      "policy:\n  allow_implicit_invocation: false\n",
+    );
     expect(existsSync(join(registryPaths.output, "codex/prompts"))).toBe(false);
 
     expect(await Bun.file(commandPath).text()).toBe(commandContent);
-    expect(await Bun.file(join(repoRoot, "commands/base-cmd.md")).text())
-      .toBe("---\ndescription: Base command\n---\n# Base Command\n");
+    expect(await Bun.file(join(repoRoot, "commands/base-cmd.md")).text()).toBe(
+      "---\ndescription: Base command\n---\n# Base Command\n",
+    );
   });
 });

@@ -23,7 +23,12 @@ describe("updateVendoredSkillsCommand", () => {
   }
 
   function run(requestedSkillNames: string[] = []): Promise<void> {
-    return updateVendoredSkillsCommand({ argv: ["bun", "update-vendored-skills.ts", ...requestedSkillNames], root, relocate, spawn });
+    return updateVendoredSkillsCommand({
+      argv: ["bun", "update-vendored-skills.ts", ...requestedSkillNames],
+      root,
+      relocate,
+      spawn,
+    });
   }
 
   async function writeLock(content: unknown): Promise<void> {
@@ -90,13 +95,12 @@ describe("updateVendoredSkillsCommand", () => {
     expect(logLines).toEqual(["No vendored external skills recorded in skills-lock.json."]);
   });
 
-  it.each([
-    [{ version: 1 }],
-    [{ skills: { broken: { ref: "v1" } } }],
-    [[]],
-  ])("rejects an invalid lock %p", async (content) => {
-    await writeLock(content);
+  it.each([[{ version: 1 }], [{ skills: { broken: { ref: "v1" } } }], [[]]])(
+    "rejects an invalid lock %p",
+    async (content) => {
+      await writeLock(content);
 
-    await expect(run()).rejects.toThrow(`Invalid vendored skill lock: ${join(root, "skills-lock.json")}`);
-  });
+      await expect(run()).rejects.toThrow(`Invalid vendored skill lock: ${join(root, "skills-lock.json")}`);
+    },
+  );
 });

@@ -18,9 +18,7 @@ function isStringRecord(value: unknown): value is Record<string, string> {
   return Object.values(value).every((entry) => typeof entry === "string");
 }
 
-function isGeneratedOutputManifestEntry(
-  value: unknown,
-): value is IGeneratedOutputManifestEntry {
+function isGeneratedOutputManifestEntry(value: unknown): value is IGeneratedOutputManifestEntry {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return false;
   }
@@ -31,18 +29,14 @@ function isGeneratedOutputManifestEntry(
   return false;
 }
 
-function isGeneratedOutputManifestEntryRecord(
-  value: unknown,
-): value is Record<string, IGeneratedOutputManifestEntry> {
+function isGeneratedOutputManifestEntryRecord(value: unknown): value is Record<string, IGeneratedOutputManifestEntry> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return false;
   }
   return Object.values(value).every((entry) => isGeneratedOutputManifestEntry(entry));
 }
 
-function isGeneratedOutputManifest(
-  value: unknown,
-): value is IGeneratedOutputManifest {
+function isGeneratedOutputManifest(value: unknown): value is IGeneratedOutputManifest {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return false;
   }
@@ -69,9 +63,7 @@ type ILegacyGeneratedOutputManifest = {
   files: Record<string, string>;
 };
 
-function isLegacyGeneratedOutputManifest(
-  value: unknown,
-): value is ILegacyGeneratedOutputManifest {
+function isLegacyGeneratedOutputManifest(value: unknown): value is ILegacyGeneratedOutputManifest {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return false;
   }

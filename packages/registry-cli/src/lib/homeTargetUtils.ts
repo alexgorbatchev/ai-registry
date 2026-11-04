@@ -132,7 +132,9 @@ export async function applyHomeTarget(
   backupSuffix: string,
 ): Promise<IHomeApplyResult> {
   if (managedEntryNames.length === 0) {
-    throw new Error(`The generated output manifest records no entries for ${target.sourcePath}. Rebuild before bootstrapping.`);
+    throw new Error(
+      `The generated output manifest records no entries for ${target.sourcePath}. Rebuild before bootstrapping.`,
+    );
   }
 
   const result: IHomeApplyResult = { linked: [], relinked: [], backedUp: [], removed: [] };

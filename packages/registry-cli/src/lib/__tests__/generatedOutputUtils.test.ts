@@ -46,10 +46,17 @@ describe("generatedOutputUtils", () => {
     await writeTestFile(stagingDir, "settings.json", "source update");
     await Bun.write(outputPath, "new harness edit");
 
-    await expect(syncManagedGeneratedOutputs({
-      nextEntries: await collectGeneratedOutputEntries(stagingDir), nextOutputDir: stagingDir,
-      outputDir, previousManifest, expectedCurrentEntries,
-    })).rejects.toThrow("Output application suspended: settings.json changed after recovery preflight. Preserve its edits and retry reconciliation.");
+    await expect(
+      syncManagedGeneratedOutputs({
+        nextEntries: await collectGeneratedOutputEntries(stagingDir),
+        nextOutputDir: stagingDir,
+        outputDir,
+        previousManifest,
+        expectedCurrentEntries,
+      }),
+    ).rejects.toThrow(
+      "Output application suspended: settings.json changed after recovery preflight. Preserve its edits and retry reconciliation.",
+    );
     expect(await Bun.file(outputPath).text()).toBe("new harness edit");
     expect(await Bun.file(session).text()).toBe("session data");
   });
@@ -63,8 +70,10 @@ describe("generatedOutputUtils", () => {
     await writeTestFile(stagingDir, "settings.json", "source update");
     const session = await writeTestFile(outputDir, "sessions/active.jsonl", "new session data");
     await syncManagedGeneratedOutputs({
-      nextEntries: await collectGeneratedOutputEntries(stagingDir), nextOutputDir: stagingDir,
-      outputDir, previousManifest: createGeneratedOutputManifest(expectedCurrentEntries),
+      nextEntries: await collectGeneratedOutputEntries(stagingDir),
+      nextOutputDir: stagingDir,
+      outputDir,
+      previousManifest: createGeneratedOutputManifest(expectedCurrentEntries),
       expectedCurrentEntries,
     });
     expect(await Bun.file(outputPath).text()).toBe("source update");
@@ -84,9 +93,9 @@ describe("generatedOutputUtils", () => {
     assert(packageEntry?.kind === "file");
 
     expect(entries).toEqual({
-      "opencode": { kind: "directory" },
+      opencode: { kind: "directory" },
       "opencode/package.json": { kind: "file", checksum: packageEntry.checksum },
-      "pi": { kind: "directory" },
+      pi: { kind: "directory" },
       "pi/linked-sessions": { kind: "symlink", target: join(outputDir, "pi", "sessions") },
       "pi/sessions": { kind: "directory" },
     });
@@ -194,9 +203,7 @@ describe("generatedOutputUtils", () => {
         expectedCurrentEntries,
       });
 
-      expect(await readFile(join(outputDir, "claude-code", "settings.json"), "utf-8")).toBe(
-        '{ "model": "sonnet" }\n',
-      );
+      expect(await readFile(join(outputDir, "claude-code", "settings.json"), "utf-8")).toBe('{ "model": "sonnet" }\n');
     });
   });
 });

@@ -110,7 +110,11 @@ export function mergeSettingsValues(input: IMergeSettingsValuesInput): ISettings
   );
   for (const keyPath of liveOnlyKeyPaths) {
     const liveOnlyValue = getAtKeyPath(input.live, keyPath);
-    setAtKeyPath(liveValue, keyPath, structuredClone(liveOnlyValue !== undefined ? liveOnlyValue : getAtKeyPath(input.source, keyPath)));
+    setAtKeyPath(
+      liveValue,
+      keyPath,
+      structuredClone(liveOnlyValue !== undefined ? liveOnlyValue : getAtKeyPath(input.source, keyPath)),
+    );
     setAtKeyPath(sourceValue, keyPath, getAtKeyPath(input.source, keyPath));
     removeEmptiedParents(sourceValue, keyPath, input.source);
   }
@@ -120,7 +124,8 @@ export function mergeSettingsValues(input: IMergeSettingsValuesInput): ISettings
     if (sourceValueAtPath === undefined) continue;
     const liveValueAtPath = getAtKeyPath(input.live, keyPath);
     const sourceObject: unknown = typeof sourceValueAtPath === "string" ? JSON.parse(sourceValueAtPath) : null;
-    const liveObject: unknown = liveValueAtPath === undefined ? {} : typeof liveValueAtPath === "string" ? JSON.parse(liveValueAtPath) : null;
+    const liveObject: unknown =
+      liveValueAtPath === undefined ? {} : typeof liveValueAtPath === "string" ? JSON.parse(liveValueAtPath) : null;
     if (!isJsonObject(sourceObject) || !isJsonObject(liveObject)) {
       throw new Error(`Settings at ${keyPath.join(".")} must contain JSON objects encoded as strings`);
     }
@@ -132,7 +137,10 @@ export function mergeSettingsValues(input: IMergeSettingsValuesInput): ISettings
     liveValue,
     sourceValue,
     conflicts: conflicts.filter(
-      (conflict) => ![...input.liveOnlyKeyPaths, ...(input.sourceJsonObjectKeyPaths ?? [])].some((pattern) => isUnderKeyPathPattern(conflict.keyPath, pattern)),
+      (conflict) =>
+        ![...input.liveOnlyKeyPaths, ...(input.sourceJsonObjectKeyPaths ?? [])].some((pattern) =>
+          isUnderKeyPathPattern(conflict.keyPath, pattern),
+        ),
     ),
   };
 }

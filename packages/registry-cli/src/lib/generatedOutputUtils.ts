@@ -1,17 +1,6 @@
 import { createHash } from "crypto";
 import { existsSync } from "fs";
-import {
-  chmod,
-  lstat,
-  mkdir,
-  readdir,
-  readFile,
-  readlink,
-  rmdir,
-  rm,
-  symlink,
-  writeFile,
-} from "fs/promises";
+import { chmod, lstat, mkdir, readdir, readFile, readlink, rmdir, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join, relative } from "path";
 
 export const GENERATED_OUTPUT_MANIFEST_VERSION = 2;
@@ -19,12 +8,7 @@ export const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
 export const LEGACY_GENERATED_OUTPUT_MANIFEST_NAME = ".generated-output-manifest.json";
 
 const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
-const GENERATED_OUTPUT_IGNORED_BASENAMES = new Set([
-  ".gitignore",
-  "bun.lock",
-  "bun.lockb",
-  "package-lock.json",
-]);
+const GENERATED_OUTPUT_IGNORED_BASENAMES = new Set([".gitignore", "bun.lock", "bun.lockb", "package-lock.json"]);
 
 export type IGeneratedOutputManifestEntry =
   | { kind: "directory" }
@@ -234,10 +218,7 @@ export async function collectGeneratedOutputEntries(
 
     if (directoryEntry.isDirectory()) {
       collectedEntries[relativePath] = { kind: "directory" };
-      Object.assign(
-        collectedEntries,
-        await collectGeneratedOutputEntries(rootDir, options, entryPath),
-      );
+      Object.assign(collectedEntries, await collectGeneratedOutputEntries(rootDir, options, entryPath));
       continue;
     }
 
@@ -302,9 +283,7 @@ export function getGeneratedOutputDrift(
 
 // Unmanaged paths are never removed, even when an older manifest still lists them
 // as managed entries.
-export async function syncManagedGeneratedOutputs(
-  options: ISyncManagedGeneratedOutputsOptions,
-): Promise<void> {
+export async function syncManagedGeneratedOutputs(options: ISyncManagedGeneratedOutputsOptions): Promise<void> {
   if (options.expectedCurrentEntries) {
     const currentEntries = await collectGeneratedOutputEntries(options.outputDir, options);
     const affectedPaths = new Set([
@@ -315,10 +294,14 @@ export async function syncManagedGeneratedOutputs(
       if (isUnmanagedPath(path, options)) continue;
       const expected = options.expectedCurrentEntries[path];
       const current = currentEntries[path];
-      const isUnchanged = expected === undefined ? current === undefined
-        : current !== undefined && areManifestEntriesEqual(expected, current);
+      const isUnchanged =
+        expected === undefined
+          ? current === undefined
+          : current !== undefined && areManifestEntriesEqual(expected, current);
       if (!isUnchanged) {
-        throw new Error(`Output application suspended: ${path} changed after recovery preflight. Preserve its edits and retry reconciliation.`);
+        throw new Error(
+          `Output application suspended: ${path} changed after recovery preflight. Preserve its edits and retry reconciliation.`,
+        );
       }
     }
   }

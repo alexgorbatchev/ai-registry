@@ -10,26 +10,33 @@ export type IRenderTemplateOptions = {
 };
 
 export async function renderTemplate(options: IRenderTemplateOptions): Promise<string> {
-  return ejs.render(options.content, {
-    ...options.variables,
-    file_path: options.sourcePath,
-    file_dir: dirname(options.sourcePath),
-    env(name: string, fallback?: string): string {
-      const value = options.environment?.[name] ?? fallback;
-      if (value === undefined) throw new Error(`Missing environment variable: ${name}`);
-      return value;
+  return ejs.render(
+    options.content,
+    {
+      ...options.variables,
+      file_path: options.sourcePath,
+      file_dir: dirname(options.sourcePath),
+      env(name: string, fallback?: string): string {
+        const value = options.environment?.[name] ?? fallback;
+        if (value === undefined) throw new Error(`Missing environment variable: ${name}`);
+        return value;
+      },
     },
-  }, {
-    filename: options.sourcePath,
-    root: options.repositoryRoot,
-    views: [options.repositoryRoot],
-    includer(originalPath, parsedPath) {
-      const relativePath = relative(options.repositoryRoot, parsedPath ?? resolve(dirname(options.sourcePath), originalPath));
-      if (relativePath === ".." || relativePath.startsWith("../") || isAbsolute(relativePath)) {
-        throw new Error(`Include path escapes repository root: ${originalPath}`);
-      }
-      if (!parsedPath) throw new Error(`Missing include file: ${originalPath}`);
-      return { filename: parsedPath };
+    {
+      filename: options.sourcePath,
+      root: options.repositoryRoot,
+      views: [options.repositoryRoot],
+      includer(originalPath, parsedPath) {
+        const relativePath = relative(
+          options.repositoryRoot,
+          parsedPath ?? resolve(dirname(options.sourcePath), originalPath),
+        );
+        if (relativePath === ".." || relativePath.startsWith("../") || isAbsolute(relativePath)) {
+          throw new Error(`Include path escapes repository root: ${originalPath}`);
+        }
+        if (!parsedPath) throw new Error(`Missing include file: ${originalPath}`);
+        return { filename: parsedPath };
+      },
     },
-  });
+  );
 }

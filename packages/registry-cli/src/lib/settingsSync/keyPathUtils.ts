@@ -49,8 +49,7 @@ export function expandKeyPathPattern(pattern: SettingsKeyPath, values: IJsonObje
   const [key, ...rest] = pattern;
   if (key === undefined) return [[]];
 
-  const keys =
-    key === ANY_KEY ? [...new Set(values.flatMap((value) => Object.keys(value)))].sort() : [key];
+  const keys = key === ANY_KEY ? [...new Set(values.flatMap((value) => Object.keys(value)))].sort() : [key];
   return keys.flatMap((concreteKey) => {
     const children = values.map((value) => value[concreteKey]).filter((child) => isJsonObject(child));
     if (rest.length === 0) return [[concreteKey]];

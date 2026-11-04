@@ -28,7 +28,11 @@ async function writeHarnessFixture(repositoryRoot: string): Promise<void> {
   await writeTestFile(repositoryRoot, "system/system.md", "Follow the repo guidance.\nEscalate risky changes.\n");
   await writeTestFile(repositoryRoot, "harnesses/pi/settings.json", "{}\n");
   for (const helperName of ["pi-install", "pi-uninstall", "pi-update"]) {
-    await writeTestFile(repositoryRoot, `harnesses/pi/templates/${helperName}.sh`, `#!/usr/bin/env bash\n# ${helperName}\n`);
+    await writeTestFile(
+      repositoryRoot,
+      `harnesses/pi/templates/${helperName}.sh`,
+      `#!/usr/bin/env bash\n# ${helperName}\n`,
+    );
   }
 }
 
@@ -92,8 +96,8 @@ describe("Pi harness build", () => {
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/prompts/harness.md", "Harness prompt.\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/skills/harness-skill/SKILL.md", "# Harness skill\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/models.json", "{\"providers\":{}}\n");
-    await writeTestFile(repositoryRoot, "harnesses/pi/web-search.json", "{\"provider\":\"none\"}\n");
+    await writeTestFile(repositoryRoot, "harnesses/pi/models.json", '{"providers":{}}\n');
+    await writeTestFile(repositoryRoot, "harnesses/pi/web-search.json", '{"provider":"none"}\n');
     await writeTestFile(repositoryRoot, "harnesses/pi/extensions/timestamps.ts", "// timestamps extension\n");
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Shared skill\n");
 
@@ -104,8 +108,8 @@ describe("Pi harness build", () => {
       "Follow the repo guidance.\nEscalate risky changes.\n",
     );
     expect(await readFile(join(outputDir, "settings.json"), "utf-8")).toBe("{}\n");
-    expect(await readFile(join(outputDir, "models.json"), "utf-8")).toBe("{\"providers\":{}}\n");
-    expect(await readFile(join(outputDir, "web-search.json"), "utf-8")).toBe("{\"provider\":\"none\"}\n");
+    expect(await readFile(join(outputDir, "models.json"), "utf-8")).toBe('{"providers":{}}\n');
+    expect(await readFile(join(outputDir, "web-search.json"), "utf-8")).toBe('{"provider":"none"}\n');
     expect(await readFile(join(outputDir, "extensions", "timestamps.ts"), "utf-8")).toBe("// timestamps extension\n");
     expect(await readFile(join(outputDir, "prompts", "review.md"), "utf-8")).toBe("Review the changes.\n");
     expect(await readFile(join(outputDir, "prompts", "harness.md"), "utf-8")).toBe("Harness prompt.\n");
@@ -152,7 +156,10 @@ describe("Pi harness build", () => {
     await buildOutput(repositoryRoot, { settingsSyncRegistry });
 
     expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
-      { relativePath: "pi/settings.json", liveOnlyKeyPaths: [["lastChangelogVersion"], ["extensionChangelogVersions"]] },
+      {
+        relativePath: "pi/settings.json",
+        liveOnlyKeyPaths: [["lastChangelogVersion"], ["extensionChangelogVersions"]],
+      },
     ]);
   });
 

@@ -49,7 +49,11 @@ describe("readGeneratedOutputManifest", () => {
     const outputDir = await createOutputDirectory();
     await writeFile(
       join(outputDir, ".generated-output-manifest.json"),
-      JSON.stringify({ version: 1, generatedAt: "2026-01-01T00:00:00.000Z", files: { "opencode/opencode.jsonc": "abc" } }),
+      JSON.stringify({
+        version: 1,
+        generatedAt: "2026-01-01T00:00:00.000Z",
+        files: { "opencode/opencode.jsonc": "abc" },
+      }),
       "utf-8",
     );
 
@@ -69,6 +73,8 @@ describe("readGeneratedOutputManifest", () => {
       "utf-8",
     );
 
-    await expect(readGeneratedOutputManifest(outputDir)).rejects.toThrow(`Invalid generated output manifest: ${manifestPath}`);
+    await expect(readGeneratedOutputManifest(outputDir)).rejects.toThrow(
+      `Invalid generated output manifest: ${manifestPath}`,
+    );
   });
 });

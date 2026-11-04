@@ -27,12 +27,9 @@ describe("hostname skill variants", () => {
   }
 
   function outputSkills(): string[] {
-    return [
-      "opencode/skills",
-      "codex/skills",
-      "pi/skills",
-      "claude-code/skills",
-    ].map((relativePath) => join(paths.output, relativePath));
+    return ["opencode/skills", "codex/skills", "pi/skills", "claude-code/skills"].map((relativePath) =>
+      join(paths.output, relativePath),
+    );
   }
 
   beforeEach(async () => {
@@ -61,15 +58,19 @@ describe("hostname skill variants", () => {
     await write("repo/harnesses/codex/config.toml", "model = 'test'\n");
     await write("repo/harnesses/pi/settings.json", "{}\n");
     for (const filename of ["pi-install.sh", "pi-uninstall.sh", "pi-update.sh"]) {
-      await write(`repo/harnesses/pi/templates/${filename}`, await Bun.file(join(REPOSITORY_ROOT, "harnesses/pi/templates", filename)).text());
+      await write(
+        `repo/harnesses/pi/templates/${filename}`,
+        await Bun.file(join(REPOSITORY_ROOT, "harnesses/pi/templates", filename)).text(),
+      );
     }
   });
 
   afterEach(async () => {
     delete process.env.AI_REGISTRY_HOSTNAME;
-    Object.assign(process.env, Object.fromEntries(
-      Object.entries(originalEnvironment).filter(([key]) => key === "AI_REGISTRY_HOSTNAME"),
-    ));
+    Object.assign(
+      process.env,
+      Object.fromEntries(Object.entries(originalEnvironment).filter(([key]) => key === "AI_REGISTRY_HOSTNAME")),
+    );
     await rm(tempDir, { recursive: true, force: true });
   });
 
@@ -77,22 +78,29 @@ describe("hostname skill variants", () => {
     await write("repo/system/common.md", "Common instructions.");
     const variantPath = await write(
       "repo/skills/agent/example/variants/workstation-a/SKILL.md",
-      skillContent("example", 'Machine instructions. <%- include("/system/common.md") %> Source: <%- file_path %>. Literal: {{args}}.'),
+      skillContent(
+        "example",
+        'Machine instructions. <%- include("/system/common.md") %> Source: <%- file_path %>. Literal: {{args}}.',
+      ),
     );
 
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
 
     for (const skillsDir of outputSkills()) {
       expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(
-        skillContent("example", `Machine instructions. Common instructions. Source: ${variantPath}. Literal: {{args}}.`),
+        skillContent(
+          "example",
+          `Machine instructions. Common instructions. Source: ${variantPath}. Literal: {{args}}.`,
+        ),
       );
       expect(await Bun.file(join(skillsDir, "example/references/shared.md")).text()).toBe("Shared instructions.\n");
       expect(await Bun.file(join(skillsDir, "example/variants/workstation-a/SKILL.md")).exists()).toBe(false);
       expect(await Bun.file(join(skillsDir, "example/variants/workstation-b/SKILL.md")).exists()).toBe(false);
       await expect(lstat(join(skillsDir, "example/variants"))).rejects.toThrow();
     }
-    expect(await Bun.file(join(paths.skills, "agent/example/SKILL.md")).text())
-      .toBe(skillContent("example", "Default instructions."));
+    expect(await Bun.file(join(paths.skills, "agent/example/SKILL.md")).text()).toBe(
+      skillContent("example", "Default instructions."),
+    );
     const manifest: IGeneratedOutputManifest = await Bun.file(join(paths.output, "manifest.json")).json();
     expect(manifest.sourcePaths?.["codex/skills/example/SKILL.md"]).toBe(variantPath);
     expect(manifest.sourcePaths?.["opencode/skills/example/SKILL.md"]).toBe(variantPath);
@@ -102,65 +110,101 @@ describe("hostname skill variants", () => {
     await write("repo/skills/agent/example/variants/workstation-b/SKILL.md", "{{unknown_variable}}\n");
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
-      expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text())
-        .toBe(skillContent("example", "Default instructions."));
+      expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(
+        skillContent("example", "Default instructions."),
+      );
       expect(await Bun.file(join(skillsDir, "example/variants/workstation-b/SKILL.md")).exists()).toBe(false);
     }
   });
 
   it("uses the operating system hostname when the override is absent", async () => {
     delete process.env.AI_REGISTRY_HOSTNAME;
-    await write(`repo/skills/agent/example/variants/${hostname()}/SKILL.md`, skillContent("example", "Detected machine."));
+    await write(
+      `repo/skills/agent/example/variants/${hostname()}/SKILL.md`,
+      skillContent("example", "Detected machine."),
+    );
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
-    expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text())
-      .toBe(skillContent("example", "Detected machine."));
+    expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text()).toBe(
+      skillContent("example", "Detected machine."),
+    );
   });
 
   it.each(["Workstation-a", "workstation-a.example.test"])("matches hostname %s exactly", async (buildHostname) => {
     process.env.AI_REGISTRY_HOSTNAME = buildHostname;
-    await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Different machine."));
+    await write(
+      "repo/skills/agent/example/variants/workstation-a/SKILL.md",
+      skillContent("example", "Different machine."),
+    );
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
-    expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text())
-      .toBe(skillContent("example", "Default instructions."));
+    expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text()).toBe(
+      skillContent("example", "Default instructions."),
+    );
   });
 
   it("selects a private overlay variant after replacing the public bundle", async () => {
     paths.overlays = [join(tempDir, "overlay")];
-    await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Public variant."));
+    await write(
+      "repo/skills/agent/example/variants/workstation-a/SKILL.md",
+      skillContent("example", "Public variant."),
+    );
     await write("overlay/skills/agent/example/SKILL.md", skillContent("example", "Private default."));
-    await write("overlay/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Private variant."));
+    await write(
+      "overlay/skills/agent/example/variants/workstation-a/SKILL.md",
+      skillContent("example", "Private variant."),
+    );
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
-      expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(skillContent("example", "Private variant."));
+      expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(
+        skillContent("example", "Private variant."),
+      );
       expect(await Bun.file(join(skillsDir, "example/references/shared.md")).exists()).toBe(false);
     }
   });
 
   it("uses the overlay default when only the public bundle has a matching variant", async () => {
     paths.overlays = [join(tempDir, "overlay")];
-    await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", skillContent("example", "Public variant."));
+    await write(
+      "repo/skills/agent/example/variants/workstation-a/SKILL.md",
+      skillContent("example", "Public variant."),
+    );
     await write("overlay/skills/agent/example/SKILL.md", skillContent("example", "Private default."));
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
-      expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(skillContent("example", "Private default."));
+      expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(
+        skillContent("example", "Private default."),
+      );
     }
   });
 
   it("preserves harness override precedence with variants", async () => {
     await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", "Invalid overridden variant.");
     for (const target of ["opencode", "codex", "pi", "claude-code"]) {
-      await write(`repo/harnesses/${target}/skills/agent/example/SKILL.md`, skillContent("example", "Harness default."));
-      await write(`repo/harnesses/${target}/skills/agent/example/variants/workstation-a/SKILL.md`, skillContent("example", "Harness variant."));
+      await write(
+        `repo/harnesses/${target}/skills/agent/example/SKILL.md`,
+        skillContent("example", "Harness default."),
+      );
+      await write(
+        `repo/harnesses/${target}/skills/agent/example/variants/workstation-a/SKILL.md`,
+        skillContent("example", "Harness variant."),
+      );
     }
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
-      expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(skillContent("example", "Harness variant."));
+      expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(
+        skillContent("example", "Harness variant."),
+      );
     }
   });
 
   it("preserves author prefixes and user invocation policy", async () => {
-    await write("repo/skills/user/manual-example/SKILL.md", skillContent("manual-example", "Manual default.", "upstream"));
-    await write("repo/skills/user/manual-example/variants/workstation-a/SKILL.md", skillContent("manual-example", "Manual variant.", "upstream"));
+    await write(
+      "repo/skills/user/manual-example/SKILL.md",
+      skillContent("manual-example", "Manual default.", "upstream"),
+    );
+    await write(
+      "repo/skills/user/manual-example/variants/workstation-a/SKILL.md",
+      skillContent("manual-example", "Manual variant.", "upstream"),
+    );
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
     for (const skillsDir of outputSkills()) {
       expect(await Bun.file(join(skillsDir, "upstream-manual-example/SKILL.md")).text()).toBe(
@@ -180,26 +224,35 @@ describe("hostname skill variants", () => {
     ["empty body", skillContent("example", "")],
   ])("rejects a matching variant with %s instead of falling back", async (_label, content) => {
     await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", content);
-    await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment })).rejects.toThrow();
+    await expect(
+      buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment }),
+    ).rejects.toThrow();
     expect(await Bun.file(join(paths.output, "manifest.json")).exists()).toBe(false);
   });
 
   it("rejects a matching variant directory without SKILL.md", async () => {
     await write("repo/skills/agent/example/variants/workstation-a/notes.md", "Incomplete variant.");
-    await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment })).rejects.toThrow();
+    await expect(
+      buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment }),
+    ).rejects.toThrow();
   });
 
   it("rejects a matching variant path that is a file", async () => {
     await write("repo/skills/agent/example/variants/workstation-a", "Not a variant directory.");
-    await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment })).rejects.toThrow(
+    await expect(
+      buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment }),
+    ).rejects.toThrow(
       `Invalid hostname skill variant directory: ${join(paths.skills, "agent/example/variants/workstation-a")}`,
     );
   });
 
   it.each(["", " ", "../escape", "nested/host", "nested\\host", ".", "..", "host\nname"])(
-    "rejects unsafe or empty hostname overrides: %j", async (override) => {
+    "rejects unsafe or empty hostname overrides: %j",
+    async (override) => {
       process.env.AI_REGISTRY_HOSTNAME = override;
-      await expect(buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment })).rejects.toThrow();
+      await expect(
+        buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment }),
+      ).rejects.toThrow();
     },
   );
 });

@@ -16,9 +16,10 @@ export async function runLockedScheduledUpdate(
   const lockPath = join(repositoryRoot, ".tmp/scheduled-update.lock");
   const logPath = join(repositoryRoot, ".tmp/scheduled-update.log");
   const loggerCommand = [process.execPath, join(import.meta.dir, "../bin/scheduled-update-logger.ts")];
-  const command = platform === "darwin"
-    ? ["/usr/bin/lockf", "-k", "-s", "-t", "0", lockPath, ...loggerCommand]
-    : ["flock", "-n", "-E", "75", lockPath, ...loggerCommand];
+  const command =
+    platform === "darwin"
+      ? ["/usr/bin/lockf", "-k", "-s", "-t", "0", lockPath, ...loggerCommand]
+      : ["flock", "-n", "-E", "75", lockPath, ...loggerCommand];
   const subprocess = Bun.spawn(command, {
     cwd: repositoryRoot,
     env: { ...process.env, AI_REGISTRY_SCHEDULED_WORKER: JSON.stringify(workerCommand) },

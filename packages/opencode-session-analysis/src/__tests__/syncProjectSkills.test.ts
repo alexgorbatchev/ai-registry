@@ -50,10 +50,7 @@ describe("syncProjectSkills", () => {
 
     const availableSkillDirByName = new Map<string, string>([
       ["bun", createSkillSource(join(registryRootPath, "skills"), "bun", "bun skill\n")],
-      [
-        "readme-writer",
-        createSkillSource(join(registryRootPath, "skills"), "readme-writer", "readme skill\n"),
-      ],
+      ["readme-writer", createSkillSource(join(registryRootPath, "skills"), "readme-writer", "readme skill\n")],
     ]);
     const usedSkills: ISkillUsageCountEntry[] = [
       { name: "bun", count: 2, averagePerDay: 2 },
@@ -102,10 +99,7 @@ describe("syncProjectSkills", () => {
 
     const availableSkillDirByName = new Map<string, string>([
       ["bun", createSkillSource(join(registryRootPath, "skills"), "bun", "bun skill\n")],
-      [
-        "readme-writer",
-        createSkillSource(join(registryRootPath, "skills"), "readme-writer", "readme skill\n"),
-      ],
+      ["readme-writer", createSkillSource(join(registryRootPath, "skills"), "readme-writer", "readme skill\n")],
     ]);
 
     await syncProjectSkills({

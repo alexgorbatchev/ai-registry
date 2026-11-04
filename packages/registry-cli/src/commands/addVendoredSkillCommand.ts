@@ -151,5 +151,10 @@ export async function addVendoredSkillCommand(
   }
 
   console.log("\nRebuilding generated outputs...");
-  await runCommand({ cmd: ["just", "build"], cwd: root, description: "build generated outputs", spawn: dependencies.spawn });
+  await runCommand({
+    cmd: ["just", "build"],
+    cwd: root,
+    description: "build generated outputs",
+    spawn: dependencies.spawn,
+  });
 }

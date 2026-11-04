@@ -34,8 +34,12 @@ describe("applyLinkTarget", () => {
     const sourcePath = await writeTestFile(root, "output/pi/web-search.json", "{}\n");
     const targetPath = join(root, "home", ".pi", "web-search.json");
 
-    expect(await applyLinkTarget({ kind: "link", sourcePath, targetPath, description: "Pi web search config" }, BACKUP_SUFFIX))
-      .toEqual({ action: "linked" });
+    expect(
+      await applyLinkTarget(
+        { kind: "link", sourcePath, targetPath, description: "Pi web search config" },
+        BACKUP_SUFFIX,
+      ),
+    ).toEqual({ action: "linked" });
     expect(await readlink(targetPath)).toBe(sourcePath);
   });
 
@@ -46,8 +50,12 @@ describe("applyLinkTarget", () => {
     await mkdir(dirname(targetPath), { recursive: true });
     await symlink(sourcePath, targetPath);
 
-    expect(await applyLinkTarget({ kind: "link", sourcePath, targetPath, description: "Pi web search config" }, BACKUP_SUFFIX))
-      .toEqual({ action: "unchanged" });
+    expect(
+      await applyLinkTarget(
+        { kind: "link", sourcePath, targetPath, description: "Pi web search config" },
+        BACKUP_SUFFIX,
+      ),
+    ).toEqual({ action: "unchanged" });
   });
 
   it("reuses a relative link that already points at the source", async () => {
@@ -57,8 +65,12 @@ describe("applyLinkTarget", () => {
     await mkdir(dirname(targetPath), { recursive: true });
     await symlink("../output/web-search.json", targetPath);
 
-    expect(await applyLinkTarget({ kind: "link", sourcePath, targetPath, description: "Pi web search config" }, BACKUP_SUFFIX))
-      .toEqual({ action: "unchanged" });
+    expect(
+      await applyLinkTarget(
+        { kind: "link", sourcePath, targetPath, description: "Pi web search config" },
+        BACKUP_SUFFIX,
+      ),
+    ).toEqual({ action: "unchanged" });
   });
 
   it("repoints a link from another checkout", async () => {
@@ -69,8 +81,12 @@ describe("applyLinkTarget", () => {
     await mkdir(dirname(targetPath), { recursive: true });
     await symlink(previousSourcePath, targetPath);
 
-    expect(await applyLinkTarget({ kind: "link", sourcePath, targetPath, description: "Pi web search config" }, BACKUP_SUFFIX))
-      .toEqual({ action: "relinked" });
+    expect(
+      await applyLinkTarget(
+        { kind: "link", sourcePath, targetPath, description: "Pi web search config" },
+        BACKUP_SUFFIX,
+      ),
+    ).toEqual({ action: "relinked" });
     expect(await readFile(targetPath, "utf-8")).toBe("relocated\n");
   });
 
@@ -81,8 +97,12 @@ describe("applyLinkTarget", () => {
     await mkdir(dirname(targetPath), { recursive: true });
     await symlink(join(root, "removed-checkout", "web-search.json"), targetPath);
 
-    expect(await applyLinkTarget({ kind: "link", sourcePath, targetPath, description: "Pi web search config" }, BACKUP_SUFFIX))
-      .toEqual({ action: "relinked" });
+    expect(
+      await applyLinkTarget(
+        { kind: "link", sourcePath, targetPath, description: "Pi web search config" },
+        BACKUP_SUFFIX,
+      ),
+    ).toEqual({ action: "relinked" });
     expect(await readFile(targetPath, "utf-8")).toBe("generated\n");
   });
 
@@ -92,8 +112,12 @@ describe("applyLinkTarget", () => {
     const targetPath = await writeTestFile(root, "home/web-search.json", "local\n");
     const backupPath = `${targetPath}.backup-${BACKUP_SUFFIX}`;
 
-    expect(await applyLinkTarget({ kind: "link", sourcePath, targetPath, description: "Pi web search config" }, BACKUP_SUFFIX))
-      .toEqual({ action: "backed_up", backupPath });
+    expect(
+      await applyLinkTarget(
+        { kind: "link", sourcePath, targetPath, description: "Pi web search config" },
+        BACKUP_SUFFIX,
+      ),
+    ).toEqual({ action: "backed_up", backupPath });
     expect(await readFile(backupPath, "utf-8")).toBe("local\n");
     expect(await readlink(targetPath)).toBe(sourcePath);
   });

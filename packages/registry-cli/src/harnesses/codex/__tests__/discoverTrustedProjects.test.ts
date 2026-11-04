@@ -31,13 +31,17 @@ describe("discoverTrustedProjects", () => {
     const root = await createTestDirectory();
     await createRepository(root, "tools/app");
     await createRepository(root, "workspace");
-    await writeTestFile(root, "workspace/.gitmodules", [
-      '[submodule "repos/lib"]',
-      "\tpath = repos/lib",
-      "\turl = https://example.invalid/lib.git",
-      '[submodule "repos/missing"]',
-      "\tpath = repos/missing",
-    ].join("\n"));
+    await writeTestFile(
+      root,
+      "workspace/.gitmodules",
+      [
+        '[submodule "repos/lib"]',
+        "\tpath = repos/lib",
+        "\turl = https://example.invalid/lib.git",
+        '[submodule "repos/missing"]',
+        "\tpath = repos/missing",
+      ].join("\n"),
+    );
     await writeTestFile(root, "workspace/repos/lib/.git", "gitdir: ../../.git/modules/repos/lib\n");
     await writeTestFile(root, "workspace/repos/lib/.gitmodules", '[submodule "nested"]\n\tpath = nested\n');
     await createRepository(root, "workspace/repos/lib/nested");

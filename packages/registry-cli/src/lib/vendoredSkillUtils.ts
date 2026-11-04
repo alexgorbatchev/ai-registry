@@ -21,7 +21,10 @@ export function extractAuthorFromSource(source: string): string | null {
   }
 
   // Remove trailing branch/ref/skill specifier: #ref or @skill
-  const cleaned = trimmed.split("#")[0].split("@")[0].replace(/\.git$/, "");
+  const cleaned = trimmed
+    .split("#")[0]
+    .split("@")[0]
+    .replace(/\.git$/, "");
 
   // Prefixes like github:owner/repo
   const prefixMatch = cleaned.match(/^[a-z0-9_-]+:([^/]+)\/[^/]+/i);
@@ -100,11 +103,7 @@ export async function resolveVendoredSkillAuthor(
   return null;
 }
 
-export async function relocateVendoredSkill(
-  root: string,
-  skillName: string,
-  source?: string,
-): Promise<void> {
+export async function relocateVendoredSkill(root: string, skillName: string, source?: string): Promise<void> {
   const flatPath = join(root, "skills", skillName);
   if (!existsSync(flatPath)) {
     return;

@@ -166,10 +166,7 @@ async function collectSkillChecksums(
   return checksums;
 }
 
-function getSkillSyncDrift(
-  manifest: ISkillSyncManifest,
-  currentChecksums: Record<string, string>,
-): ISkillSyncDrift[] {
+function getSkillSyncDrift(manifest: ISkillSyncManifest, currentChecksums: Record<string, string>): ISkillSyncDrift[] {
   const drift: ISkillSyncDrift[] = [];
 
   for (const [relativePath, expectedChecksum] of Object.entries(manifest.files)) {
@@ -276,9 +273,7 @@ function getInitialSelection(args: {
     return args.existingManifest.selectedSkills.filter((skillName) => args.availableSkillDirByName.has(skillName));
   }
 
-  return args.usedSkills
-    .map((skill) => skill.name)
-    .filter((skillName) => args.availableSkillDirByName.has(skillName));
+  return args.usedSkills.map((skill) => skill.name).filter((skillName) => args.availableSkillDirByName.has(skillName));
 }
 
 function getNewUnsyncedUsedSkills(args: {
@@ -336,14 +331,16 @@ export async function syncProjectSkills(args: ISyncProjectSkillsArgs): Promise<I
       throw new Error("Skill selection requires an interactive terminal. Re-run in a TTY or save a manifest first.");
     }
 
-    selectedSkills = [...(await args.pickSkills({
-      initialValues: getInitialSelection({
-        existingManifest,
-        availableSkillDirByName: args.availableSkillDirByName,
-        usedSkills: args.usedSkills,
-      }),
-      options: createPickerOptions(args.usedSkills, args.availableSkillDirByName),
-    }))];
+    selectedSkills = [
+      ...(await args.pickSkills({
+        initialValues: getInitialSelection({
+          existingManifest,
+          availableSkillDirByName: args.availableSkillDirByName,
+          usedSkills: args.usedSkills,
+        }),
+        options: createPickerOptions(args.usedSkills, args.availableSkillDirByName),
+      })),
+    ];
   } else if (existingManifest) {
     const newUnsyncedUsedSkills = getNewUnsyncedUsedSkills({
       existingManifest,
@@ -366,7 +363,11 @@ export async function syncProjectSkills(args: ISyncProjectSkillsArgs): Promise<I
   await mkdir(skillsDirPath, { recursive: true });
 
   if (existingManifest) {
-    const currentChecksums = await collectSkillChecksums(opencodeDirPath, skillsDirPath, existingManifest.selectedSkills);
+    const currentChecksums = await collectSkillChecksums(
+      opencodeDirPath,
+      skillsDirPath,
+      existingManifest.selectedSkills,
+    );
     await confirmOverwriteIfNeeded({
       autoConfirm: args.autoConfirm,
       confirmOverwrite: args.confirmOverwrite,
@@ -374,7 +375,9 @@ export async function syncProjectSkills(args: ISyncProjectSkillsArgs): Promise<I
       isInteractive: args.isInteractive,
     });
   } else {
-    const existingFiles = Object.keys(await collectSkillChecksums(opencodeDirPath, skillsDirPath, selectedSkills)).sort();
+    const existingFiles = Object.keys(
+      await collectSkillChecksums(opencodeDirPath, skillsDirPath, selectedSkills),
+    ).sort();
     await confirmInitialOverwriteIfNeeded({
       autoConfirm: args.autoConfirm,
       confirmOverwrite: args.confirmOverwrite,

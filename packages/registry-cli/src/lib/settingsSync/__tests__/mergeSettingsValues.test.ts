@@ -195,7 +195,10 @@ describe("mergeSettingsValues", () => {
       base: {},
       live: { hooks: { state: { "/local/hooks.json": { enabled: true } } }, skills: {} },
       source: { skills: {} },
-      liveOnlyKeyPaths: [["hooks", "state"], ["skills", "config"]],
+      liveOnlyKeyPaths: [
+        ["hooks", "state"],
+        ["skills", "config"],
+      ],
     });
 
     expect(result.sourceValue).toEqual({ skills: {} });
@@ -219,14 +222,43 @@ describe("mergeSettingsValues", () => {
 });
 
 it("applies a source-owned exception inside overlapping live-only tables", () => {
-  const source = { mcp_servers: { node_repl: { env: { NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ sky: "@oai/sky/service" }) } } } };
-  const live = { mcp_servers: { node_repl: { command: "/local/repl", env: { TOKEN: "local-secret", NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser", sky: "old-service" }) } } } };
+  const source = {
+    mcp_servers: { node_repl: { env: { NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ sky: "@oai/sky/service" }) } } },
+  };
+  const live = {
+    mcp_servers: {
+      node_repl: {
+        command: "/local/repl",
+        env: {
+          TOKEN: "local-secret",
+          NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser", sky: "old-service" }),
+        },
+      },
+    },
+  };
   const result = mergeSettingsValues({
-    base: source, source, live,
-    liveOnlyKeyPaths: [["mcp_servers", "node_repl"], ["mcp_servers", "*", "env"]],
+    base: source,
+    source,
+    live,
+    liveOnlyKeyPaths: [
+      ["mcp_servers", "node_repl"],
+      ["mcp_servers", "*", "env"],
+    ],
     sourceJsonObjectKeyPaths: [["mcp_servers", "node_repl", "env", "NODE_REPL_TRUSTED_SERVICES"]],
   });
-  expect(live.mcp_servers.node_repl.env.NODE_REPL_TRUSTED_SERVICES).toBe(JSON.stringify({ browser: "local-browser", sky: "old-service" }));
+  expect(live.mcp_servers.node_repl.env.NODE_REPL_TRUSTED_SERVICES).toBe(
+    JSON.stringify({ browser: "local-browser", sky: "old-service" }),
+  );
   expect(result.sourceValue).toEqual(source);
-  expect(result.liveValue).toEqual({ mcp_servers: { node_repl: { command: "/local/repl", env: { TOKEN: "local-secret", NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser", sky: "@oai/sky/service" }) } } } });
+  expect(result.liveValue).toEqual({
+    mcp_servers: {
+      node_repl: {
+        command: "/local/repl",
+        env: {
+          TOKEN: "local-secret",
+          NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser", sky: "@oai/sky/service" }),
+        },
+      },
+    },
+  });
 });

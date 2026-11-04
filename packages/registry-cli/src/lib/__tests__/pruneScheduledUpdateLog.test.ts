@@ -29,14 +29,21 @@ describe("pruneScheduledUpdateLog", () => {
     const logPath = await createLogPath();
     await Bun.write(logPath, `[${expired}] expired\n[${retained}] retained\n`);
     const sourcePath = resolve(REPOSITORY_ROOT, "packages/registry-cli/src/lib/pruneScheduledUpdateLog.ts");
-    const subprocess = Bun.spawn([process.execPath, "-e", [
-      `import { pruneScheduledUpdateLog } from ${JSON.stringify(sourcePath)};`,
-      `await pruneScheduledUpdateLog(${JSON.stringify(logPath)}, new Date(${JSON.stringify(instant)}));`,
-    ].join("\n")], {
-      env: { ...process.env, TZ: "America/Los_Angeles" },
-      stdout: "pipe",
-      stderr: "pipe",
-    });
+    const subprocess = Bun.spawn(
+      [
+        process.execPath,
+        "-e",
+        [
+          `import { pruneScheduledUpdateLog } from ${JSON.stringify(sourcePath)};`,
+          `await pruneScheduledUpdateLog(${JSON.stringify(logPath)}, new Date(${JSON.stringify(instant)}));`,
+        ].join("\n"),
+      ],
+      {
+        env: { ...process.env, TZ: "America/Los_Angeles" },
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
     const [output, error, exitCode] = await Promise.all([
       new Response(subprocess.stdout).text(),
       new Response(subprocess.stderr).text(),
@@ -49,22 +56,27 @@ describe("pruneScheduledUpdateLog", () => {
 
   it("keeps the last 48 hours at log minute precision, including the cutoff minute", async () => {
     const logPath = await createLogPath();
-    await Bun.write(logPath, [
-      "[2026-10-13 12:00] old",
-      "[2026-10-14 11:59] expired",
-      "[2026-10-14 12:00] boundary",
-      "[2026-10-15 12:00] café",
-      "[2026-10-16 12:00] ",
-      "[2026-10-16 12:00] last",
-    ].join("\n"));
+    await Bun.write(
+      logPath,
+      [
+        "[2026-10-13 12:00] old",
+        "[2026-10-14 11:59] expired",
+        "[2026-10-14 12:00] boundary",
+        "[2026-10-15 12:00] café",
+        "[2026-10-16 12:00] ",
+        "[2026-10-16 12:00] last",
+      ].join("\n"),
+    );
     await pruneScheduledUpdateLog(logPath, new Date(2026, 9, 16, 12, 0, 59));
-    expect(await Bun.file(logPath).text()).toBe([
-      "[2026-10-14 12:00] boundary",
-      "[2026-10-15 12:00] café",
-      "[2026-10-16 12:00] ",
-      "[2026-10-16 12:00] last",
-      "",
-    ].join("\n"));
+    expect(await Bun.file(logPath).text()).toBe(
+      [
+        "[2026-10-14 12:00] boundary",
+        "[2026-10-15 12:00] café",
+        "[2026-10-16 12:00] ",
+        "[2026-10-16 12:00] last",
+        "",
+      ].join("\n"),
+    );
     expect(await Bun.file(`${logPath}.pruning`).exists()).toBe(false);
   });
 

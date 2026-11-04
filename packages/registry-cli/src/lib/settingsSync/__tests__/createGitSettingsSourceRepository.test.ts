@@ -67,7 +67,10 @@ describe("createGitSettingsSourceRepository", () => {
   it("reports whether gitleaks finds possible secrets in a source file", async () => {
     const repositoryRoot = await createRepository();
     const repository = createGitSettingsSourceRepository();
-    await writeFile(join(repositoryRoot, "harnesses", "other.json"), `{ "awsKeyId": "${["AKIA", "IOSFODNN7EXAMPLQ"].join("")}" }\n`);
+    await writeFile(
+      join(repositoryRoot, "harnesses", "other.json"),
+      `{ "awsKeyId": "${["AKIA", "IOSFODNN7EXAMPLQ"].join("")}" }\n`,
+    );
 
     expect(await repository.hasSecrets(join(repositoryRoot, "harnesses", "settings.json"))).toBe(false);
     expect(await repository.hasSecrets(join(repositoryRoot, "harnesses", "other.json"))).toBe(true);

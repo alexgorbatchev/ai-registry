@@ -56,7 +56,8 @@ function createRegistryAssetContext(repositoryRoot: string, assets: Partial<IReg
     },
     templateContext: { ...createTemplateContext(repositoryRoot), output_dir: join(repositoryRoot, "output") },
     buildSupport: {
-      copyDirectoryWithTemplateVariables: (source, target, ctx) => copyDirectoryWithTemplateVariables(source, target, ctx),
+      copyDirectoryWithTemplateVariables: (source, target, ctx) =>
+        copyDirectoryWithTemplateVariables(source, target, ctx),
       copyPathWithTemplateVariables: (source, target, ctx) => copyPathWithTemplateVariables(source, target, ctx),
       mergeDirectory: async () => {},
       stageHarnessSkills: async () => {},
@@ -100,8 +101,9 @@ describe("harnessBuild template rendering", () => {
     await copyPathWithTemplateVariables(sourcePath, firstOutput, {}, sourcePaths);
     await Bun.write(sourcePath, "concurrent source edit");
 
-    await expect(copyPathWithTemplateVariables(sourcePath, secondOutput, {}, sourcePaths))
-      .rejects.toThrow(`Source changed while staging generated outputs: ${sourcePath}`);
+    await expect(copyPathWithTemplateVariables(sourcePath, secondOutput, {}, sourcePaths)).rejects.toThrow(
+      `Source changed while staging generated outputs: ${sourcePath}`,
+    );
     expect(await Bun.file(firstOutput).text()).toBe("original");
     expect(await Bun.file(secondOutput).text()).toBe("previous copy");
     expect(await Bun.file(sourcePath).text()).toBe("concurrent source edit");
@@ -164,14 +166,30 @@ describe("harnessBuild template rendering", () => {
       ".tmp/generated-output-staging/pi/models.json",
       '{ "baseUrl": "<%- env("AI_REGISTRY_TEST_SHELL_ONLY_URL") %>" }\n',
     );
-    const environment = createTemplateEnvironment({}, () => ({ AI_REGISTRY_TEST_SHELL_ONLY_URL: "https://shell.example.invalid" }));
+    const environment = createTemplateEnvironment({}, () => ({
+      AI_REGISTRY_TEST_SHELL_ONLY_URL: "https://shell.example.invalid",
+    }));
 
-    await applyTemplateVariablesToGeneratedOutput(stagingDir, createTemplateContext(repositoryRoot), undefined, environment);
+    await applyTemplateVariablesToGeneratedOutput(
+      stagingDir,
+      createTemplateContext(repositoryRoot),
+      undefined,
+      environment,
+    );
     expect(await Bun.file(outputPath).text()).toBe('{ "baseUrl": "https://shell.example.invalid" }\n');
 
-    await writeTestFile(repositoryRoot, ".tmp/generated-output-staging/pi/models.json", '<%- env("AI_REGISTRY_TEST_UNSET") %>\n');
+    await writeTestFile(
+      repositoryRoot,
+      ".tmp/generated-output-staging/pi/models.json",
+      '<%- env("AI_REGISTRY_TEST_UNSET") %>\n',
+    );
     await expect(
-      applyTemplateVariablesToGeneratedOutput(stagingDir, createTemplateContext(repositoryRoot), undefined, createTemplateEnvironment({}, () => ({}))),
+      applyTemplateVariablesToGeneratedOutput(
+        stagingDir,
+        createTemplateContext(repositoryRoot),
+        undefined,
+        createTemplateEnvironment({}, () => ({})),
+      ),
     ).rejects.toThrow("Missing environment variable: AI_REGISTRY_TEST_UNSET");
   });
 
@@ -202,7 +220,11 @@ describe("harnessBuild template rendering", () => {
     const targetDir = join(repositoryRoot, "output", "skills", "escaped-skill");
 
     // Escaped EJS must survive the final render without being evaluated again.
-    await writeTestFile(sourceDir, "SKILL.md", "run *args:\n    mytool {{args}}\n\nLiteral: <%%- missing %>. Root is <%- repo_root %>.");
+    await writeTestFile(
+      sourceDir,
+      "SKILL.md",
+      "run *args:\n    mytool {{args}}\n\nLiteral: <%%- missing %>. Root is <%- repo_root %>.",
+    );
 
     const templateContext: ITemplateContext = {
       repo_root: repositoryRoot,
@@ -242,9 +264,7 @@ describe("harnessBuild template rendering", () => {
     expect((await lstat(join(targetDir, "SKILL.md"))).isSymbolicLink()).toBe(false);
     expect((await lstat(join(targetDir, "references", "ref.md"))).isSymbolicLink()).toBe(false);
 
-    expect(await readFile(join(targetDir, "SKILL.md"), "utf-8")).toBe(
-      `# Skill Title\n\nRoot is ${repositoryRoot}.`,
-    );
+    expect(await readFile(join(targetDir, "SKILL.md"), "utf-8")).toBe(`# Skill Title\n\nRoot is ${repositoryRoot}.`);
     expect(await readFile(join(targetDir, "references", "ref.md"), "utf-8")).toBe(
       `# Reference\n\nSkills live in ${join(repositoryRoot, "skills")}.`,
     );
@@ -382,17 +402,25 @@ describe("harnessBuild template rendering", () => {
     const commandsDir = join(repositoryRoot, "staged", "commands");
     await writeTestFile(skillsDir, "shared/SKILL.md", "# Harness override");
 
-    await stageRegistryAssets(createRegistryAssetContext(repositoryRoot, {
-      skills: ["shared"],
-      skillSourcePaths: { shared: registrySkillDir },
-    }), { skillsDir });
+    await stageRegistryAssets(
+      createRegistryAssetContext(repositoryRoot, {
+        skills: ["shared"],
+        skillSourcePaths: { shared: registrySkillDir },
+      }),
+      { skillsDir },
+    );
     expect(await readFile(join(skillsDir, "shared", "SKILL.md"), "utf-8")).toBe("# Harness override");
 
     await writeTestFile(commandsDir, "review.md", "# Harness review");
-    await expect(stageRegistryAssets(createRegistryAssetContext(repositoryRoot, {
-      commands: ["review.md"],
-      commandSourcePaths: { "review.md": commandFile },
-    }), { skillsDir, commandsDir })).rejects.toThrow(
+    await expect(
+      stageRegistryAssets(
+        createRegistryAssetContext(repositoryRoot, {
+          commands: ["review.md"],
+          commandSourcePaths: { "review.md": commandFile },
+        }),
+        { skillsDir, commandsDir },
+      ),
+    ).rejects.toThrow(
       `Cannot stage command review.md because the output path already exists: ${join(commandsDir, "review.md")}`,
     );
   });

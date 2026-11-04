@@ -12,15 +12,22 @@ describe("reverseTemplateContent", () => {
   };
 
   it("replaces absolute paths with corresponding template variables", () => {
-    const rawContent = '{\n  "plugin": ["file:///path/to/repo/vendor/my-plugin"],\n  "skills": ["/path/to/repo/skills/git"]\n}';
+    const rawContent =
+      '{\n  "plugin": ["file:///path/to/repo/vendor/my-plugin"],\n  "skills": ["/path/to/repo/skills/git"]\n}';
     const processed = reverseTemplateContent(rawContent, mockContext);
 
-    expect(processed).toBe('{\n  "plugin": ["file://<%- repo_root %>/vendor/my-plugin"],\n  "skills": ["<%- skills_dir %>/git"]\n}');
+    expect(processed).toBe(
+      '{\n  "plugin": ["file://<%- repo_root %>/vendor/my-plugin"],\n  "skills": ["<%- skills_dir %>/git"]\n}',
+    );
   });
 
   it("reverses every string inside a JSON value and leaves other values unchanged", () => {
     const reversed = reverseTemplateObject(
-      { plugin: ["file:///path/to/repo/vendor/a.ts"], nested: { skills: "/path/to/repo/skills/git", enabled: true, count: 2 }, none: null },
+      {
+        plugin: ["file:///path/to/repo/vendor/a.ts"],
+        nested: { skills: "/path/to/repo/skills/git", enabled: true, count: 2 },
+        none: null,
+      },
       mockContext,
     );
 
@@ -40,36 +47,48 @@ describe("reverseTemplateContent", () => {
 
   it("round trips overlay and source-file paths through the template renderer", async () => {
     const context: ITemplateContext = {
-      ...mockContext, overlay_dir: "/path/to/overlay",
+      ...mockContext,
+      overlay_dir: "/path/to/overlay",
       file_path: "/path/to/repo/skills/example/SKILL.md",
       file_dir: "/path/to/repo/skills/example",
     };
     const original = "/path/to/overlay /path/to/repo/skills/example/SKILL.md /path/to/repo/skills/example";
     const recovered = reverseTemplateContent(original, context);
     expect(recovered).toBe("<%- overlay_dir %> <%- file_path %> <%- file_dir %>");
-    expect(await renderTemplate({ content: recovered, sourcePath: context.file_path,
-      repositoryRoot: context.repo_root, variables: context })).toBe(original);
+    expect(
+      await renderTemplate({
+        content: recovered,
+        sourcePath: context.file_path,
+        repositoryRoot: context.repo_root,
+        variables: context,
+      }),
+    ).toBe(original);
   });
 
   it("replaces more specific paths before less specific paths (ordering safety)", () => {
-    const rawContent = "repo = \"/path/to/repo\"\nskills = \"/path/to/repo/skills\"\n";
+    const rawContent = 'repo = "/path/to/repo"\nskills = "/path/to/repo/skills"\n';
     const processed = reverseTemplateContent(rawContent, mockContext);
 
-    expect(processed).toBe("repo = \"<%- repo_root %>\"\nskills = \"<%- skills_dir %>\"\n");
+    expect(processed).toBe('repo = "<%- repo_root %>"\nskills = "<%- skills_dir %>"\n');
   });
 
   it("is a no-op when no absolute paths match template context", () => {
-    const rawContent = "approval_policy = \"never\"\nsandbox_mode = \"danger-full-access\"\n";
+    const rawContent = 'approval_policy = "never"\nsandbox_mode = "danger-full-access"\n';
     const processed = reverseTemplateContent(rawContent, mockContext);
 
     expect(processed).toBe(rawContent);
   });
 
   it("recovers nested strings while preserving non-string values", () => {
-    expect(reverseTemplateObject({
-      paths: ["/path/to/repo/skills/example", null, 7, true],
-      nested: { root: "/path/to/repo" },
-    }, mockContext)).toEqual({
+    expect(
+      reverseTemplateObject(
+        {
+          paths: ["/path/to/repo/skills/example", null, 7, true],
+          nested: { root: "/path/to/repo" },
+        },
+        mockContext,
+      ),
+    ).toEqual({
       paths: ["<%- skills_dir %>/example", null, 7, true],
       nested: { root: "<%- repo_root %>" },
     });
@@ -79,9 +98,13 @@ describe("reverseTemplateContent", () => {
     const rendered = "Literal <%- missing %> under /path/to/repo";
     const recovered = reverseTemplateContent(rendered, mockContext);
     expect(recovered).toBe("Literal <%%- missing %> under <%- repo_root %>");
-    expect(await renderTemplate({
-      content: recovered, sourcePath: "/path/to/repo/skill.md", repositoryRoot: mockContext.repo_root,
-      variables: mockContext,
-    })).toBe(rendered);
+    expect(
+      await renderTemplate({
+        content: recovered,
+        sourcePath: "/path/to/repo/skill.md",
+        repositoryRoot: mockContext.repo_root,
+        variables: mockContext,
+      }),
+    ).toBe(rendered);
   });
 });

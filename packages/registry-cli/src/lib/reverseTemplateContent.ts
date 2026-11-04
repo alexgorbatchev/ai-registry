@@ -2,16 +2,13 @@ import { realpathSync, existsSync } from "fs";
 import type { ITemplateContext } from "./harnessBuild";
 import type { IJsonObject, JsonValue } from "./settingsSync/types";
 
-export function reverseTemplateObject(
-  obj: JsonValue,
-  templateContext: ITemplateContext
-): JsonValue {
+export function reverseTemplateObject(obj: JsonValue, templateContext: ITemplateContext): JsonValue {
   if (typeof obj === "string") {
     return reverseTemplateContent(obj, templateContext);
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => reverseTemplateObject(item, templateContext));
+    return obj.map((item) => reverseTemplateObject(item, templateContext));
   }
 
   if (typeof obj === "object" && obj !== null) {

@@ -99,25 +99,73 @@ function createDatabase(
   `);
 
   const baseTime = Date.UTC(2026, 3, 25, 12, 0, 0);
-  database.run("INSERT INTO project (id, worktree, name) VALUES (?, ?, ?)", ["project-a", paths.projectAPath, "Project A"]);
-  database.run("INSERT INTO project (id, worktree, name) VALUES (?, ?, ?)", ["project-b", paths.projectBPath, "Project B"]);
+  database.run("INSERT INTO project (id, worktree, name) VALUES (?, ?, ?)", [
+    "project-a",
+    paths.projectAPath,
+    "Project A",
+  ]);
+  database.run("INSERT INTO project (id, worktree, name) VALUES (?, ?, ?)", [
+    "project-b",
+    paths.projectBPath,
+    "Project B",
+  ]);
   database.run("INSERT INTO project (id, worktree, name) VALUES (?, ?, ?)", ["project-global", "/", "Global"]);
 
   database.run(
     "INSERT INTO session (id, project_id, parent_id, slug, directory, title, time_created, time_updated, time_archived) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    ["session-a", "project-a", null, "session-a", paths.projectAPath, "Project A root", baseTime, baseTime + 2 * FIXTURE_DAY, null],
+    [
+      "session-a",
+      "project-a",
+      null,
+      "session-a",
+      paths.projectAPath,
+      "Project A root",
+      baseTime,
+      baseTime + 2 * FIXTURE_DAY,
+      null,
+    ],
   );
   database.run(
     "INSERT INTO session (id, project_id, parent_id, slug, directory, title, time_created, time_updated, time_archived) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    ["child-a", "project-a", "session-a", "child-a", paths.projectAPath, "Project A child", baseTime, baseTime + FIXTURE_DAY, null],
+    [
+      "child-a",
+      "project-a",
+      "session-a",
+      "child-a",
+      paths.projectAPath,
+      "Project A child",
+      baseTime,
+      baseTime + FIXTURE_DAY,
+      null,
+    ],
   );
   database.run(
     "INSERT INTO session (id, project_id, parent_id, slug, directory, title, time_created, time_updated, time_archived) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    ["session-b", "project-b", null, "session-b", paths.projectBPath, "Project B root", baseTime + 3 * FIXTURE_DAY, baseTime + 4 * FIXTURE_DAY, null],
+    [
+      "session-b",
+      "project-b",
+      null,
+      "session-b",
+      paths.projectBPath,
+      "Project B root",
+      baseTime + 3 * FIXTURE_DAY,
+      baseTime + 4 * FIXTURE_DAY,
+      null,
+    ],
   );
   database.run(
     "INSERT INTO session (id, project_id, parent_id, slug, directory, title, time_created, time_updated, time_archived) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    ["session-global", "project-global", null, "session-global", paths.scratchPath, "Scratch root", baseTime + 5 * FIXTURE_DAY, baseTime + 6 * FIXTURE_DAY, null],
+    [
+      "session-global",
+      "project-global",
+      null,
+      "session-global",
+      paths.scratchPath,
+      "Scratch root",
+      baseTime + 5 * FIXTURE_DAY,
+      baseTime + 6 * FIXTURE_DAY,
+      null,
+    ],
   );
 
   database.run("INSERT INTO message (session_id, time_created, time_updated, data) VALUES (?, ?, ?, ?)", [

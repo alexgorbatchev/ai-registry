@@ -11,9 +11,7 @@ export interface IRunCommandSpawnedProcess {
   exited: Promise<number>;
 }
 
-export type IRunCommandSpawn = (
-  options: IRunCommandSpawnOptions,
-) => IRunCommandSpawnedProcess;
+export type IRunCommandSpawn = (options: IRunCommandSpawnOptions) => IRunCommandSpawnedProcess;
 
 export interface IRunCommandOptions {
   cmd: string[];
@@ -24,11 +22,7 @@ export interface IRunCommandOptions {
   spawn?: IRunCommandSpawn;
 }
 
-function createFailureMessage(
-  description: string,
-  exitCode: number,
-  failureHint?: string,
-): string {
+function createFailureMessage(description: string, exitCode: number, failureHint?: string): string {
   const lines = [`Failed to ${description} (exit code ${exitCode}).`];
 
   if (failureHint) {
@@ -58,7 +52,5 @@ export async function runCommand(options: IRunCommandOptions): Promise<void> {
     return;
   }
 
-  throw new Error(
-    createFailureMessage(options.description, exitCode, options.failureHint),
-  );
+  throw new Error(createFailureMessage(options.description, exitCode, options.failureHint));
 }

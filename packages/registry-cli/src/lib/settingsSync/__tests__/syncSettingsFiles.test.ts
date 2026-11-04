@@ -51,7 +51,10 @@ async function createLayout(relativePath: string = JSONC_RELATIVE_PATH): Promise
   };
 }
 
-function createRecordingSourceRepository(sourceState: SettingsSourceState, hasSecrets = false): IRecordingSourceRepository {
+function createRecordingSourceRepository(
+  sourceState: SettingsSourceState,
+  hasSecrets = false,
+): IRecordingSourceRepository {
   const commits: string[][] = [];
   return {
     commits,
@@ -116,7 +119,9 @@ describe("syncSettingsFiles", () => {
 
     await runSync(layout);
 
-    expect(await readFile(layout.livePath, "utf-8")).toBe(`{\n  "plugin": ["file://${layout.rootDir}/vendor/a.ts"]\n}\n`);
+    expect(await readFile(layout.livePath, "utf-8")).toBe(
+      `{\n  "plugin": ["file://${layout.rootDir}/vendor/a.ts"]\n}\n`,
+    );
     expect(JSON.parse(await readFile(layout.basePath, "utf-8"))).toEqual({
       plugin: [`file://${layout.rootDir}/vendor/a.ts`],
     });
@@ -284,7 +289,9 @@ describe("syncSettingsFiles", () => {
 
     await runSync(layout, undefined, [["lastChangelogVersion"]]);
 
-    expect(await readFile(layout.livePath, "utf-8")).toBe('{\n  "theme": "light",\n  "lastChangelogVersion": "1.2.0"\n}\n');
+    expect(await readFile(layout.livePath, "utf-8")).toBe(
+      '{\n  "theme": "light",\n  "lastChangelogVersion": "1.2.0"\n}\n',
+    );
     expect(await readFile(layout.sourcePath, "utf-8")).toBe('{\n  "theme": "light"\n}\n');
   });
 
@@ -325,9 +332,9 @@ describe("syncSettingsFiles", () => {
     const layout = await createLayout();
     await writeSource(layout, '{ "theme": }\n');
 
-    await expect(validateStagedSettingsFiles(createOptions(layout, createRecordingSourceRepository("clean")))).rejects.toThrow(
-      `Cannot sync settings file ${layout.sourcePath}: ValueExpected at offset 11.`,
-    );
+    await expect(
+      validateStagedSettingsFiles(createOptions(layout, createRecordingSourceRepository("clean"))),
+    ).rejects.toThrow(`Cannot sync settings file ${layout.sourcePath}: ValueExpected at offset 11.`);
   });
 
   it("fails when no registry source produced the synced file", async () => {
@@ -335,7 +342,10 @@ describe("syncSettingsFiles", () => {
     await writeTestFile(layout.stagedPath, "{}\n");
 
     await expect(
-      syncSettingsFiles({ ...createOptions(layout, createRecordingSourceRepository("clean")), sourcePathByOutputPath: new Map() }),
+      syncSettingsFiles({
+        ...createOptions(layout, createRecordingSourceRepository("clean")),
+        sourcePathByOutputPath: new Map(),
+      }),
     ).rejects.toThrow("Cannot sync settings file opencode/opencode.jsonc: no registry source file produced it.");
     expect(existsSync(layout.livePath)).toBe(false);
   });

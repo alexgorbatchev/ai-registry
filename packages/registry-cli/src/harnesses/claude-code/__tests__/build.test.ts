@@ -22,11 +22,7 @@ async function createOutputDirectory(): Promise<string> {
   return directory;
 }
 
-async function writeTestFile(
-  repositoryRoot: string,
-  relativePath: string,
-  content: string,
-): Promise<string> {
+async function writeTestFile(repositoryRoot: string, relativePath: string, content: string): Promise<string> {
   const fullPath = join(repositoryRoot, relativePath);
   await mkdir(join(fullPath, ".."), { recursive: true });
   await Bun.write(fullPath, content);
@@ -42,11 +38,13 @@ async function writeHarnessFixture(repositoryRoot: string): Promise<void> {
 }
 
 function buildOutput(repositoryRoot: string, options: IHarnessBuildContextOptions = {}): Promise<void> {
-  return plugin.buildOutput(createHarnessBuildContext(repositoryRoot, "claude-code", {
-    skills: ["shared-skill"],
-    commands: ["review.md"],
-    ...options,
-  }));
+  return plugin.buildOutput(
+    createHarnessBuildContext(repositoryRoot, "claude-code", {
+      skills: ["shared-skill"],
+      commands: ["review.md"],
+      ...options,
+    }),
+  );
 }
 
 function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {

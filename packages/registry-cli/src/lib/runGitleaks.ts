@@ -11,7 +11,17 @@ export async function runGitleaks(args: string[], cwd: string): Promise<Gitleaks
   let subprocess: Bun.Subprocess;
   try {
     subprocess = Bun.spawn(
-      ["gitleaks", ...args, "--no-banner", "--redact", "--log-level", "warn", "--verbose", "--exit-code", `${LEAKS_EXIT_CODE}`],
+      [
+        "gitleaks",
+        ...args,
+        "--no-banner",
+        "--redact",
+        "--log-level",
+        "warn",
+        "--verbose",
+        "--exit-code",
+        `${LEAKS_EXIT_CODE}`,
+      ],
       // Pass the environment explicitly: without it Bun resolves `gitleaks` against the
       // PATH captured at startup rather than the current one.
       { cwd, env: process.env, stdin: "ignore", stdout: "inherit", stderr: "inherit" },

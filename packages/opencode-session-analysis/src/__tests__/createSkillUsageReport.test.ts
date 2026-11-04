@@ -123,17 +123,17 @@ describe("createSkillUsageReport", () => {
     });
 
     expect(report).toEqual({
-        overall: {
-          label: "All projects",
-          totalUsages: 3,
-          averageUsagesPerDay: 1,
-          distinctSkills: 2,
-          usageDays: 3,
-          skills: [
+      overall: {
+        label: "All projects",
+        totalUsages: 3,
+        averageUsagesPerDay: 1,
+        distinctSkills: 2,
+        usageDays: 3,
+        skills: [
           { name: "readme-writer", count: 2, averagePerDay: 2 / 3 },
           { name: "bun", count: 1, averagePerDay: 1 / 3 },
-          ],
-        },
+        ],
+      },
       byProject: [
         {
           label: "/scratch/a",

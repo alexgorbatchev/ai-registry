@@ -69,7 +69,9 @@ export async function promptForYesNo(args: IPromptForYesNoArgs): Promise<boolean
   }
 }
 
-export async function promptForOverwriteDecision(args: IPromptForOverwriteDecisionArgs): Promise<"yes" | "no" | "sync"> {
+export async function promptForOverwriteDecision(
+  args: IPromptForOverwriteDecisionArgs,
+): Promise<"yes" | "no" | "sync"> {
   const abortController = new AbortController();
   const createPromptInterface = args.createPromptInterface ?? createDefaultPromptInterface;
   const promptInterface = createPromptInterface({ input: stdin, output: stdout });
@@ -78,7 +80,9 @@ export async function promptForOverwriteDecision(args: IPromptForOverwriteDecisi
   promptInterface.on("SIGINT", interruptQuestion);
 
   try {
-    const answer = await promptInterface.question(`${args.message} (y)es / (n)o / (s)ync back [y/N/s]: `, { signal: abortController.signal });
+    const answer = await promptInterface.question(`${args.message} (y)es / (n)o / (s)ync back [y/N/s]: `, {
+      signal: abortController.signal,
+    });
     const normalizedAnswer = answer.trim().toLowerCase();
     if (normalizedAnswer === "y" || normalizedAnswer === "yes") {
       return "yes";

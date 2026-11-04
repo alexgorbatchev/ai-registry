@@ -15,7 +15,10 @@ const FAKE_AWS_ACCESS_KEY_ID = ["AKIA", "IOSFODNN7EXAMPLQ"].join("");
 // Global Git hooks would otherwise block the fixture's deliberate secret commit.
 const ISOLATED_GIT_ENV = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
 
-function createRecordingScan(result: GitleaksResult): { ranges: string[]; scan: (range: string) => Promise<GitleaksResult> } {
+function createRecordingScan(result: GitleaksResult): {
+  ranges: string[];
+  scan: (range: string) => Promise<GitleaksResult>;
+} {
   const ranges: string[] = [];
   return {
     ranges,
@@ -36,7 +39,10 @@ async function createRepositoryWithRemote(): Promise<string> {
   await $`git config user.name Tester && git config user.email tester@example.com`.cwd(repositoryDir).quiet();
   await $`git remote add origin ${join(rootDir, "remote.git")}`.cwd(repositoryDir).quiet();
   await writeFile(join(repositoryDir, "readme.md"), "# Repo\n");
-  await $`git add . && git commit --quiet -m initial && git push --quiet origin main`.cwd(repositoryDir).env(ISOLATED_GIT_ENV).quiet();
+  await $`git add . && git commit --quiet -m initial && git push --quiet origin main`
+    .cwd(repositoryDir)
+    .env(ISOLATED_GIT_ENV)
+    .quiet();
   return repositoryDir;
 }
 
@@ -79,7 +85,11 @@ describe("scanPushedCommits", () => {
     const recording = createRecordingScan("leaks");
 
     await expect(
-      scanPushedCommits({ input: "refs/heads/main bbb refs/heads/main aaa\n", remoteName: "origin", scanCommitRange: recording.scan }),
+      scanPushedCommits({
+        input: "refs/heads/main bbb refs/heads/main aaa\n",
+        remoteName: "origin",
+        scanCommitRange: recording.scan,
+      }),
     ).rejects.toThrow(
       "Push blocked: gitleaks found secrets in aaa..bbb. Remove them from the outgoing commits, or record a reviewed false positive in .gitleaksignore, before pushing.",
     );
@@ -98,7 +108,10 @@ describe("scanPushedCommits", () => {
     await $`git add . && git commit --quiet -m leak`.cwd(repositoryDir).env(ISOLATED_GIT_ENV).quiet();
     const leakHead = (await $`git rev-parse HEAD`.cwd(repositoryDir).text()).trim();
 
-    const leakingPush = await runHook(repositoryDir, `refs/heads/feature ${leakHead} refs/heads/feature ${NULL_OBJECT_ID}\n`);
+    const leakingPush = await runHook(
+      repositoryDir,
+      `refs/heads/feature ${leakHead} refs/heads/feature ${NULL_OBJECT_ID}\n`,
+    );
 
     expect(cleanPush).toEqual({ exitCode: 0, stderr: "" });
     expect(leakingPush.exitCode).toBe(1);

@@ -65,7 +65,11 @@ function toPercent(hit: number, found: number): number {
   return found === 0 ? 100 : (hit / found) * 100;
 }
 
-export function checkCoverage(lcov: string, sourceFiles: readonly ISourceFile[], thresholdPercent: number): ICoverageReport {
+export function checkCoverage(
+  lcov: string,
+  sourceFiles: readonly ISourceFile[],
+  thresholdPercent: number,
+): ICoverageReport {
   const records = parseLcov(lcov);
   const totals: ICoverageTotals = { linesFound: 0, linesHit: 0, functionsFound: 0, functionsHit: 0 };
   const unloadedFiles: string[] = [];

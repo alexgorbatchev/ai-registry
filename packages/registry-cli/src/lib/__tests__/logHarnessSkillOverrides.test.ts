@@ -98,7 +98,11 @@ describe("logHarnessSkillOverrides", () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "skills/agent/github-fix-issues/SKILL.md", "# Global Agent\n");
     await writeTestFile(repositoryRoot, "skills/user/custom-tool/SKILL.md", "# Global User\n");
-    await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/user/github-fix-issues/SKILL.md", "# Harness User\n");
+    await writeTestFile(
+      repositoryRoot,
+      "harnesses/claude-code/skills/user/github-fix-issues/SKILL.md",
+      "# Harness User\n",
+    );
     await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/agent/custom-tool/SKILL.md", "# Harness Agent\n");
 
     const logged: string[] = [];

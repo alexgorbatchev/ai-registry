@@ -10,7 +10,9 @@ runLockedScheduledUpdate(repositoryRoot, [process.execPath, resolve(import.meta.
   .then((result) => {
     const isAgent = ["1", "true", "yes"].includes(process.env.AGENT ?? "");
     const message = result === "busy" ? "skipped (another run is active)" : "completed";
-    console.log(`${isAgent ? "OK:" : "[OK]"} scheduled update: ${message}; log: ${repositoryRoot}/.tmp/scheduled-update.log`);
+    console.log(
+      `${isAgent ? "OK:" : "[OK]"} scheduled update: ${message}; log: ${repositoryRoot}/.tmp/scheduled-update.log`,
+    );
   })
   .catch((error) => {
     console.error(getErrorMessage(error));

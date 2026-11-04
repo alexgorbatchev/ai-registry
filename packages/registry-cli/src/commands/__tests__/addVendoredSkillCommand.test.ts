@@ -67,24 +67,32 @@ describe("addVendoredSkillCommand", () => {
       return { exited: Promise.resolve(1) };
     };
 
-    await expect(addVendoredSkillCommand({
-      argv: ["bun", "add-vendored-skill.ts", "owner/repo --skill one"],
-      root: ROOT,
-      relocate,
-      spawn: failingSpawn,
-    })).rejects.toThrow("Failed to vendor skill one (exit code 1).");
+    await expect(
+      addVendoredSkillCommand({
+        argv: ["bun", "add-vendored-skill.ts", "owner/repo --skill one"],
+        root: ROOT,
+        relocate,
+        spawn: failingSpawn,
+      }),
+    ).rejects.toThrow("Failed to vendor skill one (exit code 1).");
     expect(relocations).toEqual([]);
   });
 
   it("rejects a missing command", async () => {
-    await expect(addVendoredSkillCommand({ argv: ["bun", "add-vendored-skill.ts"], root: ROOT, relocate, spawn }))
-      .rejects.toThrow("Missing command. Example: just skills-add 'npx skills add https://github.com/shadcn/ui --skill shadcn'");
+    await expect(
+      addVendoredSkillCommand({ argv: ["bun", "add-vendored-skill.ts"], root: ROOT, relocate, spawn }),
+    ).rejects.toThrow(
+      "Missing command. Example: just skills-add 'npx skills add https://github.com/shadcn/ui --skill shadcn'",
+    );
   });
 
   it.each([
     ["owner/repo --skill 'open", "Unterminated quoted string in command: owner/repo --skill 'open"],
     ["owner/repo --skill", "Missing value for --skill"],
-    ["owner/repo --skill one -a codex", "-a is managed automatically by just skills-add. Pass only the original source and --skill options."],
+    [
+      "owner/repo --skill one -a codex",
+      "-a is managed automatically by just skills-add. Pass only the original source and --skill options.",
+    ],
     ["owner/repo --skill one --global", "--global is not supported by just skills-add."],
     ["owner/repo --skill one --branch main", "Unsupported option for just skills-add: --branch"],
     ["owner/repo other/repo --skill one", "Unexpected extra positional argument: other/repo"],

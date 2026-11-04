@@ -41,7 +41,9 @@ export function createGitSettingsSourceRepository(): ISettingsSourceRepository {
       for (const [repositoryRoot, repositoryPaths] of pathsByRepository) {
         const relativePaths = repositoryPaths.map((sourcePath) => relative(repositoryRoot, sourcePath));
         const body = `Write settings changed in the harness back to ${relativePaths.join(", ")}.`;
-        await $`git commit --only --quiet -m ${COMMIT_SUBJECT} -m ${body} -- ${relativePaths}`.cwd(repositoryRoot).quiet();
+        await $`git commit --only --quiet -m ${COMMIT_SUBJECT} -m ${body} -- ${relativePaths}`
+          .cwd(repositoryRoot)
+          .quiet();
       }
     },
   };

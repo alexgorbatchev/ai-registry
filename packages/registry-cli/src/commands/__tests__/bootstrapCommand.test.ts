@@ -29,9 +29,10 @@ describe("bootstrapCommand", () => {
     return (options) => {
       spawnedCommands.push(options.cmd);
       const isBuild = options.cmd[1] === "build";
-      const exited = isBuild && buildExitCode === 0
-        ? writeGeneratedOutput().then(() => 0)
-        : Promise.resolve(isBuild ? buildExitCode : 0);
+      const exited =
+        isBuild && buildExitCode === 0
+          ? writeGeneratedOutput().then(() => 0)
+          : Promise.resolve(isBuild ? buildExitCode : 0);
       return { exited };
     };
   }
@@ -59,7 +60,12 @@ describe("bootstrapCommand", () => {
     async buildOutput(): Promise<void> {},
     async getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
       return [
-        { kind: "home", sourcePath: join(outputDir, "fake"), targetPath: join(homeDir, ".fake"), description: "Fake home" },
+        {
+          kind: "home",
+          sourcePath: join(outputDir, "fake"),
+          targetPath: join(homeDir, ".fake"),
+          description: "Fake home",
+        },
         {
           kind: "link",
           sourcePath: join(outputDir, "fake", "settings.json"),
@@ -117,12 +123,19 @@ describe("bootstrapCommand", () => {
 
     await bootstrapCommand(createDependencies());
 
-    expect(spawnedCommands).toEqual([["just", "setup"], ["just", "build", "-y"]]);
+    expect(spawnedCommands).toEqual([
+      ["just", "setup"],
+      ["just", "build", "-y"],
+    ]);
     expect((await lstat(join(homeDir, ".fake"))).isDirectory()).toBe(true);
     expect(await readFile(join(homeDir, ".fake", "history.jsonl"), "utf-8")).toBe("kept\n");
     expect(await readlink(join(homeDir, ".fake", "AGENTS.md"))).toBe(join(registryPaths.output, "fake", "AGENTS.md"));
-    expect(await readlink(join(homeDir, "fake-settings.json"))).toBe(join(registryPaths.output, "fake", "settings.json"));
-    expect(await readlink(join(homeDir, ".local", "bin", "air-fake"))).toBe(join(registryPaths.output, "bin", "air-fake"));
+    expect(await readlink(join(homeDir, "fake-settings.json"))).toBe(
+      join(registryPaths.output, "fake", "settings.json"),
+    );
+    expect(await readlink(join(homeDir, ".local", "bin", "air-fake"))).toBe(
+      join(registryPaths.output, "bin", "air-fake"),
+    );
     expect(getLog()).toMatchInlineSnapshot(`
 "🚀 Bootstrapping ai-registry...
 
@@ -150,17 +163,20 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
     await rm(join(homeDir, ".fake", "AGENTS.md"));
     await symlink(join(otherCheckout, "AGENTS.md"), join(homeDir, ".fake", "AGENTS.md"));
     await rm(join(homeDir, ".fake", "settings.json"));
-    await writeTestFile(join(homeDir, ".fake", "settings.json"), "{\"local\":true}\n");
+    await writeTestFile(join(homeDir, ".fake", "settings.json"), '{"local":true}\n');
     await symlink(join(registryPaths.output, "fake", "removed"), join(homeDir, ".fake", "removed"));
     await rm(join(homeDir, "fake-settings.json"));
-    await writeTestFile(join(homeDir, "fake-settings.json"), "{\"local\":true}\n");
+    await writeTestFile(join(homeDir, "fake-settings.json"), '{"local":true}\n');
     await rm(join(homeDir, ".local", "bin", "air-fake"));
     await symlink(join(otherCheckout, "air-fake"), join(homeDir, ".local", "bin", "air-fake"));
     logLines = [];
 
     await bootstrapCommand(createDependencies({ argv: ["bun", "bootstrap.ts"] }));
 
-    expect(spawnedCommands.slice(2)).toEqual([["just", "setup"], ["just", "build"]]);
+    expect(spawnedCommands.slice(2)).toEqual([
+      ["just", "setup"],
+      ["just", "build"],
+    ]);
     expect(getLog()).toMatchInlineSnapshot(`
 "🚀 Bootstrapping ai-registry...
 
@@ -189,7 +205,9 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
     await bootstrapCommand(createDependencies());
     logLines = [];
 
-    await bootstrapCommand(createDependencies({ registryPaths: { ...registryPaths, overlays: [join(root, "overlay")] } }));
+    await bootstrapCommand(
+      createDependencies({ registryPaths: { ...registryPaths, overlays: [join(root, "overlay")] } }),
+    );
 
     expect(getLog()).toMatchInlineSnapshot(`
 "🚀 Bootstrapping ai-registry...

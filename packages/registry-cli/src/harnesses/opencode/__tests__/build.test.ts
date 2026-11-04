@@ -34,7 +34,11 @@ async function writeTestFile(rootDir: string, relativePath: string, content: str
 
 async function writeHarnessFixture(repositoryRoot: string): Promise<void> {
   await writeTestFile(repositoryRoot, "harnesses/opencode/.registry-ignore", "./skills/\n");
-  await writeTestFile(repositoryRoot, "harnesses/opencode/opencode.jsonc", '{\n  // shared config\n  "theme": "dark"\n}\n');
+  await writeTestFile(
+    repositoryRoot,
+    "harnesses/opencode/opencode.jsonc",
+    '{\n  // shared config\n  "theme": "dark"\n}\n',
+  );
 }
 
 function buildOutput(repositoryRoot: string, options: IHarnessBuildContextOptions = {}): Promise<void> {

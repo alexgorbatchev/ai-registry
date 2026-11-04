@@ -16,10 +16,18 @@ async function generatePiHelpers(context: IHarnessBuildContext): Promise<void> {
   }
 }
 
-async function copyOptionalHarnessPath(context: IHarnessBuildContext, piOutputDir: string, name: string): Promise<void> {
+async function copyOptionalHarnessPath(
+  context: IHarnessBuildContext,
+  piOutputDir: string,
+  name: string,
+): Promise<void> {
   const sourcePath = join(context.harnessDir, name);
   if (existsSync(sourcePath)) {
-    await context.buildSupport.copyPathWithTemplateVariables(sourcePath, join(piOutputDir, name), context.templateContext);
+    await context.buildSupport.copyPathWithTemplateVariables(
+      sourcePath,
+      join(piOutputDir, name),
+      context.templateContext,
+    );
   }
 }
 

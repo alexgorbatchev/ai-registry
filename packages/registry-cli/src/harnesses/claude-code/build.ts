@@ -134,11 +134,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await mkdir(commandsDir, { recursive: true });
   await context.buildSupport.stageRegistryAssets(context, { commandsDir, skillsDir });
 
-  await context.buildSupport.writeBinScript(
-    context.outputDir,
-    "cll",
-    createLiteLLMHelper(),
-  );
+  await context.buildSupport.writeBinScript(context.outputDir, "cll", createLiteLLMHelper());
 
   await logHarnessSkillOverrides(context, "claude-code");
 }

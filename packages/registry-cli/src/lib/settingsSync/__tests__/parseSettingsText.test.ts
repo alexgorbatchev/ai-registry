@@ -14,7 +14,10 @@ describe("parseSettingsText", () => {
   });
 
   it("parses TOML into plain objects for .toml files", () => {
-    const settings = parseSettingsText('model = "gpt-5"\n\n[mcp_servers.docs]\nenv = { TOKEN = "x" }\n', "/live/config.toml");
+    const settings = parseSettingsText(
+      'model = "gpt-5"\n\n[mcp_servers.docs]\nenv = { TOKEN = "x" }\n',
+      "/live/config.toml",
+    );
 
     expect(settings).toEqual({ model: "gpt-5", mcp_servers: { docs: { env: { TOKEN: "x" } } } });
     expect(Object.getPrototypeOf(settings)).toBe(Object.prototype);

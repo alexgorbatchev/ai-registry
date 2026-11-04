@@ -90,7 +90,8 @@ async function stageHarnessRules(context: IHarnessBuildContext, codexOutputDir: 
 async function stageCommandSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void> {
   const commandSkillNames = new Set<string>();
   for (const command of context.assets.commands) {
-    const sourcePath = context.assets.commandSourcePaths[command] ?? join(context.templateContext.commands_dir, command);
+    const sourcePath =
+      context.assets.commandSourcePaths[command] ?? join(context.templateContext.commands_dir, command);
     const skillName = getCommandSkillName(command, await Bun.file(sourcePath).text());
     if (commandSkillNames.has(skillName)) {
       throw new Error(`Duplicate Codex command skill name: ${skillName}`);

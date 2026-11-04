@@ -27,18 +27,26 @@ describe("syncOpencodeDocsCommand", () => {
       fetch: async (url, init) => {
         requests.push({ url, authorization: new Headers(init.headers).get("Authorization") });
         const response = responses.get(url) ?? { status: 404, body: "missing" };
-        return new Response(response.body, { status: response.status, statusText: response.status === 200 ? "OK" : "Not Found" });
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.status === 200 ? "OK" : "Not Found",
+        });
       },
     };
   }
 
-  function listing(entries: Array<{ name: string; type: "file" | "dir"; download_url?: string | null }>, prefix = ""): string {
-    return JSON.stringify(entries.map((entry) => ({
-      name: entry.name,
-      path: `${DOCS_PATH}/${prefix}${entry.name}`,
-      type: entry.type,
-      download_url: entry.download_url ?? null,
-    })));
+  function listing(
+    entries: Array<{ name: string; type: "file" | "dir"; download_url?: string | null }>,
+    prefix = "",
+  ): string {
+    return JSON.stringify(
+      entries.map((entry) => ({
+        name: entry.name,
+        path: `${DOCS_PATH}/${prefix}${entry.name}`,
+        type: entry.type,
+        download_url: entry.download_url ?? null,
+      })),
+    );
   }
 
   function serveDefaultDocs(): void {
@@ -106,10 +114,7 @@ describe("syncOpencodeDocsCommand", () => {
       { url: `${API_ROOT}?ref=dev`, authorization: "Bearer secret-token" },
       { url: `${API_ROOT}/guides?ref=dev`, authorization: "Bearer secret-token" },
     ]);
-    expect(logLines).toEqual([
-      `Synced 3 English doc files into ${docsDir}`,
-      "Skipped locale directories: de, zh-cn",
-    ]);
+    expect(logLines).toEqual([`Synced 3 English doc files into ${docsDir}`, "Skipped locale directories: de, zh-cn"]);
     expect(await readdir(registryPaths.temp)).toEqual([]);
   });
 
@@ -136,7 +141,9 @@ describe("syncOpencodeDocsCommand", () => {
   it("rejects a source with no English docs", async () => {
     responses.set(`${API_ROOT}?ref=dev`, { status: 200, body: listing([{ name: "de", type: "dir" }]) });
 
-    await expect(syncOpencodeDocsCommand(createDependencies())).rejects.toThrow(`No English docs found under ${DOCS_PATH}`);
+    await expect(syncOpencodeDocsCommand(createDependencies())).rejects.toThrow(
+      `No English docs found under ${DOCS_PATH}`,
+    );
   });
 
   it("keeps the snapshot when a download fails", async () => {

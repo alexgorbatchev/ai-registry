@@ -21,10 +21,16 @@ const LCOV = [
 
 describe("checkCoverage", () => {
   it("passes when every file is loaded and both metrics meet the threshold", () => {
-    expect(checkCoverage(LCOV, [
-      { path: "src/lib/a.ts", transpiledCode: "" },
-      { path: "src/lib/b.ts", transpiledCode: "" },
-    ], 90)).toEqual({
+    expect(
+      checkCoverage(
+        LCOV,
+        [
+          { path: "src/lib/a.ts", transpiledCode: "" },
+          { path: "src/lib/b.ts", transpiledCode: "" },
+        ],
+        90,
+      ),
+    ).toEqual({
       totals: { linesFound: 20, linesHit: 19, functionsFound: 5, functionsHit: 5 },
       unloadedFiles: [],
       linePercent: 95,
@@ -36,11 +42,17 @@ describe("checkCoverage", () => {
   it("counts a file no test loaded as entirely uncovered", () => {
     const unloadedCode = "export function run() {\n  return [1].map((value) => value);\n}\n\n";
 
-    expect(checkCoverage(LCOV, [
-      { path: "src/lib/a.ts", transpiledCode: "" },
-      { path: "src/lib/b.ts", transpiledCode: "" },
-      { path: "src/bin/run.ts", transpiledCode: unloadedCode },
-    ], 90)).toEqual({
+    expect(
+      checkCoverage(
+        LCOV,
+        [
+          { path: "src/lib/a.ts", transpiledCode: "" },
+          { path: "src/lib/b.ts", transpiledCode: "" },
+          { path: "src/bin/run.ts", transpiledCode: unloadedCode },
+        ],
+        90,
+      ),
+    ).toEqual({
       totals: { linesFound: 23, linesHit: 19, functionsFound: 7, functionsHit: 5 },
       unloadedFiles: ["src/bin/run.ts"],
       linePercent: (19 / 23) * 100,
@@ -50,10 +62,16 @@ describe("checkCoverage", () => {
   });
 
   it("ignores type-only modules that compile to no runtime code", () => {
-    expect(checkCoverage(LCOV, [
-      { path: "src/lib/a.ts", transpiledCode: "" },
-      { path: "src/lib/types.ts", transpiledCode: "\n" },
-    ], 90)).toEqual({
+    expect(
+      checkCoverage(
+        LCOV,
+        [
+          { path: "src/lib/a.ts", transpiledCode: "" },
+          { path: "src/lib/types.ts", transpiledCode: "\n" },
+        ],
+        90,
+      ),
+    ).toEqual({
       totals: { linesFound: 10, linesHit: 9, functionsFound: 4, functionsHit: 4 },
       unloadedFiles: [],
       linePercent: 90,

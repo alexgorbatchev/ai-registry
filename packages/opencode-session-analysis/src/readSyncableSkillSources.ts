@@ -60,14 +60,20 @@ async function readSkillDirectories(
 export async function readSyncableSkillSources(registryRootPath: string): Promise<Map<string, ISyncableSkillSource>> {
   const sources = [
     ...(await readSkillDirectories(join(registryRootPath, "skills"), "registry", "skills")),
-    ...(await readSkillDirectories(join(registryRootPath, "harnesses", "opencode", "skills"), "harness", "harnesses/opencode")),
+    ...(await readSkillDirectories(
+      join(registryRootPath, "harnesses", "opencode", "skills"),
+      "harness",
+      "harnesses/opencode",
+    )),
   ];
 
   const sourceByName = new Map<string, ISyncableSkillSource>();
   for (const source of sources) {
     const existingSource = sourceByName.get(source.name);
     if (existingSource) {
-      throw new Error(`Duplicate syncable skill name ${source.name} found in ${source.owner} and ${existingSource.owner}`);
+      throw new Error(
+        `Duplicate syncable skill name ${source.name} found in ${source.owner} and ${existingSource.owner}`,
+      );
     }
 
     sourceByName.set(source.name, source);

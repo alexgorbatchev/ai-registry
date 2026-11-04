@@ -149,8 +149,10 @@ export function createSkillUsageReport(args: ICreateSkillUsageReportArgs): ISkil
     }
 
     incrementCount(overallCounts, skillName);
-    overallFirstUsageAt = overallFirstUsageAt === undefined ? part.time_created : Math.min(overallFirstUsageAt, part.time_created);
-    overallLastUsageAt = overallLastUsageAt === undefined ? part.time_created : Math.max(overallLastUsageAt, part.time_created);
+    overallFirstUsageAt =
+      overallFirstUsageAt === undefined ? part.time_created : Math.min(overallFirstUsageAt, part.time_created);
+    overallLastUsageAt =
+      overallLastUsageAt === undefined ? part.time_created : Math.max(overallLastUsageAt, part.time_created);
 
     const projectLabel = getSessionProjectLabel(session);
     const projectCounts = projectCountsByLabel.get(projectLabel) ?? new Map<string, number>();

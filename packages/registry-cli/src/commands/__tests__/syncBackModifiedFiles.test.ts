@@ -41,11 +41,20 @@ describe("syncBackModifiedFiles", () => {
     const staged = await writeTestFile(stagingDir, "source.md", root);
     const baseline = await collectGeneratedOutputEntries(stagingDir);
     const output = await writeTestFile(outputDir, "source.md", "harness edit");
-    await expect(syncBackModifiedFiles(
-      [{ path: "source.md", reason: "modified" }], outputDir, stagingDir,
-      new Map([[staged, source]]), { repo_root: root }, {}, baseline,
-      { "source.md": new Bun.CryptoHasher("sha256").update(original).digest("hex") },
-    )).rejects.toThrow(`Cannot recover source.md: source ${source} changed since generation. Preserve both versions and reconcile their edits before retrying.`);
+    await expect(
+      syncBackModifiedFiles(
+        [{ path: "source.md", reason: "modified" }],
+        outputDir,
+        stagingDir,
+        new Map([[staged, source]]),
+        { repo_root: root },
+        {},
+        baseline,
+        { "source.md": new Bun.CryptoHasher("sha256").update(original).digest("hex") },
+      ),
+    ).rejects.toThrow(
+      `Cannot recover source.md: source ${source} changed since generation. Preserve both versions and reconcile their edits before retrying.`,
+    );
     expect(await Bun.file(source).text()).toBe(root);
     expect(await Bun.file(output).text()).toBe("harness edit");
   });
@@ -58,10 +67,19 @@ describe("syncBackModifiedFiles", () => {
     const staged = await writeTestFile(stagingDir, "source.md", "original");
     const baseline = await collectGeneratedOutputEntries(stagingDir);
     await writeTestFile(outputDir, "source.md", "harness edit");
-    await expect(syncBackModifiedFiles(
-      [{ path: "source.md", reason: "modified" }], outputDir, stagingDir,
-      new Map([[staged, source]]), {}, {}, baseline,
-    )).rejects.toThrow("Cannot recover source.md: no source fingerprint in the manifest. Preserve the generated edit and reconcile it into source before establishing a fresh baseline.");
+    await expect(
+      syncBackModifiedFiles(
+        [{ path: "source.md", reason: "modified" }],
+        outputDir,
+        stagingDir,
+        new Map([[staged, source]]),
+        {},
+        {},
+        baseline,
+      ),
+    ).rejects.toThrow(
+      "Cannot recover source.md: no source fingerprint in the manifest. Preserve the generated edit and reconcile it into source before establishing a fresh baseline.",
+    );
     expect(await Bun.file(source).text()).toBe("original");
   });
   it("automatically recovers unattended edits while preserving unmanaged and staged files", async () => {
@@ -76,9 +94,16 @@ describe("syncBackModifiedFiles", () => {
     const session = await writeTestFile(outputDir, "sessions/active.jsonl", "session data");
     const auth = await writeTestFile(outputDir, "auth.json", "runtime data");
 
-    expect(await assertGeneratedOutputsAreSafeToReplace(
-      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, {},
-    )).toBe(true);
+    expect(
+      await assertGeneratedOutputsAreSafeToReplace(
+        manifest,
+        outputDir,
+        stagingDir,
+        new Map([[staged, source]]),
+        {},
+        {},
+      ),
+    ).toBe(true);
     expect(await Bun.file(source).text()).toBe("harness edit");
     expect(await Bun.file(output).text()).toBe("harness edit");
     expect(await Bun.file(staged).text()).toBe("original");
@@ -87,9 +112,17 @@ describe("syncBackModifiedFiles", () => {
 
     // Simulate the fresh generation pass, without invoking build or bootstrap.
     await Bun.write(staged, Bun.file(source));
-    expect(await assertGeneratedOutputsAreSafeToReplace(
-      manifest, outputDir, stagingDir, new Map([[staged, source]]), {}, {}, false,
-    )).toBe(false);
+    expect(
+      await assertGeneratedOutputsAreSafeToReplace(
+        manifest,
+        outputDir,
+        stagingDir,
+        new Map([[staged, source]]),
+        {},
+        {},
+        false,
+      ),
+    ).toBe(false);
   });
 
   it("propagates save failures and preserves source and harness edits", async () => {
@@ -100,12 +133,21 @@ describe("syncBackModifiedFiles", () => {
     const staged = await writeTestFile(stagingDir, "settings.json", "original");
     const baseline = await collectGeneratedOutputEntries(stagingDir);
     const output = await writeTestFile(outputDir, "settings.json", "harness edit");
-    await expect(syncBackModifiedFiles(
-      [{ path: "settings.json", reason: "modified" }], outputDir, stagingDir,
-      new Map([[staged, source]]), {}, {}, baseline,
-      { "settings.json": new Bun.CryptoHasher("sha256").update("original").digest("hex") },
-      () => Promise.reject(new Error("save unavailable")),
-    )).rejects.toThrow(`Cannot save recovered edit for settings.json to ${source}; generated output is preserved. Resolve the save failure before retrying.`);
+    await expect(
+      syncBackModifiedFiles(
+        [{ path: "settings.json", reason: "modified" }],
+        outputDir,
+        stagingDir,
+        new Map([[staged, source]]),
+        {},
+        {},
+        baseline,
+        { "settings.json": new Bun.CryptoHasher("sha256").update("original").digest("hex") },
+        () => Promise.reject(new Error("save unavailable")),
+      ),
+    ).rejects.toThrow(
+      `Cannot save recovered edit for settings.json to ${source}; generated output is preserved. Resolve the save failure before retrying.`,
+    );
     expect(await Bun.file(source).text()).toBe("original");
     expect(await Bun.file(output).text()).toBe("harness edit");
     expect(await Bun.file(staged).text()).toBe("original");
@@ -119,12 +161,22 @@ describe("syncBackModifiedFiles", () => {
     const staged = await writeTestFile(stagingDir, "settings.json", "original");
     const baseline = await collectGeneratedOutputEntries(stagingDir);
     const output = await writeTestFile(outputDir, "settings.json", "harness edit");
-    await expect(syncBackModifiedFiles(
-      [{ path: "settings.json", reason: "modified" }], outputDir, stagingDir,
-      new Map([[staged, source]]), {}, {}, baseline,
-      { "settings.json": new Bun.CryptoHasher("sha256").update("original").digest("hex") },
-      undefined, false,
-    )).rejects.toThrow("Generated files changed again during regeneration. Output application is suspended; preserve the edits and retry after reconciliation.");
+    await expect(
+      syncBackModifiedFiles(
+        [{ path: "settings.json", reason: "modified" }],
+        outputDir,
+        stagingDir,
+        new Map([[staged, source]]),
+        {},
+        {},
+        baseline,
+        { "settings.json": new Bun.CryptoHasher("sha256").update("original").digest("hex") },
+        undefined,
+        false,
+      ),
+    ).rejects.toThrow(
+      "Generated files changed again during regeneration. Output application is suspended; preserve the edits and retry after reconciliation.",
+    );
     expect(await Bun.file(source).text()).toBe("original");
     expect(await Bun.file(output).text()).toBe("harness edit");
   });
@@ -138,10 +190,19 @@ describe("syncBackModifiedFiles", () => {
     await Bun.write(staged, "source edit");
     const output = await writeTestFile(outputDir, "settings.json", "harness edit");
 
-    await expect(syncBackModifiedFiles(
-      [{ path: "settings.json", reason: "modified" }], outputDir, stagingDir,
-      new Map([[staged, source]]), {}, {}, baseline,
-    )).rejects.toThrow(`Cannot recover settings.json: source ${source} and generated output both changed. Preserve both versions and reconcile their edits before retrying.`);
+    await expect(
+      syncBackModifiedFiles(
+        [{ path: "settings.json", reason: "modified" }],
+        outputDir,
+        stagingDir,
+        new Map([[staged, source]]),
+        {},
+        {},
+        baseline,
+      ),
+    ).rejects.toThrow(
+      `Cannot recover settings.json: source ${source} and generated output both changed. Preserve both versions and reconcile their edits before retrying.`,
+    );
     expect(await Bun.file(source).text()).toBe("source edit");
     expect(await Bun.file(output).text()).toBe("harness edit");
     expect(await Bun.file(staged).text()).toBe("source edit");
@@ -158,12 +219,29 @@ describe("syncBackModifiedFiles", () => {
     await writeTestFile(outputDir, "first.md", "first edit");
     await writeTestFile(outputDir, "second.md", "second edit");
 
-    await expect(syncBackModifiedFiles(
-      [{ path: "first.md", reason: "modified" }, { path: "second.md", reason: "modified" }],
-      outputDir, stagingDir, new Map([[first, source], [second, source]]), {}, {}, baseline,
-      { "first.md": new Bun.CryptoHasher("sha256").update("original").digest("hex"),
-        "second.md": new Bun.CryptoHasher("sha256").update("original").digest("hex") },
-    )).rejects.toThrow(`Cannot recover second.md: harness copies first.md and second.md contain conflicting edits for ${source}. Preserve both copies and reconcile them before retrying.`);
+    await expect(
+      syncBackModifiedFiles(
+        [
+          { path: "first.md", reason: "modified" },
+          { path: "second.md", reason: "modified" },
+        ],
+        outputDir,
+        stagingDir,
+        new Map([
+          [first, source],
+          [second, source],
+        ]),
+        {},
+        {},
+        baseline,
+        {
+          "first.md": new Bun.CryptoHasher("sha256").update("original").digest("hex"),
+          "second.md": new Bun.CryptoHasher("sha256").update("original").digest("hex"),
+        },
+      ),
+    ).rejects.toThrow(
+      `Cannot recover second.md: harness copies first.md and second.md contain conflicting edits for ${source}. Preserve both copies and reconcile them before retrying.`,
+    );
     expect(await Bun.file(source).text()).toBe("original");
     expect(await Bun.file(first).text()).toBe("original");
     expect(await Bun.file(second).text()).toBe("original");
@@ -176,17 +254,22 @@ describe("syncBackModifiedFiles", () => {
     const source = await writeTestFile(root, "source.md", "original");
     const staged = await writeTestFile(stagingDir, "source.md", "original");
     await writeTestFile(outputDir, "source.md", "harness edit");
-    await expect(syncBackModifiedFiles(
-      [{ path: "source.md", reason: "modified" }], outputDir, stagingDir,
-      new Map([[staged, source]]), {},
-    )).rejects.toThrow();
+    await expect(
+      syncBackModifiedFiles(
+        [{ path: "source.md", reason: "modified" }],
+        outputDir,
+        stagingDir,
+        new Map([[staged, source]]),
+        {},
+      ),
+    ).rejects.toThrow();
     expect(await Bun.file(source).text()).toBe("original");
   });
   it.each([
     '<%- include("/shared.md") %>',
-    '<% if (true) { %>content<% } %>',
+    "<% if (true) { %>content<% } %>",
     '<%- env("VALUE") %>',
-    '<%%- repo_root %>',
+    "<%%- repo_root %>",
   ])("preserves EJS source and all outputs when recovery cannot reconstruct %s", async (template) => {
     const repositoryRoot = await createTestDirectory();
     const outputDir = join(repositoryRoot, "output");
@@ -199,12 +282,26 @@ describe("syncBackModifiedFiles", () => {
     await writeTestFile(outputDir, "template.md", "Edited rendered text");
     const baseline = await collectGeneratedOutputEntries(nextOutputDir);
 
-    await expect(syncBackModifiedFiles(
-      [{ path: "plain.md", reason: "modified" }, { path: "template.md", reason: "modified" }],
-      outputDir, nextOutputDir,
-      new Map([[plainOutput, plainSource], [templateOutput, templateSource]]), {}, {}, baseline,
-      { "plain.md": new Bun.CryptoHasher("sha256").update("Original plain text").digest("hex") },
-    )).rejects.toThrow(`Cannot sync generated edits for template.md: edit the EJS template at ${templateSource} directly; expressions, includes, and control flow cannot be reconstructed from rendered output.`);
+    await expect(
+      syncBackModifiedFiles(
+        [
+          { path: "plain.md", reason: "modified" },
+          { path: "template.md", reason: "modified" },
+        ],
+        outputDir,
+        nextOutputDir,
+        new Map([
+          [plainOutput, plainSource],
+          [templateOutput, templateSource],
+        ]),
+        {},
+        {},
+        baseline,
+        { "plain.md": new Bun.CryptoHasher("sha256").update("Original plain text").digest("hex") },
+      ),
+    ).rejects.toThrow(
+      `Cannot sync generated edits for template.md: edit the EJS template at ${templateSource} directly; expressions, includes, and control flow cannot be reconstructed from rendered output.`,
+    );
     expect(await Bun.file(plainSource).text()).toBe("Original plain text");
     expect(await Bun.file(templateSource).text()).toBe(template);
     expect(await Bun.file(plainOutput).text()).toBe("Original plain text");
@@ -214,27 +311,56 @@ describe("syncBackModifiedFiles", () => {
   it("recovers user skill edits into the selected variant while preserving the default and other hosts", async () => {
     const repositoryRoot = await createTestDirectory();
     const sourceDir = join(repositoryRoot, "skills/user/example");
-    const defaultPath = await writeTestFile(sourceDir, "SKILL.md", "---\nname: example\ndescription: Example\nauthor: upstream\n---\nDefault.\n");
-    const variantPath = await writeTestFile(sourceDir, "variants/workstation-a/SKILL.md", "---\nname: example\ndescription: Example\nauthor: upstream\n---\nHost A.\n");
+    const defaultPath = await writeTestFile(
+      sourceDir,
+      "SKILL.md",
+      "---\nname: example\ndescription: Example\nauthor: upstream\n---\nDefault.\n",
+    );
+    const variantPath = await writeTestFile(
+      sourceDir,
+      "variants/workstation-a/SKILL.md",
+      "---\nname: example\ndescription: Example\nauthor: upstream\n---\nHost A.\n",
+    );
     const otherPath = await writeTestFile(sourceDir, "variants/workstation-b/SKILL.md", "Host B.\n");
     const outputDir = join(repositoryRoot, ".output");
     const nextOutputDir = join(repositoryRoot, ".tmp/staging");
     const relativePath = "codex/skills/example/SKILL.md";
     const sourcePaths = new Map<string, string>();
-    await copyDirectoryWithTemplateVariables(sourceDir, dirname(join(nextOutputDir, relativePath)), {}, sourcePaths, "workstation-a");
+    await copyDirectoryWithTemplateVariables(
+      sourceDir,
+      dirname(join(nextOutputDir, relativePath)),
+      {},
+      sourcePaths,
+      "workstation-a",
+    );
     expect(sourcePaths.get(join(nextOutputDir, relativePath))).toBe(variantPath);
-    const editedContent = "---\ndisable-model-invocation: true\nname: upstream-example\ndescription: Example\nauthor: upstream\n---\nEdited host A.\n";
+    const editedContent =
+      "---\ndisable-model-invocation: true\nname: upstream-example\ndescription: Example\nauthor: upstream\n---\nEdited host A.\n";
     await writeTestFile(outputDir, relativePath, editedContent);
 
     const baseline = await collectGeneratedOutputEntries(nextOutputDir);
-    await syncBackModifiedFiles([{ path: relativePath, reason: "modified" }], outputDir, nextOutputDir, sourcePaths, {}, {}, baseline,
-      { [relativePath]: new Bun.CryptoHasher("sha256").update(await Bun.file(variantPath).bytes()).digest("hex") });
+    await syncBackModifiedFiles(
+      [{ path: relativePath, reason: "modified" }],
+      outputDir,
+      nextOutputDir,
+      sourcePaths,
+      {},
+      {},
+      baseline,
+      { [relativePath]: new Bun.CryptoHasher("sha256").update(await Bun.file(variantPath).bytes()).digest("hex") },
+    );
 
-    expect(await Bun.file(variantPath).text()).toBe("---\nname: example\ndescription: Example\nauthor: upstream\n---\nEdited host A.\n");
-    expect(await Bun.file(defaultPath).text()).toBe("---\nname: example\ndescription: Example\nauthor: upstream\n---\nDefault.\n");
+    expect(await Bun.file(variantPath).text()).toBe(
+      "---\nname: example\ndescription: Example\nauthor: upstream\n---\nEdited host A.\n",
+    );
+    expect(await Bun.file(defaultPath).text()).toBe(
+      "---\nname: example\ndescription: Example\nauthor: upstream\n---\nDefault.\n",
+    );
     expect(await Bun.file(otherPath).text()).toBe("Host B.\n");
     expect(await Bun.file(join(outputDir, relativePath)).text()).toBe(editedContent);
-    expect(await Bun.file(join(nextOutputDir, relativePath)).text()).toBe("---\nname: example\ndescription: Example\nauthor: upstream\n---\nHost A.\n");
+    expect(await Bun.file(join(nextOutputDir, relativePath)).text()).toBe(
+      "---\nname: example\ndescription: Example\nauthor: upstream\n---\nHost A.\n",
+    );
   });
 
   it("rejects recovery into a different source before writing any edits", async () => {
@@ -242,14 +368,28 @@ describe("syncBackModifiedFiles", () => {
     const outputDir = join(repositoryRoot, ".output");
     const nextOutputDir = join(repositoryRoot, ".tmp/staging");
     const relativePath = "codex/skills/example/SKILL.md";
-    const originalSource = await writeTestFile(repositoryRoot, "skills/agent/example/variants/workstation-a/SKILL.md", "Host A.\n");
-    const nextSource = await writeTestFile(repositoryRoot, "skills/agent/example/variants/workstation-b/SKILL.md", "Host B.\n");
+    const originalSource = await writeTestFile(
+      repositoryRoot,
+      "skills/agent/example/variants/workstation-a/SKILL.md",
+      "Host A.\n",
+    );
+    const nextSource = await writeTestFile(
+      repositoryRoot,
+      "skills/agent/example/variants/workstation-b/SKILL.md",
+      "Host B.\n",
+    );
     const nextOutputPath = await writeTestFile(nextOutputDir, relativePath, "Host B.\n");
     await writeTestFile(outputDir, relativePath, "Edited host A.\n");
-    await expect(syncBackModifiedFiles(
-      [{ path: relativePath, reason: "modified" }], outputDir, nextOutputDir,
-      new Map([[nextOutputPath, nextSource]]), {}, { [relativePath]: originalSource },
-    )).rejects.toThrow();
+    await expect(
+      syncBackModifiedFiles(
+        [{ path: relativePath, reason: "modified" }],
+        outputDir,
+        nextOutputDir,
+        new Map([[nextOutputPath, nextSource]]),
+        {},
+        { [relativePath]: originalSource },
+      ),
+    ).rejects.toThrow();
     expect(await Bun.file(originalSource).text()).toBe("Host A.\n");
     expect(await Bun.file(nextSource).text()).toBe("Host B.\n");
     expect(await Bun.file(nextOutputPath).text()).toBe("Host B.\n");
@@ -283,9 +423,7 @@ describe("syncBackModifiedFiles", () => {
       skills_dir: sourceDir,
     };
 
-    const drift: IGeneratedOutputDrift[] = [
-      { path: outputRelativePath, reason: "modified" },
-    ];
+    const drift: IGeneratedOutputDrift[] = [{ path: outputRelativePath, reason: "modified" }];
 
     await syncBackModifiedFiles(
       drift,
@@ -293,7 +431,13 @@ describe("syncBackModifiedFiles", () => {
       nextOutputDir,
       sourcePathByOutputPath,
       templateContext,
-      {}, baseline, { [outputRelativePath]: new Bun.CryptoHasher("sha256").update(await Bun.file(sourceFilePath).bytes()).digest("hex") },
+      {},
+      baseline,
+      {
+        [outputRelativePath]: new Bun.CryptoHasher("sha256")
+          .update(await Bun.file(sourceFilePath).bytes())
+          .digest("hex"),
+      },
     );
 
     // 1. Source file should have been updated with the reversed content
@@ -324,17 +468,9 @@ describe("syncBackModifiedFiles", () => {
     const sourcePathByOutputPath = new Map<string, string>();
     sourcePathByOutputPath.set(nextOutputPath, sourceFilePath);
 
-    const drift: IGeneratedOutputDrift[] = [
-      { path: outputRelativePath, reason: "missing" },
-    ];
+    const drift: IGeneratedOutputDrift[] = [{ path: outputRelativePath, reason: "missing" }];
 
-    await syncBackModifiedFiles(
-      drift,
-      outputDir,
-      nextOutputDir,
-      sourcePathByOutputPath,
-      {},
-    );
+    await syncBackModifiedFiles(drift, outputDir, nextOutputDir, sourcePathByOutputPath, {});
 
     // Source file should NOT be updated because reason is "added" rather than "modified"
     const sourceContent = await readFile(sourceFilePath, "utf-8");
@@ -354,17 +490,9 @@ describe("syncBackModifiedFiles", () => {
 
     const sourcePathByOutputPath = new Map<string, string>(); // empty map
 
-    const drift: IGeneratedOutputDrift[] = [
-      { path: outputRelativePath, reason: "modified" },
-    ];
+    const drift: IGeneratedOutputDrift[] = [{ path: outputRelativePath, reason: "modified" }];
 
-    await expect(syncBackModifiedFiles(
-      drift,
-      outputDir,
-      nextOutputDir,
-      sourcePathByOutputPath,
-      {},
-    )).rejects.toThrow();
+    await expect(syncBackModifiedFiles(drift, outputDir, nextOutputDir, sourcePathByOutputPath, {})).rejects.toThrow();
 
     // Staging file should NOT be modified
     const stagingContent = await readFile(nextOutputPath, "utf-8");

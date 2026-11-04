@@ -15,7 +15,7 @@ describe("writeTimestampedOutput", () => {
     const script = [
       `import { writeTimestampedOutput } from ${JSON.stringify(sourcePath)};`,
       'await writeTimestampedOutput(new Blob(["message\\n"]).stream(),',
-      'async (output) => { process.stdout.write(output); },',
+      "async (output) => { process.stdout.write(output); },",
       `() => new Date(${JSON.stringify(instant)}));`,
     ].join("\n");
     const subprocess = Bun.spawn([process.execPath, "-e", script], {
@@ -44,13 +44,21 @@ describe("writeTimestampedOutput", () => {
     });
     const output: string[] = [];
     const date = new Date(2026, 9, 16, 13, 9, 7);
-    await writeTimestampedOutput(stream, async (text) => { output.push(text); }, () => date);
+    await writeTimestampedOutput(
+      stream,
+      async (text) => {
+        output.push(text);
+      },
+      () => date,
+    );
     expect(output.join("")).toBe("[2026-10-16 13:09] café\n[2026-10-16 13:09] \n[2026-10-16 13:09] last\n");
   });
 
   it("does not emit a spurious line for an empty stream", async () => {
     const output: string[] = [];
-    await writeTimestampedOutput(new Blob([]).stream(), async (text) => { output.push(text); });
+    await writeTimestampedOutput(new Blob([]).stream(), async (text) => {
+      output.push(text);
+    });
     expect(output).toEqual([]);
   });
 });

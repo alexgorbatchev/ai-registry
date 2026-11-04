@@ -4,9 +4,9 @@ import { listSettingsChanges } from "../listSettingsChanges";
 
 describe("listSettingsChanges", () => {
   it("returns no changes for equal settings", () => {
-    expect(listSettingsChanges({ hooks: { Stop: [{ command: "x" }] } }, { hooks: { Stop: [{ command: "x" }] } })).toEqual(
-      [],
-    );
+    expect(
+      listSettingsChanges({ hooks: { Stop: [{ command: "x" }] } }, { hooks: { Stop: [{ command: "x" }] } }),
+    ).toEqual([]);
   });
 
   it("reports added, changed, and removed keys at the deepest object level", () => {
@@ -23,7 +23,10 @@ describe("listSettingsChanges", () => {
   });
 
   it("replaces lists and type changes as whole values", () => {
-    const changes = listSettingsChanges({ allow: ["read"], mode: { strict: true } }, { allow: ["read", "edit"], mode: "loose" });
+    const changes = listSettingsChanges(
+      { allow: ["read"], mode: { strict: true } },
+      { allow: ["read", "edit"], mode: "loose" },
+    );
 
     expect(changes).toEqual([
       { keyPath: ["allow"], value: ["read", "edit"] },

@@ -47,7 +47,8 @@ describe("runCommand", () => {
     });
 
     await expect(result).rejects.toMatchObject({
-      message: "Failed to build generated outputs (exit code 1).\nIf generated outputs drifted, rerun `bun bootstrap -- -y`.",
+      message:
+        "Failed to build generated outputs (exit code 1).\nIf generated outputs drifted, rerun `bun bootstrap -- -y`.",
     });
   });
 });

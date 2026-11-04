@@ -332,8 +332,7 @@ function resolveProject(directory: string): IProjectResolution {
 
 function looksLikeRegistryRoot(directoryPath: string): boolean {
   return (
-    existsSync(join(directoryPath, "skills")) &&
-    existsSync(join(directoryPath, "harnesses", "opencode", "skills"))
+    existsSync(join(directoryPath, "skills")) && existsSync(join(directoryPath, "harnesses", "opencode", "skills"))
   );
 }
 
@@ -543,8 +542,7 @@ function extractTokenTotals(messageData: unknown): ITokenTotals {
   const output = getNumberPath(messageData, ["tokens", "output"]) ?? 0;
   const cacheRead = getNumberPath(messageData, ["tokens", "cache", "read"]) ?? 0;
   const cacheWrite = getNumberPath(messageData, ["tokens", "cache", "write"]) ?? 0;
-  const total =
-    getNumberPath(messageData, ["tokens", "total"]) ?? input + output + cacheRead + cacheWrite;
+  const total = getNumberPath(messageData, ["tokens", "total"]) ?? input + output + cacheRead + cacheWrite;
   const reasoning = getNumberPath(messageData, ["tokens", "reasoning"]) ?? 0;
   return { input, output, cacheRead, cacheWrite, total, reasoning };
 }
@@ -961,7 +959,7 @@ function createProgram(): Command {
         all: options.all,
         sessionId: options.session,
       });
-      });
+    });
 
   return program;
 }

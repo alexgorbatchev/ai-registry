@@ -14,7 +14,11 @@ async function createTestDirectory(): Promise<string> {
   return testDir;
 }
 
-async function writeScriptFile(repositoryRoot: string, fileName: string, content: string = "#!/usr/bin/env bash\n"): Promise<string> {
+async function writeScriptFile(
+  repositoryRoot: string,
+  fileName: string,
+  content: string = "#!/usr/bin/env bash\n",
+): Promise<string> {
   const scriptPath = join(repositoryRoot, fileName);
   await mkdir(dirname(scriptPath), { recursive: true });
   await writeFile(scriptPath, content, "utf-8");

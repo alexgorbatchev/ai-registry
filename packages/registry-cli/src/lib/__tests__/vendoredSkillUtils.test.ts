@@ -126,7 +126,9 @@ author: mattpocock
     it("handles CRLF line endings properly", () => {
       const source = "---\r\nname: triage\r\ndescription: Triage issues.\r\n---\r\n\r\n# Content\r\n";
       const result = ensureSkillAuthor(source, "mattpocock");
-      expect(result).toBe("---\r\nname: triage\r\ndescription: Triage issues.\r\nauthor: mattpocock\r\n---\r\n\r\n# Content\r\n");
+      expect(result).toBe(
+        "---\r\nname: triage\r\ndescription: Triage issues.\r\nauthor: mattpocock\r\n---\r\n\r\n# Content\r\n",
+      );
     });
 
     it("creates frontmatter if none exists", () => {

@@ -22,10 +22,13 @@ describe("runLoggedScheduledUpdate", () => {
     await mkdir(join(directory, ".tmp"));
     const logPath = join(directory, ".tmp/scheduled-update.log");
     await Bun.write(logPath, "[2000-01-01 00:00] expired\n");
-    expect(await runLoggedScheduledUpdate(directory, [process.execPath, "-e", [
-      'console.log("stdout"); console.error("stderr");',
-      `process.exit(${exitCode});`,
-    ].join("\n")])).toBe(exitCode);
+    expect(
+      await runLoggedScheduledUpdate(directory, [
+        process.execPath,
+        "-e",
+        ['console.log("stdout"); console.error("stderr");', `process.exit(${exitCode});`].join("\n"),
+      ]),
+    ).toBe(exitCode);
     expect(await readTimestampedLog(logPath)).toBe("stdout\nstderr\n");
   });
 });

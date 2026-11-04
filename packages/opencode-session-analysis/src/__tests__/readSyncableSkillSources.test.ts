@@ -64,11 +64,7 @@ describe("readSyncableSkillSources", () => {
   it("rejects duplicate skill names across sources", async () => {
     const registryRootPath = createFixtureRoot("duplicate-sources");
     writeSkill(registryRootPath, "skills/bun", "---\nname: bun\ndescription: bun\n---\n");
-    writeSkill(
-      registryRootPath,
-      "harnesses/opencode/skills/bun",
-      "---\nname: bun\ndescription: duplicated bun\n---\n",
-    );
+    writeSkill(registryRootPath, "harnesses/opencode/skills/bun", "---\nname: bun\ndescription: duplicated bun\n---\n");
 
     await expect(readSyncableSkillSources(registryRootPath)).rejects.toThrow(
       "Duplicate syncable skill name bun found in harnesses/opencode and skills",

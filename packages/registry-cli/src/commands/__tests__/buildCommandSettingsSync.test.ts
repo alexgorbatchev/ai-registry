@@ -73,10 +73,17 @@ describe("buildCommand settings sync", () => {
 
     const livePath = join(registryPaths.output, "codex", "config.toml");
     // Codex declines one listed project and trusts one outside the listed folders.
-    await writeFile(livePath, applySettingsChanges(await readFile(livePath, "utf-8"), [
-      { keyPath: ["projects", join(projectsDir, "declined"), "trust_level"], value: "untrusted" },
-      { keyPath: ["projects", "/elsewhere/codex-trusted", "trust_level"], value: "trusted" },
-    ], livePath));
+    await writeFile(
+      livePath,
+      applySettingsChanges(
+        await readFile(livePath, "utf-8"),
+        [
+          { keyPath: ["projects", join(projectsDir, "declined"), "trust_level"], value: "untrusted" },
+          { keyPath: ["projects", "/elsewhere/codex-trusted", "trust_level"], value: "trusted" },
+        ],
+        livePath,
+      ),
+    );
     await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
 
     const live = Bun.TOML.parse(await readFile(livePath, "utf-8"));

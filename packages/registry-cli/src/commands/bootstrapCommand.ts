@@ -28,7 +28,10 @@ export type IBootstrapDependencies = {
 };
 
 function getTimestamp(): string {
-  return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  return new Date()
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
 }
 
 function createDefaultDependencies(): IBootstrapDependencies {
@@ -117,7 +120,9 @@ function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResul
   }
 }
 
-export async function bootstrapCommand(dependencies: IBootstrapDependencies = createDefaultDependencies()): Promise<void> {
+export async function bootstrapCommand(
+  dependencies: IBootstrapDependencies = createDefaultDependencies(),
+): Promise<void> {
   const { root, overlays, output } = dependencies.registryPaths;
   console.log("🚀 Bootstrapping ai-registry...\n");
   for (const overlay of overlays) {
@@ -138,7 +143,8 @@ export async function bootstrapCommand(dependencies: IBootstrapDependencies = cr
     cwd: root,
     description: "build generated outputs",
     spawn: dependencies.spawn,
-    failureHint: "Generated edits are recovered automatically when safe. Resolve any reported source conflict, unsupported recovery, or save failure before retrying; -y does not discard edits.",
+    failureHint:
+      "Generated edits are recovered automatically when safe. Resolve any reported source conflict, unsupported recovery, or save failure before retrying; -y does not discard edits.",
   });
 
   const bootstrapTargets = await getBootstrapTargets(dependencies.plugins, output);
@@ -174,5 +180,7 @@ export async function bootstrapCommand(dependencies: IBootstrapDependencies = cr
     console.log(`${target.description} now reads from: ${target.targetPath}`);
   }
   console.log(`Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: ${dependencies.publicBinDir}`);
-  console.log("Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, and CLAUDE_CONFIG_DIR if needed.");
+  console.log(
+    "Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, and CLAUDE_CONFIG_DIR if needed.",
+  );
 }

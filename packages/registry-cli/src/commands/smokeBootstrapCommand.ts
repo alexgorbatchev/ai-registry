@@ -17,13 +17,7 @@ const PUBLIC_SCRIPT_NAMES = [
   "air-opencode-session-export",
 ];
 
-const EXCLUDED_ROOT_ENTRIES = new Set([
-  ".agents",
-  ".git",
-  ".output",
-  ".tmp",
-  "node_modules",
-]);
+const EXCLUDED_ROOT_ENTRIES = new Set([".agents", ".git", ".output", ".tmp", "node_modules"]);
 
 function fail(message: string): never {
   throw new Error(message);

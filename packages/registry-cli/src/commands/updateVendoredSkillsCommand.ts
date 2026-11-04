@@ -18,7 +18,10 @@ type IVendoredSkillLock = {
 };
 
 function getRequestedSkillNames(argv: string[]): string[] {
-  return argv.slice(2).map((skillName) => skillName.trim()).filter(Boolean);
+  return argv
+    .slice(2)
+    .map((skillName) => skillName.trim())
+    .filter(Boolean);
 }
 
 function buildInstallSource(entry: IVendoredSkillEntry): string {
@@ -38,8 +41,12 @@ function isVendoredSkillEntry(value: unknown): value is IVendoredSkillEntry {
 }
 
 function isVendoredSkillRecord(value: unknown): value is Record<string, IVendoredSkillEntry> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    && Object.values(value).every((entry) => isVendoredSkillEntry(entry));
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value).every((entry) => isVendoredSkillEntry(entry))
+  );
 }
 
 async function readVendoredSkillLock(lockPath: string): Promise<IVendoredSkillLock> {

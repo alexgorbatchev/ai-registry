@@ -85,7 +85,7 @@ describe("applyHomeTarget", () => {
     await writeTestFile(sourcePath, "CLAUDE.md", "relocated\n");
     await writeTestFile(previousSourcePath, "CLAUDE.md", "original\n");
     const homePath = join(root, "home");
-    await writeTestFile(homePath, "history.jsonl", "{\"display\":\"keep me\"}\n");
+    await writeTestFile(homePath, "history.jsonl", '{"display":"keep me"}\n');
     await writeTestFile(homePath, "projects/app/session.jsonl", "transcript\n");
     await symlink(join(previousSourcePath, "CLAUDE.md"), join(homePath, "CLAUDE.md"));
 
@@ -97,7 +97,7 @@ describe("applyHomeTarget", () => {
 
     expect(result).toEqual({ linked: [], relinked: ["CLAUDE.md"], backedUp: [], removed: [] });
     expect(await readFile(join(homePath, "CLAUDE.md"), "utf-8")).toBe("relocated\n");
-    expect(await readFile(join(homePath, "history.jsonl"), "utf-8")).toBe("{\"display\":\"keep me\"}\n");
+    expect(await readFile(join(homePath, "history.jsonl"), "utf-8")).toBe('{"display":"keep me"}\n');
     expect(await readFile(join(homePath, "projects", "app", "session.jsonl"), "utf-8")).toBe("transcript\n");
   });
 
@@ -121,9 +121,9 @@ describe("applyHomeTarget", () => {
   it("backs up a real entry that occupies a managed name before linking it", async () => {
     const root = await createTestDirectory();
     const sourcePath = join(root, "output", "harness");
-    await writeTestFile(sourcePath, "settings.json", "{\"generated\":true}\n");
+    await writeTestFile(sourcePath, "settings.json", '{"generated":true}\n');
     const homePath = join(root, "home");
-    await writeTestFile(homePath, "settings.json", "{\"local\":true}\n");
+    await writeTestFile(homePath, "settings.json", '{"local":true}\n');
 
     const result = await applyHomeTarget(
       { kind: "home", sourcePath, targetPath: homePath, description: "Pi config" },
@@ -138,7 +138,7 @@ describe("applyHomeTarget", () => {
       backedUp: [{ name: "settings.json", backupPath }],
       removed: [],
     });
-    expect(await readFile(backupPath, "utf-8")).toBe("{\"local\":true}\n");
+    expect(await readFile(backupPath, "utf-8")).toBe('{"local":true}\n');
     expect(await readlink(join(homePath, "settings.json"))).toBe(join(sourcePath, "settings.json"));
   });
 
@@ -169,11 +169,13 @@ describe("applyHomeTarget", () => {
     await mkdir(dirname(homePath), { recursive: true });
     await symlink(sourcePath, homePath);
 
-    await expect(applyHomeTarget(
-      { kind: "home", sourcePath, targetPath: homePath, description: "Codex home" },
-      ["AGENTS.md"],
-      BACKUP_SUFFIX,
-    )).rejects.toThrow(
+    await expect(
+      applyHomeTarget(
+        { kind: "home", sourcePath, targetPath: homePath, description: "Codex home" },
+        ["AGENTS.md"],
+        BACKUP_SUFFIX,
+      ),
+    ).rejects.toThrow(
       `${homePath} is a symlink to ${sourcePath}. Harness homes are real directories that keep runtime state outside the registry; move the state it points at into a real directory at ${homePath}, then rerun bootstrap.`,
     );
     expect(await readlink(homePath)).toBe(sourcePath);
@@ -183,11 +185,13 @@ describe("applyHomeTarget", () => {
     const root = await createTestDirectory();
     const homePath = await writeTestFile(root, "home/.codex", "not a directory\n");
 
-    await expect(applyHomeTarget(
-      { kind: "home", sourcePath: join(root, "output"), targetPath: homePath, description: "Codex home" },
-      ["AGENTS.md"],
-      BACKUP_SUFFIX,
-    )).rejects.toThrow(`${homePath} exists but is not a directory.`);
+    await expect(
+      applyHomeTarget(
+        { kind: "home", sourcePath: join(root, "output"), targetPath: homePath, description: "Codex home" },
+        ["AGENTS.md"],
+        BACKUP_SUFFIX,
+      ),
+    ).rejects.toThrow(`${homePath} exists but is not a directory.`);
   });
 
   it("refuses to apply an output the manifest records nothing for", async () => {
@@ -195,11 +199,11 @@ describe("applyHomeTarget", () => {
     const sourcePath = join(root, "output", "harness");
     const homePath = join(root, "home");
 
-    await expect(applyHomeTarget(
-      { kind: "home", sourcePath, targetPath: homePath, description: "Codex home" },
-      [],
-      BACKUP_SUFFIX,
-    )).rejects.toThrow(`The generated output manifest records no entries for ${sourcePath}. Rebuild before bootstrapping.`);
+    await expect(
+      applyHomeTarget({ kind: "home", sourcePath, targetPath: homePath, description: "Codex home" }, [], BACKUP_SUFFIX),
+    ).rejects.toThrow(
+      `The generated output manifest records no entries for ${sourcePath}. Rebuild before bootstrapping.`,
+    );
     expect(existsSync(homePath)).toBe(false);
   });
 });

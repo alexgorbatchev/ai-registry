@@ -2,3 +2,4 @@ node_modules/
 bun.lock
 .tmp/
 justfile
+.state/

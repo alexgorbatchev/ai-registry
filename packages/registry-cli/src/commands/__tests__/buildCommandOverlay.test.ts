@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { existsSync } from "fs";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
@@ -8,6 +8,10 @@ import { type IRegistryPaths } from "../../lib/getRegistryPaths";
 import { copyRepositoryHarnesses, loadTestShellEnvironment } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-overlay-tests");
+
+afterAll(async () => {
+  await rm(TEST_ROOT, { recursive: true, force: true });
+});
 
 describe("buildCommand with overlay", () => {
   let tempDir: string;
@@ -51,6 +55,7 @@ describe("buildCommand with overlay", () => {
       systemPrompt: join(repoRoot, "system", "system.md"),
       output: join(repoRoot, ".output"),
       temp: join(repoRoot, ".tmp"),
+      state: join(repoRoot, ".state"),
     };
   });
 

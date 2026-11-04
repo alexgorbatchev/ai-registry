@@ -72,6 +72,25 @@ test('explicit cache removal verifies deletion and preserves source', async () =
   expect(await Bun.file(join(repositoryPath, 'source.txt')).text()).toBe('source\n');
 });
 
+test('explicit removal keeps its receipt under .state and refuses to delete cleanup records', async () => {
+  await mkdir(join(rootPath, '.tmp/cache'), { recursive: true });
+  await Bun.write(join(rootPath, '.tmp/cache/artifact.txt'), 'cache\n');
+  const removal = cli(rootPath, ['paths', 'remove', join(rootPath, '.tmp'), '--root', rootPath, '--execute']);
+  expect(removal.exitCode).toBe(0);
+  const { logPath, removed } = JSON.parse(removal.stdout);
+  expect(removed).toEqual([join(rootPath, '.tmp')]);
+  expect(logPath.startsWith(join(rootPath, '.state/cleanup-'))).toBe(true);
+  expect((await Bun.file(logPath).json()).removed).toEqual([join(rootPath, '.tmp')]);
+
+  const recordCache = join(logPath, '../node_modules');
+  await mkdir(recordCache);
+  const rejected = cli(rootPath, ['paths', 'remove', recordCache, '--root', rootPath, '--execute']);
+  expect(rejected.exitCode).toBe(1);
+  expect(rejected.stderr).toContain('Preserve the root .state cleanup records');
+  expect((await lstat(recordCache)).isDirectory()).toBe(true);
+  expect(await Bun.file(logPath).exists()).toBe(true);
+});
+
 test('validates the entire explicit batch before removing anything', async () => {
   const cachePath = join(rootPath, '.tmp/cache');
   await mkdir(cachePath, { recursive: true });

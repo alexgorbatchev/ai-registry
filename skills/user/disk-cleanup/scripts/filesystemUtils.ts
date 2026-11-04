@@ -1,4 +1,4 @@
-import { lstat, readdir, realpath } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, readdir, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { runInspectionCommand } from './runInspectionCommand';
 
@@ -22,6 +22,22 @@ export async function resolveRoot(root: string): Promise<string> {
 export function isWithin(root: string, path: string): boolean {
   const child = relative(root, path);
   return child !== '' && child !== '..' && !child.startsWith(`..${sep}`) && !isAbsolute(child);
+}
+
+// Manifests and execution receipts outlive the session that wrote them, so they stay out of `.tmp`.
+function recordContainer(root: string): string {
+  return join(root, '.state');
+}
+
+export function isRecordPath(root: string, path: string): boolean {
+  return path === recordContainer(root) || isWithin(recordContainer(root), path);
+}
+
+export async function createRecordDirectory(root: string, prefix: string): Promise<string> {
+  const container = recordContainer(root);
+  await mkdir(container, { recursive: true });
+  await validatePath(root, container);
+  return mkdtemp(join(container, prefix));
 }
 
 export async function validatePath(root: string, input: string): Promise<string> {

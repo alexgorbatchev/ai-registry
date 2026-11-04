@@ -1,5 +1,6 @@
 import assert from "node:assert";
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { existsSync } from "node:fs";
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { join } from "path";
 
@@ -11,6 +12,10 @@ import { applySettingsChanges } from "../../lib/settingsSync/applySettingsChange
 import { copyRepositoryHarnesses, loadTestShellEnvironment } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-settings-sync-tests");
+
+afterAll(async () => {
+  await rm(TEST_ROOT, { recursive: true, force: true });
+});
 
 describe("buildCommand settings sync", () => {
   let tempDir: string;
@@ -38,6 +43,7 @@ describe("buildCommand settings sync", () => {
       systemPrompt: join(repoRoot, "system", "system.md"),
       output: join(repoRoot, ".output"),
       temp: join(repoRoot, ".tmp"),
+      state: join(repoRoot, ".state"),
     };
     spyOn(console, "log").mockImplementation(() => {});
   });
@@ -61,6 +67,26 @@ describe("buildCommand settings sync", () => {
     expect(JSON.parse(await readFile(sourcePath, "utf-8")).harnessAddedSetting).toBe(true);
     expect(JSON.parse(await readFile(livePath, "utf-8")).harnessAddedSetting).toBe(true);
   });
+
+  it("keeps the settings merge base under .state so a later build propagates harness removals", async () => {
+    await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
+    const livePath = join(registryPaths.output, "claude-code", "settings.json");
+    const sourcePath = join(registryPaths.harnesses, "claude-code", "settings.json");
+    const liveSettings = JSON.parse(await readFile(livePath, "utf-8"));
+    await writeFile(livePath, `${JSON.stringify({ ...liveSettings, harnessAddedSetting: true }, null, 2)}\n`);
+    await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
+
+    const basePath = join(registryPaths.state, "settings-sync", "claude-code", "settings.json.json");
+    expect(JSON.parse(await readFile(basePath, "utf-8")).harnessAddedSetting).toBe(true);
+    expect(existsSync(join(registryPaths.temp, "settings-sync"))).toBe(false);
+
+    // Only the recorded base distinguishes a harness removal from a source addition.
+    await writeFile(livePath, `${JSON.stringify(liveSettings, null, 2)}\n`);
+    await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
+
+    expect(JSON.parse(await readFile(sourcePath, "utf-8")).harnessAddedSetting).toBeUndefined();
+    expect(JSON.parse(await readFile(livePath, "utf-8")).harnessAddedSetting).toBeUndefined();
+  }, 30_000);
 
   it("merges generated Codex project trust with trust Codex recorded itself, keeping both out of the source", async () => {
     const projectsDir = join(tempDir, "projects");

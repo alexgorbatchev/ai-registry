@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterAll, afterEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, chmod } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { scheduledUpdate } from "../scheduledUpdate";
 import { REPOSITORY_ROOT, readTimestampedLog } from "./helpers";
 
+const PARENT_PATH = resolve(REPOSITORY_ROOT, ".tmp/scheduled-update-tests");
 const testDirectories: string[] = [];
 
 async function run(cwd: string, cmd: string[]): Promise<string> {
@@ -25,9 +26,8 @@ async function run(cwd: string, cmd: string[]): Promise<string> {
 }
 
 async function createRepository() {
-  const parentPath = resolve(REPOSITORY_ROOT, ".tmp/scheduled-update-tests");
-  await mkdir(parentPath, { recursive: true });
-  const testPath = await mkdtemp(join(parentPath, "run-"));
+  await mkdir(PARENT_PATH, { recursive: true });
+  const testPath = await mkdtemp(join(PARENT_PATH, "run-"));
   testDirectories.push(testPath);
   const remotePath = join(testPath, "remote");
   const repositoryPath = join(testPath, "checkout");
@@ -35,7 +35,7 @@ async function createRepository() {
   await run(remotePath, ["git", "config", "user.name", "Test Author"]);
   await run(remotePath, ["git", "config", "user.email", "test@example.invalid"]);
   await run(remotePath, ["git", "config", "receive.denyCurrentBranch", "updateInstead"]);
-  await Bun.write(join(remotePath, ".gitignore"), ".tmp/\n");
+  await Bun.write(join(remotePath, ".gitignore"), ".tmp/\n.state/\n");
   await Bun.write(join(remotePath, "content.txt"), "initial\n");
   await Bun.write(join(remotePath, "local.txt"), "initial\n");
   await Bun.write(join(remotePath, "justfile"), "bootstrap *args:\n    bun bootstrap.ts {{args}}\n");
@@ -68,6 +68,10 @@ afterEach(async () => {
   }
 });
 
+afterAll(async () => {
+  await rm(PARENT_PATH, { recursive: true, force: true });
+});
+
 describe("scheduledUpdate", () => {
   it("runs the locked entrypoint from another working directory", async () => {
     const { remotePath, repositoryPath } = await createRepository();
@@ -83,18 +87,19 @@ describe("scheduledUpdate", () => {
       "packages/registry-cli/src/lib/pullWithRebase.ts",
       "packages/registry-cli/src/lib/pushScheduledCommits.ts",
       "packages/registry-cli/src/lib/getErrorMessage.ts",
+      "packages/registry-cli/src/lib/getScheduledUpdatePaths.ts",
     ]) {
       await Bun.write(join(repositoryPath, sourcePath), Bun.file(resolve(REPOSITORY_ROOT, sourcePath)));
     }
     await Bun.write(join(repositoryPath, ".git/info/exclude"), "packages/\n");
-    await Bun.write(join(repositoryPath, ".tmp/scheduled-update.log"), "[2000-01-01 00:00] expired\n");
+    await Bun.write(join(repositoryPath, ".state/scheduled-update.log"), "[2000-01-01 00:00] expired\n");
     expect(
       await run(remotePath, [
         process.execPath,
         join(repositoryPath, "packages/registry-cli/src/bin/scheduled-update.ts"),
       ]),
-    ).toBe(`[OK] scheduled update: completed; log: ${repositoryPath}/.tmp/scheduled-update.log`);
-    expect(await readTimestampedLog(join(repositoryPath, ".tmp/scheduled-update.log"))).toBe(
+    ).toBe(`[OK] scheduled update: completed; log: ${repositoryPath}/.state/scheduled-update.log`);
+    expect(await readTimestampedLog(join(repositoryPath, ".state/scheduled-update.log"))).toBe(
       "Already up to date.\nbun bootstrap.ts -y\n[OK] scheduled update: bootstrapped\n",
     );
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
@@ -552,7 +557,7 @@ describe("scheduledUpdate", () => {
     expect(await run(repositoryPath, ["git", "status", "--porcelain"])).toBe("");
     expect(await Bun.file(join(repositoryPath, "content.txt")).text()).toBe("local committed\n");
     expect(await run(repositoryPath, ["git", "diff", "--name-only", "--diff-filter=U"])).toBe("");
-    expect(await Bun.file(join(repositoryPath, ".tmp/scheduled-update-recovery.json")).exists()).toBe(false);
+    expect(await Bun.file(join(repositoryPath, ".state/scheduled-update-recovery.json")).exists()).toBe(false);
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).exists()).toBe(false);
   });
 
@@ -560,7 +565,7 @@ describe("scheduledUpdate", () => {
     const { remotePath, repositoryPath } = await createRepository();
     await advanceRemote(remotePath);
     const before = await run(repositoryPath, ["git", "rev-parse", "HEAD"]);
-    await Bun.write(join(repositoryPath, ".tmp/scheduled-update-recovery.json"), JSON.stringify({ before }));
+    await Bun.write(join(repositoryPath, ".state/scheduled-update-recovery.json"), JSON.stringify({ before }));
     await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow(
       "An interrupted update needs recovery.",
     );
@@ -598,7 +603,7 @@ describe("scheduledUpdate", () => {
     );
     expect(await run(repositoryPath, ["git", "rev-parse", "HEAD"])).toBe(before);
     expect(await run(repositoryPath, ["git", "status", "--porcelain"])).toBe(status);
-    expect(await Bun.file(join(repositoryPath, ".tmp/scheduled-update-recovery.json")).exists()).toBe(false);
+    expect(await Bun.file(join(repositoryPath, ".state/scheduled-update-recovery.json")).exists()).toBe(false);
   });
 
   it("stops future runs when rollback fails", async () => {
@@ -623,7 +628,7 @@ describe("scheduledUpdate", () => {
         return run(repositoryPath, cmd);
       }),
     ).rejects.toThrow("Recovery failed: rebase abort failed");
-    expect(await Bun.file(join(repositoryPath, ".tmp/scheduled-update-recovery.json")).json()).toEqual({ before });
+    expect(await Bun.file(join(repositoryPath, ".state/scheduled-update-recovery.json")).json()).toEqual({ before });
     await run(repositoryPath, ["git", "rebase", "--abort"]);
     await expect(scheduledUpdate(repositoryPath, process.execPath)).rejects.toThrow(
       "An interrupted update needs recovery.",

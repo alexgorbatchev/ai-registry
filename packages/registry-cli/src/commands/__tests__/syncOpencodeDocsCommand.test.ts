@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { existsSync } from "fs";
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "fs/promises";
 import { join } from "path";
@@ -7,6 +7,10 @@ import { syncOpencodeDocsCommand, type ISyncOpencodeDocsDependencies } from "../
 import type { IRegistryPaths } from "../../lib/getRegistryPaths";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", ".tmp", "sync-opencode-docs-tests");
+
+afterAll(async () => {
+  await rm(TEST_ROOT, { recursive: true, force: true });
+});
 const API_ROOT = "https://api.github.com/repos/anomalyco/opencode/contents/packages/web/src/content/docs";
 const RAW_ROOT = "https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs";
 const DOCS_PATH = "packages/web/src/content/docs";
@@ -81,6 +85,7 @@ describe("syncOpencodeDocsCommand", () => {
       systemPrompt: join(root, "system", "system.md"),
       output: join(root, ".output"),
       temp: join(root, ".tmp"),
+      state: join(root, ".state"),
     };
     responses = new Map();
     requests = [];

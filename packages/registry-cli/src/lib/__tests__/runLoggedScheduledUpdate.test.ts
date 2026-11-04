@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterAll, afterEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { runLoggedScheduledUpdate } from "../runLoggedScheduledUpdate";
 import { REPOSITORY_ROOT, readTimestampedLog } from "./helpers";
 
+const PARENT_PATH = resolve(REPOSITORY_ROOT, ".tmp/scheduled-logged-worker-tests");
 const testDirectories: string[] = [];
 
 afterEach(async () => {
@@ -13,14 +14,17 @@ afterEach(async () => {
   }
 });
 
+afterAll(async () => {
+  await rm(PARENT_PATH, { recursive: true, force: true });
+});
+
 describe("runLoggedScheduledUpdate", () => {
   it.each([0, 1, 75])("prunes, logs both output streams and returns worker exit %d", async (exitCode) => {
-    const parentPath = resolve(REPOSITORY_ROOT, ".tmp/scheduled-logged-worker-tests");
-    await mkdir(parentPath, { recursive: true });
-    const directory = await mkdtemp(join(parentPath, "checkout "));
+    await mkdir(PARENT_PATH, { recursive: true });
+    const directory = await mkdtemp(join(PARENT_PATH, "checkout "));
     testDirectories.push(directory);
-    await mkdir(join(directory, ".tmp"));
-    const logPath = join(directory, ".tmp/scheduled-update.log");
+    await mkdir(join(directory, ".state"));
+    const logPath = join(directory, ".state/scheduled-update.log");
     await Bun.write(logPath, "[2000-01-01 00:00] expired\n");
     expect(
       await runLoggedScheduledUpdate(directory, [

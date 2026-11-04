@@ -1,11 +1,11 @@
 import { $ } from "bun";
-import { join } from "node:path";
 
+import { getScheduledUpdatePaths } from "./getScheduledUpdatePaths";
 import { pruneScheduledUpdateLog } from "./pruneScheduledUpdateLog";
 import { writeTimestampedOutput } from "./writeTimestampedOutput";
 
 export async function runLoggedScheduledUpdate(repositoryRoot: string, workerCommand: string[]): Promise<number> {
-  const logPath = join(repositoryRoot, ".tmp/scheduled-update.log");
+  const { logPath } = getScheduledUpdatePaths(repositoryRoot);
   await pruneScheduledUpdateLog(logPath);
   // Open the append destination before starting work, including runs with no output.
   await $`printf %s ${""} >> ${logPath}`;

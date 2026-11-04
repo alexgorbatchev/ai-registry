@@ -7,10 +7,16 @@ bun.lockb
 .env.*
 !.env.example
 
-# Local skills-cli installs and state
+# Local skills-cli installs
 .agents/
+
+# Disposable development artifacts
 .tmp/
 harnesses/*/.tmp/
+
+# Long-lived unchecked caches and state
+.cache/
+.state/
 
 # Generated outputs
 .output/

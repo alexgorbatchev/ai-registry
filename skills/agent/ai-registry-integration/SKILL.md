@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-04 12:30
+  last_modified: 2026-11-04 12:44
   status: current
 ---
 
@@ -37,6 +37,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Use `prompt-writer` whenever generating, writing, or revising AI agent instructions in any artifact. `skill-writer` adds skill-bundle conventions and validation; `docs-writer` owns project documentation structure and maintenance.
 - When checked-in guidance or generated text refers to repository paths, use template tokens instead of machine-specific absolute paths.
 - Put reusable assets under the directories referenced by the repo_root token: `skills/`, `commands/`, or `harnesses/`.
+- Write only disposable development artifacts to `.tmp/` beneath the repo_root token. Put files that must outlive a session, such as logs, locks, merge bases, and recovery markers, in the git-ignored `.state/` beneath the repo_root token, and rebuildable caches in `.cache/`. Document each new `.state/` file in `AGENTS.md` beneath the repo_root token.
 - Keep executable repo entrypoints under `packages/registry-cli/src/bin/` beneath the repo_root token and use dash-based filenames. Put imported TypeScript helper modules that are not direct entrypoints under `packages/registry-cli/src/lib/`.
 - Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `pi-*`, or `cll` wrappers) MUST NOT be checked into `packages/registry-cli/src/bin/` beneath the repo_root token. Generate them through `packages/registry-cli/src/commands/buildCommand.ts` and its harness plugins into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
 - Put publishable standalone packages under `packages/<package-name>/` beneath the repo_root token.

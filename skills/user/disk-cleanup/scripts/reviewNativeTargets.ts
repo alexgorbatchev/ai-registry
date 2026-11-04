@@ -1,7 +1,13 @@
-import { lstat, mkdir, mkdtemp, readdir } from 'node:fs/promises';
+import { lstat, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { ensureUntracked, owningRepository, validatePath } from './filesystemUtils';
+import {
+  createRecordDirectory,
+  ensureUntracked,
+  isRecordPath,
+  owningRepository,
+  validatePath,
+} from './filesystemUtils';
 import { assertDisjoint } from './inventory';
 import { inspectNativeProcesses } from './inspectNativeProcesses';
 import { runInspectionCommand } from './runInspectionCommand';
@@ -38,14 +44,7 @@ export async function inspectNativeTarget(
 }
 
 export async function createNativeLog(root: string): Promise<string> {
-  try {
-    await lstat(join(root, '.tmp'));
-  } catch (error) {
-    if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error;
-    await mkdir(join(root, '.tmp'));
-  }
-  await validatePath(root, join(root, '.tmp'));
-  return mkdtemp(join(root, '.tmp/native-cleanup-'));
+  return createRecordDirectory(root, 'native-cleanup-');
 }
 
 export async function reviewNativeTargets(
@@ -58,7 +57,7 @@ export async function reviewNativeTargets(
   // Validate lexical scope for the whole selection before classifying individual entries.
   const paths = await Promise.all(inputs.map((input) => validatePath(root, input)));
   assertDisjoint(root, paths);
-  if (paths.some((path) => path === join(root, '.tmp'))) throw new Error('Preserve the root .tmp log container');
+  if (paths.some((path) => isRecordPath(root, path))) throw new Error('Preserve the root .state cleanup records');
   for (const path of paths) {
     try {
       const { identity, bytes } = await inspectNativeTarget(root, path);

@@ -57,6 +57,19 @@ test('native review records exact cache targets and preserves live files and rep
   }
 });
 
+test('native review keeps its manifest under .state and refuses to select cleanup records', async () => {
+  await mkdir(join(root, 'cache'));
+  const review = await reviewNativeTargets(root, ['cache']);
+  expect(review.manifestPath.startsWith(join(root, '.state/native-cleanup-'))).toBe(true);
+  await expect(reviewNativeTargets(root, ['.state'])).rejects.toThrow('Preserve the root .state cleanup records');
+  await expect(reviewNativeTargets(root, [join(review.manifestPath, '..')])).rejects.toThrow(
+    'Preserve the root .state cleanup records',
+  );
+  const removal = await removeNativeTargets(root, review.manifestPath, true);
+  expect(removal.logPath?.startsWith(join(root, '.state/native-cleanup-'))).toBe(true);
+  expect(await Bun.file(review.manifestPath).exists()).toBe(true);
+});
+
 test('native removal rejects replacement targets from a recorded preview', async () => {
   await mkdir(join(root, 'cache'));
   const review = cli(root, ['native', 'review', 'cache', '--root', root]);
@@ -120,7 +133,7 @@ test('native batch revalidates every target before deleting any entry', async ()
   await expect(removeNativeTargets(root, review.manifestPath, true)).rejects.toThrow(
     `Target changed since review: ${root}/second`,
   );
-  expect((await readdir(root)).sort()).toEqual(['.tmp', 'first', 'old-second', 'second']);
+  expect((await readdir(root)).sort()).toEqual(['.state', 'first', 'old-second', 'second']);
 });
 
 test('native review rejects symlink ancestors and aborts on uncertain process inspection', async () => {
@@ -174,7 +187,7 @@ test('a change during the batch process snapshot stops every removal in that bat
   });
   expect(result.failure).toContain('Contains a Git repository');
   expect(removals).toBe(0);
-  expect((await readdir(root)).sort()).toEqual(['.tmp', 'first', 'second']);
+  expect((await readdir(root)).sort()).toEqual(['.state', 'first', 'second']);
 });
 
 test('native target inspection shares identity, repository checks, and hard-link-aware allocation', async () => {
@@ -206,5 +219,5 @@ test('native removal reconciles actual deletions even when its runner throws', a
   expect(result.removed).toEqual([join(root, 'first')]);
   expect(result.failure).toContain('lost command result');
   expect(await Bun.file(result.logPath!).json()).toEqual(result);
-  expect((await readdir(root)).sort()).toEqual(['.tmp', 'second']);
+  expect((await readdir(root)).sort()).toEqual(['.state', 'second']);
 });

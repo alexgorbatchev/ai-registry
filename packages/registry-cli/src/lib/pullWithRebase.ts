@@ -2,6 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 import { getErrorMessage } from "./getErrorMessage";
+import { getScheduledUpdatePaths } from "./getScheduledUpdatePaths";
 
 export type IScheduledUpdateRunner = (cmd: string[], shouldCapture?: boolean) => Promise<string>;
 
@@ -22,7 +23,8 @@ export async function pullWithRebase(
   before: string,
   run: IScheduledUpdateRunner,
 ): Promise<boolean> {
-  const recoveryFile = Bun.file(join(repositoryRoot, ".tmp/scheduled-update-recovery.json"));
+  const { stateDir, recoveryPath } = getScheduledUpdatePaths(repositoryRoot);
+  const recoveryFile = Bun.file(recoveryPath);
   if (await recoveryFile.exists()) {
     throw new Error(`An interrupted update needs recovery. Inspect ${recoveryFile.name} before retrying.`);
   }
@@ -40,7 +42,7 @@ export async function pullWithRebase(
   }
 
   const git = ["git", "-c", "core.hooksPath=/dev/null", "-c", "rebase.updateRefs=false"];
-  await mkdir(join(repositoryRoot, ".tmp"), { recursive: true });
+  await mkdir(stateDir, { recursive: true });
   await Bun.write(recoveryFile, JSON.stringify({ before }));
 
   try {

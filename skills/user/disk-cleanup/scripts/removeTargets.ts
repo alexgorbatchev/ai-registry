@@ -1,11 +1,13 @@
-import { lstat, mkdir, mkdtemp } from 'node:fs/promises';
+import { lstat } from 'node:fs/promises';
 import { dirname, join, relative, sep } from 'node:path';
 import {
+  createRecordDirectory,
   diskBytes,
   ensureAbsent,
   ensureNoRepositories,
   ensureUntracked,
   git,
+  isRecordPath,
   owningRepository,
   run,
   validatePath,
@@ -47,14 +49,12 @@ export async function removeTargets(
     options.root,
     actions.map((action) => action.path),
   );
-  if (actions.some((action) => action.path === join(options.root, '.tmp'))) {
-    throw new Error('Preserve the root .tmp container for execution logs; select its children');
+  if (actions.some((action) => isRecordPath(options.root, action.path))) {
+    throw new Error('Preserve the root .state cleanup records');
   }
   for (const action of actions) await validate(action);
   if (!options.execute || actions.length === 0) return { execute: false, actions, logPath: null };
-  await mkdir(join(options.root, '.tmp'), { recursive: true });
-  await validatePath(options.root, join(options.root, '.tmp'));
-  const logPath = join(await mkdtemp(join(options.root, '.tmp/cleanup-')), 'execution.json');
+  const logPath = join(await createRecordDirectory(options.root, 'cleanup-'), 'execution.json');
   const before = await run(['df', '-B1', '--', options.root]);
   const removed: string[] = [];
   let failure: string | null = null;

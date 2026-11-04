@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { lstat, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { hostname } from "node:os";
@@ -9,6 +9,10 @@ import type { IGeneratedOutputManifest } from "../../lib/generatedOutputUtils";
 import { REPOSITORY_ROOT, loadTestShellEnvironment } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "../../../../../.tmp/build-hostname-tests");
+
+afterAll(async () => {
+  await rm(TEST_ROOT, { recursive: true, force: true });
+});
 
 function skillContent(name: string, body: string, author: string = "alexgorbatchev"): string {
   return `---\nname: ${name}\ndescription: Use when testing ${name}.\nauthor: ${author}\n---\n${body}\n`;
@@ -47,6 +51,7 @@ describe("hostname skill variants", () => {
       systemPrompt: join(root, "system", "system.md"),
       output: join(root, ".output"),
       temp: join(root, ".tmp"),
+      state: join(root, ".state"),
     };
     await write("repo/skills/agent/example/SKILL.md", skillContent("example", "Default instructions."));
     await write("repo/skills/agent/example/references/shared.md", "Shared instructions.\n");

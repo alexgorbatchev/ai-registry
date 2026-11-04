@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-04 12:08
+  last_modified: 2026-11-04 12:25
   status: current
 ---
 
@@ -56,7 +56,7 @@ AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" rust list --root . --idle 30m
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" rust remove project --root . --idle 30m --artifacts tmp,target
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" paths remove project/.tmp/build-cache --root .
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" native review Library/Caches/example --root "$HOME"
-AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" native remove .tmp/native-cleanup-EXAMPLE/manifest.json --root "$HOME"
+AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" native remove .state/native-cleanup-EXAMPLE/manifest.json --root "$HOME"
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" worktrees list --root .
 AGENT=1 bun "<%- file_dir %>/scripts/cleanup.ts" worktrees remove project/.workspaces/review --root .
 ```
@@ -76,7 +76,7 @@ Read [scripts/inventory.ts](scripts/inventory.ts) when changing activity classif
 | `rust list` | `--root <directory>` default `.`, `--idle <duration>` default `30m` | Inspect direct child Cargo projects; return activity, process IDs, warnings, eligibility, and separate `.tmp`, coverage, and target allocations. Coverage is included in the target total. Inspection errors return exit code `1`. |
 | `rust remove <projects...>` | Exact direct child projects; `--root` and `--idle` as above; required `--artifacts <kinds>`; `--execute` default false | Preview or remove explicitly selected `tmp`, `coverage`, and/or `target` artifacts in idle projects. Preserve active projects and protected contents. Recheck before every removal. |
 | `paths remove <paths...>` | One or more exact paths; `--root <directory>` default `.`, `--execute` default false | Preview or delete reviewed artifacts beneath `.tmp`, `.cache`, `node_modules`, `target`, or `dist`. |
-| `native review <paths...>` | Exact reviewed cache/temp directories; `--root <directory>` default `.`, `--verbose` default false | Save an exact manifest beneath root's `.tmp/native-cleanup-*`. Return its path and counts; `--verbose` includes the full manifest. Writes the review record only; never deletes targets. |
+| `native review <paths...>` | Exact reviewed cache/temp directories; `--root <directory>` default `.`, `--verbose` default false | Save an exact manifest beneath root's `.state/native-cleanup-*`. Return its path and counts; `--verbose` includes the full manifest. Writes the review record only; never deletes targets. |
 | `native remove <manifest>` | Manifest path relative to root or absolute inside it; `--root <directory>` default `.`, `--execute` default false, `--verbose` default false | Validate the saved selection; preview by default. Execute only its unchanged, inactive targets and retain a receipt. Return counts, failure, log path, and free-space change; `--verbose` includes full target/command records. |
 | `worktrees list` | `--root <directory>` default `.` | Return linked worktrees and `.workspaces` entries, allocations, branches/HEADs, locks, registration, status counts, and inspection errors. Partial scans return exit code `1`. |
 | `worktrees remove <paths...>` | One or more exact paths; `--root <directory>` default `.`, `--execute` default false | Preview or remove validated registered linked worktrees through Git. |
@@ -180,12 +180,12 @@ browser staging clones, and application caches. A location or runtime-looking na
 1. Select exact directories strictly inside one explicit root. Never pass globs, shell-expanded lists, an entire
    temp/cache container, or an unreviewed source tree. `native review <paths...> --root <container>` records the
    selection and returns its manifest path. It rejects symlink targets/ancestors, filesystem crossings, overlapping
-   selections, and deletion of root's `.tmp`. Tracked files, embedded repositories, and active targets are preserved
+   selections, and selections inside root's `.state` cleanup records. Tracked files, embedded repositories, and active targets are preserved
    with reasons. Inspection uncertainty aborts the review. It may record safe siblings alongside blocked entries.
 2. Read the saved manifest's `actions`, `preserved`, and `processWarnings`, or request it with `--verbose`. Actions contain allocation and a
    SHA-256 identity derived from every entry's path, device, inode, size, and change/modification times.
    Allocation, identity, and embedded-repository checks share one traversal per validation. Parent
-   entry lists establish the baseline for detecting later arrivals. The review writes only `.tmp/native-cleanup-*/manifest.json`.
+   entry lists establish the baseline for detecting later arrivals. The review writes only `.state/native-cleanup-*/manifest.json`.
 3. Run `native remove <manifest> --root <container>` to validate the saved batch without writing or deleting.
    Obtain missing user authorization for its concrete actions. Do not edit a manifest to expand authorization;
    create a fresh review when scope or contents change.
@@ -195,7 +195,7 @@ browser staging clones, and application caches. A location or runtime-looking na
    A failed removal can still delete other targets in that batch; verify every operand and record all confirmed
    removals. Stop before the next batch on any validation, process, removal, or verification failure.
    Save command exit statuses, selected actions, verified removals, preserved entries, failure, and before/after
-   available-byte `df` output in a separate `.tmp/native-cleanup-*/execution.json`, replacing the receipt atomically
+   available-byte `df` output in a separate `.state/native-cleanup-*/execution.json`, replacing the receipt atomically
    before and after each batch. Retain the original manifest and partial receipt on failure.
 5. Read the receipt or `--verbose` output and report `removed`, `preserved`, `newEntries` in reviewed parent directories, and `failure` separately. Verify
    removed paths are still absent. Report `freeBeforeBytes`, `freeAfterBytes`, and `reclaimedBytes` as the observed
@@ -212,7 +212,7 @@ When emptying Trash is explicitly authorized, inspect its resolved `.local/share
 directories, reject symbolic-link containers and filesystem crossings, and save the exact entry list before removal.
 Remove the enumerated entries with native `rm -r --`, preserving both containers; do not use wildcard or force deletion.
 Preserve unrelated home data. Record selected entries, command exit status, before/after `df`, and any failures in
-the project's `.tmp`. Verify that both Trash containers are empty; report concurrent new entries or failures rather
+the project's `.state`. Verify that both Trash containers are empty; report concurrent new entries or failures rather
 than declaring completion. Trash cleanup currently requires this explicit workflow; no bundled Trash command exists.
 
 ## Docker
@@ -237,7 +237,7 @@ When all unused build cache and images are authorized, use `docker buildx prune 
 and `docker image prune --all --force`, running them sequentially and stopping on a failed exit status.
 Docker's `--force` skips its confirmation prompt; it does not authorize volume deletion or filesystem force removal.
 Do not substitute broad system or volume pruning for a cache-only request. Record prune output and before/after
-`docker system df` and local `df` in the project's `.tmp`; verify retained containers after execution.
+`docker system df` and local `df` in the project's `.state`; verify retained containers after execution.
 Docker inspection and cleanup currently use these native commands; no bundled Docker command exists.
 
 ## Worktrees and explicit artifacts
@@ -250,7 +250,7 @@ For dirty worktrees or detached commits, report the blocking evidence and stop; 
 
 Reject artifact paths containing tracked files or embedded `.git` entries. Review backups before deleting them;
 the cache-path naming check does not establish that their content is disposable.
-Preserve the root's `.tmp` container because execution logs are stored beneath it. Remove selected children instead.
+Cleanup records are retained audit evidence, not scratch: never select root's `.state` or anything inside it.
 Validate an entire batch before its first deletion and revalidate each target immediately before deleting it.
 On the first removal or verification failure, stop the batch and retain its partial execution log.
 
@@ -261,9 +261,10 @@ tree help wrapped to `COLUMNS` or the terminal width (unwrapped when neither is 
 is never truncated. Agent help begins with the skill alert.
 Rust inspection inherits Cargo configuration and environment overrides, and disables rustup auto-installation
 with `RUSTUP_AUTO_INSTALL=0`. Other commands have no additional cleanup environment settings.
-Each nonempty artifact/worktree execution creates `.tmp/cleanup-*/execution.json` under root,
+Each nonempty artifact/worktree execution creates `.state/cleanup-*/execution.json` under root,
 records selected actions, verified removals, failures, and before/after `df` output. Native review/execution uses
-`.tmp/native-cleanup-*` as described above. All inspection and removal-preview commands write no logs.
+`.state/native-cleanup-*` as described above. Keep these records until the user no longer needs them; they are
+not disposable `.tmp` artifacts. All inspection and removal-preview commands write no logs.
 Return exit code `0` on success or help, `1` on validation, usage, inspection, removal, or verification failure.
 
 Distinguish allocated size from actual reclaimed bytes: hard links/shared storage and concurrent filesystem changes

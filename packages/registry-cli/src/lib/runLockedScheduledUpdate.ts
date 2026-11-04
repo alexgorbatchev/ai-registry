@@ -1,6 +1,8 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
+import { getScheduledUpdatePaths } from "./getScheduledUpdatePaths";
+
 type ILockedScheduledUpdateResult = "completed" | "busy";
 
 export async function runLockedScheduledUpdate(
@@ -12,9 +14,8 @@ export async function runLockedScheduledUpdate(
     throw new Error(`Scheduled updates require macOS lockf or Linux flock (platform: ${platform}).`);
   }
 
-  await mkdir(join(repositoryRoot, ".tmp"), { recursive: true });
-  const lockPath = join(repositoryRoot, ".tmp/scheduled-update.lock");
-  const logPath = join(repositoryRoot, ".tmp/scheduled-update.log");
+  const { stateDir, lockPath, logPath } = getScheduledUpdatePaths(repositoryRoot);
+  await mkdir(stateDir, { recursive: true });
   const loggerCommand = [process.execPath, join(import.meta.dir, "../bin/scheduled-update-logger.ts")];
   const command =
     platform === "darwin"

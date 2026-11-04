@@ -1,6 +1,6 @@
 ---
 created_on: '2026-10-05 07:24'
-last_modified: '2026-11-04 12:19'
+last_modified: '2026-11-04 12:44'
 status: current
 ---
 
@@ -20,8 +20,8 @@ Update `SKILL.md` and its `last_modified` in the same change as any command, arg
 environment handling, output, error, or filesystem side-effect change. Check the skill against the live Commander
 command tree; preserve verbatim `skill` output and the single alert on every agent help path.
 
-Use real disposable Git repositories for cleanup tests. Keep removal previews read-only. Preserve the root `.tmp`
-container because execution logs live there; reject deletions that would remove those logs.
+Use real disposable Git repositories for cleanup tests. Keep removal previews read-only. Write manifests and execution
+receipts under root's `.state`, which holds retained records rather than `.tmp` scratch; reject deletions inside it.
 `native review` intentionally writes its manifest without deleting targets. Keep native removal bound to that
 exact manifest, validate the whole batch first, and recheck identities and visible process use per removal.
 Preserve blocked repositories and active targets; never replace source review with a temp-path naming assumption.

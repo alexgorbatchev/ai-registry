@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { existsSync } from "fs";
 import { lstat, mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join } from "path";
@@ -9,6 +9,10 @@ import type { IBootstrapTarget, IUnifiedHarnessPlugin } from "../../lib/harnessB
 import type { IRunCommandSpawnOptions, IRunCommandSpawnedProcess } from "../../lib/runCommand";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", ".tmp", "bootstrap-command-tests");
+
+afterAll(async () => {
+  await rm(TEST_ROOT, { recursive: true, force: true });
+});
 const TIMESTAMP = "20261026T000000Z";
 
 async function writeTestFile(filePath: string, content: string): Promise<void> {
@@ -105,6 +109,7 @@ describe("bootstrapCommand", () => {
       systemPrompt: join(root, "repo", "system", "system.md"),
       output: join(root, "repo", ".output"),
       temp: join(root, "repo", ".tmp"),
+      state: join(root, "repo", ".state"),
     };
     spawnedCommands = [];
     logLines = [];

@@ -286,7 +286,7 @@ interface IBuildOptions {
 async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): Promise<void> {
   console.log("🚀 Building Unified Agent Outputs...");
   const buildHostname = resolveBuildHostname(process.env.AI_REGISTRY_HOSTNAME, hostname());
-  const { root, overlays, output, harnesses, skills, commands, systemPrompt, temp } =
+  const { root, overlays, output, harnesses, skills, commands, systemPrompt, temp, state } =
     options.registryPaths ?? getRegistryPaths();
 
   const GENERATED_OUTPUT_STAGING_DIR = join(temp, "generated-output-staging");
@@ -390,7 +390,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     syncedSettingsFiles,
     stagingDir: GENERATED_OUTPUT_STAGING_DIR,
     outputDir: output,
-    stateDir: join(temp, "settings-sync"),
+    stateDir: join(state, "settings-sync"),
     sourcePathByOutputPath,
     templateContext: TEMPLATE_CONTEXT,
     sourceRepository: createGitSettingsSourceRepository(),

@@ -1,6 +1,6 @@
 import { readdir, rename, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { ensureAbsent, isWithin, validatePath } from './filesystemUtils';
+import { ensureAbsent, isRecordPath, isWithin, validatePath } from './filesystemUtils';
 import { assertDisjoint } from './inventory';
 import { inspectNativeProcesses } from './inspectNativeProcesses';
 import { readNativeManifest } from './readNativeManifest';
@@ -22,7 +22,7 @@ export async function removeNativeTargets(
     ...manifest.actions.map((action) => action.path),
     ...manifest.preserved.map((entry) => entry.path),
   ]);
-  if (manifest.actions.some((action) => action.path === join(root, '.tmp') || isWithin(action.path, manifestPath))) {
+  if (manifest.actions.some((action) => isRecordPath(root, action.path) || isWithin(action.path, manifestPath))) {
     throw new Error('Cleanup would remove its manifest or execution logs');
   }
   const parents = new Set([...manifest.actions, ...manifest.preserved].map((entry) => dirname(entry.path)));

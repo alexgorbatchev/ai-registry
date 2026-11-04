@@ -26,7 +26,10 @@ export type IRegistryPaths = {
   commands: string;
   systemPrompt: string;
   output: string;
+  /** Disposable development artifacts. */
   temp: string;
+  /** Long-lived unchecked state, such as the settings-sync merge base. */
+  state: string;
 };
 
 export function getRegistryPaths(): IRegistryPaths {
@@ -53,5 +56,6 @@ export function getRegistryPaths(): IRegistryPaths {
     systemPrompt: join(root, "system", "system.md"),
     output: join(root, ".output"),
     temp: join(root, ".tmp"),
+    state: join(root, ".state"),
   };
 }

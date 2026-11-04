@@ -75,7 +75,7 @@ test('preview leaves files and execution logs untouched', async () => {
   );
   expect(result).toMatchObject({ result: { execute: false, logPath: null } });
   expect(await Bun.file(join(project, '.tmp/scratch')).text()).toBe('scratch');
-  expect(await Bun.file(join(root, '.tmp')).exists()).toBe(false);
+  expect(await Bun.file(join(root, '.state')).exists()).toBe(false);
 });
 
 test('tmp cleanup preserves embedded clones, symlinks, tracked data, and incremental state', async () => {
@@ -251,9 +251,9 @@ test('activity between removals stops the batch and logs the partial result', as
   ).rejects.toThrow('Cleanup stopped; inspect');
   expect(await Bun.file(join(project, '.tmp/scratch')).exists()).toBe(false);
   expect(await Bun.file(join(project, 'target/debug/incremental/state')).exists()).toBe(true);
-  const [logDirectory] = await readdir(join(root, '.tmp'));
+  const [logDirectory] = await readdir(join(root, '.state'));
   assert(logDirectory);
-  const log = await Bun.file(join(root, '.tmp', logDirectory, 'execution.json')).json();
+  const log = await Bun.file(join(root, '.state', logDirectory, 'execution.json')).json();
   expect(log.removed).toEqual([join(project, '.tmp')]);
   expect(log.failure).toBe(`Error: Project is no longer eligible: ${project}: recent filesystem or Git activity`);
 }, 20_000);

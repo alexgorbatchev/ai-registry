@@ -118,4 +118,4 @@ cron-disable:
 
 # Print the latest scheduled-update output
 cron-logs:
-    tail -n 100 .tmp/scheduled-update.log
+    tail -n 100 .state/scheduled-update.log

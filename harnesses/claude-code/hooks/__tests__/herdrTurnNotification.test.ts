@@ -8,6 +8,7 @@ import { spawnRunner } from "../herdr";
 import {
   buildFocusCommand,
   buildPushArguments,
+  closedMarkdown,
   finalMessage,
   MAX_BODY_LENGTH,
   parseAgent,
@@ -36,9 +37,16 @@ async function script(name: string, body: string): Promise<string> {
   return path;
 }
 
-/** Install a fake sidebar CLI that records each argument on its own line. */
-async function fakeSidebar(exitCode = 0): Promise<void> {
-  await script("aerospace-sidebar", `for a in "$@"; do printf '%s\\n' "$a" >> '${pushLog}'; done; exit ${exitCode}`);
+/**
+ * Install a fake sidebar CLI that records each argument on its own line; `knowsMarkdown` false makes it refuse
+ * `--markdown` with a usage error, as a CLI from before the option does.
+ */
+async function fakeSidebar(exitCode = 0, knowsMarkdown = true): Promise<void> {
+  const refuse = knowsMarkdown ? "" : `for a in "$@"; do [ "$a" = --markdown ] && exit 64; done; `;
+  await script(
+    "aerospace-sidebar",
+    `${refuse}for a in "$@"; do printf '%s\\n' "$a" >> '${pushLog}'; done; exit ${exitCode}`,
+  );
 }
 
 async function pushedArguments(): Promise<string[]> {
@@ -92,8 +100,10 @@ test("focuses with herdr on PATH when nothing else is known", () => {
   expect(buildFocusCommand({})).toBeUndefined();
 });
 
-test("puts the final message on one line", () => {
-  expect(finalMessage(stopInput())).toBe("Release **v0.0.1** is out. Next: install it.");
+test("keeps the final message's line breaks, with at most one blank line in a row", () => {
+  expect(finalMessage(stopInput())).toBe("Release **v0.0.1** is out.\n\nNext: install it.");
+  const spaced = finalMessage(stopInput({ last_assistant_message: "\n  One  \r\n\r\n\r\n\r\nTwo\t\nThree \n" }));
+  expect(spaced).toBe("One\n\nTwo\nThree");
 });
 
 test("cuts a long final message to the card's length without splitting a character", () => {
@@ -106,6 +116,38 @@ test("cuts a long final message to the card's length without splitting a charact
   expect(finalMessage(stopInput({ last_assistant_message: exact }))).toBe(exact);
 });
 
+test("cuts a long message where it leaves no markdown span open", () => {
+  const filler = "x".repeat(MAX_BODY_LENGTH - 20);
+  const cut = (tail: string) => finalMessage(stopInput({ last_assistant_message: `${filler} ${tail}` }));
+  expect(cut("see [the docs](https://example.com/very/long/path/to/docs) now")).toBe(`${filler} see…`);
+  expect(cut("run `make test --verbose` then")).toBe(`${filler} run…`);
+  expect(cut("it is **very important that** you")).toBe(`${filler} it is…`);
+  const shorter = "x".repeat(MAX_BODY_LENGTH - 30);
+  const closedLink = finalMessage(
+    stopInput({ last_assistant_message: `${shorter} ok [d](https://x.io) and *more emphasis here*` }),
+  );
+  expect(closedLink).toBe(`${shorter} ok [d](https://x.io) and…`);
+});
+
+test("closes nothing that is already closed", () => {
+  for (const text of ["**bold** and `code` and [x](https://y.z) and ~~gone~~", "snake_case_name is fine", "a `**` b"]) {
+    expect(closedMarkdown(text)).toBe(text);
+  }
+});
+
+test("drops each kind of open span, innermost last", () => {
+  expect(closedMarkdown("done [link](https://x")).toBe("done ");
+  expect(closedMarkdown("done [link")).toBe("done ");
+  expect(closedMarkdown("run `cmd")).toBe("run ");
+  expect(closedMarkdown("**bold** and **open")).toBe("**bold** and ");
+  expect(closedMarkdown("~~struck")).toBe("");
+  expect(closedMarkdown("an *open one")).toBe("an ");
+  expect(closedMarkdown("an _open one and snake_case")).toBe("an ");
+  expect(closedMarkdown("**bold** *mixed")).toBe("**bold** ");
+  // Each open span goes, the one opened last first.
+  expect(closedMarkdown("**bold *mixed")).toBe("");
+});
+
 test("finds no final message in unusable input", () => {
   expect(finalMessage(stopInput({ last_assistant_message: null }))).toBeUndefined();
   expect(finalMessage(stopInput({ last_assistant_message: " \n " }))).toBeUndefined();
@@ -113,9 +155,18 @@ test("finds no final message in unusable input", () => {
 });
 
 test("titles a card without a project after the agent and leaves out an empty body", () => {
-  expect(buildPushArguments({ agent: "codex", focusCommand: "focus", project: undefined, message: undefined })).toEqual(
-    ["notification", "push", "--title", "Codex", "--icon", "codex", "--run", "focus"],
-  );
+  expect(
+    buildPushArguments({
+      agent: "codex",
+      focusCommand: "focus",
+      project: undefined,
+      message: undefined,
+      markdown: true,
+    }),
+  ).toEqual(["notification", "push", "--title", "Codex", "--icon", "codex", "--run", "focus"]);
+  expect(
+    buildPushArguments({ agent: "codex", focusCommand: "f", project: "p", message: "m", markdown: false }),
+  ).toEqual(["notification", "push", "--title", "p", "--body", "m", "--icon", "codex", "--run", "f"]);
 });
 
 test("pushes a card titled with the workspace label that shows the final message", async () => {
@@ -129,7 +180,10 @@ test("pushes a card titled with the workspace label that shows the final message
     "--title",
     "sidebar",
     "--body",
-    "Release **v0.0.1** is out. Next: install it.",
+    "Release **v0.0.1** is out.",
+    "",
+    "Next: install it.",
+    "--markdown",
     "--icon",
     "claude",
     "--run",
@@ -142,6 +196,24 @@ test("titles the card with the project folder when Herdr does not answer", async
   const herdr = await script("herdr", "exit 1");
   expect(await runStop("codex", stopInput(), herdrEnv(herdr), spawnRunner)).toBe(true);
   expect((await pushedArguments()).slice(2, 4)).toEqual(["--title", "aerospace-sidebar"]);
+});
+
+test("pushes the message as plain text to a CLI without --markdown", async () => {
+  await fakeSidebar(0, false);
+  const herdr = await script("herdr", "exit 1");
+  expect(await runStop("claude", stopInput(), herdrEnv(herdr), spawnRunner)).toBe(true);
+  const pushed = await pushedArguments();
+  expect(pushed).toContain("--body");
+  expect(pushed).not.toContain("--markdown");
+});
+
+test("does not retry a usage error that --markdown did not cause", async () => {
+  await fakeSidebar(64);
+  const herdr = await script("herdr", "exit 1");
+  expect(await runStop("claude", stopInput({ last_assistant_message: null }), herdrEnv(herdr), spawnRunner)).toBe(
+    false,
+  );
+  expect((await pushedArguments()).filter((argument) => argument === "push")).toHaveLength(1);
 });
 
 test("does nothing outside Herdr or without the sidebar CLI", async () => {
@@ -173,7 +245,7 @@ test("runs as a hook process", async () => {
     return { code: await child.exited, stdout, stderr };
   };
   expect(await run(["claude"], herdrEnv(herdr))).toEqual({ code: 0, stdout: "", stderr: "" });
-  expect(await pushedArguments()).toContain("Release **v0.0.1** is out. Next: install it.");
+  expect(await pushedArguments()).toContain("Release **v0.0.1** is out.");
 
   const missingAgent = await run([], herdrEnv(herdr));
   expect(missingAgent.code).toBe(1);

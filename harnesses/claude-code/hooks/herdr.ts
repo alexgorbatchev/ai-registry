@@ -5,14 +5,25 @@ export type Environment = Record<string, string | undefined>;
 /** Run a command and return its stdout, or undefined when it cannot start or fails. */
 export type Runner = (argv: string[], env: Environment) => Promise<string | undefined>;
 
-export const spawnRunner: Runner = async (argv, env) => {
+/** Run a command and return its exit status, undefined when it cannot start, with its stdout. */
+export type StatusRunner = (
+  argv: string[],
+  env: Environment,
+) => Promise<{ status: number | undefined; stdout: string }>;
+
+export const spawnWithStatus: StatusRunner = async (argv, env) => {
   try {
     const child = Bun.spawn(argv, { env, stdin: "ignore", stdout: "pipe", stderr: "ignore" });
     const stdout = await new Response(child.stdout).text();
-    return (await child.exited) === 0 ? stdout : undefined;
+    return { status: await child.exited, stdout };
   } catch {
-    return undefined;
+    return { status: undefined, stdout: "" };
   }
+};
+
+export const spawnRunner: Runner = async (argv, env) => {
+  const { status, stdout } = await spawnWithStatus(argv, env);
+  return status === 0 ? stdout : undefined;
 };
 
 /** The folder the session works in, from the hook input's `cwd`. */

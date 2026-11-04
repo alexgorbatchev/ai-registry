@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { projectName, readProject, readWorkspaceLabel, type Runner, spawnRunner } from "../herdr";
+import { projectName, readProject, readWorkspaceLabel, type Runner, spawnRunner, spawnWithStatus } from "../herdr";
 
 const HERDR = { HERDR_WORKSPACE_ID: "w2J", HERDR_BIN_PATH: "/opt/herdr dir/herdr" };
 
@@ -38,6 +38,12 @@ test("reports no workspace label when herdr cannot supply one", async () => {
 test("prefers the workspace label over the session folder", async () => {
   expect(await readProject(INPUT, HERDR, workspaceRunner("dotfiles"))).toBe("dotfiles");
   expect(await readProject(INPUT, HERDR, failingRunner)).toBe("dotfiles-cli");
+});
+
+test("reports the exit status and stdout, or no status when the command cannot start", async () => {
+  const env = { PATH: process.env.PATH ?? "" };
+  expect(await spawnWithStatus(["/bin/sh", "-c", "printf out; exit 64"], env)).toEqual({ status: 64, stdout: "out" });
+  expect(await spawnWithStatus(["/nonexistent/binary"], env)).toEqual({ status: undefined, stdout: "" });
 });
 
 test("returns stdout only for commands that succeed", async () => {

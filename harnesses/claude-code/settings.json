@@ -190,6 +190,15 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "command": "bun \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/herdrPaneRecap.ts\"",
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
       }
     ]
   },

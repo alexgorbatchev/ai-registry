@@ -39,13 +39,20 @@ CLAUDE_CODE_MAX_CONTEXT_TOKENS = "1000000"
 [features]
 goals = true
 
-# Untrusted hooks do not run: approve this one once per machine with /hooks.
+# Untrusted hooks do not run: approve these once per machine with /hooks.
 [[hooks.PreToolUse]]
 matcher = "^Bash$"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
 command = 'bun "$HOME/.claude/hooks/guardGitBypass.ts"'
+
+[[hooks.UserPromptSubmit]]
+
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
+command = 'bun "$HOME/.claude/hooks/herdrPaneRecap.ts"'
+timeout = 10
 
 [marketplaces]
 alexgorbatchev = { source_type = "git", source = "https://github.com/alexgorbatchev/claude-workspace.git" }

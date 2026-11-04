@@ -54,6 +54,13 @@ type = "command"
 command = 'bun "$HOME/.claude/hooks/herdrPaneRecap.ts"'
 timeout = 10
 
+[[hooks.Stop]]
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'bun "$HOME/.claude/hooks/herdrTurnNotification.ts" codex'
+timeout = 10
+
 [marketplaces]
 alexgorbatchev = { source_type = "git", source = "https://github.com/alexgorbatchev/claude-workspace.git" }
 

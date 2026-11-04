@@ -135,6 +135,15 @@
             "type": "command"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "command": "bun \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/herdrTurnNotification.ts\" claude",
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
       }
     ],
     "StopFailure": [

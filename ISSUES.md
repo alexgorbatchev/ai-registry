@@ -1,12 +1,12 @@
 ---
 created_on: 2026-10-14 10:29
-last_modified: 2026-11-03 10:42
+last_modified: 2026-11-04 11:19
 status: current
 ---
 
 # Instruction issues and remediation
 
-This register tracks findings and fixes from the [autonomy audit](docs/internal/audit/autonomy.md) and subsequent user review. Entries record source evidence, remediation, verification, and unresolved decisions; they do not independently change operating policy. Private values are intentionally omitted.
+This register tracks findings and fixes from the [autonomy audit](docs/internal/audit/autonomy.md) and subsequent user review. Entries record source evidence, remediation, verification, and unresolved decisions; they do not independently change operating policy. Private values are intentionally omitted. Resolved and obsolete entries are removed; their text remains in Git history.
 
 Output verification: the last completed `bun run build`, through I025, passed typechecking and output application. The user paused rebuilds during the review; source changes from I026 onward have not been built or verified in generated outputs. Source validation is recorded per issue. The earlier settings-drift application blockers are resolved. Session data is preserved; no forced drift overwrite was performed.
 
@@ -21,18 +21,6 @@ The setup validator passes with the existing upstream metadata warning. The full
 Protected upstream findings remain: triage names a harness-specific Skill tool; workflow references use unprefixed skill names while generated names include the author prefix. The new setup tracker templates recommend heredocs, conflicting with the registry's operating rule, and its domain template still mentions the deliberately removed `grill-with-docs` workflow. Preserve these bundles under the user's ownership instruction. Use the installed author-prefixed names when invoking skills; higher-priority project and user instructions continue to govern execution. Any upstream content correction is suspended pending an upstream update or explicit permission to modify that content.
 
 The interactive checkpoints in these explicitly user-invoked workflows are intentional. They are not autonomous execution workflows. The former `grill-with-docs` bundle is removed.
-
-## I002: AGENTS refresh paths corrected
-
-[commands/--refresh-agents-md.md](commands/--refresh-agents-md.md) now references the docs-writer skill and its two resources through `<%- skills_dir %>/agent/docs-writer/...`, replacing the obsolete `skills/docs-writer/...` paths. The canonical template resolves independently of the consuming project's working directory.
-
-Typechecking and output compilation pass. All 21 references across seven staged command copies resolve to existing source files. The current successful unified build also applies these source changes to active outputs.
-
-## I003: PR authorization aligned
-
-[github-pr](skills/agent/github-pr/SKILL.md) and [github-fix-issues](skills/agent/github-fix-issues/SKILL.md) now allow publication of verified PR titles and bodies under existing PR-creation or update authorization, as approved during this review. They preserve draft-only limits and explicit content-review requirements. Merging, releasing, and deploying still require authorization covering those actions.
-
-Both skill validators, typechecking, and output compilation pass. The current successful unified build also applies these source changes to active outputs.
 
 ## I004: Blocker suspension aligned
 
@@ -60,60 +48,6 @@ Both changed skill bundles validate; typechecking and output compilation pass. T
 
 Installed tool packages, storage-cleanup guidance, ignore entries, and unrelated API command examples remain available. Before upstream content restoration, eight changed skill bundles validated, with the existing upstream metadata warning for diagnosing-bugs; typechecking and output compilation passed, and packaging checks covered 78 staged skill files, nine system documents, and seven command copies. Those historical checks do not verify the restored upstream wording; current restoration and build checks are recorded under I008. The current successful unified build also applies these source changes to active outputs.
 
-## I008: Analysis workflow corrected; third-party ticket workflow preserved
-
-[OpenCode conversation-analysis](harnesses/opencode/skills/agent/opencode-conversation-analysis/SKILL.md) now invokes its bundled extractor through a canonical source-path template and passes the existing `--output-dir` option explicitly, placing temporary chunks under project `.tmp/opencode-analysis`. Analysis prompts use that same location. The extractor's legacy standalone default remains unchanged. Existing artifacts are not moved or deleted by this instruction change.
-
-Matt Pocock's [to-tickets](skills/user/to-tickets/SKILL.md) still writes local ticket artifacts beneath `.scratch`. Its modification or removal is suspended by the user's instruction to preserve third-party-authored skills. The ownership rule is recorded in root guidance, the README, [skills/AGENTS.md](skills/AGENTS.md), and registry integration guidance. Content edits to `to-tickets` and the moved user-only `diagnosing-bugs` were restored to their original repository versions.
-
-Both changed registry-owned skill bundles validate. Synthetic extraction with the explicit output option produced the expected message and chunk while preserving an unrelated file. Restored upstream skill files match their original repository versions. Typechecking and unified output compilation pass; the rendered analysis command and all 20 staged copies of the two protected skills preserve source bodies and explicit user invocation. `git diff --check` passes. The current successful unified build also applies these source changes to active outputs.
-
-## I009: Demo timeboxing made explicit; correctness checks required
-
-[rapid-demo](skills/user/rapid-demo/SKILL.md) now applies a timebox only when the user explicitly requests one. A quick-demo request alone sets no deadline; otherwise the agent continues until the agreed scope and required checks are complete or a verified blocker prevents dependent work.
-
-The shortcut instruction and fixed 15-minute/5-minute cadence are removed. Agents define concrete acceptance checks, preserve correctness and required verification, and reserve verification time within an explicitly requested budget. On expiry they preserve changes, runtime data, and verification state, report unfinished work and failed or unrun checks, and identify the next action to resume. Blockers suspend only dependent work; independent authorized work can continue within any remaining timebox. Completion reporting uses verified results and gaps instead of a numerical score.
-
-The skill remains under `skills/user/`. Its validator, full build (including typechecking and active output application), and `git diff --check` pass. All ten generated copies match the revised source body and retain `disable-model-invocation: true`. Written review covers a demo without a deadline (continue through acceptance checks), an expired requested timebox (preserve and report incomplete work), missing required context (record the blocker and suspend dependent work), and an out-of-scope request (honor the authorization boundary). These reviews and packaging checks do not constitute an executed model evaluation. No session data was deleted.
-
-## I010: Agent instruction review simplified and applied
-
-[prompt-writer](skills/agent/prompt-writer/SKILL.md) and [skill-writer](skills/agent/skill-writer/SKILL.md) now use concrete checklists for instructions consumed by AI agents. The numerical formula, unreachable score thresholds, 10/10 target, separate scoring report, and reliability guarantee are removed.
-
-Reviews check actions, inputs, consistency, completion, and blocked-work handling using normal, missing-context, and conflicting or out-of-scope scenarios. Both allow at most two review-and-fix rounds and finish as soon as required checks pass. Remaining required failures are recorded as blockers, never waived or reported as completion; drafts are preserved and independent authorized work can continue. Written walkthroughs are distinguished from execution evidence. Prompt tool guidance uses existing authorization for covered actions.
-
-All three changed skill bundles validate, as do typechecking and unified output compilation. All 20 staged prompt-writer and skill-writer copies use bounded agent instruction reviews without the old scoring framework. `git diff --check` passes. A written review covers normal execution (check and finish), missing required context (retrieve it or record the blocker and continue independent work), and an out-of-scope request (honor the boundary and obtain missing authorization). These are instruction and packaging checks, not executed model evaluations. The current successful unified build also applies these source changes to active outputs.
-
-The user's scope clarification keeps all three writer skills. `prompt-writer` now triggers whenever asked to generate, write, rewrite, or improve AI agent instructions in any artifact, including prompts, rules, workflows, AGENTS.md, commands, and skill bodies. `skill-writer` adds bundle-specific conventions and validation; `docs-writer` owns documentation structure and maintenance. Root guidance, skill-authoring guidance, the README, and registry integration guidance record these complementary roles. All three skill validators pass, the full build passes, and the broadened trigger is verified in all ten generated prompt-writer copies.
-
-## I011: Private Git host exception generalized
-
-The private-domain section of [system/system.md](system/system.md) previously contained an actual private internal hostname. Its value is omitted here. The repository's [public-content rules](AGENTS.md) require anonymized reusable content.
-
-The current source rule permits private Git hosts explicitly authorized by the user without naming a deployment-specific host. Destination/content checks and the GitHub prohibition remain. Private-domain values are supplied through environment configuration.
-
-## I012: Machine-specific OpenCode directory permission removed
-
-The machine-specific absolute directory entry was removed from the `external_directory` permission in [harnesses/opencode/opencode.jsonc](harnesses/opencode/opencode.jsonc), as requested. Its value is omitted here. The existing registry template and home-directory rules remain.
-
-Source and generated OpenCode configurations parse successfully, and verification confirms only the two retained rules remain. `bun run build` passes, including typechecking and active output application. No directory contents or session data were deleted. The broad existing home-directory permission is a separate policy choice.
-
-## I013: Task-owned storage limits corrected across language and programming guidance
-
-The user reports that agents misunderstand global cache size versus their own work cache size and stop artifact-producing work. Bun, Go, and Rust storage guidance (since consolidated into [Bun runtime](skills/agent/programming/references/bun/runtime.md), [Go disk usage](skills/agent/programming/references/go/disk-usage.md), and [Rust disk usage](skills/agent/programming/references/rust/disk-usage.md)) previously imposed the same 5 GB ceiling on shared build caches as project artifacts.
-
-The committed language skills now apply a 5 GB budget only to artifacts owned by the current task. They exclude artifacts created before the task, other tasks' outputs, global/shared caches, dependencies, installed tools, and runtime data. They preserve the task baseline across retries, resumed sessions, and agent handoffs. Uncertain attribution in shared output directories is reported without charging the entire directory or authorizing deletion; work can continue while actual filesystem space permits. At the task limit, only operations that would add counted artifacts pause; independent authorized work can continue. Actual filesystem exhaustion is a separate blocker. Shared-cache maintenance requires separate authorization, and session data remains protected.
-
-The three changed skill validators, full build, and `git diff --check` pass. Thirty generated storage policy files contain the corrected task scope, cache exclusions, persistent baseline, and filesystem-space distinction. Affected generated skill files occupy 1,802,240 allocated bytes. Written review covers a global cache above 5 GB with a small task output (continue), the task's own 5 GB budget exhausted (pause only additional artifact production), uncertain concurrent ownership (preserve and report the limitation), and actual disk exhaustion (record the affected-work blocker). These are instruction and packaging checks, not executed model evaluations. No storage files were deleted.
-
-The user explicitly authorized aligning the untracked programming bundle's duplicates while preserving its other content. Its Bun storage section, Go and Rust storage references, convention summaries, and modification timestamp are now updated. Checks confirmed the other 27 bundle files were unchanged and that the Rust reference changes were confined to storage scope, measurement scope, and the matching retention rule. The programming validator and full build pass; all 60 changed programming files across ten generated bundles match source. The ownership blocker is resolved. No caches, build artifacts, or runtime data were deleted for this fix.
-
-## I014: CLI application guidance excludes embedded automation scripts
-
-As requested, [cli-best-practices](skills/agent/cli-best-practices/SKILL.md) now identifies CLI applications in its routing description and opening scope section. Scripts embedded in repositories, skill bundles, or project workflows for internal automation are excluded, including build helpers, tests, CI, migrations, code generation, and maintenance. Arguments, flags, a shebang, or terminal execution alone do not make a script a CLI application. Application classification follows intended use and the supported interface, including applications implemented in scripting languages.
-
-The existing justfile requirement is narrowed from every repository to CLI application projects. README ownership remains with docs-writer. The skill validator, full build, and `git diff --check` pass; all ten generated copies match source after normal template escape rendering. Written review covers a CLI application (apply the skill), an internal script with flags (use language/project guidance), and a CLI application implemented in a scripting language (apply the skill). These are instruction and packaging checks, not executed model evaluations.
-
 ## I015: Concurrent state preserved; only conflicting operations suspend
 
 The concurrency section of [shared guidance](system/system.md) previously required an immediate execution pause on unowned Git state and a halt before any action once unowned staged files remained for 60 seconds. This is finding A02 in the autonomy audit. Staged-file age alone does not establish that another agent is stalled, and the whole-worker halt conflicted with the approved affected-work suspension policy.
@@ -121,14 +55,6 @@ The concurrency section of [shared guidance](system/system.md) previously requir
 The user selected preservation with affected-operation suspension. Shared guidance now requires ownership and Git-state inspection before mutations, an owned isolated worktree when concurrent state could conflict, and resynchronization before retry. Unowned changes, index state, locks, and refs remain protected. Worktree isolation grants no authority over shared refs or locks, and elapsed time grants no takeover authority. Record ownership blockers and resume conditions; continue independent authorized work when safe and report when none can proceed. Root guidance, the README, and registry integration guidance reflect this policy.
 
 The registry integration skill validator, full build including typechecking, and `git diff --check` pass. Twelve generated system prompts contain the new isolation and ownership-blocker rules without the old staged-file timeout; ten generated registry integration copies contain the matching policy. Written review covers another actor staging for longer than 60 seconds (preserve and continue safe independent work), a shared ref or lock conflict (suspend the conflicting operation even in another worktree), and no safe independent authorized work (preserve state and report the unblock condition). These are instruction and packaging checks, not executed model evaluations. No locks, unowned changes, or session data were removed.
-
-## I016: OpenCode question skill removed
-
-The former `harnesses/opencode/skills/agent/opencode-ask-user/SKILL.md`, attributed to `glennsyj`, required questions and explicit confirmation before any feature, including requests with complete requirements and existing authorization. Its description and opening principles also claimed the question tool was the only user-visible communication channel. This is finding A04 in the autonomy audit.
-
-The user explicitly requested deletion. The installed bundle is removed without rewriting its third-party content. Reference inspection found no operational dependencies or lock entry; the remaining references record this finding and its resolution. OpenCode's existing native question-tool permission remains enabled. No session or runtime data was deleted.
-
-The full build, including typechecking, and `git diff --check` pass. Verification confirms the source file, generated bundle directory, and output-manifest entries are absent; all four generated OpenCode agent definitions are clear of references. The first packaging check caught an empty source directory still being emitted after file deletion; removing that exact empty directory and rebuilding resolved it.
 
 ## I017: Routine owned-worktree Git operations permitted with destructive-operation guards
 
@@ -176,36 +102,6 @@ Open implementation gap: the root and three package manifests do not define a co
 
 Written review covers a behavioral change (meaningful tests and both package metrics), a documentation-only edit (applicable validators), and a blocking baseline failure (untouched-base reproduction and the bounded prerequisite process). These are instruction walkthroughs, not executed model or coverage evaluations.
 
-## I021: Issue ambiguity suspends only affected work
-
-The [queue reference](skills/agent/github-fix-issues/references/queue.md) formerly required resolving ambiguous priority rankings or conflicting labels, or asking, before selecting work. The [skill](skills/agent/github-fix-issues/SKILL.md) said missing acceptance criteria were blockers without distinguishing unavailable requirements from a missing structured section. This is finding A13 in the autonomy audit.
-
-The user approved both proposed replacements. Resolve priority ambiguity from verified repository guidance; if unresolved, record the ambiguity and unblock condition, suspend only affected issues and their dependents, and select the next independent eligible issue within the authorized queue. Do not invent ranks or alter labels to bypass ambiguity. Establish acceptance criteria from verified issue discussion, referenced specifications, tests, and documented behavior; a missing structured section alone does not block work. Existing behavior and tests alone do not establish the desired change. Missing or contradictory material requirements suspend only affected issues and dependents, with the question and unblock condition recorded; never invent product behavior. The skill, queue and scheduling references, root guidance, README, workflow reference, and registry integration guidance are aligned.
-
-Both changed skill bundles validate. The full build, including typechecking and output application, and repository-wide `git diff --check` pass. All ten generated issue-workflow bundles contain the approved acceptance rule, the queue's approved priority rule, and aligned scheduling guidance without the former blanket wording. Ten generated registry integration bundles contain the matching policy. No executable behavior changed, external ticket metadata was not altered, and no session data or unowned changes were removed.
-
-Written review covers recoverable criteria without a heading (proceed from cited requirements), conflicting priority labels with no resolving guidance (suspend affected tickets and dependents, then select independent eligible work), contradictory material product requirements (record the question rather than inventing behavior), and a single-issue request with no independent authorized work (preserve state and report the required input). These walkthroughs and packaging checks are instruction review, not executed model or end-to-end issue-workflow evaluations.
-
-## I022: CI readiness and infrastructure retries preserve progress across restarts
-
-The [checks reference](skills/agent/github-fix-issues/references/checks-and-ci.md) formerly treated absent CI as a blocker without a readiness and prerequisite-repair distinction, and allowed transient infrastructure reruns without a durable retry budget. This is finding A14 in the autonomy audit.
-
-The user approved checking applicable workflows, trigger conditions, and access before implementation. Missing same-repository CI configuration follows the existing bounded prerequisite-repair policy; missing access or an external outage suspends only dependent work. An absent or empty check result never counts as success. Confirmed transient infrastructure failures follow the repository's documented retry policy; without one, allow at most two automatic reruns per unchanged PR revision, waiting 30 seconds before the first and 60 seconds before the second. Persist revision, classification, evidence locators, attempt count, and next retry time before requesting a rerun. Reconcile live runs after restart so recovery neither resets the budget nor duplicates an already requested or running rerun. Exhausted retries with continuing infrastructure-failure evidence invoke the blocker protocol. Code failures are repaired within scope; pending CI and running review neither consume attempts nor justify suspension merely because time passes.
-
-The skill, checks/queue/scheduling/setup references, root guidance, README, workflow reference, and registry integration skill are aligned. Both changed skill bundles validate. The full build, including typechecking and output application, and repository-wide `git diff --check` pass. All ten generated issue-workflow bundles contain the updated workflow and all four changed references match source after whitespace normalization; ten generated registry integration bundles contain the matching policy. No executable behavior changed, no external CI reruns or ticket mutations were performed, and no session data or unowned changes were removed.
-
-Written review covers missing repairable CI configuration (bounded prerequisite), a confirmed infrastructure failure without a repository policy (persist and back off for at most two reruns), restart after requesting a rerun (reconcile rather than duplicate), exhausted attempts with continuing infrastructure failure (suspend affected work and select independent authorized work), and ordinary pending CI (continue watching without spending retry attempts). These walkthroughs and packaging checks are instruction review, not executed model or live CI-recovery evaluations.
-
-## I023: Repository and reviewer readiness checked early; main-only policy retained
-
-The [setup reference](skills/agent/github-fix-issues/references/setup.md) listed `main`, tools, authenticated implementer, configured distinct reviewer/token, and required access without an explicit complete readiness check before implementation. This is finding A15 in the autonomy audit. The user's `q32.1` response was interpreted as the pending Q23.1 selection: add early readiness checks and retain the main-only workflow.
-
-Setup now contains the approved wording: verify tools, repository and publishing-remote identity, implementer authentication, configured reviewer identity and token availability, distinct identities, required access, and compatibility with repository protections before implementation. Follow the existing bundled setup/access helper; never dump credentials, change default authentication, bypass protections, or escalate existing permissions. Persist non-secret findings and exact missing requirements, suspend only dependent actions, preserve prepared work, continue independent authorized preparation or eligible issues under existing scheduling/blocker rules, and recheck prerequisites before resumption and at review/integration gates. The workflow explicitly uses main and records an unavailable branch as a blocker without silently selecting another branch.
-
-The skill, setup and queue references, root guidance, README, workflow reference, and registry integration skill are aligned. Both changed skill bundles validate. The full build, including typechecking and output application, and repository-wide `git diff --check` pass. Verification confirms the exact approved common and branch wording after whitespace normalization, all ten generated workflow bundles with matching setup/queue references, and ten aligned registry integration copies. No executable behavior changed, external authentication or repository permissions were not altered, and no session data or unowned changes were removed.
-
-Written review covers a ready main-based repository (proceed), unavailable reviewer credentials (record the exact requirement and suspend dependent actions without exposing secrets), incompatible protection policy (preserve work without bypass), missing main (record the branch requirement rather than silently selecting another), and restart (refresh prerequisites before dependent actions resume). These are instruction walkthroughs and packaging checks, not executed model or end-to-end GitHub setup evaluations.
-
 ## I024: Publication reconciliation bounded and resumable without connectivity probes
 
 The [integration reference](skills/agent/github-fix-issues/references/integration.md) formerly said to read native PR state until MERGED and to record a reconciliation blocker when a published head had not been marked merged, without defining the waiting boundary. This is the remaining reconciliation portion of finding A16; I023 already added protection-compatibility preflight.
@@ -230,57 +126,11 @@ Written review covers an established owner (update the queue and resume within a
 
 Open runtime implementation gap: these instructions do not install a scheduler, provide leases, dispatch workers, or guarantee automatic wakeup. A factory runtime must supply those capabilities and verify their behavior before unattended resumption can be claimed. This remains open separately from the completed instruction change.
 
-## I026: Gitea blockers suspend dependent actions and honor explicit grants
-
-The [Gitea skill](skills/agent/gitea/SKILL.md) required stopping for missing or invalid credentials and asking again before replacing a conflicting origin or performing destructive cleanup/history rewriting. These are finding A18 in the autonomy audit. The user selected Q26.1 and approved all three replacements.
-
-Authentication now uses existing configured Tea authentication or the credential-store entry for the verified host. Credential-helper output must be captured privately rather than emitted into tool results, logs, or reports; secrets must not be requested in chat. Missing authentication suspends remote-dependent actions while authorized local preparation and independent work continue. A conflicting origin is inspected for ownership and destination intent. An existing explicit grant to replace that specified remote is sufficient; publishing alone does not authorize replacement. Destructive cleanup or history rewriting requires verified scope, ownership, and explicit authorization, with an existing grant honored without another confirmation. Otherwise preserve the repository and prepare the reviewable repair while suspending the destructive action and dependent publication. Session data and other owners' work remain protected.
-
-The skill validator, source checks for all three exact approved paragraphs and removal of the superseded stop/ask phrases, and repository-wide `git diff --check` pass. Build and generated-output verification are deferred at the user's request. No executable behavior changed, no credentials were retrieved, no live API, remote mutation, push, cleanup, or history rewrite was performed, and no session data or unowned changes were removed.
-
-Written review covers missing authentication (preserve local preparation), an explicitly authorized remote replacement (proceed within the specified scope), a publish-only request with a conflicting origin (preserve it and record the required decision), an explicitly authorized owned cleanup (honor the grant), and missing destructive authority (preserve state and prepare a reviewable repair). These are instruction walkthroughs and source validation, not executed model or live Gitea evaluations.
-
-## I027: Syncthing transfers honor standing grants and preserve pending delivery
-
-The [Syncthing transfer skill](skills/agent/syncthing-transfer/SKILL.md) asked about ambiguous peers/files, extra recipients, collisions, and missing destinations, and ended status polling after 60 seconds without a resumption contract. This is finding A19 in the autonomy audit. The user selected Q27.1.
-
-The exact approved addition checks explicit instructions, approved transfer configuration, and standing grants before the decision gates. Proceed without another question only when those inputs uniquely identify and authorize the operation, including all recipients and overwrites or renaming. Otherwise preserve files, record the unresolved decision, and suspend dependent transfer actions while read-only investigation and independent authorized work continue. No recipient, destination, or collision policy is invented.
-
-The approved polling replacement limits individual polling batches rather than treating the elapsed batch as delivery or task completion. Pending state belongs in existing durable execution state outside synced shares and daemon state, with peer/share, staged relative path, byte fingerprint or verified version, delivery evidence, and next verification time. Private details stay local and staged copies remain intact. Verified offline peers or unavailable access suspend dependent actions. Deferred verification uses only an authorized, configured scheduler with verified acceptance; otherwise report the exact redispatch requirement. Resume only after rechecking authorization, membership, bytes, and delivery evidence. Existing receipt-verification requirements remain intact.
-
-The changed skill validator and repository-wide `git diff --check` pass. Source diff review confirms the approved three paragraphs and removal of the old per-request polling cutoff while preserving the prior search-tool correction and receipt checks. Build and generated-output verification are deferred at the user's request. No executable behavior changed, no transfer, scheduler job, private configuration lookup, or daemon operation was performed, and no session data or unowned changes were removed.
-
-Written review covers an approved unambiguous transfer (honor the grant), extra unauthorized recipients or an unresolved collision (preserve files and suspend the copy), an online peer after one polling batch (continue verification), an offline peer (preserve pending state), accepted scheduler dispatch (record acceptance), missing scheduling (report redispatch), and restart with changed membership or bytes (revalidate before claiming delivery). These are instruction walkthroughs and source validation, not executed model, Syncthing, or scheduler evaluations. Automatic wakeup still requires an externally supplied runtime.
-
 ## I028: Third-party shadcn checkpoints preserved; upstream finding open
 
 The [shadcn skill](skills/agent/shadcn/SKILL.md:157), authored by `shadcn`, says: “If no registry is specified (e.g. user says \"add a login block\" without specifying `@shadcn`, `@tailark`, etc.), ask which registry to use. Never default to a registry on behalf of the user.” Its [CLI reference](skills/agent/shadcn/cli.md:132) also says: “User says \"just update everything\" → use `--overwrite`, but confirm first.” The [preset section](skills/agent/shadcn/cli.md:295) says: “Ask the user first: **overwrite**, **partial**, **merge**, or **skip** existing components?” These are finding A20 in the autonomy audit.
 
 Those checkpoints can repeat a decision already supplied in approved project configuration or explicit task authorization. The user's standing instruction prohibits modifying third-party-authored skills. The bundle remains untouched; an audit does not authorize changing its content. Record this as an unresolved upstream finding and continue independent registry-owned instruction work. Upstream correction or explicit permission to edit the bundle is needed to change its instructions. No source remediation, CLI execution, build, or generated-output verification was performed for this finding.
-
-## I029: Session continuation supports verified fallback and relevant check reuse
-
-The [continuation skill](skills/user/continue-session/SKILL.md) assumed the `agent-print-session` reader and Pi/Claude transcript format and required tests or builds on every takeover. This is finding A21 in the autonomy audit. The user selected Q28.1; the skill remains under `skills/user/`.
-
-The exact approved replacements verify the installed reader and help, permit another reader with verified format support or sufficient verified durable task state, and prohibit invented flags, schemas, adapters, or missing decisions. Missing required context suspends only dependent work. Phase 1 identifies the actual harness and session; the command phases apply only to supported Pi/Claude transcripts, and handoff-first is conditional on using that tool. Other harnesses use the verified fallback rather than being passed to an unsupported reader.
-
-Workspace inspection now explicitly preserves unowned state, session transcripts, and runtime data; continuation grants no cleanup authority. Prior results may be reused only when revision, checked scope, environment, and outcome remain applicable. Run required checks affected by subsequent changes or unresolved failures, honor explicit limits including paused builds, and record deferred checks without claiming they passed. The earlier search-tool restriction was already removed and remains absent.
-
-The changed skill validator and repository-wide `git diff --check` pass. Source diff review confirms the approved replacements and preserves the earlier discovery-tool correction. Build and generated-output verification are deferred at the user's request. No executable behavior changed, no session transcripts were opened or modified, no alternative reader or adapter was installed, and no processes, locks, session data, or unowned changes were removed.
-
-Written review covers a supported reader (verified help, scoped handoff), missing reader with sufficient durable state (resume after workspace reconciliation), an unsupported harness with a verified reader (recover equivalent context), missing required decisions (suspend dependent work), unchanged applicable check evidence (reuse), changed source or unresolved failure (run affected required checks), and paused builds (record deferral). These are instruction walkthroughs and source validation, not executed model, reader, or handoff evaluations. This change does not implement additional transcript adapters.
-
-## I030: Missing terminal capabilities suspend dependent checks
-
-The [terminal-control skill](skills/agent/termctrl/SKILL.md) reported a missing binary without specifying an equivalent-method fallback or the work that could continue. This is part of finding A22 in the autonomy audit. The user selected Q29.1.
-
-The exact approved replacement permits available authorized alternatives only when their verified capabilities satisfy the same interaction and evidence and the request does not specifically require termctrl or a particular session. Report the actual method and limitations; logs do not replace required rendered-screen or visual checks. Missing capabilities suspend dependent checks/actions with an exact provisioning or input requirement, while independent authorized work continues. Unrun checks cannot pass, and another owner's terminal session cannot be taken over. The reporting paragraph distinguishes completed checks from checks awaiting tools, sessions, or access and prohibits completion while required verification remains deferred.
-
-Related boundaries remain intact. The [Hunk skill](skills/agent/hunk-review/SKILL.md:11), authored by `modem-dev`, requires a live user session and is protected by the user's third-party-content instruction. [Chrome CDP](skills/agent/chrome-cdp/SKILL.md:3) retains explicit permission for inspecting or interacting with an already-open personal browser page. [Browser authentication](skills/agent/agent-browser/references/authentication.md:202) retains manual 2FA. No consent, authentication, or specifically requested tool/session requirement is bypassed. Worker tool/session provisioning remains a runtime responsibility rather than a capability installed by these instruction edits.
-
-The changed skill validator and repository-wide `git diff --check` pass. Source diff review confirms only the approved two replacements and metadata changed in this skill. Build and generated-output verification are deferred at the user's request. No executable behavior changed, no tools were installed, no terminal or browser session was opened, and no session data, processes, locks, or unowned changes were removed.
-
-Written review covers an equivalent verified terminal method (use and report it), an explicitly requested termctrl session (preserve that requirement), logs lacking required visual evidence (do not substitute), an unavailable required capability (suspend dependent checks), and unrelated work that can proceed (continue within authorization). These are instruction walkthroughs and source validation, not executed model, terminal, or browser evaluations. The protected upstream Hunk gate and runtime provisioning requirements remain open or intentional as described above.
 
 ## I031: Automatic generated-edit recovery implemented; integration verification deferred
 
@@ -295,68 +145,6 @@ Recovered source is saved through an owned temporary file and same-filesystem re
 Verification: 82 fixture tests across six files pass with 245 assertions, and `bun run typecheck` passes. Coverage includes automatic recovery without a prompt, source/output conflicts, hidden source edits, missing fingerprints/mappings/baselines, conflicting harness copies, save failure, bounded regeneration, late output drift, unchanged runtime data, path reversal, and copied bytes/mode. New regressions fail against the untouched implementation in an owned isolated worktree for the relevant behavior; restoring the final implementation makes the six-file suite pass there. The owned sensitivity worktree was restored and removed without forced cleanup. Scheduled-update tests use disposable local repositories and a stub bootstrap; they do not run the real build or bootstrap.
 
 Live build/bootstrap and generated-output verification remain unrun because the user paused rebuilds. The all-source per-package coverage command/gate remains unconfigured under [I020](#i020-per-package-coverage-policy-corrected-enforcement-gap-open); no coverage compliance is claimed. These follow-up gaps do not prohibit independent source validation or authorized integration of this instruction-maintenance task. Resume live application and its verification when the user lifts that specific pause. No live `.output`, session/runtime data, scheduler, hook, or authentication state was changed or removed. The scheduled updater's tracked-dirty-checkout guard remains in place.
-
-## I032: Local approval rule removed; standing policies recorded automatically
-
-Finding A24 grouped four local instruction rules as potential unattended-work blockers. In response to Q33, the user clarified that this registry is maintained interactively with agent assistance; reusable guidance for unattended workers does not make interactive registry maintenance a defect. Root and registry-integration guidance now record that distinction, and the audit scope reflects it.
-
-The user explicitly requested removal of the approval rule in `profiles/AGENTS.md`. That line is deleted rather than replaced with another approval checkpoint. Profile support, including that file, was later removed entirely. The documentation collection rule in [wiki/prompt-writing/AGENTS.md](wiki/prompt-writing/AGENTS.md:25) is preserved: the user did not request its removal or replacement. The earlier blanket four-file Q33 proposal was not accepted as written.
-
-The user explained that the policy-recording rules in [skills/AGENTS.md](skills/AGENTS.md) and [disk-cleanup/AGENTS.md](skills/user/disk-cleanup/AGENTS.md) mean explicit standing instructions, such as always doing or never doing something, should be saved automatically without a separate request to update policy. Those rules now say so. Update superseded rules in place and ask only when the intended scope or resolution of a material conflict is unclear. One-task directions, progress, handoffs, and session data stay out of policy files. The root guidance and registry-integration skill are aligned. Docs-writer's entrypoint, persistence reference, and three AGENTS template sections now carry the same automatic-recording requirement so new files retain this behavior. No task history is embedded in the policy updates.
-
-The docs-writer, registry-integration, and disk-cleanup bundles validate, and repository-wide `git diff --check` passes. Written review covers an explicit standing rule (save automatically at the applicable scope), an explicit replacement (update the existing rule), a one-task instruction (keep it out of policy), and unresolved scope/conflict (ask only for that missing decision). These are instruction walkthroughs and source checks, not executed model behavior. No executable code changed and no behavioral tests were added. Build and generated-output verification remain deferred at the user's request. Live output, sessions, and runtime data were not changed; unrelated disk-cleanup changes were preserved.
-
-## I033: Manual commands excluded from the autonomy review
-
-The user excluded commands because they imply manual workflows. The audit scope now excludes reusable, profile-local, and harness-local commands, including their generated native-skill forms. Q34 is withdrawn without applying its proposed review-loop changes. Command-only findings A27/A36/A37 and the command portions of A29/A35 and the contradiction table no longer create remediation work. The command ledger records the exclusion, and the historical inventory counts remain explicitly labeled as historical. Earlier authorized command fixes, including I002, remain intact. No command content is changed by this scope adjustment.
-
-Verification is limited to source review and whitespace checks; the review continues with non-command findings. No executable changes, rebuilds, or live output/session changes are required.
-
-## I034: New user work is queued without abandoning the active task
-
-At the user's explicit request, [system/system.md](system/system.md) now directs agents to acknowledge and queue new user comments that add work, retain them in an existing task record when available, finish the active task through its required checks, and select queued work at the next task-selection boundary within its authorization and dependencies. Clarifications, answers, corrections, explicit reprioritization, cancellations, and stop requests affect the active work immediately. Status questions receive a brief answer followed by continued work. The default profile includes this shared prompt; generated propagation remains deferred under the user's build pause.
-
-Written scenario review covers a new independent task (queue it and finish the active task), an answer or correction (apply it immediately), a stop or cancellation (honor it immediately), a status question (answer and resume), and blocked active work (follow the existing blocker protocol and select independent authorized work). This is an instruction review, not an executed model-behavior test. Source and whitespace checks apply; no executable code or live output/session data is changed.
-
-## I035: Design decisions suspend only dependent work; review loops retained
-
-Finding A28 combined unlimited review loops with a whole-document stop for unresolved design decisions. After initially selecting Q35.1, the user explicitly superseded its review-loop proposal: leave the existing loops alone and apply only the decision-rule replacement. The review-until-completely-clean instructions in the engineering-design reference, ticket reference, engineering-design template, and ticket template remain unchanged. No review limit, pass counter, or replacement completion gate is introduced.
-
-The rule in [eng-designs.md](skills/agent/docs-writer/references/eng-designs.md:52) now permits routine implementation choices within authorized requirements and established architecture. When a material product or architecture decision remains unresolved, record the exact question, suspend only dependent sections and work, and continue independent authorized work without inventing the missing requirement. The docs-writer entrypoint's modification timestamp is updated; its content and the templates are otherwise preserved.
-
-Written review covers a routine implementation choice (choose within the authorized architecture), missing material product input (record the question and suspend dependent work), and an independent section (continue without making up the missing decision). Review-until-clean remains required in all four existing locations. The docs-writer skill validator and repository-wide `git diff --check` pass. The engineering-design reference diff contains only the approved decision-rule replacement, and the ticket reference and both templates have no diff. These are instruction review and source checks, not executed model behavior. No executable behavior changes or behavioral tests are required; builds and generated-output verification remain deferred at the user's request. Commands, live generated output, and session/runtime data remain untouched.
-
-## I036: Redundant first-iteration perfection requirement removed
-
-For finding A30, the user selected Q37.1: delete the “No Quick Shortcut Rationalizations” paragraph from [system/system.md](system/system.md) without replacement. This supersedes Q36's longer replacement proposal. The removed paragraph demanded complete architectural correctness in the first iteration and repeated protections already present in the adjacent instructions against evading checks and violating semantic contracts.
-
-The adjacent rules, required tests and verification, scope boundaries, due-diligence reporting, and existing review-until-clean loops remain intact. I018 already bounds library integration to the authorized task. Reporting unrelated concerns does not authorize repairing them. The audit disposition reflects the approved deletion rather than proposing another replacement paragraph.
-
-Verification consists of the source diff, checking the retained neighboring rules, and whitespace validation. No executable code or skill bundle changes are involved. Build and generated-output verification remain deferred under the user's build pause; commands, live generated output, and session/runtime data are untouched.
-
-## I037: CLI standards scoped to authorized work
-
-Q38.1 approves replacing the scope paragraph in [cli-best-practices/SKILL.md](skills/agent/cli-best-practices/SKILL.md:17). New applications and explicitly authorized standardization apply relevant requirements within their authorized scope. Existing applications apply requirements to changed surfaces and the smallest necessary prerequisite repairs under the active task policy. Unrelated pre-existing deviations are follow-up work, not automatic scope expansion or completion blockers unless they prevent required checks from passing. Existing licensing and distribution arrangements require explicit task authorization to change. All required checks remain in force.
-
-Written scenario review covers a narrow flag fix (apply relevant standards without unrelated tooling or licensing changes), a new CLI (apply relevant application standards), and a blocking prerequisite (follow the existing prerequisite policy without waiving checks). This is instruction review, not executed model-behavior testing. The CLI skill validator and repository-wide `git diff --check` pass. Build and generated-output verification remain deferred under the user's build pause. Commands, live generated outputs, and session/runtime data are untouched. The broader skill-trigger portion of A31 is not changed by this decision.
-
-## I038: Redundant shared skill-consultation section removed
-
-The user rejected adding a skill-rereading rule and explicitly requested deleting the shared Mandatory Skills Consultation section from [system/system.md](system/system.md). Q39's reuse-clarification proposal is superseded by this deletion without replacement. Individual skill triggers, repository-specific authoring requirements, and applicable validation remain unchanged.
-
-Source inspection confirms the section is removed and the following grounding section is retained; repository-wide `git diff --check` passes. This is a non-executable instruction deletion; generated-output verification remains deferred under the build pause. Commands, generated outputs, and session/runtime data are untouched.
-
-## I039: Release asset replacement honors existing explicit approval
-
-Q40A1 approves replacing the repeated confirmation rules in [github-release/SKILL.md](skills/agent/github-release/SKILL.md:44). Before replacement, verify the repository, release, remote asset, replacement file, and explicit acceptance of deletion risk. Honor an existing applicable approval rather than requesting it again. Missing approval or replacement details suspend only the affected upload while preparation and independent authorized work continue. The core deletion-risk requirement remains intact; general release authorization does not authorize asset replacement.
-
-Written review covers an exact approved replacement (verify and proceed), general release permission without replacement approval (prepare and request the missing decision), and unresolved replacement details (suspend that upload). The skill validator and repository-wide whitespace check pass. These are source checks and instruction review, not a live release test. No remote release, command, generated output, or session/runtime data is changed. Build verification remains deferred. The missing-tag checkpoint in A41 is subsequently resolved in I040.
-
-## I040: Release tag creation honors existing explicit authorization
-
-The user's `a41a1` response is interpreted as selecting Q41A1. The missing-tag paragraph in [github-release/SKILL.md](skills/agent/github-release/SKILL.md:62) now honors existing authorization to create and push the specified tag when its target commit is unambiguous. Verify the remote tag resolves to the intended commit before release creation. Missing authority or target details suspend only tag publication and dependent release creation; notes, assets, and independent authorized work may continue. Silent default-branch tag creation and replacement of an existing tag remain prohibited.
-
-Written review covers an authorized tag with a known commit (create, push, verify, then release), an unknown target (request that decision without inventing it), and an existing tag (do not replace it under missing-tag authority). The release skill validator and repository-wide whitespace check pass. No tag, release, or other remote resource is changed. Build and generated-output verification remain deferred; session/runtime data is untouched. Together with I039, this resolves A41's instruction changes.
 
 ## I041: Remaining audit dispositions reconciled
 

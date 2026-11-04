@@ -1,12 +1,12 @@
 ---
 created_on: 2026-10-26 10:10
-last_modified: 2026-11-04 10:13
+last_modified: 2026-11-04 11:19
 status: current
 ---
 
 # Review findings for commit e56e821
 
-This register records the review of `e56e821` (`refactor(registry): apply autonomy interview decisions`, 2026-10-24) against `HEAD` at `0e138b9`. Entries record evidence, impact, and suggested remediation; they do not independently change operating policy. Finding IDs (`F1`–`F24`, `D2`–`D7`) match the review discussion.
+This register records the review of `e56e821` (`refactor(registry): apply autonomy interview decisions`, 2026-10-24) against `HEAD` at `0e138b9`. Entries record evidence, impact, and suggested remediation; they do not independently change operating policy. Finding IDs (`F1`–`F24`, `D2`–`D7`) match the review discussion. Fixed and obsolete findings are removed; their text remains in Git history.
 
 Method: the registry-cli code changes were reviewed directly, including a reproduction of the template-reversal behavior and a comparison of test results at the commit, its parent, and `HEAD`. The instruction changes were reviewed by two independent read-only passes; their highest-severity findings (F1, F2, F6, F7, F10) were re-verified. Entries marked *plausible* describe a confirmed mechanism whose real-world trigger was not observed.
 
@@ -55,19 +55,6 @@ Several managed generated files have no entry in `sourcePaths` in `.output/manif
 Before this commit, `-y` overwrote drift. It is now ignored (F19), and the error text ("resolve its source mapping") gives no actionable step, so the only recovery is manually reverting the generated file.
 
 Remediation: decide the intended behavior for unrecoverable drift. Options: a documented explicit discard command that backs up the generated edit before overwriting it, or mapping rendered prompts to their profile `system_prompt` source and reporting the include-based case with exact instructions. Update the error text and `AGENTS.md` to match.
-
-### F5: `programming` bundle is a stale duplicate that contradicts current Bun policy
-
-Status: fixed in `b1e1fcb`, which removed the standalone language skills and ported their newer Bun and React policy into the bundle. Confidence: confirmed.
-
-The bundle under [skills/agent/programming](skills/agent/programming/SKILL.md) was authored before `6eda682` (justfile and shared React policy) and committed with its other content preserved.
-
-- `programming/references/bun/runtime.md:44-58` puts tasks in `package.json` scripts, including a `check` script, and omits the justfile and `ts-unused` requirements. [bun/SKILL.md](skills/agent/bun/SKILL.md) line 23 forbids a `check` script because it overrides `bun check`.
-- `programming/references/bun/react-compiler.md:114-150` uses `.oxlintrc.json` and a `check` script; the standalone copy requires the shared policy factories and `just verify`.
-
-Every profile except `personal-assistant` selects `skills: ['*']`, so `programming` ships alongside `bun`, `bun-tailwind`, `golang`, `rust`, `typescript`, `python-skill`, and `modular-justfiles`, and both are described as mandatory. Eighteen reference files are byte-identical duplicates. Drift has started: `a7c7d60` fixed whitespace only in the bundle copies of `archive.md` and `bundling.md`; `typescript/SKILL.md:269` still has the `n## TypeScript 7 Updates` typo the bundle fixed; `typescript/references/storybook.md:3` still links the nonexistent `storybook-review`.
-
-Remediation: keep one source of truth. Either remove the standalone language skills and port their newer policy into the bundle, or remove the bundle. Resolve the Bun policy conflict before choosing.
 
 ### F6: Guidance cites shared rules that no longer exist
 
@@ -179,14 +166,6 @@ Status: open. Confidence: plausible.
 
 Remediation: state which rule wins for agent-facing tickets and designs.
 
-### F18: TypeScript completion criteria contradict the justfile mandate
-
-Status: fixed; the completion criteria now require `just verify`. Confidence: confirmed.
-
-`skills/agent/programming/references/typescript/testing.md:183-190` requires `bun lint`, `bun typecheck`, and `bun fix` (package scripts) before completion. [Bun runtime](skills/agent/programming/references/bun/runtime.md) forbids package scripts for tasks and requires `just verify`.
-
-Remediation: replace the package-script commands with the justfile recipes.
-
 ## Low
 
 ### F19: Dead build confirmation code
@@ -212,14 +191,6 @@ Status: open. Confidence: confirmed.
 - `continue-session` (lines 4, 14, 63-71, 81) contains Pi and Claude Code session paths and harness-specific behavior in a generic skill.
 - [merge-to-main-baseline](skills/agent/merge-to-main-baseline/SKILL.md) line 13 adds an "instruction-maintenance task" carve-out, a concept defined only in this registry's `AGENTS.md`, to a skill that ships to every repository.
 
-### F22: Issue-workflow policy duplicated across about seven files
-
-Status: open. Confidence: confirmed.
-
-The issue-workflow rules are restated in `AGENTS.md:16-27` (which also says the bundled references own them), `README.md:10-19`, [ai-registry-integration](skills/agent/ai-registry-integration/SKILL.md) lines 101-113 (under "Add A Command"), `docs/internal/references/github-issue-workflow.md:34-165`, the skill, and each reference. For example, prerequisite-repair authority appears in `AGENTS.md:19`, `README.md:19`, `ai-registry-integration:112`, `github-issue-workflow.md:128`, `SKILL.md:102`, `queue.md:105`, and `checks-and-ci.md:22`. The audit flags this as "Shared policy duplication" (`autonomy.md:224`); the commit increased it. F6 shows the resulting drift.
-
-Remediation: keep the rules in the skill references and replace the other copies with a one-line pointer.
-
 ### F23: Vendored setup skill references workflows that are not installed
 
 Status: open (upstream). Confidence: confirmed.
@@ -238,7 +209,6 @@ Remediation: pass an explicit source-registry object with methods for registerin
 
 ## Due diligence
 
-- **D2:** `ISSUES.md` had uncommitted changes in the working tree at the start of the review.
 - **D3:** `harnesses/opencode/skills/agent/opencode-conversation-analysis/scripts/extract.ts` lines 44 and 86 default to `.opencode-analysis`, while the skill now documents `.tmp/opencode-analysis`. The script default, `.gitignore:31`, and the `airOpencodeCommands.test.ts:160` fixture still use the old location.
 - **D4:** [rapid-demo](skills/user/rapid-demo/SKILL.md) spawns a `reviewer` subagent type, a harness-specific agent name in a generic skill with no generic definition.
 - **D5:** `programming/SKILL.md:22` routes all Tailwind work, including non-Bun projects, to the Bun-only `bun-tailwind` references.
@@ -251,6 +221,5 @@ Remediation: pass an explicit source-registry object with methods for registerin
 2. F7: stop printing `auth.json`.
 3. F4 with F19: define a supported path for unrecoverable generated edits.
 4. F3 and F24: restrict fingerprinting to registered source roots.
-5. F5: choose one source of truth for language guidance.
-6. F6, F10, F22: reconcile the instructions with the current `system.md` and correct the decision record.
-7. Remaining medium findings, then low findings.
+5. F6 and F10: reconcile the instructions with the current `system.md` and correct the decision record.
+6. Remaining medium findings, then low findings.

@@ -14,6 +14,7 @@ import { createHarnessBuildContext, type IHarnessBuildContextOptions } from "../
 
 const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "codex-build-tests");
 const originalCodexHome: string | undefined = process.env.CODEX_HOME;
+const originalTrustedDirs: string | undefined = process.env.AI_REGISTRY_CODEX_TRUSTED_DIRS;
 
 async function createTestDirectory(): Promise<string> {
   await mkdir(TEST_ROOT, { recursive: true });
@@ -44,6 +45,7 @@ function getBootstrapTargets(): NonNullable<typeof plugin.getBootstrapTargets> {
 describe("Codex harness build plugin", () => {
   beforeEach(() => {
     delete process.env.CODEX_HOME;
+    delete process.env.AI_REGISTRY_CODEX_TRUSTED_DIRS;
   });
 
   afterEach(async () => {
@@ -51,6 +53,11 @@ describe("Codex harness build plugin", () => {
       delete process.env.CODEX_HOME;
     } else {
       process.env.CODEX_HOME = originalCodexHome;
+    }
+    if (originalTrustedDirs === undefined) {
+      delete process.env.AI_REGISTRY_CODEX_TRUSTED_DIRS;
+    } else {
+      process.env.AI_REGISTRY_CODEX_TRUSTED_DIRS = originalTrustedDirs;
     }
     await rm(TEST_ROOT, { force: true, recursive: true });
   });
@@ -101,7 +108,7 @@ describe("Codex harness build plugin", () => {
       {
         relativePath: "codex/config.toml",
         liveOnlyKeyPaths: [
-          ["projects"],
+          ["projects", "*"],
           ["notice"],
           ["skills", "config"],
           ["hooks", "state"],
@@ -116,6 +123,26 @@ describe("Codex harness build plugin", () => {
         ],
       },
     ]);
+  });
+
+  it("trusts every checkout under the folders listed in AI_REGISTRY_CODEX_TRUSTED_DIRS", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await mkdir(join(repositoryRoot, "projects", "app", ".git"), { recursive: true });
+    await mkdir(join(repositoryRoot, "projects", "tool", ".git"), { recursive: true });
+    process.env.AI_REGISTRY_CODEX_TRUSTED_DIRS = "projects";
+
+    await buildOutput(repositoryRoot);
+
+    const config = Bun.TOML.parse(await readFile(join(repositoryRoot, ".output", "codex", "config.toml"), "utf-8"));
+    expect(config).toEqual({
+      model: "gpt-5.5",
+      projects: {
+        [join(repositoryRoot, "projects", "app")]: { trust_level: "trusted" },
+        [join(repositoryRoot, "projects", "tool")]: { trust_level: "trusted" },
+      },
+    });
+    expect(await readFile(join(repositoryRoot, "harnesses", "codex", "config.toml"), "utf-8")).toBe("model = \"gpt-5.5\"\n");
   });
 
   it("fails when the harness config is missing", async () => {

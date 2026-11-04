@@ -290,6 +290,7 @@ For local file-based OpenCode plugins that need runtime dependencies from this r
 The Codex harness compiles `.output/codex/`, which bootstrap applies to `${CODEX_HOME:-~/.codex}`.
 
 - `AGENTS.md` is a copy of `system/system.md`
+- set `AI_REGISTRY_CODEX_TRUSTED_DIRS` to a PATH-style list of folders (for example `~/development`) to trust every git checkout beneath them, including declared submodules; Codex matches trust by exact checkout path, so trusting a parent folder alone covers nothing below it. The entries go into the generated `config.toml` only, and trust Codex records itself, including `untrusted`, takes precedence
 - `config.toml` syncs both ways with `harnesses/codex/config.toml` on every build, keeping comments; trusted projects, hook trust, notices, and MCP credentials stay local to the machine
 - `skills/` contains every registry skill, Codex-only harness skills, and every command as a native skill bundle, with template tags resolved
 - command bundles preserve their Markdown instructions and description and disable implicit invocation through `agents/openai.yaml`; invoke `--commit-changed-files.md` as `$command-commit-changed-files` or select it through `/skills`

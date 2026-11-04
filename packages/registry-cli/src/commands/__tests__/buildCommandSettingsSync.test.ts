@@ -7,6 +7,7 @@ import { buildCommand } from "../buildCommand";
 import type { IRegistryPaths } from "../../lib/getRegistryPaths";
 import { getManagedEntryNames } from "../../lib/homeTargetUtils";
 import { readGeneratedOutputManifest } from "../../lib/readGeneratedOutputManifest";
+import { applySettingsChanges } from "../../lib/settingsSync/applySettingsChanges";
 import { copyRepositoryHarnesses } from "./helpers";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-settings-sync-tests");
@@ -43,6 +44,7 @@ describe("buildCommand settings sync", () => {
 
   afterEach(async () => {
     mock.restore();
+    delete process.env.AI_REGISTRY_CODEX_TRUSTED_DIRS;
     await rm(tempDir, { recursive: true, force: true });
   });
 
@@ -59,6 +61,32 @@ describe("buildCommand settings sync", () => {
     expect(JSON.parse(await readFile(sourcePath, "utf-8")).harnessAddedSetting).toBe(true);
     expect(JSON.parse(await readFile(livePath, "utf-8")).harnessAddedSetting).toBe(true);
   });
+
+  it("merges generated Codex project trust with trust Codex recorded itself, keeping both out of the source", async () => {
+    const projectsDir = join(tempDir, "projects");
+    await mkdir(join(projectsDir, "listed", ".git"), { recursive: true });
+    await mkdir(join(projectsDir, "declined", ".git"), { recursive: true });
+    process.env.AI_REGISTRY_CODEX_TRUSTED_DIRS = projectsDir;
+    const sourcePath = join(registryPaths.harnesses, "codex", "config.toml");
+    const sourceBefore = await readFile(sourcePath, "utf-8");
+    await buildCommand({ hasAutoConfirm: true, registryPaths });
+
+    const livePath = join(registryPaths.output, "codex", "config.toml");
+    // Codex declines one listed project and trusts one outside the listed folders.
+    await writeFile(livePath, applySettingsChanges(await readFile(livePath, "utf-8"), [
+      { keyPath: ["projects", join(projectsDir, "declined"), "trust_level"], value: "untrusted" },
+      { keyPath: ["projects", "/elsewhere/codex-trusted", "trust_level"], value: "trusted" },
+    ], livePath));
+    await buildCommand({ hasAutoConfirm: true, registryPaths });
+
+    const live = Bun.TOML.parse(await readFile(livePath, "utf-8"));
+    expect(Reflect.get(live, "projects")).toEqual({
+      [join(projectsDir, "declined")]: { trust_level: "untrusted" },
+      [join(projectsDir, "listed")]: { trust_level: "trusted" },
+      "/elsewhere/codex-trusted": { trust_level: "trusted" },
+    });
+    expect(await readFile(sourcePath, "utf-8")).toBe(sourceBefore);
+  }, 30_000);
 
   it("records synced settings files in the manifest so bootstrap links them into harness homes", async () => {
     await buildCommand({ hasAutoConfirm: true, registryPaths });

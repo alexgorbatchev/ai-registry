@@ -5,20 +5,23 @@ import { join } from "path";
 
 import type { IBootstrapTarget, IHarnessBuildContext, IUnifiedHarnessPlugin } from "../../lib/harnessBuild";
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
+import { applySettingsChanges } from "../../lib/settingsSync/applySettingsChanges";
 import { getCommandSkillName } from "./getCommandSkillName";
+import { CODEX_TRUSTED_DIRS_ENV, discoverTrustedProjects } from "./discoverTrustedProjects";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
 
 const CONFIG_FILE_NAME = "config.toml";
 
-// Codex keys that never reach the registry source: project trust levels, skill
+// Codex keys that never reach the registry source: project trust levels (each
+// project separately, so generated entries fill in projects Codex has not seen), skill
 // toggles, and hook trust hashes keyed by absolute local paths; entries Codex and the
 // ChatGPT desktop app point at machine-local binaries and caches (the computer-use
 // `notify` hook, the bundled and primary-runtime marketplaces, and the app's REPL MCP
 // servers); acknowledgement notices and notice counters Codex stamps itself; and MCP
 // server fields that can hold credentials.
 const CODEX_LIVE_ONLY_KEY_PATHS = [
-  ["projects"],
+  ["projects", "*"],
   ["notice"],
   ["skills", "config"],
   ["hooks", "state"],
@@ -32,6 +35,27 @@ const CODEX_LIVE_ONLY_KEY_PATHS = [
   ["mcp_servers", "*", "http_headers"],
 ];
 
+// Marks every git checkout under the folders listed in the environment as trusted.
+// `projects` is live-only, so these machine-specific paths reach the live file
+// but never the registry source.
+async function trustListedProjects(context: IHarnessBuildContext, configPath: string): Promise<void> {
+  const trustedProjects = await discoverTrustedProjects(
+    process.env[CODEX_TRUSTED_DIRS_ENV] ?? "",
+    context.templateContext.repo_root,
+  );
+  if (trustedProjects.length === 0) {
+    return;
+  }
+
+  const configText = await Bun.file(configPath).text();
+  const trustChanges = trustedProjects.map((projectDir) => ({
+    keyPath: ["projects", projectDir, "trust_level"],
+    value: "trusted",
+  }));
+  await Bun.write(configPath, applySettingsChanges(configText, trustChanges, configPath));
+  console.log(`   ↳ codex trusted projects (${trustedProjects.length}) from ${CODEX_TRUSTED_DIRS_ENV}`);
+}
+
 // Codex saves `/model`, MCP, and feature changes into this file; the build syncs
 // them back into `harnesses/codex/config.toml`.
 async function stageCodexConfig(context: IHarnessBuildContext, codexOutputDir: string): Promise<void> {
@@ -42,6 +66,7 @@ async function stageCodexConfig(context: IHarnessBuildContext, codexOutputDir: s
 
   const configPath = join(codexOutputDir, CONFIG_FILE_NAME);
   await context.buildSupport.copyPathWithTemplateVariables(sourceConfigPath, configPath, context.templateContext);
+  await trustListedProjects(context, configPath);
   context.buildSupport.syncSettingsFile(configPath, { liveOnlyKeyPaths: CODEX_LIVE_ONLY_KEY_PATHS });
 }
 

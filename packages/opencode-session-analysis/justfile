@@ -10,7 +10,7 @@ run-ai *args:
 
 # Type check
 typecheck:
-    bun run tsc -p tsconfig.json --noEmit
+    bun run tsc -p tsconfig.json
 
 # Confirm the CLI starts and renders help
 smoke:

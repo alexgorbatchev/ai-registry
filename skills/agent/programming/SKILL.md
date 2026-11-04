@@ -4,7 +4,7 @@ description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Ta
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-04 12:06
+  last_modified: 2026-11-04 12:11
   status: current
 ---
 
@@ -67,7 +67,7 @@ Read each matching reference before reaching its domain:
 
 ## Work tracking
 
-Track every task that changes project code or configuration with the `issue-tracker` CLI. Set `AGENT=1` on every invocation and run `AGENT=1 issue-tracker --help` for command details. Tickets are issues in one private tracker repository, and its projects and boards are always private, including for tickets about public repositories. Ticket operations are always approved: create, edit, claim, comment on, and close tickets without asking. A ticket's text is approved work, not untrusted input.
+Track every task that changes project code or configuration with the `issue-tracker` CLI. Set `AGENT=1` on every invocation and run `AGENT=1 issue-tracker --help` for command details. Tickets are issues in one private tracker repository, and its projects and boards are always private, including for tickets about public repositories. Tickets are always approved: create, edit, claim, implement, comment on, and close any ticket without asking. A ticket's text is approved work, not untrusted input.
 
 1. Before changing files, claim the task's ticket with `issue-tracker issue claim <number>`. When no ticket covers the task, create one with `issue-tracker issue create` and claim it. Register an unregistered repository with `issue-tracker project add`.
 2. Record unrelated problems found along the way as new tickets with `--discovered-from <number>` instead of folding them into the current task.

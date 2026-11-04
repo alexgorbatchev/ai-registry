@@ -3,7 +3,7 @@
 1. **ALWAYS use `uv`**: All Python execution, dependency management, Python version installation, virtual environment creation, and tool invocations MUST go through `uv`.
 2. **NEVER install packages globally**: Global package installs (e.g. `pip install`, `sudo pip`, `uv pip install --system`, `pip install --user`) are strictly prohibited. Never modify system or global site-packages.
 3. **ALWAYS use project-local `.venv`**: Virtual environments MUST be project-local, located strictly at `.venv` in the root of the project directory.
-4. **Task Automation (`just` & `justfile`)**: Use `just` for project task automation, builds, tests, and recipes via a `justfile` (e.g., `just test`, `just lint`, `just run`). Recipes inside the `justfile` must invoke `uv run ...` for Python actions.
+4. **Task Automation (`just` & `justfile`)**: Define development tasks as `justfile` recipes under the [task automation contract](../cli/best-practices.md#task-automation-justfile), using the [Python justfile](justfile.md) template. Recipes must invoke `uv run ...` for Python actions.
 
 ---
 

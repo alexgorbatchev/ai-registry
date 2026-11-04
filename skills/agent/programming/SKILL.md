@@ -1,10 +1,10 @@
 ---
 name: programming
-description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Tailwind, Swift, shell scripts, or justfiles.
+description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Tailwind, Swift, shell scripts, or justfiles, and when building, designing, refactoring, documenting, or reviewing CLI applications and their command-line interfaces.
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-04 11:25
+  last_modified: 2026-11-04 11:41
   status: current
 ---
 
@@ -20,7 +20,8 @@ Inspect the task's files, manifests, toolchain configuration, and repository ins
 | Reading or writing TypeScript, including TSX | [TypeScript conventions](references/typescript/conventions.md) |
 | Bun execution, dependencies, builds, or runtime APIs | [Bun runtime](references/bun/runtime.md) |
 | Tailwind integration, theme tokens, or utility scanning | [Bun/Tailwind integration](references/bun-tailwind/integration.md) and [setup](references/bun-tailwind/setup.md); apply Bun-specific wiring when the project uses Bun |
-| Creating, structuring, or refactoring justfiles | [Modular justfiles](references/just/modular-justfiles.md) |
+| Creating, structuring, or refactoring justfiles, or defining development tasks | [Task automation](references/cli/best-practices.md#task-automation-justfile), the language's justfile reference ([Go](references/go/justfile.md), [Python](references/python/justfile.md), [Rust](references/rust/justfile.md), [Bun](references/bun/justfile.md)), and [Modular justfiles](references/just/modular-justfiles.md) |
+| Building, designing, refactoring, documenting, or reviewing CLI applications | [CLI best practices](references/cli/best-practices.md) and the language's CLI reference ([Go](references/go/cli.md), [Python](references/python/cli.md), [Rust](references/rust/cli.md), [TypeScript](references/typescript/cli.md)) |
 
 Swift and shell scripts have no language baseline here; for them, follow the project's own conventions and the shared sections below. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Select runtime commands from the actual project's tooling; Bun commands apply to Bun projects. Verify unfamiliar APIs against the installed version's source or official documentation.
 
@@ -101,4 +102,4 @@ While POC is on:
 
 If a required reference, toolchain, dependency contract, or project configuration is unavailable, record what is missing, the affected work, attempted recovery, and the input needed to resume. Suspend only dependent work and continue independent authorized work. Do not invent missing contracts or substitute another language's rules.
 
-Run the project's required checks for the affected languages and tooling, excluding tests while POC is on. Report executed results and material limitations; a reference walkthrough is not an executed check.
+Run the project's required checks for the affected languages and tooling, including `just check` under the [task automation contract](references/cli/best-practices.md#task-automation-justfile). While POC is on, run the non-test recipes `check` depends on instead of `check` itself. Report executed results and material limitations; a reference walkthrough is not an executed check.

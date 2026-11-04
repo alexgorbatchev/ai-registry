@@ -20,11 +20,7 @@ Always use native, highly-optimized Bun APIs instead of falling back to Node.js 
 
 ## Developer workflows
 
-Define development tasks in `justfile` recipes: running, development servers, builds, formatting, linting, type checking, tests, and aggregate verification. Invoke them with `just <recipe>` locally and in CI. Run Bun entrypoints and installed tools directly inside recipes; do not wrap or duplicate development tasks in `package.json` scripts. Keep package metadata, dependencies, workspaces, and required package-manager lifecycle hooks in `package.json`.
-
-Name aggregate validation `verify`, invoke it as `just verify`, and keep type checking in a separate `typecheck` recipe. Do not create a `check` recipe or a `package.json` `check` script for aggregate validation: [Bun's native `bun check`](https://bun.com/docs/runtime/check) performs TypeScript type checking, and a package script named `check` overrides that command. In workspaces, put component recipes in package-local justfiles and coordinate them through root `mod` declarations; see [Modular justfiles](../just/modular-justfiles.md).
-
-When migrating an existing workflow, move task commands into recipes, update local and CI callers, and remove superseded package scripts.
+Define development tasks as `justfile` recipes under the [task automation contract](../cli/best-practices.md#task-automation-justfile), using the [Bun justfile](justfile.md) template. In workspaces, put component recipes in package-local justfiles and coordinate them through root `mod` declarations; see [Modular justfiles](../just/modular-justfiles.md).
 
 ## Build storage and temporary files
 
@@ -50,42 +46,11 @@ bun add -D oxlint oxfmt ts-unused
 
 Commit `package.json` and `bun.lock`, and run `bun install` when setting up the project. Invoke installed tool binaries with `bun run <tool>` inside recipes. Do not use `bun x`, `bunx`, or `--no-install` for these development tasks.
 
-For React projects, also install **`@alexgorbatchev/typescript-ai-policy`** and use its shared config factories as described in [react-compiler.md](react-compiler.md#3-required-react-policy). This is mandatory for React projects. Use `oxlint.config.ts` and `oxfmt.config.ts` with those factories instead of standalone JSON configs. For other projects, commit `.oxlintrc.json` for lint rules and `.oxfmtrc.json` for formatting options. Preserve existing formatting conventions where the required shared policy permits them. Replace superseded lint/format dependencies, configs, and scripts rather than running duplicate stacks.
+For React projects, also install **`@alexgorbatchev/typescript-ai-policy`** and use its shared config factories as described in [react-compiler.md](react-compiler.md#3-required-react-policy). This is mandatory for React projects. Use `oxlint.config.ts` and `oxfmt.config.ts` with those factories instead of standalone JSON configs. For other projects, commit `.oxlintrc.json` for lint rules and `.oxfmtrc.json` for formatting options. Preserve existing formatting conventions where the required shared policy permits them. Replace superseded lint/format dependencies and configs rather than running duplicate stacks.
 
-Expose separate write and validation recipes in `justfile`; keep `verify` and its dependencies read-only. This TypeScript example requires installed `typescript` and `@types/bun` development dependencies, a `tsconfig.json`, and behavioral tests:
+Expose these tools through the formatting, lint, type-checking, unused-code, and test recipes in the [Bun justfile](justfile.md). Keep `tsc --noEmit` for type checking and `bun test` for behavioral tests alongside this stack.
 
-```justfile
-default:
-    @just --list
-
-fmt:
-    bun run oxfmt
-
-fmt-check:
-    bun run oxfmt --check
-
-lint:
-    bun run oxlint --deny-warnings
-
-fix:
-    bun run oxlint --fix
-    bun run oxfmt
-
-typecheck:
-    bun run tsc --noEmit
-
-unused:
-    bun run --bun ts-unused check tsconfig.json
-
-test:
-    bun test
-
-verify: fmt-check lint typecheck unused test
-```
-
-Scope these commands to the project's source and test directories when a repository contains unrelated assets or packages. Keep `tsc --noEmit` for type checking and `bun test` for behavioral tests alongside this stack. Run `just fmt` or `just fix` to modify files; run `just verify` locally and in CI to validate them.
-
-Keep `unused` in `verify` for every Bun project. Point it at a `tsconfig.json` that includes the project's source; in workspaces, run it for each relevant package config. Use `unused.config.ts` with `defineConfig` from `ts-unused` when customization is needed. Enable `packageMode` for published library entrypoints, and limit exclusions to verified external consumers or generated files; do not suppress findings merely to make verification pass. Keep the mutating `ts-unused fix` command out of `verify`. Consult the [ts-unused documentation](https://github.com/alexgorbatchev/ts-unused#readme) before configuring analysis.
+Keep `unused` in `check` for every Bun project. Point it at a `tsconfig.json` that includes the project's source; in workspaces, run it for each relevant package config. Use `unused.config.ts` with `defineConfig` from `ts-unused` when customization is needed. Enable `packageMode` for published library entrypoints, and limit exclusions to verified external consumers or generated files; do not suppress findings merely to make `check` pass. Keep the mutating `ts-unused fix` command out of `check`. Consult the [ts-unused documentation](https://github.com/alexgorbatchev/ts-unused#readme) before configuring analysis.
 
 Check the official [Oxlint configuration](https://oxc.rs/docs/guide/usage/linter/config.html) and [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html) docs before choosing rules or options. For React-specific lint rules, read [react-compiler.md](react-compiler.md).
 

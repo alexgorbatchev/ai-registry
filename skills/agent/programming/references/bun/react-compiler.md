@@ -140,7 +140,7 @@ Replace superseded `.oxlintrc.json` and `.oxfmtrc.json` configurations after tra
 
 ### Use the shared configs in every formatting and lint recipe
 
-Replace the formatting and lint recipes from [Bun runtime](runtime.md#linting--formatting) with these; keep its `typecheck`, `unused`, and `test` recipes:
+Replace the formatting and lint recipes from the [Bun justfile](justfile.md) with these; keep its `typecheck`, `unused`, and `test` recipes:
 
 ```justfile
 fmt:
@@ -156,16 +156,16 @@ fix:
     bun run --bun oxlint --config oxlint.config.ts --fix .
     bun run --bun oxfmt --config oxfmt.config.ts .
 
-verify: fmt-check lint typecheck unused test
+check: fmt-check lint typecheck unused test
 ```
 
-Run the tools under Bun to load the TypeScript config entrypoints. The formatting and lint checks above enforce the shared policy as part of `just verify`; do not maintain a second standalone lint/format stack.
+Run the tools under Bun to load the TypeScript config entrypoints. The formatting and lint checks above enforce the shared policy as part of `just check`; do not maintain a second standalone lint/format stack.
 
 ---
 
-## 4. Development Tasks (`just verify`)
+## 4. Development Tasks (`just check`)
 
-Use the quality recipes from [Bun runtime](runtime.md#linting--formatting) with the policy-backed replacements above. Run `just verify` to validate shared-policy formatting and lint, types, unused code, and tests. Keep these tasks in `justfile`; reserve `bun check` for Bun's native type checker.
+Use the quality recipes from the [Bun justfile](justfile.md) with the policy-backed replacements above. Run `just check` to validate shared-policy formatting and lint, types, unused code, and tests.
 
 Add build and development recipes that run the project's actual entrypoints directly. For a project using `src/build/buildClient.ts` and `src/server/startServer.ts`:
 

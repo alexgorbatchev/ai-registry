@@ -22,7 +22,7 @@ These are non-negotiable and apply to every Go project. The rest of this file sh
 - **Latest Go Version**: Always use the latest version of Go (currently at least Go 1.26+). Declare `go 1.26` or higher in `go.mod`.
 - **Binary Output Location (`bin/`)**: Compiled binaries must always be placed into the project-local `bin/` directory using the project's actual application name (e.g., `go build -o bin/<app-name> ./cmd/<app-name>`). Never output binaries into root or source directories, and never output literally as `bin/app` (replace `<app-name>` with the project binary name). Always git-ignore `bin/`.
 - **Never Commit Compiled Binaries**: Compiled Go binaries (executables, `.exe` files, shared libraries, etc.) are platform-specific, huge, and must never be committed to git repositories. Distribute compiled assets solely through CI/CD pipelines, package registries, or release platforms.
-- **Task Automation (`just` & `justfile`)**: Use `just` for task automation, builds, tests, and project recipes via a `justfile` (e.g., `just build`, `just test`, `just lint`). Avoid raw uncoordinated shell scripts or legacy makefiles.
+- **Task Automation (`just` & `justfile`)**: Define development tasks as `justfile` recipes under the [task automation contract](../cli/best-practices.md#task-automation-justfile), using the [Go justfile](justfile.md) template.
 - **Third-Party Libraries & Selection**: Encourage using mature third-party libraries instead of rolling custom functionality. Before adding new functionality, research candidate libraries, rank by maturity and adoption (stars, activity, releases, community trust), present options with GitHub links, and let the user pick. Follow standard library exceptions (`net/http.ServeMux`, `log/slog`, `testing`).
 - **LLM Integrations (`any-llm-go`)**: Whenever an application requires LLM completions, chat streaming, tool calling, embeddings, or reasoning, always use `github.com/mozilla-ai/any-llm-go` (https://github.com/mozilla-ai/any-llm-go) to provide a unified interface across providers.
 - **CLI Framework & Argument Parsing (Cobra & cobra-help-tree/v4)**: For CLI applications, always use Cobra (`github.com/spf13/cobra`) and `github.com/alexgorbatchev/cobra-help-tree/v4`. Fully leverage all `cobra-help-tree` features (positional argument documentation via `TechCatalog`, tree help on stdout, error usage on stderr, `TreeOptions.HideGeneratedCommands`, dual-mode `AGENT=1` output, and the `skill` command from `HelpOptions.Skill`) in place of standard Cobra help formatting. Do not use the standard library `flag` package or write custom argument parsers.
@@ -35,7 +35,7 @@ Verify before shipping a project change:
 - [ ] New Go CLI or library project is provisioned using `go-scaffold`
 - [ ] Go version is latest (at least Go 1.26+) declared in `go.mod`
 - [ ] Binaries are built strictly into `bin/`, and `bin/` is git-ignored with no compiled binaries committed
-- [ ] Task automation uses `just` with a `justfile` (`just build`, `just test`, etc.)
+- [ ] `justfile` follows the [Go justfile](justfile.md), including `fmt`, and `just check` passes
 - [ ] Third-party libraries preferred over rolling custom code (researched, ranked, and user-selected)
 - [ ] LLM workflows use `github.com/mozilla-ai/any-llm-go`
 - [ ] CLI tools use Cobra with `github.com/alexgorbatchev/cobra-help-tree/v4` leveraging TechCatalog for arguments, tree help screens, output stream separation, and `HelpOptions.Skill` for the agent skill command
@@ -119,32 +119,7 @@ project/
 
 ## 3. justfile Automation Template
 
-Use `just` for task automation instead of makefiles or uncoordinated shell scripts:
-
-```just
-# Default recipe: list available tasks
-default:
-    @just --list
-
-# Build compiled binary strictly into bin/ (replace <app-name> with the actual binary name)
-build:
-    @mkdir -p bin
-    go build -o bin/<app-name> ./cmd/<app-name>
-
-# Run all unit tests with race detector
-test:
-    go test -race ./...
-
-# Check module hygiene and run vet + linter
-lint:
-    go mod tidy -diff
-    go vet ./...
-    golangci-lint run
-
-# Clean build artifacts
-clean:
-    rm -rf bin/
-```
+Use the [Go justfile](justfile.md) template, including its required `fmt` recipe.
 
 ---
 

@@ -10,10 +10,10 @@
 - [Root Lifecycle Orchestration](#root-lifecycle-orchestration)
 - [Verification & Formatting](#verification--formatting)
 
-In multi-package repositories, workspaces, or multi-component projects (e.g. `apps/*`, `packages/*`, `tools/*`, `modules/*`), use `just` submodules (`mod`) instead of calling nested directories, package scripts, or tooling entrypoints directly from a monolithic root `justfile`.
+Give every subproject, package, library, app, service, and tool directory its own `justfile` and link it with `mod`, as required by [nested justfiles](../cli/best-practices.md#nested-justfiles). A parent `justfile` reaches a subproject only through `just <module> <recipe>`.
 
-- **Root `justfile`**: Owns workspace orchestration, high-level lifecycle commands (`verify`, `test`, `lint`, `build`), and links submodules via `mod`. Never invokes arbitrary deeply nested scripts directly when a submodule can encapsulate them.
-- **Submodule `justfile`**: Owns component-specific recipes (`run`, `run-ai`, `verify`, `test`, `fmt`, `build`) and executes within its scoped domain.
+- **Root `justfile`**: Owns workspace orchestration, high-level lifecycle commands (`check`, `test`, `lint`, `build`), and links submodules via `mod`. Never runs a subproject's tools, scripts, or entrypoints directly.
+- **Submodule `justfile`**: Owns component-specific recipes (`run`, `run-ai`, `check`, `test`, `fmt`, `build`) and runs only its own component's commands.
 
 ## Naming & File Conventions
 
@@ -93,7 +93,7 @@ By default, `just` sets the working directory of a submodule's recipes to the di
    typecheck:
        bun run tsc --noEmit
 
-   verify: typecheck test
+   check: typecheck test
 
    test:
        bun test tools/cli
@@ -101,16 +101,7 @@ By default, `just` sets the working directory of a submodule's recipes to the di
 
 ## Standard Submodule Recipes
 
-Name aggregate validation `verify` and invoke it with `just verify` or `just <module> verify`. Keep `verify` and its dependencies read-only; reserve formatting and fixes for separate write recipes. Do not create a `check` alias for aggregate validation.
-
-Every runnable submodule should provide standard lifecycle recipes matching CLI standards:
-
-- `[default]` on the primary entrypoint so `just <module>` runs it without sub-recipe arguments.
-- `run *args:`: Main execution entrypoint forwarding flags.
-- `run-ai *args:`: Token-conservative agent mode when `AGENT=1` applies.
-- `verify:`: Aggregate read-only validation, including linting, type checking, invariants, and tests as applicable.
-- `typecheck:`: Type checking.
-- `test:`: Component test suite execution.
+Every submodule provides the recipes required by the [task automation contract](../cli/best-practices.md#task-automation-justfile), plus the language's required recipes from its `justfile.md`. Mark the primary entrypoint `[default]` so `just <module>` runs it without sub-recipe arguments.
 
 ```justfile
 # tools/dashboard/justfile
@@ -124,7 +115,7 @@ run-ai *args:
 typecheck:
     bun run tsc --noEmit
 
-verify: typecheck test
+check: typecheck test
 
 test:
     bun test
@@ -144,11 +135,11 @@ mod cli 'tools/cli/justfile'
 default:
     @just --list
 
-# Run verification across all submodules
-verify:
-    just core verify
-    just web verify
-    just cli verify
+# Run validation across all submodules
+check:
+    just core check
+    just web check
+    just cli check
 
 # Run tests across all submodules
 test:

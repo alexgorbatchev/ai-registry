@@ -31,9 +31,7 @@ Design features to add capabilities. Avoid mutually exclusive features where pos
 
 ## CLI applications
 
-Use the repository's established CLI framework. For a new nontrivial CLI without one, evaluate [clap](https://docs.rs/clap/latest/clap/) and use its native parsing, validation, help, and error handling rather than a handwritten compatibility layer.
-
-Keep argument parsing and output rendering at the boundary; keep domain operations callable without a terminal. Preserve stdout for results and stderr for diagnostics. Define stable machine-readable output and exit behavior where automation needs them. Test help, invalid arguments, noninteractive execution, and command failures. Do not force Rust CLI output into another language's framework conventions.
+Follow [Rust CLI](cli.md) for the framework choice and CLI boundaries.
 
 ## Development storage policy
 

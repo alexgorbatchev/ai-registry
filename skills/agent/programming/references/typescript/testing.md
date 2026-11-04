@@ -176,11 +176,11 @@ expect(result).toMatchObject({ name: 'test' });
 
 ## Running Tests
 
-For Bun projects, use the commands and recipes below, defined as in [Bun runtime](../bun/runtime.md#linting--formatting). For other runtimes, use the project's configured equivalents for these checks.
+For Bun projects, use the commands and recipes below, defined as in the [Bun justfile](../bun/justfile.md). For other runtimes, use the project's configured equivalents for these checks.
 
 - Single test file: `bun test [file]`
 - All tests: `just test`
 - Update snapshots: `bun test --update-snapshots`
 - Apply lint fixes and formatting: `just fix`
 
-**Task completion requires** `just verify` to pass: formatting check, linting, type checking, unused-code analysis, and all tests.
+**Task completion requires** `just check` to pass: formatting check, linting, type checking, unused-code analysis, and all tests.

@@ -4,7 +4,7 @@ description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Ta
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-04 11:41
+  last_modified: 2026-11-04 12:02
   status: current
 ---
 
@@ -55,7 +55,7 @@ Read each matching reference before reaching its domain:
 ## Development artifacts
 
 - Use the project's git-ignored `.tmp/` directory only for development artifacts: scratch files, build and test intermediates, drafts, captured output, and toolchain temporary directories. Treat everything in it as disposable; it may not survive between sessions.
-- Never put files that must outlive the session in `.tmp/`, even when they are not checked in: caches that are expensive to rebuild, state, locks, logs or reports kept for later inspection. Put them in a git-ignored location the project documents for that purpose.
+- Never put files that must outlive the session in `.tmp/`, even when they are not checked in. Keep them in git-ignored directories at the project root: `.cache/` for regenerable caches and mirrors, `.state/` for state, locks, queues, and logs or reports kept for later inspection.
 - Give each task or command its own `.tmp/` child, and point the toolchain's temporary-directory variable at it (`TMPDIR`, `GOTMPDIR`, or the equivalent) so tools do not write to the system temp directory. Remove the child when its last consumer finishes, including on failure or cancellation. Remove only paths you created; never wipe `.tmp/` by name.
 
 ## Test cleanup

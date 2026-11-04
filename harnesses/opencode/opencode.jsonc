@@ -45,5 +45,11 @@
   "disabled_providers": [],
   "experimental": {
     "mcp_timeout": 420000
+  },
+  "default_agent": "developer",
+  "agent": {
+    "build": {
+      "disable": true
+    }
   }
 }

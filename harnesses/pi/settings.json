@@ -11,18 +11,22 @@
     "npm:@alexgorbatchev/pi-skill-library",
     "npm:@alexgorbatchev/pi-env",
     "npm:@alexgorbatchev/pi-quick-answer",
-    "npm:@alexgorbatchev/pi-workspace"
+    "npm:@alexgorbatchev/pi-workspace",
+    "git:github.com/alexgorbatchev/pi-codegraph@fix/dangling-managed-symlinks"
   ],
   "steeringMode": "one-at-a-time",
   "enabledModels": [
-    "qwen3.8-27b-uncensored-int8"
+    "qwen3.8-27b-uncensored-int8",
+    "google/*",
+    "litellm/*"
   ],
   "@alexgorbatchev/pi-env": {
     "AGENT": "1"
   },
   "@alexgorbatchev/pi-quick-answer": {
     "models": [
-      "qwen3.8-27b-uncensored-int8"
+      "qwen3.8-27b-uncensored-int8",
+      "litellm/gemini-2.5-flash"
     ]
   },
   "litellm": {
@@ -44,7 +48,7 @@
   "lastChangelogVersion": "1.3.0",
   "hideThinkingBlock": true,
   "defaultProvider": "litellm",
-  "defaultModel": "qwen3.8-27b-uncensored-int8",
+  "defaultModel": "gemini-4-argon",
   "defaultThinkingLevel": "high",
   "theme": "dark"
 }

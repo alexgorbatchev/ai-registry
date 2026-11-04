@@ -25,14 +25,25 @@ export interface ISettingsChange {
   value: JsonValue | undefined;
 }
 
+// A string setting holding a JSON object whose source entries override matching live
+// entries, inside a table the harness creates and owns, such as an MCP server a desktop
+// app registers. Source entries reach the live file only while that table holds at
+// least one of `ownerTableKeys`; otherwise they are removed from the live file, so the
+// registry never creates the table by itself.
+export interface ISourceJsonObjectSetting {
+  keyPath: SettingsKeyPath;
+  ownerTableKeyPath: SettingsKeyPath;
+  ownerTableKeys: string[];
+}
+
 export interface ISyncedSettingsFileOptions {
   // Key path patterns (`*` matches any key) that stay in the live file only and are
   // never written back to the registry source: values the harness stamps on its own
   // (version notices), machine-specific entries (local project paths), and fields
   // that can hold credentials (MCP headers and environment).
   liveOnlyKeyPaths?: SettingsKeyPath[];
-  // JSON object strings whose source entries override matching live entries after live-only preservation.
-  sourceJsonObjectKeyPaths?: SettingsKeyPath[];
+  // Applied after live-only preservation.
+  sourceJsonObjects?: ISourceJsonObjectSetting[];
 }
 
 // "clean": tracked with no uncommitted edits, so a sync edit can be committed on its own.
@@ -48,5 +59,5 @@ export interface ISettingsSourceRepository {
 export interface ISyncedSettingsFile {
   relativePath: string;
   liveOnlyKeyPaths: SettingsKeyPath[];
-  sourceJsonObjectKeyPaths?: SettingsKeyPath[];
+  sourceJsonObjects?: ISourceJsonObjectSetting[];
 }

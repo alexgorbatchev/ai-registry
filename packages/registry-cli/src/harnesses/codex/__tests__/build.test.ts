@@ -116,7 +116,13 @@ describe("Codex harness build plugin", () => {
     expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
       {
         relativePath: "codex/config.toml",
-        sourceJsonObjectKeyPaths: [["mcp_servers", "node_repl", "env", "NODE_REPL_TRUSTED_SERVICES"]],
+        sourceJsonObjects: [
+          {
+            keyPath: ["mcp_servers", "node_repl", "env", "NODE_REPL_TRUSTED_SERVICES"],
+            ownerTableKeyPath: ["mcp_servers", "node_repl"],
+            ownerTableKeys: ["command", "url"],
+          },
+        ],
         liveOnlyKeyPaths: [
           ["projects", "*"],
           ["notice"],

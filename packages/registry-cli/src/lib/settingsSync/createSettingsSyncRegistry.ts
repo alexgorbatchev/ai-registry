@@ -24,7 +24,7 @@ export function createSettingsSyncRegistry(rootDir: string): ISettingsSyncRegist
       syncedSettingsFiles.set(relativePath, {
         relativePath,
         liveOnlyKeyPaths: options.liveOnlyKeyPaths ?? [],
-        ...(options.sourceJsonObjectKeyPaths ? { sourceJsonObjectKeyPaths: options.sourceJsonObjectKeyPaths } : {}),
+        ...(options.sourceJsonObjects ? { sourceJsonObjects: options.sourceJsonObjects } : {}),
       });
     },
     getSyncedSettingsFiles(): ISyncedSettingsFile[] {

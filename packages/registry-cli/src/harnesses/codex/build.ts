@@ -35,6 +35,17 @@ const CODEX_LIVE_ONLY_KEY_PATHS = [
   ["mcp_servers", "*", "http_headers"],
 ];
 
+// The desktop app registers `node_repl` with a stdio `command` or an HTTP `url`. The
+// registry only adds its trusted services to a server the app wrote, because an entry
+// without a transport stops Codex from starting on hosts without the app.
+const CODEX_SOURCE_JSON_OBJECTS = [
+  {
+    keyPath: ["mcp_servers", "node_repl", "env", "NODE_REPL_TRUSTED_SERVICES"],
+    ownerTableKeyPath: ["mcp_servers", "node_repl"],
+    ownerTableKeys: ["command", "url"],
+  },
+];
+
 // Marks every git checkout under the folders listed in the environment as trusted.
 // `projects` is live-only, so these machine-specific paths reach the live file
 // but never the registry source.
@@ -69,7 +80,7 @@ async function stageCodexConfig(context: IHarnessBuildContext, codexOutputDir: s
   await trustListedProjects(context, configPath);
   context.buildSupport.syncSettingsFile(configPath, {
     liveOnlyKeyPaths: CODEX_LIVE_ONLY_KEY_PATHS,
-    sourceJsonObjectKeyPaths: [["mcp_servers", "node_repl", "env", "NODE_REPL_TRUSTED_SERVICES"]],
+    sourceJsonObjects: CODEX_SOURCE_JSON_OBJECTS,
   });
 }
 

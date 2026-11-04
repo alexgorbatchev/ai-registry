@@ -1,6 +1,13 @@
 import { isJsonObject } from "./isJsonObject";
 import { expandKeyPathPattern, getAtKeyPath, isUnderKeyPathPattern, setAtKeyPath } from "./keyPathUtils";
-import type { IJsonObject, ISettingsConflict, ISettingsMergeResult, JsonValue, SettingsKeyPath } from "./types";
+import type {
+  IJsonObject,
+  ISettingsConflict,
+  ISettingsMergeResult,
+  ISourceJsonObjectSetting,
+  JsonValue,
+  SettingsKeyPath,
+} from "./types";
 
 export interface IMergeSettingsValuesInput {
   // The settings as of the previous build; undefined when no build has recorded them yet.
@@ -9,7 +16,7 @@ export interface IMergeSettingsValuesInput {
   source: IJsonObject;
   // Key path patterns (`*` matches any key) kept in the live file only.
   liveOnlyKeyPaths: SettingsKeyPath[];
-  sourceJsonObjectKeyPaths?: SettingsKeyPath[];
+  sourceJsonObjects?: ISourceJsonObjectSetting[];
 }
 
 function isEqual(left: JsonValue | undefined, right: JsonValue | undefined): boolean {
@@ -81,17 +88,54 @@ function mergeObjects(
   return merged;
 }
 
-// Drops parents that only held live-only keys, such as a `hooks` table holding just
-// `hooks.state`, unless the source already has them.
-function removeEmptiedParents(target: IJsonObject, keyPath: SettingsKeyPath, source: IJsonObject): void {
+// Drops parents emptied by removing the value at `keyPath`, such as a `hooks` table
+// that only held the live-only `hooks.state`, stopping at the first parent to keep.
+function removeEmptiedParents(
+  target: IJsonObject,
+  keyPath: SettingsKeyPath,
+  shouldKeepParent: (parentPath: SettingsKeyPath) => boolean,
+): void {
   for (let length = keyPath.length - 1; length > 0; length -= 1) {
     const parentPath = keyPath.slice(0, length);
     const parent = getAtKeyPath(target, parentPath);
-    if (!isJsonObject(parent) || Object.keys(parent).length > 0 || getAtKeyPath(source, parentPath) !== undefined) {
+    if (!isJsonObject(parent) || Object.keys(parent).length > 0 || shouldKeepParent(parentPath)) {
       return;
     }
     setAtKeyPath(target, parentPath, undefined);
   }
+}
+
+function parseJsonObjectSetting(value: JsonValue | undefined, keyPath: SettingsKeyPath): IJsonObject | undefined {
+  if (value === undefined) return undefined;
+  const parsed: unknown = typeof value === "string" ? JSON.parse(value) : null;
+  if (!isJsonObject(parsed)) {
+    throw new Error(`Settings at ${keyPath.join(".")} must contain JSON objects encoded as strings`);
+  }
+  return parsed;
+}
+
+// Writes the source entries of a JSON object setting into the live value while its
+// harness-owned table exists, and strips them, along with parents left empty, otherwise.
+function applySourceJsonObject(
+  liveValue: IJsonObject,
+  setting: ISourceJsonObjectSetting,
+  sourceObject: IJsonObject,
+): void {
+  const liveObject = parseJsonObjectSetting(getAtKeyPath(liveValue, setting.keyPath), setting.keyPath) ?? {};
+  const ownerTable = getAtKeyPath(liveValue, setting.ownerTableKeyPath);
+  const hasOwnerTable = isJsonObject(ownerTable) && setting.ownerTableKeys.some((key) => ownerTable[key] !== undefined);
+  if (hasOwnerTable) {
+    setAtKeyPath(liveValue, setting.keyPath, JSON.stringify({ ...liveObject, ...sourceObject }));
+    return;
+  }
+
+  const harnessEntries = Object.entries(liveObject).filter(([key]) => !Object.hasOwn(sourceObject, key));
+  if (harnessEntries.length > 0) {
+    setAtKeyPath(liveValue, setting.keyPath, JSON.stringify(Object.fromEntries(harnessEntries)));
+    return;
+  }
+  setAtKeyPath(liveValue, setting.keyPath, undefined);
+  removeEmptiedParents(liveValue, setting.keyPath, () => false);
 }
 
 // Three-way merge of a harness settings file. Keys changed on only one side since
@@ -116,21 +160,15 @@ export function mergeSettingsValues(input: IMergeSettingsValuesInput): ISettings
       structuredClone(liveOnlyValue !== undefined ? liveOnlyValue : getAtKeyPath(input.source, keyPath)),
     );
     setAtKeyPath(sourceValue, keyPath, getAtKeyPath(input.source, keyPath));
-    removeEmptiedParents(sourceValue, keyPath, input.source);
+    removeEmptiedParents(sourceValue, keyPath, (parentPath) => getAtKeyPath(input.source, parentPath) !== undefined);
   }
 
-  for (const keyPath of input.sourceJsonObjectKeyPaths ?? []) {
-    const sourceValueAtPath = getAtKeyPath(input.source, keyPath);
-    if (sourceValueAtPath === undefined) continue;
-    const liveValueAtPath = getAtKeyPath(input.live, keyPath);
-    const sourceObject: unknown = typeof sourceValueAtPath === "string" ? JSON.parse(sourceValueAtPath) : null;
-    const liveObject: unknown =
-      liveValueAtPath === undefined ? {} : typeof liveValueAtPath === "string" ? JSON.parse(liveValueAtPath) : null;
-    if (!isJsonObject(sourceObject) || !isJsonObject(liveObject)) {
-      throw new Error(`Settings at ${keyPath.join(".")} must contain JSON objects encoded as strings`);
-    }
-    setAtKeyPath(liveValue, keyPath, JSON.stringify({ ...liveObject, ...sourceObject }));
-    setAtKeyPath(sourceValue, keyPath, structuredClone(sourceValueAtPath));
+  for (const setting of input.sourceJsonObjects ?? []) {
+    const sourceSettingValue = getAtKeyPath(input.source, setting.keyPath);
+    const sourceObject = parseJsonObjectSetting(sourceSettingValue, setting.keyPath);
+    if (sourceObject === undefined) continue;
+    applySourceJsonObject(liveValue, setting, sourceObject);
+    setAtKeyPath(sourceValue, setting.keyPath, structuredClone(sourceSettingValue));
   }
 
   return {
@@ -138,8 +176,8 @@ export function mergeSettingsValues(input: IMergeSettingsValuesInput): ISettings
     sourceValue,
     conflicts: conflicts.filter(
       (conflict) =>
-        ![...input.liveOnlyKeyPaths, ...(input.sourceJsonObjectKeyPaths ?? [])].some((pattern) =>
-          isUnderKeyPathPattern(conflict.keyPath, pattern),
+        ![...input.liveOnlyKeyPaths, ...(input.sourceJsonObjects ?? []).map((setting) => setting.keyPath)].some(
+          (pattern) => isUnderKeyPathPattern(conflict.keyPath, pattern),
         ),
     ),
   };

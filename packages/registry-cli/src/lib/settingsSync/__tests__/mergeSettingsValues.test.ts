@@ -221,44 +221,140 @@ describe("mergeSettingsValues", () => {
   });
 });
 
-it("applies a source-owned exception inside overlapping live-only tables", () => {
+describe("mergeSettingsValues source JSON objects", () => {
+  const TRUSTED_SERVICES_KEY_PATH = ["mcp_servers", "node_repl", "env", "NODE_REPL_TRUSTED_SERVICES"];
+  const LIVE_ONLY_KEY_PATHS = [
+    ["mcp_servers", "node_repl"],
+    ["mcp_servers", "*", "env"],
+  ];
+  const SOURCE_JSON_OBJECTS = [
+    {
+      keyPath: TRUSTED_SERVICES_KEY_PATH,
+      ownerTableKeyPath: ["mcp_servers", "node_repl"],
+      ownerTableKeys: ["command", "url"],
+    },
+  ];
   const source = {
     mcp_servers: { node_repl: { env: { NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ sky: "@oai/sky/service" }) } } },
   };
-  const live = {
-    mcp_servers: {
-      node_repl: {
-        command: "/local/repl",
-        env: {
-          TOKEN: "local-secret",
-          NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser", sky: "old-service" }),
+
+  it("merges source entries into a harness-owned table inside overlapping live-only tables", () => {
+    const live = {
+      mcp_servers: {
+        node_repl: {
+          command: "/local/repl",
+          env: {
+            TOKEN: "local-secret",
+            NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser", sky: "old-service" }),
+          },
         },
       },
-    },
-  };
-  const result = mergeSettingsValues({
-    base: source,
-    source,
-    live,
-    liveOnlyKeyPaths: [
-      ["mcp_servers", "node_repl"],
-      ["mcp_servers", "*", "env"],
-    ],
-    sourceJsonObjectKeyPaths: [["mcp_servers", "node_repl", "env", "NODE_REPL_TRUSTED_SERVICES"]],
+    };
+    const result = mergeSettingsValues({
+      base: source,
+      source,
+      live,
+      liveOnlyKeyPaths: LIVE_ONLY_KEY_PATHS,
+      sourceJsonObjects: SOURCE_JSON_OBJECTS,
+    });
+    expect(live.mcp_servers.node_repl.env.NODE_REPL_TRUSTED_SERVICES).toBe(
+      JSON.stringify({ browser: "local-browser", sky: "old-service" }),
+    );
+    expect(result.sourceValue).toEqual(source);
+    expect(result.liveValue).toEqual({
+      mcp_servers: {
+        node_repl: {
+          command: "/local/repl",
+          env: {
+            TOKEN: "local-secret",
+            NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser", sky: "@oai/sky/service" }),
+          },
+        },
+      },
+    });
   });
-  expect(live.mcp_servers.node_repl.env.NODE_REPL_TRUSTED_SERVICES).toBe(
-    JSON.stringify({ browser: "local-browser", sky: "old-service" }),
-  );
-  expect(result.sourceValue).toEqual(source);
-  expect(result.liveValue).toEqual({
-    mcp_servers: {
-      node_repl: {
-        command: "/local/repl",
-        env: {
-          TOKEN: "local-secret",
-          NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser", sky: "@oai/sky/service" }),
+
+  it("merges source entries into a harness-owned table identified by any of its keys", () => {
+    const result = mergeSettingsValues({
+      base: source,
+      source,
+      live: { mcp_servers: { node_repl: { url: "http://127.0.0.1:9000/mcp" } } },
+      liveOnlyKeyPaths: LIVE_ONLY_KEY_PATHS,
+      sourceJsonObjects: SOURCE_JSON_OBJECTS,
+    });
+
+    expect(result.liveValue).toEqual({
+      mcp_servers: {
+        node_repl: {
+          url: "http://127.0.0.1:9000/mcp",
+          env: { NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ sky: "@oai/sky/service" }) },
         },
       },
-    },
+    });
+  });
+
+  it("does not create the harness-owned table when the live file lacks it", () => {
+    const result = mergeSettingsValues({
+      base: undefined,
+      source: { model: "gpt-5.5", ...source },
+      live: { model: "gpt-5.5" },
+      liveOnlyKeyPaths: LIVE_ONLY_KEY_PATHS,
+      sourceJsonObjects: SOURCE_JSON_OBJECTS,
+    });
+
+    expect(result).toEqual({
+      liveValue: { model: "gpt-5.5" },
+      sourceValue: { model: "gpt-5.5", ...source },
+      conflicts: [],
+    });
+  });
+
+  it("removes source entries from a live table that lacks every owner key", () => {
+    const result = mergeSettingsValues({
+      base: source,
+      source,
+      live: source,
+      liveOnlyKeyPaths: LIVE_ONLY_KEY_PATHS,
+      sourceJsonObjects: SOURCE_JSON_OBJECTS,
+    });
+
+    expect(result.liveValue).toEqual({});
+    expect(result.sourceValue).toEqual(source);
+  });
+
+  it("keeps harness entries when removing source entries from a live table that lacks every owner key", () => {
+    const result = mergeSettingsValues({
+      base: source,
+      source,
+      live: {
+        mcp_servers: {
+          node_repl: {
+            env: { NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser", sky: "old-service" }) },
+          },
+        },
+      },
+      liveOnlyKeyPaths: LIVE_ONLY_KEY_PATHS,
+      sourceJsonObjects: SOURCE_JSON_OBJECTS,
+    });
+
+    expect(result.liveValue).toEqual({
+      mcp_servers: {
+        node_repl: { env: { NODE_REPL_TRUSTED_SERVICES: JSON.stringify({ browser: "local-browser" }) } },
+      },
+    });
+  });
+
+  it("rejects a setting that does not hold a JSON object", () => {
+    expect(() =>
+      mergeSettingsValues({
+        base: undefined,
+        source: { mcp_servers: { node_repl: { env: { NODE_REPL_TRUSTED_SERVICES: "[]" } } } },
+        live: {},
+        liveOnlyKeyPaths: LIVE_ONLY_KEY_PATHS,
+        sourceJsonObjects: SOURCE_JSON_OBJECTS,
+      }),
+    ).toThrow(
+      "Settings at mcp_servers.node_repl.env.NODE_REPL_TRUSTED_SERVICES must contain JSON objects encoded as strings",
+    );
   });
 });

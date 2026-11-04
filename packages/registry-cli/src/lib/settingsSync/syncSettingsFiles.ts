@@ -72,26 +72,24 @@ async function syncSettingsFile(file: ISyncedSettingsFile, options: ISyncSetting
   await mkdir(dirname(basePath), { recursive: true });
   await replaceSymlinkWithFile(livePath);
 
-  if (!existsSync(livePath)) {
-    await mkdir(dirname(livePath), { recursive: true });
-    await Bun.write(livePath, renderedSourceText);
-    await Bun.write(basePath, `${JSON.stringify(source, null, 2)}\n`);
-    return null;
-  }
-
-  const liveText = await Bun.file(livePath).text();
-  const live = parseSettingsText(liveText, livePath);
-  const base = existsSync(basePath) ? parseSettingsText(await Bun.file(basePath).text(), basePath) : undefined;
+  // A first build installs the rendered source, still merged so that source entries
+  // conditioned on harness-written tables are left out.
+  const hasLiveFile = existsSync(livePath);
+  const liveText = hasLiveFile ? await Bun.file(livePath).text() : renderedSourceText;
+  const live = hasLiveFile ? parseSettingsText(liveText, livePath) : source;
+  const base =
+    hasLiveFile && existsSync(basePath) ? parseSettingsText(await Bun.file(basePath).text(), basePath) : undefined;
   const result = mergeSettingsValues({
     base,
     live,
     source,
     liveOnlyKeyPaths: file.liveOnlyKeyPaths,
-    sourceJsonObjectKeyPaths: file.sourceJsonObjectKeyPaths,
+    sourceJsonObjects: file.sourceJsonObjects,
   });
 
   const nextLiveText = applySettingsChanges(liveText, listSettingsChanges(live, result.liveValue), livePath);
-  if (nextLiveText !== liveText) {
+  if (!hasLiveFile || nextLiveText !== liveText) {
+    await mkdir(dirname(livePath), { recursive: true });
     await Bun.write(livePath, nextLiveText);
   }
 

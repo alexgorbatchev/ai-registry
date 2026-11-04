@@ -280,6 +280,52 @@ describe("syncSettingsFiles", () => {
     );
   });
 
+  it("adds source JSON object entries only to a harness-owned table the harness wrote", async () => {
+    const layout = await createLayout(TOML_RELATIVE_PATH);
+    const options: ISyncSettingsFilesOptions = {
+      ...createOptions(layout, createRecordingSourceRepository("unversioned")),
+      syncedSettingsFiles: [
+        {
+          relativePath: layout.relativePath,
+          liveOnlyKeyPaths: [["mcp_servers", "node_repl"]],
+          sourceJsonObjects: [
+            {
+              keyPath: ["mcp_servers", "node_repl", "env", "NODE_REPL_TRUSTED_SERVICES"],
+              ownerTableKeyPath: ["mcp_servers", "node_repl"],
+              ownerTableKeys: ["command", "url"],
+            },
+          ],
+        },
+      ],
+    };
+    await writeSource(
+      layout,
+      'model = "gpt-5"\n\n[mcp_servers.node_repl.env]\nNODE_REPL_TRUSTED_SERVICES = \'{"sky":"@oai/sky/service"}\'\n',
+    );
+
+    await syncSettingsFiles(options);
+
+    expect(await readFile(layout.livePath, "utf-8")).toBe('model = "gpt-5"\n');
+    expect(JSON.parse(await readFile(layout.basePath, "utf-8"))).toEqual({ model: "gpt-5" });
+
+    await writeTestFile(layout.livePath, 'model = "gpt-5"\n\n[mcp_servers.node_repl]\ncommand = "/app/node_repl"\n');
+
+    await syncSettingsFiles(options);
+
+    expect(Bun.TOML.parse(await readFile(layout.livePath, "utf-8"))).toEqual({
+      model: "gpt-5",
+      mcp_servers: {
+        node_repl: {
+          command: "/app/node_repl",
+          env: { NODE_REPL_TRUSTED_SERVICES: '{"sky":"@oai/sky/service"}' },
+        },
+      },
+    });
+    expect(await readFile(layout.sourcePath, "utf-8")).toBe(
+      'model = "gpt-5"\n\n[mcp_servers.node_repl.env]\nNODE_REPL_TRUSTED_SERVICES = \'{"sky":"@oai/sky/service"}\'\n',
+    );
+  });
+
   it("applies registry edits to the live file without touching harness-only keys", async () => {
     const layout = await createLayout();
     await writeSource(layout, '{\n  "theme": "dark"\n}\n');

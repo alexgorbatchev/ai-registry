@@ -4,7 +4,7 @@ description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Ta
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-10-30 12:40
+  last_modified: 2026-11-04 10:00
   status: current
 ---
 
@@ -45,7 +45,7 @@ Read each matching reference before reaching its domain:
 | Storybook installation or configuration | [Storybook setup](references/typescript/storybook-setup.md) |
 | Storybook failures | [Storybook debugging](references/typescript/storybook-debugging.md) |
 | Bun bundling or compilation | [Bun bundling](references/bun/bundling.md) |
-| Bun React Compiler or React lint configuration | [Bun React Compiler](references/bun/react-compiler.md) |
+| Bun React projects, React Compiler, or the shared React lint and format policy | [Bun React Compiler](references/bun/react-compiler.md) |
 | Bun S3/R2 storage | [Bun S3](references/bun/s3.md) |
 | Bun Redis/Valkey clients | [Bun Redis](references/bun/redis.md) |
 | Bun tar/gzip archives | [Bun archives](references/bun/archive.md) |

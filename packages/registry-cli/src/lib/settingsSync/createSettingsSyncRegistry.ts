@@ -21,7 +21,7 @@ export function createSettingsSyncRegistry(rootDir: string): ISettingsSyncRegist
         throw new Error(`Synced settings file must be inside the generated output root ${rootDir}: ${filePath}`);
       }
 
-      syncedSettingsFiles.set(relativePath, { relativePath, liveOnlyKeyPaths: options.liveOnlyKeyPaths ?? [] });
+      syncedSettingsFiles.set(relativePath, { relativePath, liveOnlyKeyPaths: options.liveOnlyKeyPaths ?? [], ...(options.sourceJsonObjectKeyPaths ? { sourceJsonObjectKeyPaths: options.sourceJsonObjectKeyPaths } : {}) });
     },
     getSyncedSettingsFiles(): ISyncedSettingsFile[] {
       return [...syncedSettingsFiles.values()].sort((left, right) => left.relativePath.localeCompare(right.relativePath));

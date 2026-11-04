@@ -31,6 +31,8 @@ export interface ISyncedSettingsFileOptions {
   // (version notices), machine-specific entries (local project paths), and fields
   // that can hold credentials (MCP headers and environment).
   liveOnlyKeyPaths?: SettingsKeyPath[];
+  // JSON object strings whose source entries override matching live entries after live-only preservation.
+  sourceJsonObjectKeyPaths?: SettingsKeyPath[];
 }
 
 // "clean": tracked with no uncommitted edits, so a sync edit can be committed on its own.
@@ -46,4 +48,5 @@ export interface ISettingsSourceRepository {
 export interface ISyncedSettingsFile {
   relativePath: string;
   liveOnlyKeyPaths: SettingsKeyPath[];
+  sourceJsonObjectKeyPaths?: SettingsKeyPath[];
 }

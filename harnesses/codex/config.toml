@@ -64,6 +64,9 @@ alexgorbatchev = { source_type = "git", source = "https://github.com/alexgorbatc
 "visualize@openai-bundled" = { enabled = true }
 "computer-use@openai-bundled" = { enabled = true }
 
+[mcp_servers.node_repl.env]
+NODE_REPL_TRUSTED_SERVICES = '{"sky":"@oai/sky/service"}'
+
 [apps]
 connector_openai_codex_document_control = { enabled = false }
 

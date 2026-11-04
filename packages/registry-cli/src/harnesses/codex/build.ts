@@ -67,7 +67,10 @@ async function stageCodexConfig(context: IHarnessBuildContext, codexOutputDir: s
   const configPath = join(codexOutputDir, CONFIG_FILE_NAME);
   await context.buildSupport.copyPathWithTemplateVariables(sourceConfigPath, configPath, context.templateContext);
   await trustListedProjects(context, configPath);
-  context.buildSupport.syncSettingsFile(configPath, { liveOnlyKeyPaths: CODEX_LIVE_ONLY_KEY_PATHS });
+  context.buildSupport.syncSettingsFile(configPath, {
+    liveOnlyKeyPaths: CODEX_LIVE_ONLY_KEY_PATHS,
+    sourceJsonObjectKeyPaths: [["mcp_servers", "node_repl", "env", "NODE_REPL_TRUSTED_SERVICES"]],
+  });
 }
 
 async function stageHarnessRules(context: IHarnessBuildContext, codexOutputDir: string): Promise<void> {

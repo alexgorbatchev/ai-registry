@@ -9,6 +9,7 @@ export interface IMergeSettingsValuesInput {
   source: IJsonObject;
   // Key path patterns (`*` matches any key) kept in the live file only.
   liveOnlyKeyPaths: SettingsKeyPath[];
+  sourceJsonObjectKeyPaths?: SettingsKeyPath[];
 }
 
 function isEqual(left: JsonValue | undefined, right: JsonValue | undefined): boolean {
@@ -109,16 +110,29 @@ export function mergeSettingsValues(input: IMergeSettingsValuesInput): ISettings
   );
   for (const keyPath of liveOnlyKeyPaths) {
     const liveOnlyValue = getAtKeyPath(input.live, keyPath);
-    setAtKeyPath(liveValue, keyPath, liveOnlyValue !== undefined ? liveOnlyValue : getAtKeyPath(input.source, keyPath));
+    setAtKeyPath(liveValue, keyPath, structuredClone(liveOnlyValue !== undefined ? liveOnlyValue : getAtKeyPath(input.source, keyPath)));
     setAtKeyPath(sourceValue, keyPath, getAtKeyPath(input.source, keyPath));
     removeEmptiedParents(sourceValue, keyPath, input.source);
+  }
+
+  for (const keyPath of input.sourceJsonObjectKeyPaths ?? []) {
+    const sourceValueAtPath = getAtKeyPath(input.source, keyPath);
+    if (sourceValueAtPath === undefined) continue;
+    const liveValueAtPath = getAtKeyPath(input.live, keyPath);
+    const sourceObject: unknown = typeof sourceValueAtPath === "string" ? JSON.parse(sourceValueAtPath) : null;
+    const liveObject: unknown = liveValueAtPath === undefined ? {} : typeof liveValueAtPath === "string" ? JSON.parse(liveValueAtPath) : null;
+    if (!isJsonObject(sourceObject) || !isJsonObject(liveObject)) {
+      throw new Error(`Settings at ${keyPath.join(".")} must contain JSON objects encoded as strings`);
+    }
+    setAtKeyPath(liveValue, keyPath, JSON.stringify({ ...liveObject, ...sourceObject }));
+    setAtKeyPath(sourceValue, keyPath, structuredClone(sourceValueAtPath));
   }
 
   return {
     liveValue,
     sourceValue,
     conflicts: conflicts.filter(
-      (conflict) => !input.liveOnlyKeyPaths.some((pattern) => isUnderKeyPathPattern(conflict.keyPath, pattern)),
+      (conflict) => ![...input.liveOnlyKeyPaths, ...(input.sourceJsonObjectKeyPaths ?? [])].some((pattern) => isUnderKeyPathPattern(conflict.keyPath, pattern)),
     ),
   };
 }

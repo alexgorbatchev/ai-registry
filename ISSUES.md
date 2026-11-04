@@ -56,18 +56,6 @@ Before this commit, `-y` overwrote drift. It is now ignored (F19), and the error
 
 Remediation: decide the intended behavior for unrecoverable drift. Options: a documented explicit discard command that backs up the generated edit before overwriting it, or mapping rendered prompts to their profile `system_prompt` source and reporting the include-based case with exact instructions. Update the error text and `AGENTS.md` to match.
 
-### F6: Guidance cites shared rules that no longer exist
-
-Status: open. Confidence: confirmed.
-
-`AGENTS.md:87-91`, [README.md](README.md), and [ai-registry-integration](skills/agent/ai-registry-integration/SKILL.md) lines 30-35 refer agents to [system.md](system/system.md) for library-scope, red/green, test-sensitivity, ownership-blocker, and destructive-Git rules. `f5a079b` reduced `system.md` to 86 lines, and none of those rules remain.
-
-The undefined "blocker protocol" is relied on by [gitea](skills/agent/gitea/SKILL.md) line 54, [termctrl](skills/agent/termctrl/SKILL.md) line 11, [continue-session](skills/user/continue-session/SKILL.md) line 14, and `github-fix-issues/references/{checks-and-ci.md:51, integration.md:74, setup.md:37}`; `scheduling.md:26` calls it "blocker procedure". Even at `b76bd42`, depending on it violated the self-contained-skill rule, and the `personal-assistant` profile does not include `system.md`.
-
-Related: [agents-templates.md](skills/agent/docs-writer/assets/agents-templates.md) lines 60, 72, 84 and `docs-writer/references/agents.md:104,125` write "under the existing policy" into other repositories' `AGENTS.md`, where no such policy exists.
-
-Remediation: decide whether the removed rules return to `system.md`. Then either restore them or remove the citations, and inline a minimal blocker procedure in each skill that needs one. Record the reversal of the I018 decision if it is dropped.
-
 ### F7: `pi-debug` instructs redaction but prints credentials
 
 Status: open. Confidence: confirmed.
@@ -221,5 +209,5 @@ Remediation: pass an explicit source-registry object with methods for registerin
 2. F7: stop printing `auth.json`.
 3. F4 with F19: define a supported path for unrecoverable generated edits.
 4. F3 and F24: restrict fingerprinting to registered source roots.
-5. F6 and F10: reconcile the instructions with the current `system.md` and correct the decision record.
+5. F10: correct the decision record.
 6. Remaining medium findings, then low findings.

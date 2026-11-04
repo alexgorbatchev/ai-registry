@@ -34,7 +34,7 @@ For cleanup/conformance requests, rewrite the complete requested files using the
 ## Boundaries
 - Always: automatically record explicit standing user instructions in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save them; update the relevant rule in place when it changes
 - Never: record task history, progress, handoffs, or dated user amendments in `AGENTS.md`
-- Always (code-based projects only): For code changes that alter executable behavior, add or update meaningful behavioral tests. Require at least 90% line coverage and 90% function coverage across the non-test source of each affected first-party package; include unexecuted source files and exclude `scripts/` directories. Document and configure the coverage command, source scope, metrics, and exclusions. Reproduce a blocking baseline failure on the untouched base and handle the smallest necessary prerequisite repair under the existing policy. Do not weaken coverage gates or make token test edits to satisfy this rule.
+- Always (code-based projects only): For code changes that alter executable behavior, add or update meaningful behavioral tests. Require at least 90% line coverage and 90% function coverage across the non-test source of each affected first-party package; include unexecuted source files and exclude `scripts/` directories. Document and configure the coverage command, source scope, metrics, and exclusions. Reproduce a blocking baseline failure on the untouched base and handle the smallest necessary prerequisite repair. Do not weaken coverage gates or make token test edits to satisfy this rule.
 - Always: `<safe repeated action>`
 - Ask first: `<risky change>`
 - Never: publish releases automatically without explicit user authorization
@@ -67,7 +67,7 @@ For cleanup/conformance requests, rewrite the complete requested files using the
 ## Shared boundaries
 - Always: automatically record explicit standing user instructions in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save them; update the relevant rule in place when it changes
 - Never: record task history, progress, handoffs, or dated user amendments in `AGENTS.md`
-- Always (code-based projects only): For code changes that alter executable behavior, add or update meaningful behavioral tests. Require at least 90% line coverage and 90% function coverage across the non-test source of each affected first-party package; include unexecuted source files and exclude `scripts/` directories. Document and configure the coverage command, source scope, metrics, and exclusions. Reproduce a blocking baseline failure on the untouched base and handle the smallest necessary prerequisite repair under the existing policy. Do not weaken coverage gates or make token test edits to satisfy this rule.
+- Always (code-based projects only): For code changes that alter executable behavior, add or update meaningful behavioral tests. Require at least 90% line coverage and 90% function coverage across the non-test source of each affected first-party package; include unexecuted source files and exclude `scripts/` directories. Document and configure the coverage command, source scope, metrics, and exclusions. Reproduce a blocking baseline failure on the untouched base and handle the smallest necessary prerequisite repair. Do not weaken coverage gates or make token test edits to satisfy this rule.
 - Always: `<shared repeated action>`
 - Ask first: `<shared risky change>`
 - Never: publish releases automatically without explicit user authorization
@@ -99,7 +99,7 @@ For cleanup/conformance requests, rewrite the complete requested files using the
 ## Boundaries
 - Always: automatically record explicit standing user instructions within this subtree's scope in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save them; update the relevant rule in place when it changes
 - Never: record task history, progress, handoffs, or dated user amendments in `AGENTS.md`
-- Always (code-based projects only): For code changes that alter executable behavior, add or update meaningful behavioral tests. Require at least 90% line coverage and 90% function coverage across the non-test source of each affected first-party package; include unexecuted source files and exclude `scripts/` directories. Document and configure the coverage command, source scope, metrics, and exclusions. Reproduce a blocking baseline failure on the untouched base and handle the smallest necessary prerequisite repair under the existing policy. Do not weaken coverage gates or make token test edits to satisfy this rule.
+- Always (code-based projects only): For code changes that alter executable behavior, add or update meaningful behavioral tests. Require at least 90% line coverage and 90% function coverage across the non-test source of each affected first-party package; include unexecuted source files and exclude `scripts/` directories. Document and configure the coverage command, source scope, metrics, and exclusions. Reproduce a blocking baseline failure on the untouched base and handle the smallest necessary prerequisite repair. Do not weaken coverage gates or make token test edits to satisfy this rule.
 - Ask first: `<local risky change>`
 - Never: `<local forbidden zone>`
 

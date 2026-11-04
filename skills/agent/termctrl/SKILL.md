@@ -4,11 +4,11 @@ description: Use when operating or testing interactive terminal applications, in
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-08 13:49
-  last_modified: 2026-10-16 20:03
+  last_modified: 2026-11-04 12:10
   status: current
 ---
 
-Check `termctrl --version` and `termctrl <command> --help` for the installed interface. Use [Terminal Control documentation](https://github.com/anomalyco/terminal-control) for additional capabilities. If the binary is missing or a required operation is unsupported, inspect available authorized alternatives. Use an alternative only when its verified capabilities satisfy the same required interaction and evidence, and the request does not explicitly require termctrl or a particular session. Report the method actually used and its limitations; command logs alone cannot substitute for required rendered-screen or visual verification. If no suitable alternative is available, record the missing capability and exact input or provisioning needed, suspend only dependent checks or actions under the blocker protocol, and continue independent authorized work. Do not claim an unrun check passed or take over another owner's terminal session.
+Check `termctrl --version` and `termctrl <command> --help` for the installed interface. Use [Terminal Control documentation](https://github.com/anomalyco/terminal-control) for additional capabilities. If the binary is missing or a required operation is unsupported, inspect available authorized alternatives. Use an alternative only when its verified capabilities satisfy the same required interaction and evidence, and the request does not explicitly require termctrl or a particular session. Report the method actually used and its limitations; command logs alone cannot substitute for required rendered-screen or visual verification. If no suitable alternative is available, record the missing capability and exact input or provisioning needed, suspend only dependent checks or actions, and continue independent authorized work. Do not claim an unrun check passed or take over another owner's terminal session.
 
 ## Choose the session lifecycle
 

@@ -4,7 +4,7 @@ description: Create and manage Gitea repositories and inspect Gitea Actions usin
 author: alexgorbatchev
 metadata:
   created_on: 2026-05-06 11:40
-  last_modified: 2026-11-01 15:30
+  last_modified: 2026-11-04 12:10
   status: current
 ---
 # gitea
@@ -52,7 +52,7 @@ verified target host. Capture credential-helper output inside a private process
 context; never emit the full output, passwords, or tokens into tool results,
 logs, or reports. If authentication is missing or invalid, record the named
 requirement and suspend only remote-dependent actions. Continue authorized local
-preparation and independent work under the blocker protocol. Request the missing
+preparation and independent work. Request the missing
 access through the approved configuration channel; never ask for secrets in chat
 or invent credentials.
 

@@ -5,13 +5,13 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-28 10:39
-  last_modified: 2026-10-16 17:14
+  last_modified: 2026-11-04 12:10
   status: current
 ---
 
 ## Core Tool: `agent-print-session`
 
-Use `agent-print-session` for supported Pi and Claude Code transcripts after verifying the installed command and its help. If that reader is unavailable or cannot read the transcript, use an available reader whose support for the actual format is verified against local source, documentation, or command help, or recover sufficient continuation context from verified durable task state. Do not invent command flags, transcript schemas, adapters, or missing decisions. If required context remains unavailable, record the missing input and suspend only dependent work under the blocker protocol. Continue independent authorized work.
+Use `agent-print-session` for supported Pi and Claude Code transcripts after verifying the installed command and its help. If that reader is unavailable or cannot read the transcript, use an available reader whose support for the actual format is verified against local source, documentation, or command help, or recover sufficient continuation context from verified durable task state. Do not invent command flags, transcript schemas, adapters, or missing decisions. If required context remains unavailable, record the missing input and suspend only dependent work. Continue independent authorized work.
 
 Command syntax:
 ```bash

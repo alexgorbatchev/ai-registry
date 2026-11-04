@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-04 12:44
+  last_modified: 2026-11-04 14:10
   status: current
 ---
 
@@ -42,7 +42,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Public CLI helpers meant to be symlinked to `~/.local/bin/` (like `air-*`, `pi-*`, or `cll` wrappers) MUST NOT be checked into `packages/registry-cli/src/bin/` beneath the repo_root token. Generate them through `packages/registry-cli/src/commands/buildCommand.ts` and its harness plugins into `.output/bin/` beneath the repo_root token so the bootstrap script can link them from there.
 - Put publishable standalone packages under `packages/<package-name>/` beneath the repo_root token.
 - Put vendored third-party code packages that need Bun workspace installs under `vendor/` beneath the repo_root token.
-- Register bundled skill packages needed by repository-wide typechecking as root Bun workspaces so normal installs include their dependencies. Exclude installed dependencies, local lockfiles, and scratch directories from generated copies through the skill's `.registry-ignore`.
+- Register bundled skill packages needed by repository-wide typechecking as root Bun workspaces so normal installs include their dependencies. Exclude installed dependencies and scratch directories from generated copies through the skill's `.registry-ignore`. Ship the skill's `bun.lock` when its instructions install with `--frozen-lockfile`, and keep that lockfile installable on its own, outside the root workspace.
 - When a source tree needs repo-local files that must not ship into generated outputs, add `.registry-ignore` files with `.gitignore`-style rules inside that tree. The build honors nested `.registry-ignore` files while staging `skills/`, `commands/`, and `harnesses/<target>/` content.
 - Make intentional registry edits in source; treat subsequent harness-written changes in `.output/` beneath the repo_root token as expected. Automatically recover supported generated edits into their mapped source only when the generated baseline, source fingerprint, and exact reversal establish that source changes will not be overwritten, then regenerate all affected outputs. Preserve both versions and suspend dependent output application on source conflicts, unsupported recovery, or save failures. Reconcile existing drift without source fingerprints into source before establishing a fresh baseline. Do not request confirmation or investigate ownership merely because a harness changed a generated file; `-y` does not bypass reconciliation. Preserve all session/runtime data and unmanaged harness-owned files.
 - After modifying any file under `skills/`, `commands/`, `system/`, `harnesses/`, or `skills-lock.json` beneath the repo_root token, run `just build` from the repo_root token.

@@ -8,8 +8,8 @@ import {
   type IRegistryAssets,
   type IUnifiedHarnessPlugin,
   applyTemplateVariablesToGeneratedOutput,
-  copyDirectoryWithTemplateVariables,
-  copyPathWithTemplateVariables,
+  stageSourceDirectory,
+  stageSourcePath,
   mergeDirectory,
   stageHarnessSkills,
   stageRegistryAssets,
@@ -313,11 +313,11 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   const settingsSyncRegistry = createSettingsSyncRegistry(GENERATED_OUTPUT_STAGING_DIR);
 
   const wrappedBuildSupport: IBuildSupport = {
-    copyDirectoryWithTemplateVariables: (sourceDir, targetDir) => {
-      return copyDirectoryWithTemplateVariables(sourceDir, targetDir, sourcePathByOutputPath, buildHostname);
+    stageSourceDirectory: (sourceDir, targetDir) => {
+      return stageSourceDirectory(sourceDir, targetDir, sourcePathByOutputPath, buildHostname);
     },
-    copyPathWithTemplateVariables: (sourcePath, targetPath) => {
-      return copyPathWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath, buildHostname);
+    stageSourcePath: (sourcePath, targetPath) => {
+      return stageSourcePath(sourcePath, targetPath, sourcePathByOutputPath, buildHostname);
     },
     mergeDirectory: (sourceDir, destinationDir, options) => {
       return mergeDirectory(sourceDir, destinationDir, options, sourcePathByOutputPath);

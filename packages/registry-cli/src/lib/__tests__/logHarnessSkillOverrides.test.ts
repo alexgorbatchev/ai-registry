@@ -44,8 +44,8 @@ function createUnifiedContext(
       stageHarnessSkills: async () => {},
       stageRegistryAssets: async () => {},
       writeBinScript: async () => {},
-      copyDirectoryWithTemplateVariables: async () => {},
-      copyPathWithTemplateVariables: async () => {},
+      stageSourceDirectory: async () => {},
+      stageSourcePath: async () => {},
       syncSettingsFile: () => {},
     },
   };

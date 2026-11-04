@@ -1,12 +1,12 @@
 ---
 created_on: '2026-10-05 07:24'
-last_modified: '2026-11-04 12:44'
+last_modified: '2026-11-04 14:10'
 status: current
 ---
 
 Maintain the portable development-folder cleanup skill and its Bun scripts in this directory.
 
-- Install locked dependencies: `bun install --frozen-lockfile`.
+- Install locked dependencies: `bun install --frozen-lockfile`. The generated skill ships `bun.lock`, so keep it standalone: after a dependency change, regenerate it with `bun install` in a copy of this directory outside the root workspace and copy the lockfile back.
 - Run format and lint checks, type checks, ts-unused, and behavioral tests: `just check`.
 - Use Oxlint and Oxfmt for linting and formatting: `just lint` and `just fmt-check` check them; `just fix` applies fixes.
 - Run the tool for agents: `just run-ai skill`, then `just run-ai disk assess --root <target> --system`

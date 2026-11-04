@@ -8,7 +8,8 @@ export const GENERATED_OUTPUT_MANIFEST_NAME = "manifest.json";
 export const LEGACY_GENERATED_OUTPUT_MANIFEST_NAME = ".generated-output-manifest.json";
 
 const GENERATED_OUTPUT_IGNORED_PATH_PARTS = new Set(["node_modules"]);
-const GENERATED_OUTPUT_IGNORED_BASENAMES = new Set([".gitignore", "bun.lock", "bun.lockb", "package-lock.json"]);
+// Lockfiles ship when their source tree keeps them; `.registry-ignore` decides, not this list.
+const GENERATED_OUTPUT_IGNORED_BASENAMES = new Set([".gitignore"]);
 
 export type IGeneratedOutputManifestEntry =
   | { kind: "directory" }

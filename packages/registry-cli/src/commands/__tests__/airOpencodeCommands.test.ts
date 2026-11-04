@@ -7,8 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import plugin from "../../harnesses/opencode/build";
 import {
   applyTemplateVariablesToGeneratedOutput,
-  copyDirectoryWithTemplateVariables,
-  copyPathWithTemplateVariables,
+  stageSourceDirectory,
+  stageSourcePath,
   mergeDirectory,
   stageHarnessSkills,
   stageRegistryAssets,
@@ -35,8 +35,8 @@ beforeAll(async () => {
     assets: { skills: [], skillSourcePaths: {}, userSkillNames: new Set(), commands: [], commandSourcePaths: {} },
     templateContext: { repo_root: REPO_ROOT },
     buildSupport: {
-      copyDirectoryWithTemplateVariables,
-      copyPathWithTemplateVariables,
+      stageSourceDirectory,
+      stageSourcePath,
       mergeDirectory,
       stageHarnessSkills,
       stageRegistryAssets,

@@ -16,7 +16,7 @@ async function stageHarnessFiles(context: IHarnessBuildContext, claudeCodeOutput
     return;
   }
 
-  await context.buildSupport.copyDirectoryWithTemplateVariables(context.harnessDir, claudeCodeOutputDir);
+  await context.buildSupport.stageSourceDirectory(context.harnessDir, claudeCodeOutputDir);
 
   // Claude Code writes `/config`, `/model`, and installer changes back to this file.
   const settingsPath = join(claudeCodeOutputDir, SETTINGS_FILE_NAME);
@@ -119,10 +119,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   const commandsDir = join(claudeCodeOutputDir, "commands");
 
   await mkdir(skillsDir, { recursive: true });
-  await context.buildSupport.copyPathWithTemplateVariables(
-    context.systemPromptPath,
-    join(claudeCodeOutputDir, MEMORY_FILE_NAME),
-  );
+  await context.buildSupport.stageSourcePath(context.systemPromptPath, join(claudeCodeOutputDir, MEMORY_FILE_NAME));
 
   await context.buildSupport.stageHarnessSkills(context, skillsDir);
   await stageHarnessFiles(context, claudeCodeOutputDir);

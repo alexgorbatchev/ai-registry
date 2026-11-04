@@ -100,6 +100,24 @@ describe("generatedOutputUtils", () => {
     });
   });
 
+  it("manages lockfiles a source ships while skipping installed dependencies", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const outputDir = join(repositoryRoot, ".output");
+
+    await writeTestFile(repositoryRoot, ".output/claude-code/skills/tool/bun.lock", "lock\n");
+    await writeTestFile(repositoryRoot, ".output/claude-code/skills/tool/node_modules/dep/index.js", "dep\n");
+    await writeTestFile(repositoryRoot, ".output/claude-code/skills/tool/.gitignore", "node_modules/\n");
+
+    const entries = await collectGeneratedOutputEntries(outputDir);
+
+    expect(Object.keys(entries).sort()).toEqual([
+      "claude-code",
+      "claude-code/skills",
+      "claude-code/skills/tool",
+      "claude-code/skills/tool/bun.lock",
+    ]);
+  });
+
   it("ignores unmanaged current output entries during drift checks", () => {
     const manifest = createGeneratedOutputManifest({
       "pi/APPEND_SYSTEM.md": { kind: "file", checksum: "managed" },

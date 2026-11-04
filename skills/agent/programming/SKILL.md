@@ -4,7 +4,7 @@ description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Ta
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-04 12:11
+  last_modified: 2026-11-04 14:11
   status: current
 ---
 
@@ -64,6 +64,14 @@ Read each matching reference before reaching its domain:
 - Stop child processes gracefully before forcing them: signal the process group to terminate, wait a bounded grace period, then kill it, so they can remove their own files.
 - The rule covers existing tests. A test that leaves artifacts or processes behind is a defect: fix it when the test is part of the task's change, otherwise record it under Work tracking.
 - After adding or changing tests, compare the system temp directory, the project's `.tmp/`, and the process list before and after a run, and report anything left behind.
+
+## CI dependency caching
+
+CI jobs must not reinstall heavy dependencies from scratch on every run. Toolchains, package-manager downloads, browsers, and their system packages are restored or prebuilt, never rebuilt each time.
+
+- Cache package and toolchain downloads between runs, keyed by the lockfile or tool version so a dependency change invalidates the cache. Keep the built-in caching of setup actions enabled (for example `actions/setup-go`, `actions/setup-node`, and `golangci/golangci-lint-action`); add `actions/cache` only for what they do not cover.
+- System packages installed with `apt` or similar cannot be restored from a cache reliably. Run the job in a prebuilt container image that already contains them. For Playwright, use the official `mcr.microsoft.com/playwright:v<version>` image matching the project's Playwright version through the job's `container:` key, instead of `playwright install --with-deps` on every run.
+- After adding or changing a CI job, read its step timings from a real run. A dependency or setup step that dominates the job's duration is a defect: fix it in the same change, or record it under Work tracking.
 
 ## Work tracking
 

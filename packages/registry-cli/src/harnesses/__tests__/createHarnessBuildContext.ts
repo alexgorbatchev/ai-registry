@@ -1,8 +1,8 @@
 import { join } from "node:path";
 
 import {
-  copyDirectoryWithTemplateVariables,
-  copyPathWithTemplateVariables,
+  stageSourceDirectory,
+  stageSourcePath,
   mergeDirectory,
   stageHarnessSkills,
   stageRegistryAssets,
@@ -57,10 +57,9 @@ export function createHarnessBuildContext(
       stageHarnessSkills,
       stageRegistryAssets,
       writeBinScript,
-      copyDirectoryWithTemplateVariables: (sourceDir, targetDir) =>
-        copyDirectoryWithTemplateVariables(sourceDir, targetDir, sourcePathByOutputPath),
-      copyPathWithTemplateVariables: (sourcePath, targetPath) =>
-        copyPathWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath),
+      stageSourceDirectory: (sourceDir, targetDir) =>
+        stageSourceDirectory(sourceDir, targetDir, sourcePathByOutputPath),
+      stageSourcePath: (sourcePath, targetPath) => stageSourcePath(sourcePath, targetPath, sourcePathByOutputPath),
       syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
     },
   };

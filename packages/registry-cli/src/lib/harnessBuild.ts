@@ -51,8 +51,8 @@ export type IBuildSupport = {
   ): Promise<void>;
   stageHarnessSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void>;
   writeBinScript(outputDir: string, filename: string, content: string): Promise<void>;
-  copyDirectoryWithTemplateVariables(sourceDir: string, targetDir: string): Promise<void>;
-  copyPathWithTemplateVariables(sourcePath: string, targetPath: string): Promise<void>;
+  stageSourceDirectory(sourceDir: string, targetDir: string): Promise<void>;
+  stageSourcePath(sourcePath: string, targetPath: string): Promise<void>;
   // Marks a staged settings file the harness edits at runtime. The build keeps it
   // out of the manifest and reconciles it with its registry source on every run.
   syncSettingsFile(filePath: string, options?: ISyncedSettingsFileOptions): void;
@@ -227,7 +227,7 @@ function moveOriginalSourcePathForDirectory(
   }
 }
 
-async function copyFileWithTemplateVariables(
+async function stageSourceFile(
   sourcePath: string,
   targetPath: string,
   sourcePathByOutputPath?: ISourcePathByOutputPath,
@@ -247,7 +247,7 @@ async function copyFileWithTemplateVariables(
   registerOriginalSourcePath(targetPath, sourcePath, sourcePathByOutputPath);
 }
 
-export async function copyDirectoryWithTemplateVariables(
+export async function stageSourceDirectory(
   sourceDir: string,
   targetDir: string,
   sourcePathByOutputPath?: ISourcePathByOutputPath,
@@ -277,7 +277,7 @@ export async function copyDirectoryWithTemplateVariables(
       continue;
     }
 
-    await copyFileWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath);
+    await stageSourceFile(sourcePath, targetPath, sourcePathByOutputPath);
     await chmod(targetPath, sourceStats.mode);
   }
   if (skillSourcePath && skillSourcePath !== join(sourceDir, "SKILL.md")) {
@@ -285,7 +285,7 @@ export async function copyDirectoryWithTemplateVariables(
   }
 }
 
-export async function copyPathWithTemplateVariables(
+export async function stageSourcePath(
   sourcePath: string,
   targetPath: string,
   sourcePathByOutputPath?: ISourcePathByOutputPath,
@@ -298,7 +298,7 @@ export async function copyPathWithTemplateVariables(
   }
 
   if (sourceStats.isDirectory()) {
-    await copyDirectoryWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath, hostname);
+    await stageSourceDirectory(sourcePath, targetPath, sourcePathByOutputPath, hostname);
     return;
   }
 
@@ -306,7 +306,7 @@ export async function copyPathWithTemplateVariables(
     return;
   }
 
-  await copyFileWithTemplateVariables(sourcePath, targetPath, sourcePathByOutputPath);
+  await stageSourceFile(sourcePath, targetPath, sourcePathByOutputPath);
   await chmod(targetPath, sourceStats.mode);
 }
 
@@ -437,7 +437,7 @@ export async function stageRegistryAssets(
       if (existsSync(outputPath)) {
         throw new Error(`Cannot stage command ${command} because the output path already exists: ${outputPath}`);
       }
-      await context.buildSupport.copyPathWithTemplateVariables(
+      await context.buildSupport.stageSourcePath(
         assets.commandSourcePaths[command] ?? join(context.templateContext.commands_dir, command),
         outputPath,
       );
@@ -455,7 +455,7 @@ export async function stageRegistryAssets(
     const outputSkillName = getOutputSkillName(skill, skillAuthor);
     const outputPath = join(skillsDir, outputSkillName);
     if (existsSync(outputPath)) continue;
-    await context.buildSupport.copyDirectoryWithTemplateVariables(sourceDir, outputPath);
+    await context.buildSupport.stageSourceDirectory(sourceDir, outputPath);
 
     const generatedSkillFilePath = join(outputPath, "SKILL.md");
     if (existsSync(generatedSkillFilePath)) {
@@ -493,7 +493,7 @@ export async function stageHarnessSkills(context: IHarnessBuildContext, skillsDi
       await rm(outputPath, { recursive: true, force: true });
     }
 
-    await context.buildSupport.copyDirectoryWithTemplateVariables(harnessSkillEntry.sourcePath, outputPath);
+    await context.buildSupport.stageSourceDirectory(harnessSkillEntry.sourcePath, outputPath);
 
     const generatedSkillFilePath = join(outputPath, "SKILL.md");
     if (existsSync(generatedSkillFilePath)) {

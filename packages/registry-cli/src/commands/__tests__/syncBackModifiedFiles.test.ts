@@ -4,7 +4,7 @@ import { dirname, join } from "path";
 
 import { assertGeneratedOutputsAreSafeToReplace, syncBackModifiedFiles } from "../buildCommand";
 import type { IGeneratedOutputDrift } from "../../lib/generatedOutputUtils";
-import { copyDirectoryWithTemplateVariables } from "../../lib/harnessBuild";
+import { stageSourceDirectory } from "../../lib/harnessBuild";
 import { collectGeneratedOutputEntries, createGeneratedOutputManifest } from "../../lib/generatedOutputUtils";
 
 const TEST_ROOT = join(import.meta.dir, "..", "..", "lib", "__tests__", ".tmp", "sync-back-tests");
@@ -325,12 +325,7 @@ describe("syncBackModifiedFiles", () => {
     const nextOutputDir = join(repositoryRoot, ".tmp/staging");
     const relativePath = "codex/skills/example/SKILL.md";
     const sourcePaths = new Map<string, string>();
-    await copyDirectoryWithTemplateVariables(
-      sourceDir,
-      dirname(join(nextOutputDir, relativePath)),
-      sourcePaths,
-      "workstation-a",
-    );
+    await stageSourceDirectory(sourceDir, dirname(join(nextOutputDir, relativePath)), sourcePaths, "workstation-a");
     expect(sourcePaths.get(join(nextOutputDir, relativePath))).toBe(variantPath);
     const editedContent =
       "---\ndisable-model-invocation: true\nname: upstream-example\ndescription: Example\nauthor: upstream\n---\nEdited host A.\n";

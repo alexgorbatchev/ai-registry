@@ -1,24 +1,8 @@
 import { quote } from "shell-quote";
-import { projectName, type Runner, spawnRunner } from "./herdrTurnNotification";
+import { type Environment, readProject, type Runner, spawnRunner } from "./herdr";
 
 const RECAP_SOURCE = "recap";
 const RECAP_PLACEHOLDER = "<recap>";
-
-type Environment = Record<string, string | undefined>;
-
-/** Read the label of the pane's Herdr workspace, which names the project it works on. */
-export async function readWorkspaceLabel(env: Environment, run: Runner): Promise<string | undefined> {
-  const workspaceId = env.HERDR_WORKSPACE_ID;
-  if (!workspaceId) return undefined;
-  const stdout = await run([env.HERDR_BIN_PATH || "herdr", "workspace", "get", workspaceId], env);
-  if (stdout === undefined) return undefined;
-  try {
-    const label = JSON.parse(stdout)?.result?.workspace?.label;
-    return typeof label === "string" && label.trim() ? label.trim() : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 /**
  * Build the command that sets the pane title, starting with the project name so the
@@ -58,7 +42,7 @@ export function buildRecapInstruction(env: Environment, project: string | undefi
 
 export async function runUserPromptSubmit(input: string, env: Environment, run: Runner): Promise<string> {
   if (!env.HERDR_PANE_ID) return "";
-  const project = (await readWorkspaceLabel(env, run)) ?? projectName(input);
+  const project = await readProject(input, env, run);
   const instruction = buildRecapInstruction(env, project);
   if (instruction === undefined) return "";
   return JSON.stringify({

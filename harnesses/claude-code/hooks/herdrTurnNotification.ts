@@ -1,16 +1,14 @@
-import { basename } from "node:path";
 import { quote } from "shell-quote";
+import { type Environment, readProject, type Runner, spawnRunner } from "./herdr";
 
 const SIDEBAR_CLI = "aerospace-sidebar";
 
 const AGENT_NAMES = { claude: "Claude", codex: "Codex" } as const;
 
+/** Characters of the agent's final message a card shows. */
+export const MAX_BODY_LENGTH = 300;
+
 export type Agent = keyof typeof AGENT_NAMES;
-
-type Environment = Record<string, string | undefined>;
-
-/** Run a command and return its stdout, or undefined when it cannot start or fails. */
-export type Runner = (argv: string[], env: Environment) => Promise<string | undefined>;
 
 export function parseAgent(value: string | undefined): Agent | undefined {
   return value !== undefined && Object.hasOwn(AGENT_NAMES, value) ? (value as Agent) : undefined;
@@ -30,31 +28,41 @@ export function buildFocusCommand(env: Environment): string | undefined {
   return terminal ? `${focus}; ${quote(["open", "-b", terminal])}` : focus;
 }
 
-/** Read the pane's title, which the recap hook keeps set to what the session works on. */
-export async function readPaneTitle(env: Environment, run: Runner): Promise<string | undefined> {
-  const paneId = env.HERDR_PANE_ID;
-  if (!paneId) return undefined;
-  const stdout = await run([env.HERDR_BIN_PATH || "herdr", "pane", "get", paneId], env);
-  if (stdout === undefined) return undefined;
+/**
+ * The agent's final message from the Stop input's `last_assistant_message`, on one line
+ * and cut to `MAX_BODY_LENGTH` characters.
+ */
+export function finalMessage(input: string): string | undefined {
+  let message: unknown;
   try {
-    const title = JSON.parse(stdout)?.result?.pane?.title;
-    return typeof title === "string" && title.trim() ? title.trim() : undefined;
+    message = JSON.parse(input)?.last_assistant_message;
   } catch {
     return undefined;
   }
+  if (typeof message !== "string") return undefined;
+  const text = message.replace(/\s+/g, " ").trim();
+  if (!text) return undefined;
+  const characters = [...new Intl.Segmenter().segment(text)].map(({ segment }) => segment);
+  return characters.length > MAX_BODY_LENGTH
+    ? `${characters
+        .slice(0, MAX_BODY_LENGTH - 1)
+        .join("")
+        .trimEnd()}…`
+    : text;
 }
 
 export function buildPushArguments(options: {
   agent: Agent;
   focusCommand: string;
-  summary: string | undefined;
+  project: string | undefined;
+  message: string | undefined;
 }): string[] {
-  const body = options.summary ? ["--body", options.summary] : [];
+  const body = options.message ? ["--body", options.message] : [];
   return [
     "notification",
     "push",
     "--title",
-    `${AGENT_NAMES[options.agent]} finished`,
+    options.project ?? AGENT_NAMES[options.agent],
     ...body,
     "--icon",
     options.agent,
@@ -63,39 +71,20 @@ export function buildPushArguments(options: {
   ];
 }
 
-/** The project folder the agent worked in, from the hook input's `cwd`. */
-export function projectName(input: string): string | undefined {
-  try {
-    const cwd = JSON.parse(input)?.cwd;
-    return typeof cwd === "string" && cwd ? basename(cwd) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 /**
- * Push a sidebar card when the agent's turn ends in a Herdr pane. Outside Herdr, or
- * without the sidebar CLI on PATH, it does nothing. Returns false when the push failed.
+ * Push a sidebar card when the agent's turn ends in a Herdr pane: the project as its
+ * title and the agent's final message as its body. Outside Herdr, or without the
+ * sidebar CLI on PATH, it does nothing. Returns false when the push failed.
  */
 export async function runStop(agent: Agent, input: string, env: Environment, run: Runner): Promise<boolean> {
   const focusCommand = buildFocusCommand(env);
   if (focusCommand === undefined) return true;
   const sidebar = Bun.which(SIDEBAR_CLI, { PATH: env.PATH ?? "" });
   if (sidebar === null) return true;
-  const summary = (await readPaneTitle(env, run)) ?? projectName(input);
-  const pushed = await run([sidebar, ...buildPushArguments({ agent, focusCommand, summary })], env);
-  return pushed !== undefined;
+  const project = await readProject(input, env, run);
+  const args = buildPushArguments({ agent, focusCommand, project, message: finalMessage(input) });
+  return (await run([sidebar, ...args], env)) !== undefined;
 }
-
-export const spawnRunner: Runner = async (argv, env) => {
-  try {
-    const child = Bun.spawn(argv, { env, stdin: "ignore", stdout: "pipe", stderr: "ignore" });
-    const stdout = await new Response(child.stdout).text();
-    return (await child.exited) === 0 ? stdout : undefined;
-  } catch {
-    return undefined;
-  }
-};
 
 if (import.meta.main) {
   const agent = parseAgent(process.argv[2]);

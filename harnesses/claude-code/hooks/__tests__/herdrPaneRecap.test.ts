@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { parse } from "shell-quote";
-import type { Runner } from "../herdrTurnNotification";
-import { buildRecapCommand, buildRecapInstruction, readWorkspaceLabel, runUserPromptSubmit } from "../herdrPaneRecap";
+import type { Runner } from "../herdr";
+import { buildRecapCommand, buildRecapInstruction, runUserPromptSubmit } from "../herdrPaneRecap";
 
 const HOOK = join(import.meta.dir, "..", "herdrPaneRecap.ts");
 
@@ -35,20 +35,6 @@ test("injects nothing outside a Herdr pane", async () => {
   expect(await runUserPromptSubmit(INPUT, {}, workspaceRunner("dotfiles", calls))).toBe("");
   expect(await runUserPromptSubmit(INPUT, { HERDR_PANE_ID: "" }, workspaceRunner("dotfiles", calls))).toBe("");
   expect(calls).toEqual([]);
-});
-
-test("reads the workspace label through the configured herdr binary", async () => {
-  const calls: string[][] = [];
-  expect(await readWorkspaceLabel(HERDR, workspaceRunner("  dotfiles ", calls))).toBe("dotfiles");
-  expect(calls).toEqual([["/opt/herdr dir/herdr", "workspace", "get", "w2J"]]);
-});
-
-test("reports no workspace label when herdr cannot supply one", async () => {
-  expect(await readWorkspaceLabel({ HERDR_PANE_ID: "p1" }, workspaceRunner("dotfiles"))).toBeUndefined();
-  expect(await readWorkspaceLabel(HERDR, failingRunner)).toBeUndefined();
-  expect(await readWorkspaceLabel(HERDR, async () => "not json")).toBeUndefined();
-  expect(await readWorkspaceLabel(HERDR, workspaceRunner(" "))).toBeUndefined();
-  expect(await readWorkspaceLabel(HERDR, workspaceRunner(42))).toBeUndefined();
 });
 
 test("titles the pane with the project followed by the recap", () => {

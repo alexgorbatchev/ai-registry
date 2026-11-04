@@ -4,7 +4,7 @@ description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Ta
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-04 10:00
+  last_modified: 2026-11-04 10:13
   status: current
 ---
 
@@ -51,8 +51,41 @@ Read each matching reference before reaching its domain:
 | Bun tar/gzip archives | [Bun archives](references/bun/archive.md) |
 | Bun utilities or cryptography | [Bun utilities](references/bun/utilities.md) |
 
+## Work tracking
+
+Track every task that changes project code or configuration with the `issue-tracker` CLI. Set `AGENT=1` on every invocation and run `AGENT=1 issue-tracker --help` for command details.
+
+1. Before changing files, claim the task's ticket with `issue-tracker issue claim <number>`. When no ticket covers the task, create one with `issue-tracker issue create` and claim it. Register an unregistered repository with `issue-tracker project add`.
+2. Record unrelated problems found along the way as new tickets with `--discovered-from <number>` instead of folding them into the current task.
+3. Close the ticket with `issue-tracker issue close <number> --pr <pull-request>` after its pull request merges, or with `--reason completed` when the work was committed directly to `main`. Run `issue-tracker issue release <number>` when stopping before the work is done.
+4. Follow any `WARN:` line printed for a public project: keep ticket text, attachments, ticket numbers, and the tracker repository name out of its commits, pull requests, and branch names.
+
+If the CLI is missing or fails on authentication, report the exact error and the command that resolves it, continue the code work, and list the untracked work so it can be recorded afterward.
+
+## POC projects
+
+A project is in POC when its root `AGENTS.md` contains this exact line:
+
+```text
+POC mode: merge directly to main; skip tests unless requested.
+```
+
+When the user turns POC on, add that line directly below the file's first heading, creating `AGENTS.md` with a `# <project name>` heading if it does not exist. When the user turns POC off, delete the line. Change nothing else in the file for the toggle, and commit it like any other task change.
+
+While POC is on:
+
+- Integrate work into `main` directly: commit on `main`, or merge a task branch or worktree into `main` locally, then push. Do not open pull requests. Never force-push or bypass branch protection; report a rejected push.
+- Do not write, update, or run tests, and do not apply coverage requirements, unless the user requests tests for the current task. This overrides test and coverage rules in repository and shared guidance. Run the project's other required checks, such as formatting, linting, type checking, and builds.
+- Start the `DUE DILIGENCE` section with this exact unnumbered line, and include the section even when nothing else is reported:
+
+  ```text
+  POC: tests and PRs skipped (non-actionable).
+  ```
+
+  Do not report missing tests, missing coverage, or skipped pull requests as due diligence items.
+
 ## Missing context and completion
 
 If a required reference, toolchain, dependency contract, or project configuration is unavailable, record what is missing, the affected work, attempted recovery, and the input needed to resume. Suspend only dependent work and continue independent authorized work. Do not invent missing contracts or substitute another language's rules.
 
-Run the project's required checks for the affected languages and tooling. Report executed results and material limitations; a reference walkthrough is not an executed check.
+Run the project's required checks for the affected languages and tooling, excluding tests while POC is on. Report executed results and material limitations; a reference walkthrough is not an executed check.

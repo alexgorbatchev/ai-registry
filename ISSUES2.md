@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-26 10:10
-last_modified: 2026-11-04 10:02
+last_modified: 2026-11-04 10:13
 status: current
 ---
 
@@ -181,7 +181,7 @@ Remediation: state which rule wins for agent-facing tickets and designs.
 
 ### F18: TypeScript completion criteria contradict the justfile mandate
 
-Status: open. Confidence: confirmed.
+Status: fixed; the completion criteria now require `just verify`. Confidence: confirmed.
 
 `skills/agent/programming/references/typescript/testing.md:183-190` requires `bun lint`, `bun typecheck`, and `bun fix` (package scripts) before completion. [Bun runtime](skills/agent/programming/references/bun/runtime.md) forbids package scripts for tasks and requires `just verify`.
 

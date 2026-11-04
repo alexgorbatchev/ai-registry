@@ -7,7 +7,6 @@
     "npm:pi-file-change-reminder",
     "npm:pi-timestamps",
     "npm:pi-herdr-btw",
-    "git:github.com/alexgorbatchev/pi-codegraph@fix/dangling-managed-symlinks",
     "npm:pi-provider-litellm",
     "npm:@alexgorbatchev/pi-skill-library",
     "npm:@alexgorbatchev/pi-env",

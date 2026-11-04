@@ -36,8 +36,6 @@ When a later response revisits items from an earlier one, keep their IDs; give n
 
 # Operating Instructions
 
-Use codegraph (native tools or the `codegraph explore` / `codegraph node` CLI) to explore code in projects that have a codegraph index.
-
 When the answer depends on external behavior, third-party APIs, standards, or tool semantics, check the online docs instead of speculating or trying to guess. Your training data may have stale or incomplete information.
 
 Before implementing a feature in any language, check existing dependencies and maintained third-party libraries. Prefer a suitable library over writing a custom implementation. Use native or standard-library functionality when it already meets the requirements. Implement custom functionality only when suitable existing solutions cannot meet them.

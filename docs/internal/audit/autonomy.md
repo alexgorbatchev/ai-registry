@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-14 09:33
-last_modified: 2026-11-03 10:42
+last_modified: 2026-11-04 12:08
 status: current
 ---
 
@@ -319,12 +319,6 @@ Before upstream content restoration, the three changed skill bundles validated, 
 [Shared guidance](../../../system/system.md) and the [issue checks reference](../../../skills/agent/github-fix-issues/references/checks-and-ci.md) now require concise results grounded in actual checks for the relevant revision, with material limitations and native CI links or existing local log paths where applicable. Raw logs remain in the execution system without mandatory transcript publication or evidence bundles, as approved during this review. Local logs do not replace required CI, and failed, skipped, pending, or unrun required checks cannot be reported as passing. Root guidance, the README, registry integration guidance, and the workflow reference carry the same contract.
 
 Both changed skill bundles validate; typechecking and output compilation pass. The completion policy is verified in 20 staged skill files and nine generated system documents. These are instruction and packaging checks, not an executed end-to-end issue run. The current successful unified build also applies these source changes to active outputs. The prerequisite-repair authorization recorded under I005 remains in force.
-
-### I007: Search-tool mandates removed
-
-[Shared guidance](../../../system/system.md) now leaves search and code-navigation tool selection to the model, as requested. The Pi and Claude Code codegraph instruction bundles are removed, eliminating their mandatory tool ordering and failure stop rules. Registry-owned session discovery, implementation audits, Pi debugging, file transfer, remote-content inspection, skill authoring, and test-output guidance now state the required outcome without prescribing codegraph, find, rg, or grep. Root guidance, the README, and registry integration guidance preserve this policy for future edits. Matt Pocock's debugging-cleanup wording is restored and preserved under the user's third-party ownership instruction.
-
-Installed tool packages, storage-cleanup guidance, ignore entries, and unrelated API command examples remain available. Before upstream content restoration, eight changed skill bundles validated, with the existing upstream metadata warning for diagnosing-bugs; typechecking and output compilation passed, and packaging checks covered 78 staged skill files, nine system documents, and seven command copies. Those historical checks do not verify the restored upstream wording; current restoration and build checks are recorded under I008. The current successful unified build also applies these source changes to active outputs.
 
 ### I015: Concurrent state preserved; only conflicting operations suspend
 

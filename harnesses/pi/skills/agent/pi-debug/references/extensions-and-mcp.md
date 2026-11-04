@@ -9,7 +9,7 @@ Pi extensions are registered in `~/.pi/agent/settings.json` under `packages`:
   "packages": [
     "npm:pi-provider-litellm",
     "npm:@aliou/pi-processes",
-    "npm:@isac322/pi-codegraph"
+    "npm:pi-web-access"
   ]
 }
 ```

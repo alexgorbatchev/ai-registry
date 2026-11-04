@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-02 11:28
+  last_modified: 2026-11-04 12:08
   status: current
 ---
 
@@ -166,7 +166,7 @@ In particular, inspect OpenCode's `opencode.db` and companion files before treat
 Do not infer that an application database is a rebuildable cache from its parent directory's location.
 
 For an authorized cache beneath `.cache`, use the existing `paths remove` preview and execution commands with
-the home directory as `--root`. For example, select `.cache/pi-codegraph` only after inspecting its contents.
+the home directory as `--root`. For example, select one tool cache such as `.cache/<tool>` only after inspecting its contents.
 Do not generalize authorization for one cache to Go, npm, Bun, browser, or other caches.
 For package-manager cache commands or database maintenance, verify current official documentation first.
 The artifact command does not accept arbitrary `.npm`, `.bun`, or Trash paths. Use the reviewed native-directory
@@ -207,27 +207,6 @@ preserve ambiguous escaped names. Related mount warnings and malformed/failed sn
 Process visibility is limited by the invoking user's permissions. Snapshots and repeated identity checks cannot
 lock out a producer that starts or writes afterward; coordinate stopping the producer before cleanup when needed.
 Do not weaken Git guards to remove copied repositories. Review source changes through a separate authorized workflow.
-
-### CodeGraph indexes
-
-Include CodeGraph storage in development and home disk inspections. Locate the configured index store from
-the installed integration's configuration and environment; check the XDG cache root rather than assuming
-`~/.cache`. Inspect central stores such as `pi-codegraph/projects` and their daemon directories, plus real
-project-local `.codegraph` directories. Resolve project index symlinks for attribution, but measure each
-physical directory once and never pass a symlink to the removal command.
-
-Report per-project index sizes, database/WAL sizes, and logs separately. Where present, use
-`.pi-codegraph.json` metadata's `sourcePath` to associate hashed directories with projects or worktrees.
-Check whether those sources still exist; missing metadata or an inspection error is not proof of a stale index.
-Do not apply Rust's 30-minute artifact policy to CodeGraph indexes or assume native garbage collection
-enforces an age or size limit. Verify the installed implementation's collection rules before proposing it.
-
-Before proposing index deletion, inspect open database files and mapped files, daemon processes, and sockets.
-Preserve active indexes; coordinate stopping their owner before rechecking an authorized target. Never unlink
-individual live database, WAL, or shared-memory files as cache cleanup. Explain that removing an index requires
-reindexing. Preview only explicitly selected, validated inactive cache directories with `paths remove` where
-its path policy permits them; project-local `.codegraph` alone is not an accepted artifact component.
-Do not delete an entire central store merely because one project's index is stale.
 
 When emptying Trash is explicitly authorized, inspect its resolved `.local/share/Trash/files` and `info`
 directories, reject symbolic-link containers and filesystem crossings, and save the exact entry list before removal.

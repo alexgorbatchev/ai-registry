@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-26 10:10
-last_modified: 2026-11-04 11:37
+last_modified: 2026-11-04 12:08
 status: current
 ---
 
@@ -60,13 +60,13 @@ Remediation: decide the intended behavior for unrecoverable drift. Options: a do
 
 Status: open. Confidence: confirmed.
 
-`AGENTS.md:87-91`, [README.md](README.md), and [ai-registry-integration](skills/agent/ai-registry-integration/SKILL.md) lines 30-35 refer agents to [system.md](system/system.md) for library-scope, red/green, test-sensitivity, ownership-blocker, and destructive-Git rules. `f5a079b` reduced `system.md` to 86 lines, and none of those rules remain. Parts of it now contradict the root guidance: `system.md:39` mandates codegraph while `AGENTS.md:86` says the registry does not mandate a search tool.
+`AGENTS.md:87-91`, [README.md](README.md), and [ai-registry-integration](skills/agent/ai-registry-integration/SKILL.md) lines 30-35 refer agents to [system.md](system/system.md) for library-scope, red/green, test-sensitivity, ownership-blocker, and destructive-Git rules. `f5a079b` reduced `system.md` to 86 lines, and none of those rules remain.
 
 The undefined "blocker protocol" is relied on by [gitea](skills/agent/gitea/SKILL.md) line 54, [termctrl](skills/agent/termctrl/SKILL.md) line 11, [continue-session](skills/user/continue-session/SKILL.md) line 14, and `github-fix-issues/references/{checks-and-ci.md:51, integration.md:74, setup.md:37}`; `scheduling.md:26` calls it "blocker procedure". Even at `b76bd42`, depending on it violated the self-contained-skill rule, and the `personal-assistant` profile does not include `system.md`.
 
 Related: [agents-templates.md](skills/agent/docs-writer/assets/agents-templates.md) lines 60, 72, 84 and `docs-writer/references/agents.md:104,125` write "under the existing policy" into other repositories' `AGENTS.md`, where no such policy exists.
 
-Remediation: decide whether the removed rules return to `system.md`. Then either restore them or remove the citations, and inline a minimal blocker procedure in each skill that needs one. Record the reversal of the I007/I018 decisions in `ISSUES.md` if they are dropped.
+Remediation: decide whether the removed rules return to `system.md`. Then either restore them or remove the citations, and inline a minimal blocker procedure in each skill that needs one. Record the reversal of the I018 decision if it is dropped.
 
 ### F7: `pi-debug` instructs redaction but prints credentials
 

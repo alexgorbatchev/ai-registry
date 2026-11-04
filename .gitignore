@@ -23,7 +23,6 @@ harnesses/*/.tmp/
 /.opencode-analysis
 /.graymatter
 /.workspaces
-/.codegraph
 /.pi-subagents
 
 /.pi/subagents

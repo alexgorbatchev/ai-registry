@@ -18,7 +18,7 @@ The reusable source-of-truth layer.
   Models choose search and code-navigation tools according to the task and available capabilities; the registry does not mandate a search tool or tool ordering.
   Dependency investigation and library integration stay within the authorized task's required capabilities, using supported interfaces and intended usage patterns.
   Red/green and isolated test-sensitivity checks apply to changes in executable behavior; non-executable changes use applicable validators.
-  Behavior-changing implementation work requires meaningful behavioral tests and at least 90% line and function coverage per affected first-party package, including unexecuted non-test source and excluding `scripts/` directories. Coverage commands and scope must be documented and configured; `just coverage` runs the `packages/registry-cli` gate, which counts files no test loads as uncovered. Instruction-maintenance tasks use applicable validators and existing checks; newly specified but unimplemented enforcement stays recorded as follow-up work and does not block committing or merging the maintenance task. Existing failing checks remain subject to prerequisite repair. User-deferred generation or application does not prohibit independent verification or authorized source integration; unrun verification remains explicit.
+  Behavior-changing implementation work requires meaningful behavioral tests and at least 90% line and function coverage per affected first-party package, including unexecuted non-test source and excluding `scripts/` directories. Coverage commands and scope must be documented and configured; `just coverage` runs the `packages/registry-cli` and `harnesses/claude-code/hooks` gates, which count files no test loads as uncovered. Instruction-maintenance tasks use applicable validators and existing checks; newly specified but unimplemented enforcement stays recorded as follow-up work and does not block committing or merging the maintenance task. Existing failing checks remain subject to prerequisite repair. User-deferred generation or application does not prohibit independent verification or authorized source integration; unrun verification remains explicit.
   Concurrent-work guidance preserves other actors' changes, index state, locks, and refs. Only conflicting operations suspend; independent authorized work may continue in an owned, isolated worktree when safe. Staged-file age does not authorize takeover or a whole-worker halt.
   Routine branch and path-scoped index work uses existing task authorization after ownership checks. Codex and OpenCode guard explicit force/file-restoration checkout forms and reset modes; the shared instructions cover ownership, authorization, and equivalent syntax beyond those command-text matches.
 - **`harnesses/`**: Harness-specific config overrides, unified-output build plugins, and repo-local harness maintenance guidance. Shipping files live under `harnesses/<target>/`, and repo-only build logic lives under `packages/registry-cli/src/harnesses/<target>/` when excluded via `.registry-ignore`.
@@ -129,7 +129,7 @@ just bootstrap-smoke
 That command:
 
 - runs `just setup`, which runs `bun install` and installs the repo-local Git hooks from `.githooks`
-- installs dependencies for all root workspaces declared in `package.json`, including `vendor/*`, `packages/*`, the bundled GitHub reviewer helper, and the disk-cleanup skill
+- installs dependencies for all root workspaces declared in `package.json`, including `vendor/*`, `packages/*`, the bundled GitHub reviewer helper, the disk-cleanup skill, and the Claude Code hooks
 - builds the generated outputs
 - verifies the previous generated-output manifest before overwriting managed generated paths in `.output/`
 - automatically recovers supported harness-written generated-file edits into their mapped source and regenerates outputs when the manifest baseline confirms that source changes will not be overwritten; conflicts, unsupported recovery, or save failures preserve both versions and suspend output application, including with `-y`
@@ -178,7 +178,7 @@ just setup
 just build
 ```
 
-Development tasks live in `justfile` recipes; `package.json` files have no `scripts`. The root `justfile` links each package's own `justfile` as a module (`registry-cli`, `template-resolver`, `session-analysis`, `disk-cleanup`). Run `just check` to type check and validate every package (formatting, lint, type checks, unused code, and tests), `just fix` to apply formatting and lint fixes, `just test` to run every package's tests, and `just --list --list-submodules` to see all recipes.
+Development tasks live in `justfile` recipes; `package.json` files have no `scripts`. The root `justfile` links each package's own `justfile` as a module (`registry-cli`, `template-resolver`, `session-analysis`, `disk-cleanup`, `claude-code-hooks`). Run `just check` to type check and validate every package (formatting, lint, type checks, unused code, and tests), `just fix` to apply formatting and lint fixes, `just test` to run every package's tests, and `just --list --list-submodules` to see all recipes.
 
 ### Repo-local PATH commands
 

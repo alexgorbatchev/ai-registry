@@ -2,6 +2,7 @@ mod registry-cli 'packages/registry-cli/justfile'
 mod template-resolver 'packages/template-resolver/justfile'
 mod session-analysis 'packages/opencode-session-analysis/justfile'
 mod disk-cleanup 'skills/user/disk-cleanup/justfile'
+mod claude-code-hooks 'harnesses/claude-code/hooks/justfile'
 
 # List available commands
 default:
@@ -52,9 +53,10 @@ skills-update:
     just registry-cli skills-update
     just build
 
-# Run the registry CLI coverage gate
+# Run the registry CLI and Claude Code hooks coverage gates
 coverage:
     just registry-cli coverage
+    just claude-code-hooks coverage
 
 # Run every package's tests
 test:
@@ -62,6 +64,7 @@ test:
     just template-resolver test
     just session-analysis test
     just disk-cleanup test
+    just claude-code-hooks test
 
 # Apply formatting in every package
 fmt:
@@ -69,6 +72,7 @@ fmt:
     just template-resolver fmt
     just session-analysis fmt
     just disk-cleanup fmt
+    just claude-code-hooks fmt
 
 # Apply lint fixes and formatting in every package
 fix:
@@ -76,6 +80,7 @@ fix:
     just template-resolver fix
     just session-analysis fix
     just disk-cleanup fix
+    just claude-code-hooks fix
 
 # Validate without modifying source files
 check: typecheck
@@ -83,6 +88,7 @@ check: typecheck
     just template-resolver check
     just session-analysis check
     just disk-cleanup check
+    just claude-code-hooks check
 
 # Validate this repository's .cronrc
 cron-check:

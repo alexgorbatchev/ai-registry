@@ -13,7 +13,15 @@ export function buildRecapCommand(env: Environment): string | undefined {
   const paneId = env.HERDR_PANE_ID;
   if (!paneId) return undefined;
   const socket = env.HERDR_SOCKET_PATH ? [`HERDR_SOCKET_PATH=${quote([env.HERDR_SOCKET_PATH])}`] : [];
-  const argv = quote([env.HERDR_BIN_PATH || "herdr", "pane", "report-metadata", paneId, "--source", RECAP_SOURCE, "--title"]);
+  const argv = quote([
+    env.HERDR_BIN_PATH || "herdr",
+    "pane",
+    "report-metadata",
+    paneId,
+    "--source",
+    RECAP_SOURCE,
+    "--title",
+  ]);
   return [...socket, argv, `'${RECAP_PLACEHOLDER}'`].join(" ");
 }
 

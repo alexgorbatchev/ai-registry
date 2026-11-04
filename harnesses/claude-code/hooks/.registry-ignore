@@ -1,0 +1,9 @@
+# Package tooling and tests stay in the registry; only the hook scripts ship.
+node_modules/
+.tmp/
+__tests__/
+justfile
+package.json
+tsconfig.json
+.oxfmtrc.json
+.oxlintrc.json

@@ -6,7 +6,8 @@
   "workspaces": [
     "vendor/*",
     "packages/*",
-    "skills/user/disk-cleanup"
+    "skills/user/disk-cleanup",
+    "harnesses/claude-code/hooks"
   ],
   "dependencies": {
     "@alexgorbatchev/dedent-string": "^1.0.1",

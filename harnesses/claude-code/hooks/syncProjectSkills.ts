@@ -31,7 +31,9 @@ export async function syncProjectSkills(projectPath: string): Promise<number> {
       sources.set(linkName(sourcePath), sourcePath);
       return;
     }
-    for (const entry of (await readdir(sourcePath, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
+    for (const entry of (await readdir(sourcePath, { withFileTypes: true })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    )) {
       if (entry.isDirectory() || entry.isSymbolicLink()) await visit(join(sourcePath, entry.name));
     }
   }
@@ -59,7 +61,7 @@ export async function syncProjectSkills(projectPath: string): Promise<number> {
       await symlink(sourcePath, destinationPath, "dir");
     } catch (error) {
       if (!(error instanceof Error && "code" in error && error.code === "EEXIST")) throw error;
-      if (!(await lstat(destinationPath)).isSymbolicLink() || await readlink(destinationPath) !== sourcePath) {
+      if (!(await lstat(destinationPath)).isSymbolicLink() || (await readlink(destinationPath)) !== sourcePath) {
         throw new Error(`Project skill link conflicts with existing path: ${destinationPath}`);
       }
     }

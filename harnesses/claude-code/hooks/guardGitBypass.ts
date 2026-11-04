@@ -3,7 +3,8 @@ import { parse } from "shell-quote";
 
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 const CONTROL_OPERATORS = /[;&|()]+/;
-const CONFIG_OVERRIDE = /^(?:GIT_CONFIG_GLOBAL|GIT_CONFIG_SYSTEM|GIT_CONFIG_NOSYSTEM|GIT_CONFIG_COUNT|GIT_CONFIG_PARAMETERS|GIT_CONFIG_(?:KEY|VALUE)_\d+)=/;
+const CONFIG_OVERRIDE =
+  /^(?:GIT_CONFIG_GLOBAL|GIT_CONFIG_SYSTEM|GIT_CONFIG_NOSYSTEM|GIT_CONFIG_COUNT|GIT_CONFIG_PARAMETERS|GIT_CONFIG_(?:KEY|VALUE)_\d+)=/;
 const HOOK_KEY = /^hook\./i;
 const SHORT_NO_VERIFY = /^-[A-Za-z]*n[A-Za-z]*$/;
 const SHELL_COMMAND_OPTION = /^-[A-Za-z]*c$/;
@@ -76,7 +77,11 @@ function checkGit(args: string[]): string | undefined {
   if ((subcommand === "commit" || subcommand === "am") && rest.some((word) => SHORT_NO_VERIFY.test(word))) {
     return "skipping Git hooks with -n";
   }
-  if (subcommand === "config" && rest.some((word) => HOOK_KEY.test(word)) && !rest.some((word) => CONFIG_READS.has(word))) {
+  if (
+    subcommand === "config" &&
+    rest.some((word) => HOOK_KEY.test(word)) &&
+    !rest.some((word) => CONFIG_READS.has(word))
+  ) {
     return "changing Git hook configuration";
   }
   return undefined;
@@ -93,9 +98,10 @@ function getApiMethod(args: string[]): string {
 }
 
 function checkGitHub(args: string[]): string | undefined {
-  const isGistWrite = args[0] === "gist"
-    ? GIST_WRITES.has(args[1] ?? "")
-    : args[0] === "api" && args.some((word) => GISTS_PATH.test(word)) && getApiMethod(args) !== "GET";
+  const isGistWrite =
+    args[0] === "gist"
+      ? GIST_WRITES.has(args[1] ?? "")
+      : args[0] === "api" && args.some((word) => GISTS_PATH.test(word)) && getApiMethod(args) !== "GET";
   return isGistWrite ? "publishing a gist, which no scanner inspects" : undefined;
 }
 
@@ -142,7 +148,12 @@ export function runPreToolUse(input: unknown): string {
     throw new Error("PreToolUse input must contain tool_input");
   }
   const toolInput = input.tool_input;
-  if (typeof toolInput !== "object" || toolInput === null || !("command" in toolInput) || typeof toolInput.command !== "string") {
+  if (
+    typeof toolInput !== "object" ||
+    toolInput === null ||
+    !("command" in toolInput) ||
+    typeof toolInput.command !== "string"
+  ) {
     throw new Error("PreToolUse input must contain a command");
   }
   const violation = findViolation(toolInput.command);

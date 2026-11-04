@@ -32,8 +32,9 @@ test("discovers nested and linked bundles, deduplicates cycles, preserves native
   expect(entries).toHaveLength(3);
   expect(entries).toContain("native");
   const generated = entries.filter((entry) => entry !== "native");
-  expect(await Promise.all(generated.map((entry) => Bun.file(join(root, ".claude/skills", entry, "SKILL.md")).exists())))
-    .toEqual([true, true]);
+  expect(
+    await Promise.all(generated.map((entry) => Bun.file(join(root, ".claude/skills", entry, "SKILL.md")).exists())),
+  ).toEqual([true, true]);
   expect(await readlink(join(root, ".claude/skills", generated[0]!))).toContain(".agents/skills/");
   await rm(join(root, ".agents"), { recursive: true });
   expect(await syncProjectSkills(root)).toBe(0);

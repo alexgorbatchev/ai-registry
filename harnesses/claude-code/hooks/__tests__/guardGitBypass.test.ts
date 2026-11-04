@@ -40,8 +40,8 @@ const BLOCKED = [
   "bash -c 'git commit --no-verify -m skip'",
   "sh -lc 'git push --no-verify'",
   'eval "git push --no-verify"',
-  'name=${path%%/*}; git push --no-verify',
-  'GIT_CONFIG_GLOBAL=/dev/null echo ${path%%/*}',
+  "name=${path%%/*}; git push --no-verify",
+  "GIT_CONFIG_GLOBAL=/dev/null echo ${path%%/*}",
   "bash <<'EOF'\ngit push --no-verify\nEOF",
   "cat script | sh <<EOF\ngit push --no-verify\nEOF",
   "cat > notes <<EOF\nsafe\nEOF\ngit push --no-verify",
@@ -114,6 +114,9 @@ test("blocks through the process contract and fails closed on invalid input", as
   const denied = await run(JSON.stringify({ tool_name: "Bash", tool_input: { command: "git push --no-verify" } }));
   expect(denied.exitCode).toBe(0);
   expect(JSON.parse(denied.output).hookSpecificOutput.permissionDecision).toBe("deny");
-  expect(await run(JSON.stringify({ tool_name: "Bash", tool_input: { command: "git status" } }))).toEqual({ output: "", exitCode: 0 });
+  expect(await run(JSON.stringify({ tool_name: "Bash", tool_input: { command: "git status" } }))).toEqual({
+    output: "",
+    exitCode: 0,
+  });
   expect((await run("not json")).exitCode).toBe(2);
 });

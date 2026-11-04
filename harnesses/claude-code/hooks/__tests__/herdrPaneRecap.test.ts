@@ -39,7 +39,16 @@ test("targets the pane, binary, and socket from the environment", () => {
 
 test("falls back to herdr on PATH and its default socket", () => {
   const command = buildRecapCommand({ HERDR_PANE_ID: "p1" });
-  expect(runAsAgent(command ?? "", "x")).toEqual(["herdr", "pane", "report-metadata", "p1", "--source", "recap", "--title", "x"]);
+  expect(runAsAgent(command ?? "", "x")).toEqual([
+    "herdr",
+    "pane",
+    "report-metadata",
+    "p1",
+    "--source",
+    "recap",
+    "--title",
+    "x",
+  ]);
 });
 
 test("wraps the instruction in UserPromptSubmit additional context", () => {
@@ -51,7 +60,11 @@ test("wraps the instruction in UserPromptSubmit additional context", () => {
 
 test("runs as a hook process, draining the harness input", async () => {
   const run = async (env: Record<string, string>) => {
-    const child = Bun.spawn(["bun", HOOK], { env: { PATH: process.env.PATH ?? "", ...env }, stdin: "pipe", stdout: "pipe" });
+    const child = Bun.spawn(["bun", HOOK], {
+      env: { PATH: process.env.PATH ?? "", ...env },
+      stdin: "pipe",
+      stdout: "pipe",
+    });
     child.stdin.write(JSON.stringify({ hook_event_name: "UserPromptSubmit", prompt: "hi" }));
     child.stdin.end();
     const stdout = await new Response(child.stdout).text();

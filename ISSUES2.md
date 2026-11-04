@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-26 10:10
-last_modified: 2026-10-26 10:10
+last_modified: 2026-11-04 10:02
 status: current
 ---
 
@@ -58,7 +58,7 @@ Remediation: decide the intended behavior for unrecoverable drift. Options: a do
 
 ### F5: `programming` bundle is a stale duplicate that contradicts current Bun policy
 
-Status: open. Confidence: confirmed.
+Status: fixed in `b1e1fcb`, which removed the standalone language skills and ported their newer Bun and React policy into the bundle. Confidence: confirmed.
 
 The bundle under [skills/agent/programming](skills/agent/programming/SKILL.md) was authored before `6eda682` (justfile and shared React policy) and committed with its other content preserved.
 
@@ -183,7 +183,7 @@ Remediation: state which rule wins for agent-facing tickets and designs.
 
 Status: open. Confidence: confirmed.
 
-`skills/agent/typescript/references/testing.md:181-188` and `skills/agent/programming/references/typescript/testing.md:183-190` require `bun lint`, `bun typecheck`, and `bun fix` (package scripts) before completion. [bun/SKILL.md](skills/agent/bun/SKILL.md) forbids package scripts for tasks and requires `just verify`.
+`skills/agent/programming/references/typescript/testing.md:183-190` requires `bun lint`, `bun typecheck`, and `bun fix` (package scripts) before completion. [Bun runtime](skills/agent/programming/references/bun/runtime.md) forbids package scripts for tasks and requires `just verify`.
 
 Remediation: replace the package-script commands with the justfile recipes.
 

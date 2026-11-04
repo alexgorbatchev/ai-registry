@@ -1,16 +1,16 @@
 ---
 created_on: 2026-10-26 10:10
-last_modified: 2026-11-04 11:27
+last_modified: 2026-11-04 11:37
 status: current
 ---
 
-# Review findings for commit e56e821
+# Review findings for commit b76bd42
 
-This register records the review of `e56e821` (`refactor(registry): apply autonomy interview decisions`, 2026-10-24) against `HEAD` at `0e138b9`. Entries record evidence, impact, and suggested remediation; they do not independently change operating policy. Finding IDs (`F1`–`F24`, `D2`–`D7`) match the review discussion. Fixed and obsolete findings are removed; their text remains in Git history. Audit entries (`I0xx`) live in the [autonomy audit's remediation log](docs/internal/audit/autonomy.md#remediation-log).
+This register records the review of `b76bd42` (`refactor(registry): apply autonomy interview decisions`, 2026-10-24) against `HEAD` as of 2026-10-26. Entries record evidence, impact, and suggested remediation; they do not independently change operating policy. Finding IDs (`F1`–`F24`, `D2`–`D7`) match the review discussion. Fixed and obsolete findings are removed; their text remains in Git history. Audit entries (`I0xx`) live in the [autonomy audit's remediation log](docs/internal/audit/autonomy.md#remediation-log).
 
 Method: the registry-cli code changes were reviewed directly, including a reproduction of the template-reversal behavior and a comparison of test results at the commit, its parent, and `HEAD`. The instruction changes were reviewed by two independent read-only passes; their highest-severity findings (F1, F2, F6, F7, F10) were re-verified. Entries marked *plausible* describe a confirmed mechanism whose real-world trigger was not observed.
 
-Test status: at `e56e821`, `bun test packages/registry-cli` reported 302 pass / 20 fail; its parent reported 7 failures, so the commit introduced 13. At `HEAD`, 387 pass / 0 fail. Nothing in this register has been remediated yet.
+Test status: at `b76bd42`, `bun test packages/registry-cli` reported 302 pass / 20 fail; its parent reported 7 failures, so the commit introduced 13. At the review's `HEAD`, 387 pass / 0 fail. Each finding's status line records its current remediation.
 
 ## High
 
@@ -38,11 +38,11 @@ Remediation: put `"git checkout *": "ask"` and `"git reset *": "ask"` first, kee
 
 ### F3: Commit landed with failing tests and a crashing build; root cause remains
 
-Status: symptom fixed in `fc2cf82`; root cause open. Confidence: confirmed.
+Status: symptom fixed in `9af941e`; root cause open. Confidence: confirmed.
 
 The commit introduced 13 test failures (hostname variant, overlay, and Codex provenance suites). Each failed with `ENOENT` at `buildCommand.ts:513`: `copyFileWithTemplateVariables` fingerprinted files copied out of the staging directory (for example `.tmp/generated-output-staging/.opencode-agents/work.md`) as sources, and the pre-application fingerprint check then tried to re-read them after staging cleanup. A real `bun run build` failed the same way. The commit message records that the rebuild was deferred, which is how it was committed.
 
-`fc2cf82` fixed the symptom by making the OpenCode and Pi plugins copy those files directly. [copyFileWithTemplateVariables](packages/registry-cli/src/lib/harnessBuild.ts) still fingerprints any path it receives, so the next plugin that copies a staged temporary file through it will reintroduce the crash.
+`9af941e` fixed the symptom by making the OpenCode and Pi plugins copy those files directly. [copyFileWithTemplateVariables](packages/registry-cli/src/lib/harnessBuild.ts) still fingerprints any path it receives, so the next plugin that copies a staged temporary file through it will reintroduce the crash.
 
 Remediation: fingerprint and map only paths inside registered source roots (repository and overlay, excluding `.tmp/` and the staging directory), and add a regression test that copies a staged file through the shared helper.
 
@@ -50,7 +50,7 @@ Remediation: fingerprint and map only paths inside registered source roots (repo
 
 Status: open. Confidence: mechanism confirmed; trigger plausible.
 
-Several managed generated files have no entry in `sourcePaths` in `.output/manifest.json`: `claude-code/default/CLAUDE.md`, `codex/default/AGENTS.md`, `pi/default/APPEND_SYSTEM.md`, and, since `fc2cf82`, OpenCode agents and Pi prompts. When any of them drifts, `syncBackModifiedFiles` throws `Cannot recover <path>: no mapped source` on every build. A plausible trigger is Claude Code writing user memory to `~/.claude/CLAUDE.md` through `/memory`. Scheduled updates then fail on every run and stop pushing.
+Several managed generated files have no entry in `sourcePaths` in `.output/manifest.json`: `claude-code/default/CLAUDE.md`, `codex/default/AGENTS.md`, `pi/default/APPEND_SYSTEM.md`, and, since `9af941e`, OpenCode agents and Pi prompts. When any of them drifts, `syncBackModifiedFiles` throws `Cannot recover <path>: no mapped source` on every build. A plausible trigger is Claude Code writing user memory to `~/.claude/CLAUDE.md` through `/memory`. Scheduled updates then fail on every run and stop pushing.
 
 Before this commit, `-y` overwrote drift. It is now ignored (F19), and the error text ("resolve its source mapping") gives no actionable step, so the only recovery is manually reverting the generated file.
 
@@ -62,7 +62,7 @@ Status: open. Confidence: confirmed.
 
 `AGENTS.md:87-91`, [README.md](README.md), and [ai-registry-integration](skills/agent/ai-registry-integration/SKILL.md) lines 30-35 refer agents to [system.md](system/system.md) for library-scope, red/green, test-sensitivity, ownership-blocker, and destructive-Git rules. `f5a079b` reduced `system.md` to 86 lines, and none of those rules remain. Parts of it now contradict the root guidance: `system.md:39` mandates codegraph while `AGENTS.md:86` says the registry does not mandate a search tool.
 
-The undefined "blocker protocol" is relied on by [gitea](skills/agent/gitea/SKILL.md) line 54, [termctrl](skills/agent/termctrl/SKILL.md) line 11, [continue-session](skills/user/continue-session/SKILL.md) line 14, and `github-fix-issues/references/{checks-and-ci.md:51, integration.md:74, setup.md:37}`; `scheduling.md:26` calls it "blocker procedure". Even at `e56e821`, depending on it violated the self-contained-skill rule, and the `personal-assistant` profile does not include `system.md`.
+The undefined "blocker protocol" is relied on by [gitea](skills/agent/gitea/SKILL.md) line 54, [termctrl](skills/agent/termctrl/SKILL.md) line 11, [continue-session](skills/user/continue-session/SKILL.md) line 14, and `github-fix-issues/references/{checks-and-ci.md:51, integration.md:74, setup.md:37}`; `scheduling.md:26` calls it "blocker procedure". Even at `b76bd42`, depending on it violated the self-contained-skill rule, and the `personal-assistant` profile does not include `system.md`.
 
 Related: [agents-templates.md](skills/agent/docs-writer/assets/agents-templates.md) lines 60, 72, 84 and `docs-writer/references/agents.md:104,125` write "under the existing policy" into other repositories' `AGENTS.md`, where no such policy exists.
 
@@ -106,7 +106,7 @@ Remediation: simulate the rebuild of the recovered content before saving the sou
 
 Status: open. Confidence: confirmed.
 
-The audit log's I027 stated that `skills/agent/syncthing-transfer/SKILL.md` was changed and that the changed skill validator passed; I027 has since been removed as obsolete. That skill was deleted in `3a1730a` (2026-10-20), an ancestor of `e56e821`; the path does not exist at the commit. [autonomy.md](docs/internal/audit/autonomy.md) still lists A19 as an approved source change, and lines 83, 161, 250, 255 link to `pi-codegraph` and `claude-code-codegraph`, which this commit deletes. Line 83 recommends fixing the `pi-codegraph` fallback; the skill was deleted instead.
+The audit log's I027 stated that `skills/agent/syncthing-transfer/SKILL.md` was changed and that the changed skill validator passed; I027 has since been removed as obsolete. That skill was deleted in `3a1730a` (2026-10-20), an ancestor of `b76bd42`; the path does not exist at the commit. [autonomy.md](docs/internal/audit/autonomy.md) still lists A19 as an approved source change, and lines 83, 161, 250, 255 link to `pi-codegraph` and `claude-code-codegraph`, which this commit deletes. Line 83 recommends fixing the `pi-codegraph` fallback; the skill was deleted instead.
 
 Remediation: update the audit report's disposition and links.
 

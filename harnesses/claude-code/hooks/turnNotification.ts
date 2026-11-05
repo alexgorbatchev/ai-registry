@@ -1,5 +1,14 @@
 import { quote } from "shell-quote";
-import { type Environment, readProject, type Runner, spawnRunner, spawnWithStatus, type StatusRunner } from "./herdr";
+import {
+  type Environment,
+  projectName,
+  readProject,
+  type Runner,
+  spawnRunner,
+  spawnWithStatus,
+  type StatusRunner,
+} from "./herdr";
+import { readT3Thread } from "./t3";
 
 const SIDEBAR_CLI = "aerospace-sidebar";
 
@@ -21,12 +30,17 @@ const PUSH_ATTEMPTS = [
   { key: false, markdown: false },
 ] as const;
 
-/** The key that keeps one card per Herdr pane: a later turn's card replaces the pane's earlier one. */
-function paneKey(paneId: string): string {
-  return `herdr:${paneId}`;
-}
-
 export type Agent = keyof typeof AGENT_NAMES;
+
+/** What clicking a card does: run a shell command, or open a URL. */
+export type CardAction = { kind: "run"; command: string } | { kind: "open"; url: string };
+
+/** Where a card points: its title, its click action, and the key that keeps one card per pane or thread. */
+export type CardTarget = {
+  title: string | undefined;
+  action: CardAction | undefined;
+  key: string;
+};
 
 export function parseAgent(value: string | undefined): Agent | undefined {
   return value !== undefined && Object.hasOwn(AGENT_NAMES, value) ? (value as Agent) : undefined;
@@ -114,33 +128,75 @@ function cutOpenSpan(text: string): string {
 
 export function buildPushArguments(options: {
   agent: Agent;
-  focusCommand: string;
-  project: string | undefined;
+  title: string | undefined;
+  action: CardAction | undefined;
   message: string | undefined;
   markdown: boolean;
   key?: string;
 }): string[] {
   const body = options.message ? ["--body", options.message, ...(options.markdown ? ["--markdown"] : [])] : [];
+  const action = options.action
+    ? options.action.kind === "run"
+      ? ["--run", options.action.command]
+      : ["--open", options.action.url]
+    : [];
   return [
     "notification",
     "push",
     "--title",
-    options.project ?? AGENT_NAMES[options.agent],
+    options.title ?? AGENT_NAMES[options.agent],
     ...body,
     "--icon",
     options.agent,
-    "--run",
-    options.focusCommand,
+    ...action,
     ...(options.key ? ["--key", options.key] : []),
   ];
 }
 
 /**
- * Push a sidebar card when the agent's turn ends in a Herdr pane: the project as its
- * title and the agent's final message as its markdown body, keyed to the pane so each pane
- * keeps one card. Outside Herdr, or without the sidebar CLI on PATH, it does nothing. A CLI
- * too old for `--key` or `--markdown` gets the push without them (`PUSH_ATTEMPTS`). Returns
- * false when the push failed.
+ * The card for a T3 Code thread (`T3CODE_THREAD_ID`): titled with the thread's title, else the session folder, and
+ * opening the thread in the app through its `t3code://` link. When the T3 server does not answer, a click brings
+ * the app (`__CFBundleIdentifier`) forward instead.
+ */
+async function t3Target(threadId: string, input: string, env: Environment, run: Runner): Promise<CardTarget> {
+  const thread = await readT3Thread(env, run);
+  const app = env.__CFBundleIdentifier;
+  const action: CardAction | undefined = thread?.appLink
+    ? { kind: "open", url: thread.appLink }
+    : app
+      ? { kind: "run", command: quote(["open", "-b", app]) }
+      : undefined;
+  return { title: thread?.title ?? projectName(input), action, key: `t3:${threadId}` };
+}
+
+/**
+ * The card for a Herdr pane (`HERDR_PANE_ID`): titled with the project, focusing the pane on click, keyed to the
+ * pane. Undefined outside Herdr.
+ */
+async function herdrTarget(input: string, env: Environment, run: Runner): Promise<CardTarget | undefined> {
+  const focusCommand = buildFocusCommand(env);
+  if (focusCommand === undefined) return undefined;
+  return {
+    title: await readProject(input, env, run),
+    action: { kind: "run", command: focusCommand },
+    key: `herdr:${env.HERDR_PANE_ID ?? ""}`,
+  };
+}
+
+/**
+ * Where the session's card points. A T3 Code thread wins over a Herdr pane, because a T3 server started from a
+ * Herdr pane passes that pane's variables on to every thread it runs.
+ */
+export async function resolveTarget(input: string, env: Environment, run: Runner): Promise<CardTarget | undefined> {
+  const threadId = env.T3CODE_THREAD_ID;
+  return threadId ? t3Target(threadId, input, env, run) : herdrTarget(input, env, run);
+}
+
+/**
+ * Push a sidebar card when the agent's turn ends in a T3 Code thread or a Herdr pane (`resolveTarget`), with the
+ * agent's final message as its markdown body, keyed so each thread or pane keeps one card. Anywhere else, or
+ * without the sidebar CLI on PATH, it does nothing. A CLI too old for `--key` or `--markdown` gets the push without
+ * them (`PUSH_ATTEMPTS`). Returns false when the push failed.
  */
 export async function runStop(
   agent: Agent,
@@ -149,23 +205,21 @@ export async function runStop(
   run: Runner,
   push: StatusRunner = spawnWithStatus,
 ): Promise<boolean> {
-  const focusCommand = buildFocusCommand(env);
-  if (focusCommand === undefined) return true;
   const sidebar = Bun.which(SIDEBAR_CLI, { PATH: env.PATH ?? "" });
   if (sidebar === null) return true;
-  const project = await readProject(input, env, run);
+  const target = await resolveTarget(input, env, run);
+  if (target === undefined) return true;
   const message = finalMessage(input);
-  const key = paneKey(env.HERDR_PANE_ID ?? "");
   let status: number | undefined;
   let previous: string[] = [];
   for (const attempt of PUSH_ATTEMPTS) {
     const args = buildPushArguments({
       agent,
-      focusCommand,
-      project,
+      title: target.title,
+      action: target.action,
       message,
       markdown: attempt.markdown,
-      key: attempt.key ? key : undefined,
+      key: attempt.key ? target.key : undefined,
     });
     // Without a message there is no --markdown to leave out, so the last attempt would repeat the one before.
     if (args.join("\0") === previous.join("\0")) continue;
@@ -181,11 +235,11 @@ if (import.meta.main) {
   // The harness writes the hook input to stdin; drain it so the write never fails.
   const input = await Bun.stdin.text();
   if (agent === undefined) {
-    console.error(`herdrTurnNotification: expected the agent (${Object.keys(AGENT_NAMES).join(" or ")}) as argument`);
+    console.error(`turnNotification: expected the agent (${Object.keys(AGENT_NAMES).join(" or ")}) as argument`);
     process.exit(1);
   }
   if (!(await runStop(agent, input, process.env, spawnRunner))) {
-    console.error(`herdrTurnNotification: ${SIDEBAR_CLI} notification push failed`);
+    console.error(`turnNotification: ${SIDEBAR_CLI} notification push failed`);
     process.exit(1);
   }
 }

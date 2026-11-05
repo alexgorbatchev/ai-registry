@@ -58,7 +58,7 @@ timeout = 10
 
 [[hooks.Stop.hooks]]
 type = "command"
-command = 'bun "$HOME/.claude/hooks/herdrTurnNotification.ts" codex'
+command = 'bun "$HOME/.claude/hooks/turnNotification.ts" codex'
 timeout = 10
 
 [marketplaces]

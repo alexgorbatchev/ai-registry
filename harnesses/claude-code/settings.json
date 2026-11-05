@@ -139,7 +139,7 @@
       {
         "hooks": [
           {
-            "command": "bun \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/herdrTurnNotification.ts\" claude",
+            "command": "bun \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/turnNotification.ts\" claude",
             "timeout": 10,
             "type": "command"
           }

@@ -12,10 +12,14 @@ import {
   finalMessage,
   MAX_BODY_LENGTH,
   parseAgent,
+  resolveTarget,
   runStop,
-} from "../herdrTurnNotification";
+} from "../turnNotification";
 
-const HOOK = join(import.meta.dir, "..", "herdrTurnNotification.ts");
+const HOOK = join(import.meta.dir, "..", "turnNotification.ts");
+
+const T3_THREAD = "ab49f601-7254-4234-a7d6-b65abdee00b3";
+const T3_APP_LINK = `t3code://threads/ded656bc-3e4c-42b3-be26-65fb25c7f480/${T3_THREAD}`;
 
 function stopInput(fields: Record<string, unknown> = {}): string {
   return JSON.stringify({
@@ -62,6 +66,29 @@ function herdrEnv(herdrBin: string): Record<string, string> {
     HERDR_SOCKET_PATH: "/home/me/.config/herdr/herdr.sock",
     __CFBundleIdentifier: "com.mitchellh.ghostty",
   };
+}
+
+function t3Env(t3Bin: string, extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    PATH: `${bin}:/usr/bin:/bin`,
+    T3CODE_THREAD_ID: T3_THREAD,
+    T3CODE_CLI_PATH: t3Bin,
+    __CFBundleIdentifier: "com.t3tools.t3code",
+    ...extra,
+  };
+}
+
+/** Install a fake `t3` that answers `thread show` with a thread titled `title`, logging its arguments. */
+async function fakeT3(title: string): Promise<string> {
+  const thread = JSON.stringify({
+    thread: {
+      threadId: T3_THREAD,
+      title,
+      link: `https://app.t3.codes/threads/ded656bc-3e4c-42b3-be26-65fb25c7f480/${T3_THREAD}`,
+    },
+    messages: [],
+  });
+  return script("t3", `printf '%s ' "$@" > '${join(bin, "t3.log")}'; printf '%s' '${thread}'`);
 }
 
 beforeEach(async () => {
@@ -150,19 +177,83 @@ test("finds no final message in unusable input", () => {
   expect(finalMessage("not json")).toBeUndefined();
 });
 
-test("titles a card without a project after the agent and leaves out an empty body", () => {
+test("titles a card without a title after the agent and leaves out an empty body", () => {
   expect(
     buildPushArguments({
       agent: "codex",
-      focusCommand: "focus",
-      project: undefined,
+      title: undefined,
+      action: { kind: "run", command: "focus" },
       message: undefined,
       markdown: true,
     }),
   ).toEqual(["notification", "push", "--title", "Codex", "--icon", "codex", "--run", "focus"]);
   expect(
-    buildPushArguments({ agent: "codex", focusCommand: "f", project: "p", message: "m", markdown: false }),
+    buildPushArguments({
+      agent: "codex",
+      title: "p",
+      action: { kind: "run", command: "f" },
+      message: "m",
+      markdown: false,
+    }),
   ).toEqual(["notification", "push", "--title", "p", "--body", "m", "--icon", "codex", "--run", "f"]);
+});
+
+test("opens a URL on click, or does nothing on click without an action", () => {
+  expect(
+    buildPushArguments({
+      agent: "claude",
+      title: "t",
+      action: { kind: "open", url: T3_APP_LINK },
+      message: undefined,
+      markdown: true,
+    }),
+  ).toEqual(["notification", "push", "--title", "t", "--icon", "claude", "--open", T3_APP_LINK]);
+  expect(
+    buildPushArguments({ agent: "claude", title: "t", action: undefined, message: undefined, markdown: true }),
+  ).toEqual(["notification", "push", "--title", "t", "--icon", "claude"]);
+});
+
+test("pushes a card for a T3 thread titled with the thread that opens it in the app", async () => {
+  await fakeSidebar();
+  const t3 = await fakeT3("Remove codegraph hooks");
+  expect(await runStop("claude", stopInput(), t3Env(t3), spawnRunner)).toBe(true);
+  expect(await readFile(join(bin, "t3.log"), "utf8")).toBe(`thread show ${T3_THREAD} --json --messages 0 `);
+  expect(await pushedArguments()).toEqual([
+    "notification",
+    "push",
+    "--title",
+    "Remove codegraph hooks",
+    "--body",
+    "Release **v0.0.1** is out.",
+    "",
+    "Next: install it.",
+    "--markdown",
+    "--icon",
+    "claude",
+    "--open",
+    T3_APP_LINK,
+    "--key",
+    `t3:${T3_THREAD}`,
+  ]);
+});
+
+test("brings T3 forward and titles with the project folder when the T3 server does not answer", async () => {
+  const t3 = await script("t3", "exit 1");
+  expect(await resolveTarget(stopInput(), t3Env(t3), spawnRunner)).toEqual({
+    title: "aerospace-sidebar",
+    action: { kind: "run", command: "open -b com.t3tools.t3code" },
+    key: `t3:${T3_THREAD}`,
+  });
+  const { __CFBundleIdentifier: _, ...withoutApp } = t3Env(t3);
+  expect((await resolveTarget(stopInput(), withoutApp, spawnRunner))?.action).toBeUndefined();
+});
+
+test("prefers the T3 thread over the Herdr pane a T3 server inherited", async () => {
+  const t3 = await fakeT3("Thread");
+  const herdr = await script("herdr", "exit 1");
+  const target = await resolveTarget(stopInput(), t3Env(t3, herdrEnv(herdr)), spawnRunner);
+  expect(target?.key).toBe(`t3:${T3_THREAD}`);
+  expect(target?.action).toEqual({ kind: "open", url: T3_APP_LINK });
 });
 
 test("pushes a card titled with the workspace label that shows the final message", async () => {
@@ -225,12 +316,15 @@ test("stops retrying once a usage error has no option left to blame", async () =
   expect((await pushedArguments()).filter((argument) => argument === "push")).toHaveLength(2);
 });
 
-test("does nothing outside Herdr or without the sidebar CLI", async () => {
+test("does nothing outside Herdr and T3 or without the sidebar CLI", async () => {
   const unused: Runner = async () => {
     throw new Error("must not run");
   };
-  expect(await runStop("claude", stopInput(), { PATH: bin }, unused)).toBe(true);
   expect(await runStop("claude", stopInput(), herdrEnv("herdr"), unused)).toBe(true);
+  expect(await runStop("claude", stopInput(), t3Env("t3"), unused)).toBe(true);
+  await fakeSidebar();
+  expect(await runStop("claude", stopInput(), { PATH: bin }, unused)).toBe(true);
+  expect(await Bun.file(pushLog).exists()).toBe(false);
 });
 
 test("reports a failed push", async () => {

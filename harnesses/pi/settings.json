@@ -11,8 +11,7 @@
     "npm:@alexgorbatchev/pi-skill-library",
     "npm:@alexgorbatchev/pi-env",
     "npm:@alexgorbatchev/pi-quick-answer",
-    "npm:@alexgorbatchev/pi-workspace",
-    "git:github.com/alexgorbatchev/pi-codegraph@fix/dangling-managed-symlinks"
+    "npm:@alexgorbatchev/pi-workspace"
   ],
   "steeringMode": "one-at-a-time",
   "enabledModels": [

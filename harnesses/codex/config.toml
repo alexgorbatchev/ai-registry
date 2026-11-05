@@ -51,7 +51,7 @@ command = 'bun "$HOME/.claude/hooks/guardGitBypass.ts"'
 
 [[hooks.UserPromptSubmit.hooks]]
 type = "command"
-command = 'bun "$HOME/.claude/hooks/herdrPaneRecap.ts"'
+command = 'bun "$HOME/.claude/hooks/recapTitle.ts"'
 timeout = 10
 
 [[hooks.Stop]]

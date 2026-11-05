@@ -2,9 +2,14 @@ import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { parse } from "shell-quote";
 import type { Runner } from "../herdr";
-import { buildRecapCommand, buildRecapInstruction, runUserPromptSubmit } from "../herdrPaneRecap";
+import {
+  buildHerdrRecapInstruction,
+  buildRecapCommand,
+  buildT3RecapInstruction,
+  runUserPromptSubmit,
+} from "../recapTitle";
 
-const HOOK = join(import.meta.dir, "..", "herdrPaneRecap.ts");
+const HOOK = join(import.meta.dir, "..", "recapTitle.ts");
 
 const HERDR = {
   HERDR_PANE_ID: "w2J:pE",
@@ -30,10 +35,32 @@ function runAsAgent(command: string, recap: string): ReturnType<typeof parse> {
   return parse(command.replace("<recap>", recap));
 }
 
-test("injects nothing outside a Herdr pane", async () => {
+const T3 = { T3CODE_THREAD_ID: "ab49f601-7254" };
+
+test("injects nothing outside a Herdr pane or T3 thread", async () => {
   const calls: string[][] = [];
   expect(await runUserPromptSubmit(INPUT, {}, workspaceRunner("dotfiles", calls))).toBe("");
   expect(await runUserPromptSubmit(INPUT, { HERDR_PANE_ID: "" }, workspaceRunner("dotfiles", calls))).toBe("");
+  expect(await runUserPromptSubmit(INPUT, { T3CODE_THREAD_ID: "" }, workspaceRunner("dotfiles", calls))).toBe("");
+  expect(calls).toEqual([]);
+});
+
+test("tells the agent to rename the T3 thread with T3's tool, without the project", () => {
+  const instruction = buildT3RecapInstruction("ab49f601-7254");
+  expect(instruction).toContain("T3 Code thread ab49f601-7254");
+  expect(instruction).toContain("`t3_thread_update`");
+  expect(instruction).toContain("`action` set to `rename`");
+  expect(instruction).toContain("at most 60 characters");
+  expect(instruction).not.toContain("herdr");
+});
+
+test("prefers the T3 thread over the Herdr pane a T3 server inherited, without asking Herdr", async () => {
+  const calls: string[][] = [];
+  const output = JSON.parse(await runUserPromptSubmit(INPUT, { ...HERDR, ...T3 }, workspaceRunner("dotfiles", calls)));
+  expect(output.hookSpecificOutput).toEqual({
+    hookEventName: "UserPromptSubmit",
+    additionalContext: buildT3RecapInstruction("ab49f601-7254"),
+  });
   expect(calls).toEqual([]);
 });
 
@@ -69,13 +96,13 @@ test("falls back to herdr on PATH, its default socket, and a bare recap", () => 
     "--title",
     "x",
   ]);
-  expect(buildRecapInstruction({ HERDR_PANE_ID: "p1" }, undefined)).not.toContain("project name");
+  expect(buildHerdrRecapInstruction({ HERDR_PANE_ID: "p1" }, undefined)).not.toContain("project name");
 });
 
 test("names the workspace label as the project", async () => {
   const output = JSON.parse(await runUserPromptSubmit(INPUT, HERDR, workspaceRunner("dotfiles")));
   expect(output.hookSpecificOutput.hookEventName).toBe("UserPromptSubmit");
-  expect(output.hookSpecificOutput.additionalContext).toBe(buildRecapInstruction(HERDR, "dotfiles"));
+  expect(output.hookSpecificOutput.additionalContext).toBe(buildHerdrRecapInstruction(HERDR, "dotfiles"));
   expect(output.hookSpecificOutput.additionalContext).toContain(buildRecapCommand(HERDR, "dotfiles"));
   expect(output.hookSpecificOutput.additionalContext).toContain("do not repeat it in the recap");
 });
@@ -98,10 +125,13 @@ test("runs as a hook process, draining the harness input", async () => {
     return { code: await child.exited, stdout };
   };
   expect(await run({})).toEqual({ code: 0, stdout: "" });
+  expect(JSON.parse((await run(T3)).stdout).hookSpecificOutput.additionalContext).toBe(
+    buildT3RecapInstruction("ab49f601-7254"),
+  );
   // The binary does not exist, so the label lookup fails and the directory names the project.
   const inPane = await run(HERDR);
   expect(inPane.code).toBe(0);
   expect(JSON.parse(inPane.stdout).hookSpecificOutput.additionalContext).toBe(
-    buildRecapInstruction(HERDR, "dotfiles-cli"),
+    buildHerdrRecapInstruction(HERDR, "dotfiles-cli"),
   );
 });

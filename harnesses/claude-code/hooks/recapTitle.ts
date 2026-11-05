@@ -28,7 +28,7 @@ export function buildRecapCommand(env: Environment, project: string | undefined)
 }
 
 /** Return the end-of-turn recap instruction when the session runs in a Herdr pane. */
-export function buildRecapInstruction(env: Environment, project: string | undefined): string | undefined {
+export function buildHerdrRecapInstruction(env: Environment, project: string | undefined): string | undefined {
   const command = buildRecapCommand(env, project);
   if (command === undefined) return undefined;
   return [
@@ -40,10 +40,30 @@ export function buildRecapInstruction(env: Environment, project: string | undefi
   ].join("\n");
 }
 
+/**
+ * Return the end-of-turn recap instruction for a T3 Code thread: rename the thread with T3's own
+ * `t3_thread_update` tool. T3 lists threads under their project, so the title carries only the recap.
+ */
+export function buildT3RecapInstruction(threadId: string): string {
+  return [
+    `This session runs in T3 Code thread ${threadId}. As the last tool call of this turn, after all other work and before the final reply, call T3's \`t3_thread_update\` tool once (load its schema first if it is deferred) with \`action\` set to \`rename\`, \`threadId\` left out so it renames this thread, and \`title\` set to a plain-text recap of what this session is working on, at most 60 characters.`,
+    "",
+    "Skip the call when the title you set earlier in this thread still describes the session, or when the user has said not to use tools this turn; otherwise make it even when the turn needs no other tool calls. Do not mention the title update in the reply. If the call fails, state the error in one line and do not retry.",
+  ].join("\n");
+}
+
+/**
+ * The recap instruction for where the session runs. A T3 Code thread wins over a Herdr pane, because a T3 server
+ * started from a Herdr pane passes that pane's variables on to every thread it runs.
+ */
+async function recapInstruction(input: string, env: Environment, run: Runner): Promise<string | undefined> {
+  if (env.T3CODE_THREAD_ID) return buildT3RecapInstruction(env.T3CODE_THREAD_ID);
+  if (!env.HERDR_PANE_ID) return undefined;
+  return buildHerdrRecapInstruction(env, await readProject(input, env, run));
+}
+
 export async function runUserPromptSubmit(input: string, env: Environment, run: Runner): Promise<string> {
-  if (!env.HERDR_PANE_ID) return "";
-  const project = await readProject(input, env, run);
-  const instruction = buildRecapInstruction(env, project);
+  const instruction = await recapInstruction(input, env, run);
   if (instruction === undefined) return "";
   return JSON.stringify({
     hookSpecificOutput: {

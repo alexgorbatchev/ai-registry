@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-05 04:37
+  last_modified: 2026-11-05 11:57
   status: current
 ---
 
@@ -241,6 +241,43 @@ Do not substitute broad system or volume pruning for a cache-only request. Recor
 Docker inspection and cleanup currently use these native commands; no bundled Docker command exists.
 
 ## Worktrees and explicit artifacts
+
+### Workspace staleness evidence
+
+Before proposing workspace cleanup, supplement the inventory with all four checks below. These are operator
+checks, not additional fields guaranteed by `worktrees list`. Record the inspection time, evidence, and unknowns
+for each candidate; directory age alone never establishes disposal safety.
+
+1. **Git activity:** Record the latest commit and available reflog activity, branch ancestry, and whether the
+   candidate's commits exist on the live remote `main` (or the repository's verified integration branch).
+   Capture local activity before remote verification. Verify the current remote branch tip rather than trusting
+   cached tracking refs; obtain missing objects only as needed without switching or resetting the checkout.
+   Check HEAD and any other local refs or recoverable reflog commits that removal would discard. Preserve
+   unpublished history; similar diffs after squash or cherry-pick are not proof that commits are retained.
+   Report missing/expired reflogs and unavailable remotes as evidence gaps, not inactivity or publication.
+   Keep the dependency inactivity scan local-only; this separate publication check must not manufacture activity
+   from its own remote inspection.
+2. **Local changes:** Inspect staged, unstaged, deleted, and untracked files and record available modification
+   timestamps, including the newest changed file. Review ignored artifacts separately for valuable contents.
+   Old commits can coexist with yesterday's unfinished work. Missing timestamps, including those for deleted
+   files, are unknown; old timestamps do not make uncommitted work disposable.
+3. **Runtime use:** Check processes using the directory or its descendants as their working directory,
+   executable, or open files. Record matching process IDs and use. Preserve active workspaces; do not kill
+   consumers merely to qualify a directory for cleanup. Permission errors or incomplete process visibility
+   leave runtime use unknown rather than proving inactivity.
+4. **Ownership:** Resolve Git metadata and the owning repository, and verify worktree registration.
+   Distinguish a valid registered worktree, a standalone clone, and a broken reference to a moved or deleted
+   repository. A directory under `.workspaces` is not necessarily a linked worktree. Preserve unknown or broken
+   ownership for investigation; neither an absent registration nor a broken reference authorizes deletion.
+
+Report each candidate as active, inactive with unpublished/local work, inactive and published, or unknown,
+with the latest observed activity date and age where available. Identify missing checks explicitly. Only an
+inactive, published candidate with all checks complete may proceed to the existing authorized removal preview;
+it must still satisfy every removal guard below. Standalone clones and broken references do not qualify for
+`worktrees remove`; retain them for separate review. Recheck local changes, runtime use, and publication before
+removal. Never turn an inventory's stale classification into automatic deletion permission.
+
+### Removal guards
 
 Remove worktrees with native `git worktree remove`, never recursive filesystem deletion or `--force`.
 Reject the main worktree, unregistered targets, locked/prunable targets, index locks, changed/untracked/ignored files,

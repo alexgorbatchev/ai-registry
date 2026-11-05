@@ -4,7 +4,7 @@ description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Ta
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-04 14:11
+  last_modified: 2026-11-05 12:35
   status: current
 ---
 
@@ -56,7 +56,9 @@ Read each matching reference before reaching its domain:
 
 - Use the project's git-ignored `.tmp/` directory only for development artifacts: scratch files, build and test intermediates, drafts, captured output, and toolchain temporary directories. Treat everything in it as disposable; it may not survive between sessions.
 - Never put files that must outlive the session in `.tmp/`, even when they are not checked in. Keep them in git-ignored directories at the project root: `.cache/` for regenerable caches and mirrors, `.state/` for state, locks, queues, and logs or reports kept for later inspection.
-- Give each task or command its own `.tmp/` child, and point the toolchain's temporary-directory variable at it (`TMPDIR`, `GOTMPDIR`, or the equivalent) so tools do not write to the system temp directory. Remove the child when its last consumer finishes, including on failure or cancellation. Remove only paths you created; never wipe `.tmp/` by name.
+- Give each build command its own `.tmp/` child and scope build-tool temporary variables to that command (`GOTMPDIR` for Go, `TMPDIR` for a Bun build). Remove the child when its last consumer finishes, including on failure or cancellation. Remove only paths you created; never wipe `.tmp/` by name.
+- Keep test suites on the system temporary directory. Do not globally export project-local temporary-directory overrides into tests, including `TMPDIR`, `TMP`, `TEMP`, and Go's `GOTMPDIR`: long paths can exceed Unix socket limits, paths under home change path rendering, and Git discovery can reach the enclosing project. If a command shares one environment between compilation and test execution, keep system-temp defaults unless the build-only overrides can be removed before tests start. Tests own and remove their temporary files under the test-cleanup rules below.
+- Put Unix domain sockets in a short, uniquely created per-run directory such as `/tmp/<project>-XXXXXX`. Stop its consumers before removing that exact directory on exit, failure, or cancellation; never reuse a predictable shared socket directory.
 
 ## Test cleanup
 

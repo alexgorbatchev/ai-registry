@@ -17,12 +17,15 @@
    - For a comment about prose, including a PR description, quote the exact passage being criticized before the reviewer's comment. Retrieve that passage rather than reconstructing it from the reviewer's paraphrase.
    - If the comment has no explicit target, say so. If the target cannot be retrieved, report that limitation; never substitute related code or invent a target.
    - Keep prose quotes at a single blockquote level; never nest quotes. The restriction on code snippets applies to analysis, not to the required target code block.
-   - Start the blockquote with the bold comment ID and the bold thing in question, linked to the file on the PR head branch (`https://github.com/{owner}/{repo}/blob/{head-branch}/{path}`, plus `#L{line}` or `#L{start}-L{end}` for line comments), followed by a one-line description of what it is.
+   - Start every review item, including reprints, with `**F<ID> · <short title> (N more to go)**`. Count the review comments still to be presented after this item, excluding the current item, already presented comments, author explanatory notes, and queued implementation work. Show `(0 more to go)` on the last item. Keep IDs stable and recalculate the count when the queue changes; an approved overlapping fix does not replace presenting a reviewer's comment.
+   - Below the heading, identify the exact target with its file or prose source and link. For code, link to the reviewed revision (`https://github.com/{owner}/{repo}/blob/{revision}/{path}#L{line}` or `#L{start}-L{end}`).
    - Follow with the bold author handle and a link to the comment's `html_url`, then the comment text verbatim on the next lines inside the same blockquote.
    - Below the blockquote, give a bold **TL;DR** with the verdict (valid, partially valid, or not applicable) and one ID-labelled bullet per supporting point, then a bold **Recommended action** with one ID-labelled bullet per action, then a `---` separator.
 
    ```markdown
-   > **F1** · **[`{path}`]({file-url})**: {what the file or code is}
+   **F1 · {short title} ({N} more to go)**
+
+   > **[`{path}`]({file-url})**: {what the file or code is}
    >
    > **Exact target**
    > {verbatim targeted prose; for code, show the targeted lines in a fenced code block instead}

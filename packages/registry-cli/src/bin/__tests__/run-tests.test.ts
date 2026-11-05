@@ -4,6 +4,41 @@ import { join, resolve } from "node:path";
 import { factory_testDirectory } from "./fixtures";
 
 const runner = resolve(import.meta.dir, "../run-tests.sh");
+const repositoryRoot = resolve(import.meta.dir, "../../../../..");
+
+describe.each([
+  ["packages/template-resolver", "src/__tests__"],
+  ["skills/user/disk-cleanup", "scripts/__tests__"],
+  ["harnesses/claude-code/hooks", "__tests__"],
+])("%s fixture cleanup", (packagePath, testPath) => {
+  it.each([
+    ["success", "expect(true).toBe(true);", 0],
+    ["assertion failure", "expect(true).toBe(false);", 1],
+    ["timeout", "await Bun.sleep(60000);", 1],
+  ])("removes fixture and preload roots after %s", async (_name, body, status) => {
+    const parent = factory_testDirectory("package-lifecycle");
+    const source = join(parent, "lifecycle.test.ts");
+    const fixtures = join(repositoryRoot, packagePath, testPath, "fixtures.ts");
+    await Bun.write(
+      source,
+      `import { test, expect } from "bun:test";
+import { factory_testDirectory } from ${JSON.stringify(fixtures)};
+test("owned fixture", async () => {
+  const root = factory_testDirectory("fixture");
+  await Bun.write(root + "/artifact", "temporary");
+  ${body}
+});`,
+    );
+    const result = Bun.spawnSync([process.execPath, "test", source, "--timeout=20"], {
+      cwd: join(repositoryRoot, packagePath),
+      env: { ...process.env, REGISTRY_TEST_TMPDIR: parent },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    expect(result.exitCode).toBe(status);
+    expect(await readdir(parent)).toEqual(["lifecycle.test.ts"]);
+  });
+});
 
 describe("test command cleanup", () => {
   it.each([0, 7, 124])("removes scratch and preserves command status %d", async (status) => {

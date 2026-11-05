@@ -25,7 +25,7 @@ unused:
 
 # Run the test suite
 test:
-    bun test
+    bash ../registry-cli/src/bin/run-tests.sh bun test
 
 # Validate without modifying source files
 check: fmt-check lint typecheck unused test

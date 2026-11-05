@@ -39,7 +39,7 @@ unused:
 
 # Run the test suite
 test:
-    bun test --timeout={{test_timeout}} scripts/__tests__
+    bash ../../../packages/registry-cli/src/bin/run-tests.sh bun test --timeout={{ test_timeout }} scripts/__tests__
 
 # Validate without modifying source files
 check: fmt-check lint typecheck unused test

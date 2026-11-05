@@ -1,14 +1,14 @@
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import { factory_testDirectory } from './fixtures';
 
 const skillPath = join(import.meta.dir, '../..');
 type CliResult = { exitCode: number; stdout: string; stderr: string };
 export async function createRoot(): Promise<string> {
-  await mkdir(join(skillPath, '.tmp'), { recursive: true });
-  return mkdtemp(join(skillPath, '.tmp/cleanup-test-'));
+  return factory_testDirectory('cleanup-test');
 }
 export async function disposeRoot(rootPath: string): Promise<void> {
-  await rm(rootPath, { recursive: true });
+  await rm(rootPath, { recursive: true, force: true });
 }
 export function git(rootPath: string, args: string[], ageDays: number = 60): string {
   const timestamp = new Date(Date.now() - ageDays * 86400000).toISOString();

@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { beforeEach, expect, test } from "bun:test";
+import { chmod, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { factory_testDirectory } from "./fixtures";
 import { parse } from "shell-quote";
 import type { Runner } from "../herdr";
 import { spawnRunner } from "../herdr";
@@ -65,12 +65,8 @@ function herdrEnv(herdrBin: string): Record<string, string> {
 }
 
 beforeEach(async () => {
-  bin = await mkdtemp(join(tmpdir(), "herdr-turn-"));
+  bin = factory_testDirectory("herdr-turn");
   pushLog = join(bin, "push.log");
-});
-
-afterEach(async () => {
-  await rm(bin, { recursive: true, force: true });
 });
 
 test("accepts only the known agents", () => {

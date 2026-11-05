@@ -88,5 +88,6 @@ For each harness, we maintain its upstream source code locally in a `.tmp/` scra
 
 ## Maintenance
 
+- Claude Code hook tests use the registry-cli fixture factories through `hooks/__tests__/fixtures.ts` and its command supervisor. Keep the test preload excluded from generated output. The coverage command validates its report inside owned scratch before removing it.
 - After editing anything in `harnesses/`, run `just build`.
 - Verify the generated copies in `.output/`.

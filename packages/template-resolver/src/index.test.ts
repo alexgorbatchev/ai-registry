@@ -1,16 +1,12 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
+import { expect, test } from "bun:test";
+import { mkdir, writeFile } from "fs/promises";
 import { dirname, join } from "path";
+import { factory_testDirectory } from "./__tests__/fixtures";
 
 import { renderTemplate } from "./index";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "template-resolver-tests");
-const createdDirectories: string[] = [];
-
 async function createTestDirectory(): Promise<string> {
-  const testDirectory = await mkdtemp(join(TEST_ROOT, "case-"));
-  createdDirectories.push(testDirectory);
-  return testDirectory;
+  return factory_testDirectory("template-resolver");
 }
 
 async function writeRepositoryFile(repositoryRoot: string, relativePath: string, content: string): Promise<string> {
@@ -19,16 +15,6 @@ async function writeRepositoryFile(repositoryRoot: string, relativePath: string,
   await writeFile(filePath, content, "utf-8");
   return filePath;
 }
-
-beforeAll(async (): Promise<void> => {
-  await mkdir(TEST_ROOT, { recursive: true });
-});
-
-afterAll(async (): Promise<void> => {
-  for (const createdDirectory of createdDirectories) {
-    await rm(createdDirectory, { recursive: true, force: true });
-  }
-});
 
 test("renders variables, recursive includes, and environment values", async (): Promise<void> => {
   const repositoryRoot = await createTestDirectory();

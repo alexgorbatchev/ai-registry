@@ -178,7 +178,7 @@ just setup
 just build
 ```
 
-Development tasks live in `justfile` recipes; `package.json` files have no `scripts`. The root `justfile` links each package's own `justfile` as a module (`registry-cli`, `template-resolver`, `session-analysis`, `disk-cleanup`, `claude-code-hooks`). Run `just check` to type check and validate every package (formatting, lint, type checks, unused code, and tests), `just fix` to apply formatting and lint fixes, `just test` to run every package's tests, and `just --list --list-submodules` to see all recipes. Registry CLI and session-analysis test commands isolate their fixtures in unique scratch directories and remove those directories after success, failure, timeout, or interruption; coverage reports are consumed before cleanup.
+Development tasks live in `justfile` recipes; `package.json` files have no `scripts`. The root `justfile` links each package's own `justfile` as a module (`registry-cli`, `template-resolver`, `session-analysis`, `disk-cleanup`, `claude-code-hooks`). Run `just check` to type check and validate every package (formatting, lint, type checks, unused code, and tests), `just fix` to apply formatting and lint fixes, `just test` to run every package's tests, and `just --list --list-submodules` to see all recipes. All first-party test commands isolate their fixtures in unique scratch directories and remove those directories after success, failure, timeout, or interruption; coverage reports are consumed before cleanup.
 
 ### Repo-local PATH commands
 

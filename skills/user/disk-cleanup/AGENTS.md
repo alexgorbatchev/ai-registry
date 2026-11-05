@@ -1,6 +1,6 @@
 ---
 created_on: '2026-10-05 07:24'
-last_modified: '2026-11-04 14:10'
+last_modified: '2026-11-05 04:37'
 status: current
 ---
 
@@ -14,7 +14,7 @@ Maintain the portable development-folder cleanup skill and its Bun scripts in th
 - General disk-space requests require the combined assessment before cleanup recommendations or deletion questions.
   Await all sections, include large development paths alongside caches, preserve partial command output, and expose
   every inspection failure. Never report a pending or failed assessment as complete.
-- Keep test fixtures and verification artifacts in `.tmp/`; tests must never delete real project data.
+- Keep test fixtures and verification artifacts in unique owned `.tmp/` children; tests must never delete real project data. Repository tests use the registry-cli fixture factories through `scripts/__tests__/fixtures.ts` and the shared command supervisor. Register fixture cleanup immediately. Exclude tests and their preload configuration from generated skills so the shipped CLI remains self-contained.
 
 Update `SKILL.md` and its `last_modified` in the same change as any command, argument, option, default,
 environment handling, output, error, or filesystem side-effect change. Check the skill against the live Commander

@@ -1,22 +1,16 @@
-import { afterEach, expect, test } from "bun:test";
-import { mkdir, mkdtemp, readdir, readlink, rm, symlink } from "node:fs/promises";
+import { expect, test } from "bun:test";
+import { mkdir, readdir, readlink, rm, symlink } from "node:fs/promises";
 import { join } from "node:path";
+import { factory_testDirectory } from "./fixtures";
 import { runSessionStart, syncProjectSkills } from "../syncProjectSkills";
 
-const roots: string[] = [];
 async function fixture(): Promise<string> {
-  await mkdir(".tmp", { recursive: true });
-  const root = await mkdtemp(join(process.cwd(), ".tmp/project-skills-"));
-  roots.push(root);
-  return root;
+  return factory_testDirectory("project-skills");
 }
 async function skill(path: string): Promise<void> {
   await mkdir(path, { recursive: true });
   await Bun.write(join(path, "SKILL.md"), "---\nname: example\ndescription: Example\n---\nInstructions\n");
 }
-afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
-});
 
 test("discovers nested and linked bundles, deduplicates cycles, preserves native skills", async () => {
   const root = await fixture();

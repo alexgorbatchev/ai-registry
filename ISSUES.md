@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-26 10:10
-last_modified: 2026-11-04 12:08
+last_modified: 2026-11-05 15:23
 status: current
 ---
 
@@ -89,14 +89,6 @@ Recovery writes the source, then rebuilds with `canRecoverEdits = false`. If the
 Remediation: simulate the rebuild of the recovered content before saving the source, and reject edits that do not round-trip with an error naming the transformation.
 
 ## Medium: instruction correctness
-
-### F10: Decision record claims a change to a nonexistent file
-
-Status: open. Confidence: confirmed.
-
-The audit log's I027 stated that `skills/agent/syncthing-transfer/SKILL.md` was changed and that the changed skill validator passed; I027 has since been removed as obsolete. That skill was deleted in `3a1730a` (2026-10-20), an ancestor of `b76bd42`; the path does not exist at the commit. [autonomy.md](docs/internal/audit/autonomy.md) still lists A19 as an approved source change, and lines 83, 161, 250, 255 link to `pi-codegraph` and `claude-code-codegraph`, which this commit deletes. Line 83 recommends fixing the `pi-codegraph` fallback; the skill was deleted instead.
-
-Remediation: update the audit report's disposition and links.
 
 ### F11: Missing-CI repair depends on an impossible precondition
 
@@ -209,5 +201,4 @@ Remediation: pass an explicit source-registry object with methods for registerin
 2. F7: stop printing `auth.json`.
 3. F4 with F19: define a supported path for unrecoverable generated edits.
 4. F3 and F24: restrict fingerprinting to registered source roots.
-5. F10: correct the decision record.
-6. Remaining medium findings, then low findings.
+5. Remaining medium findings, then low findings.

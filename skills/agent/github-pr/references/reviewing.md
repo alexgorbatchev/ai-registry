@@ -12,13 +12,20 @@
    Review submissions have no reactions endpoint; read their bodies without reacting. A `200` response means the reaction already existed and `201` means it was created; treat both as acknowledged and report any other status.
 4. Evaluate each comment against ground truth before forming a position. Read the code it targets on the PR head and verify every factual claim with the relevant source: the base branch for "already exists" questions, installed dependency versions and their exports for "use the library's X" suggestions, and the diff for duplication or design concerns. Classify each comment as valid, partially valid, or not applicable, with the evidence behind the classification.
 5. Evaluate every open comment first, then present them one at a time in the order they should be resolved: comments that need only a reply come first, then comments that need code changes or a decision. Show the next comment once the current one is resolved or the user moves on, and present issues reviewers did not raise after the last comment. Use the format below, and write the analysis in plain language about behavior and design, without code snippets.
-   - Quote only the thing in question and the comment, in a single blockquote level; never nest quotes.
+   - Every review item must show both the reviewer's verbatim comment and its exact target in the same response, including when revisiting an item. A link, filename, summary, or related implementation is not a substitute for the target.
+   - For an inline code comment, include a fenced code block containing the exact targeted lines, with the file path, line numbers, and revision link above it. Use the comment's diff hunk and original revision for outdated comments; label any current-head comparison separately.
+   - For a comment about prose, including a PR description, quote the exact passage being criticized before the reviewer's comment. Retrieve that passage rather than reconstructing it from the reviewer's paraphrase.
+   - If the comment has no explicit target, say so. If the target cannot be retrieved, report that limitation; never substitute related code or invent a target.
+   - Keep prose quotes at a single blockquote level; never nest quotes. The restriction on code snippets applies to analysis, not to the required target code block.
    - Start the blockquote with the bold comment ID and the bold thing in question, linked to the file on the PR head branch (`https://github.com/{owner}/{repo}/blob/{head-branch}/{path}`, plus `#L{line}` or `#L{start}-L{end}` for line comments), followed by a one-line description of what it is.
    - Follow with the bold author handle and a link to the comment's `html_url`, then the comment text verbatim on the next lines inside the same blockquote.
    - Below the blockquote, give a bold **TL;DR** with the verdict (valid, partially valid, or not applicable) and one ID-labelled bullet per supporting point, then a bold **Recommended action** with one ID-labelled bullet per action, then a `---` separator.
 
    ```markdown
    > **F1** · **[`{path}`]({file-url})**: {what the file or code is}
+   >
+   > **Exact target**
+   > {verbatim targeted prose; for code, show the targeted lines in a fenced code block instead}
    >
    > **@{author}** · [comment]({comment-html-url})
    > {comment text}

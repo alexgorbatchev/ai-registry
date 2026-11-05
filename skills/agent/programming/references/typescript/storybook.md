@@ -26,23 +26,29 @@ Treat this repository's Storybook guidance and lint rules as hard requirements f
 
 Follow this exact shape:
 
-- Put every `*.stories.tsx` file under a sibling `stories/` directory.
+- Put every `*.stories.tsx` file under a `stories/` tree in the same canonical component area and nearest package as its resolved owner. Group the catalog by function when useful; groups do not need to mirror runtime directories. Feature-local story trees within that area also qualify.
 - Keep Storybook project-support TSX files under `.storybook/*.tsx` or `.storybook/**/*.tsx`; those files are Storybook harness files, not component ownership files.
-- Keep each story file mapped to a sibling component ownership file by exact basename. By default use `ComponentName.tsx` with `ComponentName.stories.tsx`; when the shared config uses `FilenameStyle.DashCase`, use `component-name.tsx` with `component-name.stories.tsx`.
+- Preserve the resolved source-file basename. By default use `ComponentName.tsx` with `ComponentName.stories.tsx`; when the shared config uses `FilenameStyle.DashCase`, use `component-name.tsx` with `component-name.stories.tsx`. A compound part such as `Panel.Header` from `Panel.tsx` still belongs in `Panel.stories.tsx`.
 - Keep the owning component itself under a canonical `components/`, `templates/`, or `layouts/` directory.
 - Bind the default export as a top-level typed const:
 
   ```tsx
+  // src/components/stories/forms/ComponentName.stories.tsx
+  import type { Meta } from "@storybook/react";
+  import { ComponentName } from "../../fields/ComponentName";
+
   const meta: Meta<typeof ComponentName> = {
     component: ComponentName,
-    title: "@scope/package/path/ComponentName",
+    title: "@scope/package/components/forms/ComponentName",
   };
 
   export default meta;
   ```
 
+- Make `Meta<typeof Component>` and the effective `component` property resolve to the same source file and symbol. Imports, aliases, and re-exports can establish ownership; titles, group names, and matching filenames cannot. Two different exports from one file are different bindings, and a story bound to one same-named component cannot cover another.
+- Resolve metadata in property order: local const spreads can supply `component`, a later explicit property establishes its final value, and an unknown later spread can invalidate it. Keep the typed and effective bindings explicit when ownership cannot be proved. Do not use story, test, hook, or fixture modules as component owners or cross a package or canonical component-area boundary.
 - Do not use `as Meta<...>` or `satisfies Meta<...>` for the meta object. Use the const type annotation instead.
-- Set `meta.title` from the package-relative story path with structural `src/` and `stories/` segments removed.
+- Set `meta.title` from the package-relative story path with structural `src/` and `stories/` segments removed; preserve functional catalog group segments. The title describes the catalog location and does not establish component ownership.
 - Keep story exports limited to the approved Storybook surface. Move helpers and support code into fixture or helper modules instead of exporting them from the story file.
 - Give every exported story a typed `Story` binding and a `play` function unless `meta.tags` or `story.tags` remove Storybook's built-in `test` tag with `"!test"`.
 - Use the correct export shape:
@@ -80,7 +86,7 @@ Cover at least these user-visible scenarios when they exist:
 - Prefer lightweight harness components when local state is required.
 - Keep harness state close to the story file unless multiple story files need the same helper.
 - Move reusable helpers and shared fixtures out of the story file when they would otherwise become extra exports.
-- Keep story support files inside the `stories/` area limited to `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`.
+- Keep each catalog group inside `stories/` limited to stories, group-local `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/` descendants. Preserve fixture entrypoint, export, and import rules; do not place runtime modules, tests, or arbitrary support files in the story tree.
 - Expose accessible names for all interactive controls.
 - Add dialog semantics to modal components so stories and tests can target them reliably.
 - Keep assertions user-facing; do not assert implementation details, CSS class names, or DOM order unless that order is the product requirement.

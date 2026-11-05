@@ -95,7 +95,7 @@ When an exception is truly required, isolate it, document why JSX is insufficien
 - Keep props narrow and typed.
 - Expose supported visual choices through typed props owned by the component, such as `variant`, `size`, `tone`, `density`, `layout`, or explicit state props. Do not expose `className` or `style` from app or feature components as public styling escape hatches.
 - Use direct `style={...}` only for dynamic geometry that cannot be represented statically. Do not use inline styles for ordinary colors, spacing, typography, state styling, or other static presentation choices.
-- Treat any file rendering a React component imported from another module or package as a consumer. Product-surface consumers must not pass `className` or `style` to imported components to change spacing, size, color, typography, layout, or state styling. Add or extend a named variant on the owning component instead.
+- Treat a file rendering an imported styled product component as its consumer. Do not pass `className` or `style` to that component to change spacing, size, color, typography, layout, or state styling. Add or extend a named variant on the owning component instead. A runtime component implementation may establish its own styling through a verified unstyled native primitive under the contract below.
 - Use `startEnhancer` and `endEnhancer` prop names for optional leading and trailing visual slots around a component's main content. Do not invent one-off names like `leftIcon`, `rightElement`, `prefix`, `suffix`, or `actionSlot` for this shape unless the surrounding codebase already standardizes on them.
 - Extract pure transforms into helpers instead of embedding large calculations in render.
 - Extract repeated stateful behavior into hooks only when more than one caller needs it or the component becomes hard to read.
@@ -124,6 +124,16 @@ export function ActionButton({ children, startEnhancer, endEnhancer }: ActionBut
 ```
 
 Keep enhancers presentation-oriented. If the trailing element is the component's primary action, expose a named command prop such as `onRemove` or compose a separate action component instead of hiding behavior inside `endEnhancer`.
+
+### Native primitive styling ownership
+
+When the repository uses the shared TypeScript policy, style a Base UI native primitive only inside a runtime component ownership file under `components/`, `templates/`, or `layouts/`. Story, test, hook, fixture, and other support files do not gain this allowance; existing raw DOM styling allowances remain separate.
+
+- Verify the installed `@base-ui/react` version is **1.9.0** and the import names an exact public primitive or part reviewed by the shared policy. Do not assume every package export is a native primitive or infer ownership from a familiar JSX name. Unsupported versions and symbols require shared-policy work, not a consumer allowlist or lint suppression.
+- Preserve import provenance and lexical scope. Named and renamed imports qualify when they resolve to a reviewed export; default imports, type-only imports, local wrapper aliases, shadowed bindings, and product component re-exports do not. Recognition of namespace imports in the policy does not relax the TypeScript conventions against introducing them.
+- Use Base UI's documented [`className` and `style` APIs](https://base-ui.com/react/handbook/styling), including state callbacks. Keep ordinary presentation in classes and reserve direct `style` for dynamic geometry as required above.
+- When explicit styling accompanies a [`render` prop](https://base-ui.com/react/handbook/composition), require every visible render link to end in an intrinsic element or another verified native primitive. JSX and resolvable const element aliases can establish that terminal. Do not style a product component through a native wrapper or assume an unknown callback, props-supplied target, or unknown later spread establishes ownership. Composition without explicit styling remains available.
+- If package identity, symbol provenance, or the render terminal cannot be verified, keep the styling restriction and resolve the missing contract. Do not rename imports, relocate product code into support roles, or add wrappers to evade it.
 
 ## Code organization rules
 
@@ -154,7 +164,8 @@ Before finishing a React change, verify all of the following:
 - helper components with their own tagged roots use their own names
 - visual design choices use typed component-owned props, not app or feature component `className` or `style` escape hatches
 - direct `style={...}` is limited to dynamic geometry that cannot be represented statically
-- product-surface consumers do not pass `className` or `style` to imported components for spacing, size, color, typography, layout, or state styling
+- consumers do not pass `className` or `style` to imported styled product components for spacing, size, color, typography, layout, or state styling
+- native primitive styling has a verified supported package, symbol, runtime owner, and intrinsic or native render terminal
 - optional leading and trailing visual slots use `startEnhancer` and `endEnhancer`
 - feature-specific modules live in named feature or domain folders instead of a broad unrelated `lib/` dump
 - component files and hook files match the exported names in the repo's configured filename style

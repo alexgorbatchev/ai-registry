@@ -51,9 +51,11 @@ Each file should have a single primary export. If multiple related items are exp
 Also follow these ownership-location rules:
 
 - component ownership `.tsx` files live under `components/`, `templates/`, or `layouts/`, using `ComponentName.tsx` by default or `component-name.tsx` when the shared config uses `FilenameStyle.DashCase`
+- allow nested feature directories and canonical `stories/`, `__tests__/`, and `hooks/` subtrees inside component areas; retain each role's strict file rules instead of adding arbitrary runtime or support modules
 - exported runtime hooks whose names start with `use` live in direct-child `hooks/useThing.ts[x]` files by default or `hooks/use-thing.ts[x]` when the shared config uses `FilenameStyle.DashCase`
-- Hook-owned `.tsx` files follow hook contracts and matching test requirements rather than component naming, test-id, or sibling-story requirements. Shared raw-JSX and direct-styling ownership boundaries still apply.
-- `stories/` directories are reserved for `*.stories.tsx`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`
+- Hook-owned `.tsx` files follow hook contracts and matching test requirements rather than component naming, test-id, or component-story requirements. Shared raw-JSX and direct-styling ownership boundaries still apply.
+- organize `stories/` into functional catalog groups independently of runtime folders; each group is reserved for `*.stories.tsx`, group-local `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/` descendants, subject to fixture entrypoint, export, and import rules
+- establish story ownership through the exact typed meta and effective component binding in the same package and canonical component area, with the source-file basename preserved; follow the [Storybook file contract](storybook.md#policy-driven-story-file-contract)
 - `__tests__/` directories are reserved for `*.test.ts[x]`, `helpers.ts[x]`, `fixtures.ts[x]`, and `fixtures/`
 
 ## Naming Conventions

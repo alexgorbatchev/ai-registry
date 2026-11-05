@@ -1,20 +1,10 @@
-import { afterEach, describe, expect, it } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { factory_testDirectory } from "./fixtures";
+import { describe, expect, it } from "bun:test";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import type { ISkillUsageCountEntry } from "../createSkillUsageReport";
 import { getProjectSkillSyncPaths, syncProjectSkills } from "../syncProjectSkills";
-
-const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..");
-const FIXTURE_ROOT = join(REPO_ROOT, ".tmp", "opencode-session-analysis-skill-sync");
-const FIXTURE_DIRECTORIES = ["writes-manifest", "reuses-manifest", "detects-drift"];
-
-function createFixtureRoot(fixtureName: string): string {
-  const fixturePath = join(FIXTURE_ROOT, fixtureName);
-  rmSync(fixturePath, { recursive: true, force: true });
-  mkdirSync(fixturePath, { recursive: true });
-  return fixturePath;
-}
 
 function createSkillSource(rootPath: string, skillName: string, body: string): string {
   const skillDirPath = join(rootPath, skillName);
@@ -34,15 +24,9 @@ function readManifest(manifestPath: string): {
   return JSON.parse(readFileSync(manifestPath, "utf8"));
 }
 
-afterEach(() => {
-  for (const fixtureName of FIXTURE_DIRECTORIES) {
-    rmSync(join(FIXTURE_ROOT, fixtureName), { recursive: true, force: true });
-  }
-});
-
 describe("syncProjectSkills", () => {
   it("copies the selected skills and writes a sync manifest", async () => {
-    const fixtureRootPath = createFixtureRoot("writes-manifest");
+    const fixtureRootPath = factory_testDirectory("writes-manifest");
     const registryRootPath = join(fixtureRootPath, "registry");
     const projectRootPath = join(fixtureRootPath, "project");
     mkdirSync(registryRootPath, { recursive: true });
@@ -91,7 +75,7 @@ describe("syncProjectSkills", () => {
   });
 
   it("reuses the saved manifest selection and warns about newly used unsynced skills", async () => {
-    const fixtureRootPath = createFixtureRoot("reuses-manifest");
+    const fixtureRootPath = factory_testDirectory("reuses-manifest");
     const registryRootPath = join(fixtureRootPath, "registry");
     const projectRootPath = join(fixtureRootPath, "project");
     mkdirSync(registryRootPath, { recursive: true });
@@ -137,7 +121,7 @@ describe("syncProjectSkills", () => {
   });
 
   it("fails when managed files drift and no overwrite confirmation is available", async () => {
-    const fixtureRootPath = createFixtureRoot("detects-drift");
+    const fixtureRootPath = factory_testDirectory("detects-drift");
     const registryRootPath = join(fixtureRootPath, "registry");
     const projectRootPath = join(fixtureRootPath, "project");
     mkdirSync(registryRootPath, { recursive: true });

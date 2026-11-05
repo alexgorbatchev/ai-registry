@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { chmod, lstat, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
@@ -14,7 +15,7 @@ import {
 } from "../harnessBuild";
 import { createTemplateEnvironment } from "../createTemplateEnvironment";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "harness-build-tests");
+const TEST_ROOT = factory_testRoot("harness-build-tests");
 const createdDirectories: string[] = [];
 
 async function createTestDirectory(): Promise<string> {

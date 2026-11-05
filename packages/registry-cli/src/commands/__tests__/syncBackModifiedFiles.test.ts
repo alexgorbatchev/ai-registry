@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
@@ -7,7 +8,7 @@ import type { IGeneratedOutputDrift } from "../../lib/generatedOutputUtils";
 import { stageSourceDirectory } from "../../lib/harnessBuild";
 import { collectGeneratedOutputEntries, createGeneratedOutputManifest } from "../../lib/generatedOutputUtils";
 
-const TEST_ROOT = join(import.meta.dir, "..", "..", "lib", "__tests__", ".tmp", "sync-back-tests");
+const TEST_ROOT = factory_testRoot("sync-back-tests");
 const createdDirectories: string[] = [];
 
 async function createTestDirectory(): Promise<string> {

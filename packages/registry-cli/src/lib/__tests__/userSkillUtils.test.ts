@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
@@ -11,7 +12,7 @@ import {
   updateSkillName,
 } from "../userSkillUtils";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "user-skill-utils-tests");
+const TEST_ROOT = factory_testRoot("user-skill-utils-tests");
 
 async function createTestDirectory(): Promise<string> {
   await mkdir(TEST_ROOT, { recursive: true });

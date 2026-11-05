@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -5,7 +6,7 @@ import { join, resolve } from "node:path";
 import { runLockedScheduledUpdate } from "../runLockedScheduledUpdate";
 import { REPOSITORY_ROOT, readTimestampedLog } from "./helpers";
 
-const PARENT_PATH = resolve(REPOSITORY_ROOT, ".tmp/scheduled-lock-tests");
+const PARENT_PATH = factory_testRoot("scheduled-lock-tests");
 const testDirectories: string[] = [];
 
 async function createDirectory(): Promise<string> {

@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { $ } from "bun";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
@@ -6,7 +7,7 @@ import { join } from "path";
 import { scanPushedCommits } from "../scanPushedCommits";
 import type { GitleaksResult } from "../runGitleaks";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "scan-pushed-commits-tests");
+const TEST_ROOT = factory_testRoot("scan-pushed-commits-tests");
 const HOOK_ENTRYPOINT = join(import.meta.dir, "..", "..", "bin", "scan-pushed-commits.ts");
 const createdDirectories: string[] = [];
 const NULL_OBJECT_ID = "0".repeat(40);

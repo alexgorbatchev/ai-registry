@@ -1,10 +1,11 @@
+import { factory_testRoot } from "./fixtures";
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { smokeBootstrapCommand, type ISmokeBootstrapRunner } from "../smokeBootstrapCommand";
 
-const TEST_ROOT = join(import.meta.dir, "..", "..", "..", ".tmp", "smoke-bootstrap-tests");
+const TEST_ROOT = factory_testRoot("smoke-bootstrap-tests");
 const PUBLIC_SCRIPTS = [
   "air-opencode-conversation-extract",
   "air-opencode-session-analysis",

@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import assert from "node:assert";
 import { existsSync } from "fs";
 import { afterEach, describe, expect, it } from "bun:test";
@@ -8,7 +9,7 @@ import plugin from "../../opencode/build";
 import { createSettingsSyncRegistry } from "../../../lib/settingsSync/createSettingsSyncRegistry";
 import { createHarnessBuildContext, type IHarnessBuildContextOptions } from "../../__tests__/createHarnessBuildContext";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "opencode-build-tests");
+const TEST_ROOT = factory_testRoot("opencode-build-tests");
 const originalOpencodeConfigDir: string | undefined = process.env.OPENCODE_CONFIG_DIR;
 const originalXdgConfigHome: string | undefined = process.env.XDG_CONFIG_HOME;
 

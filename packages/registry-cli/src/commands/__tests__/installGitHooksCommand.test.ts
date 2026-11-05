@@ -1,13 +1,12 @@
+import { factory_testRoot } from "./fixtures";
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { $ } from "bun";
 import { mkdir, mkdtemp, rm } from "fs/promises";
-import { tmpdir } from "os";
 import { join } from "path";
 
 import { installGitHooksCommand } from "../installGitHooksCommand";
 
-// Outside this repository, so the "not a Git worktree" case is not inside one.
-const TEST_ROOT = join(tmpdir(), "registry-cli-install-git-hooks-tests");
+const TEST_ROOT = factory_testRoot("registry-cli-install-git-hooks-tests");
 
 describe("installGitHooksCommand", () => {
   let root: string;
@@ -37,7 +36,13 @@ describe("installGitHooksCommand", () => {
   });
 
   it("skips installation outside a Git worktree", async () => {
-    await installGitHooksCommand(root);
+    const originalCeiling = process.env.GIT_CEILING_DIRECTORIES;
+    process.env.GIT_CEILING_DIRECTORIES = TEST_ROOT;
+    try {
+      await installGitHooksCommand(root);
+    } finally {
+      process.env.GIT_CEILING_DIRECTORIES = originalCeiling;
+    }
 
     expect(logLines).toEqual(["Skipping Git hook install outside a Git worktree."]);
   });

@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { factory_testDirectory } from "./fixtures";
+import { describe, expect, it } from "bun:test";
 import { Database } from "bun:sqlite";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 interface ICliResult {
@@ -17,15 +18,11 @@ interface IFixtureContext {
 }
 
 const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..");
-const FIXTURE_ROOT = join(REPO_ROOT, ".tmp", "opencode-session-analysis-cli");
 const CLI_PATH = join(REPO_ROOT, "packages", "opencode-session-analysis", "src", "cli.ts");
 const FIXTURE_DAY = 24 * 60 * 60 * 1000;
-const FIXTURE_DIRECTORIES = ["help", "skills", "sessions"];
 
 function createFixtureContext(fixtureName: string): IFixtureContext {
-  const fixturePath = join(FIXTURE_ROOT, fixtureName);
-  rmSync(fixturePath, { recursive: true, force: true });
-  mkdirSync(fixturePath, { recursive: true });
+  const fixturePath = factory_testDirectory(fixtureName);
 
   const projectAPath = join(fixturePath, "project-a");
   const projectBPath = join(fixturePath, "project-b");
@@ -295,12 +292,6 @@ function normalizeCliOutput(output: string, fixture: IFixtureContext): string {
     })
     .join("\n");
 }
-
-afterEach(() => {
-  for (const fixtureName of FIXTURE_DIRECTORIES) {
-    rmSync(join(FIXTURE_ROOT, fixtureName), { recursive: true, force: true });
-  }
-});
 
 describe("cli", () => {
   it("shows command-based help", () => {

@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
@@ -5,7 +6,7 @@ import { join } from "path";
 import { updateVendoredSkillsCommand } from "../updateVendoredSkillsCommand";
 import type { IRunCommandSpawnOptions, IRunCommandSpawnedProcess } from "../../lib/runCommand";
 
-const TEST_ROOT = join(import.meta.dir, "..", "..", "..", ".tmp", "update-vendored-skills-tests");
+const TEST_ROOT = factory_testRoot("update-vendored-skills-tests");
 
 describe("updateVendoredSkillsCommand", () => {
   let root: string;

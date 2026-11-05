@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { mkdir, mkdtemp, rm } from "fs/promises";
 import { homedir } from "os";
@@ -5,13 +6,14 @@ import { delimiter, join, relative } from "path";
 
 import { getRegistryPaths, resolvePathWithHome } from "../getRegistryPaths";
 
+const TEST_ROOT = factory_testRoot("getRegistryPaths");
+
 describe("getRegistryPaths", () => {
   const originalEnv = process.env.AI_REGISTRY_OVERLAY;
   let tempDir: string;
 
   beforeEach(async () => {
-    await mkdir(join(process.cwd(), ".tmp"), { recursive: true });
-    tempDir = await mkdtemp(join(process.cwd(), ".tmp", "registry-paths-test-"));
+    tempDir = await mkdtemp(join(TEST_ROOT, "registry-paths-test-"));
   });
 
   afterEach(async () => {

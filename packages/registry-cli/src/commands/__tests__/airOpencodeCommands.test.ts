@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import assert from "node:assert";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
@@ -18,7 +19,7 @@ import {
 import { createSettingsSyncRegistry } from "../../lib/settingsSync/createSettingsSyncRegistry";
 
 const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..", "..");
-const TMP_DIR = resolve(REPO_ROOT, ".tmp");
+const TMP_DIR = factory_testRoot("air-opencode-tests");
 let fixtureDirectory: string;
 let scriptsDirectory: string;
 

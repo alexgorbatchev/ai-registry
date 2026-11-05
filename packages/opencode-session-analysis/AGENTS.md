@@ -5,6 +5,7 @@ This package provides tools and CLI commands for analyzing OpenCode session logs
 ## Commands
 
 - Test: `just session-analysis test` from the repository root, or `just test` in this package
+- Fixture lifecycle: import `factory_testDirectory` from `./fixtures` so each fixture registers cleanup immediately. The preload owns the run root and redirects `TMPDIR`; the test recipe uses registry-cli’s shared supervisor to stop child processes and remove scratch on failure, timeout, or interruption. Tests share the registry-cli fixture implementation, while the package’s TypeScript configuration remains non-emitting.
 - Validate: `just session-analysis check` (Oxfmt and Oxlint checks, type check, ts-unused, CLI help smoke run, tests); `just session-analysis fix` applies formatting and lint fixes
 
 ## Boundaries & Quality Rules

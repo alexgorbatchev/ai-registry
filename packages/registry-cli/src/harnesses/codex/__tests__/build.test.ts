@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import assert from "node:assert";
 import { existsSync } from "fs";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
@@ -12,7 +13,7 @@ import { createSettingsSyncRegistry } from "../../../lib/settingsSync/createSett
 import { syncBackModifiedFiles } from "../../../commands/buildCommand";
 import { createHarnessBuildContext, type IHarnessBuildContextOptions } from "../../__tests__/createHarnessBuildContext";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "codex-build-tests");
+const TEST_ROOT = factory_testRoot("codex-build-tests");
 const originalCodexHome: string | undefined = process.env.CODEX_HOME;
 const originalTrustedDirs: string | undefined = process.env.AI_REGISTRY_CODEX_TRUSTED_DIRS;
 

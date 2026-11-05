@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { existsSync } from "fs";
 import { chmod, lstat, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from "fs/promises";
@@ -8,7 +9,7 @@ import { syncSettingsFiles, validateStagedSettingsFiles } from "../syncSettingsF
 import type { ISyncSettingsFilesOptions } from "../syncSettingsFiles";
 import type { ISettingsSourceRepository, SettingsKeyPath, SettingsSourceState } from "../types";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "sync-settings-files-tests");
+const TEST_ROOT = factory_testRoot("sync-settings-files-tests");
 const createdDirectories: string[] = [];
 const JSONC_RELATIVE_PATH = "opencode/opencode.jsonc";
 const TOML_RELATIVE_PATH = "codex/config.toml";

@@ -1,10 +1,11 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
 
 import { runGitleaks } from "../runGitleaks";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "run-gitleaks-tests");
+const TEST_ROOT = factory_testRoot("run-gitleaks-tests");
 const createdDirectories: string[] = [];
 const originalPath = process.env.PATH;
 // Assembled at runtime so this test file itself never contains a detectable key.

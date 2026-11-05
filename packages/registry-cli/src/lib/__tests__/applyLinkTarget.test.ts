@@ -1,10 +1,11 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { applyLinkTarget } from "../applyLinkTarget";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "apply-link-target-tests");
+const TEST_ROOT = factory_testRoot("apply-link-target-tests");
 const BACKUP_SUFFIX = "20261026T000000Z";
 const createdDirectories: string[] = [];
 

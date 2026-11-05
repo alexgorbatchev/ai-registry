@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { existsSync } from "fs";
@@ -9,7 +10,7 @@ import plugin from "../../pi/build";
 import { createSettingsSyncRegistry } from "../../../lib/settingsSync/createSettingsSyncRegistry";
 import { createHarnessBuildContext, type IHarnessBuildContextOptions } from "../../__tests__/createHarnessBuildContext";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "pi-build-tests");
+const TEST_ROOT = factory_testRoot("pi-build-tests");
 const originalPiCodingAgentDir: string | undefined = process.env.PI_CODING_AGENT_DIR;
 
 async function createOutputDirectory(): Promise<string> {

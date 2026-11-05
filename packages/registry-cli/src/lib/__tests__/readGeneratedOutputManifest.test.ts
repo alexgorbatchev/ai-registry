@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
@@ -5,7 +6,7 @@ import { join } from "path";
 import type { IGeneratedOutputManifest } from "../generatedOutputUtils";
 import { readGeneratedOutputManifest } from "../readGeneratedOutputManifest";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "read-generated-output-manifest-tests");
+const TEST_ROOT = factory_testRoot("read-generated-output-manifest-tests");
 const createdDirectories: string[] = [];
 
 async function createOutputDirectory(): Promise<string> {

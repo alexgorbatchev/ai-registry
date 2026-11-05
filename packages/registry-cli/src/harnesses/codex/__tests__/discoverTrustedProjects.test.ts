@@ -1,10 +1,11 @@
+import { factory_testRoot } from "./fixtures";
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "fs/promises";
 import { delimiter, dirname, join } from "path";
 
 import { discoverTrustedProjects } from "../discoverTrustedProjects";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "discover-trusted-projects-tests");
+const TEST_ROOT = factory_testRoot("discover-trusted-projects-tests");
 
 async function createTestDirectory(): Promise<string> {
   await mkdir(TEST_ROOT, { recursive: true });

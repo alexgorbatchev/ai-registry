@@ -39,7 +39,7 @@ smoke:
 
 # Run the test suite
 test:
-    bun test src
+    bash ../registry-cli/src/bin/run-tests.sh bun test src
 
 # Validate without modifying source files
 check: fmt-check lint typecheck unused smoke test

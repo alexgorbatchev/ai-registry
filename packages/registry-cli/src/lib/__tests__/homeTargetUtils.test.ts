@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { existsSync } from "fs";
 import { lstat, mkdir, mkdtemp, readdir, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
@@ -6,7 +7,7 @@ import { dirname, join } from "path";
 import { createGeneratedOutputManifest } from "../generatedOutputUtils";
 import { applyHomeTarget, getManagedEntryNames } from "../homeTargetUtils";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "home-target-utils-tests");
+const TEST_ROOT = factory_testRoot("home-target-utils-tests");
 const BACKUP_SUFFIX = "20261026T000000Z";
 const createdDirectories: string[] = [];
 

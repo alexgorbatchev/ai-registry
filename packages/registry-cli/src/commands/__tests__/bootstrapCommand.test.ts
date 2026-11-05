@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { existsSync } from "fs";
 import { lstat, mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
@@ -8,7 +9,7 @@ import type { IRegistryPaths } from "../../lib/getRegistryPaths";
 import type { IBootstrapTarget, IUnifiedHarnessPlugin } from "../../lib/harnessBuild";
 import type { IRunCommandSpawnOptions, IRunCommandSpawnedProcess } from "../../lib/runCommand";
 
-const TEST_ROOT = join(import.meta.dir, "..", "..", "..", ".tmp", "bootstrap-command-tests");
+const TEST_ROOT = factory_testRoot("bootstrap-command-tests");
 
 afterAll(async () => {
   await rm(TEST_ROOT, { recursive: true, force: true });

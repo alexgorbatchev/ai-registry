@@ -1,19 +1,9 @@
-import { afterEach, describe, expect, it } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { factory_testDirectory } from "./fixtures";
+import { describe, expect, it } from "bun:test";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { readSyncableSkillSources } from "../readSyncableSkillSources";
-
-const REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..");
-const FIXTURE_ROOT = join(REPO_ROOT, ".tmp", "opencode-session-analysis-skill-sources");
-const FIXTURE_DIRECTORIES = ["discovers-sources", "duplicate-sources"];
-
-function createFixtureRoot(fixtureName: string): string {
-  const fixturePath = join(FIXTURE_ROOT, fixtureName);
-  rmSync(fixturePath, { recursive: true, force: true });
-  mkdirSync(fixturePath, { recursive: true });
-  return fixturePath;
-}
 
 function writeSkill(registryRootPath: string, relativeSkillPath: string, content: string): void {
   const skillDirPath = join(registryRootPath, relativeSkillPath);
@@ -21,15 +11,9 @@ function writeSkill(registryRootPath: string, relativeSkillPath: string, content
   writeFileSync(join(skillDirPath, "SKILL.md"), content, "utf8");
 }
 
-afterEach(() => {
-  for (const fixtureName of FIXTURE_DIRECTORIES) {
-    rmSync(join(FIXTURE_ROOT, fixtureName), { recursive: true, force: true });
-  }
-});
-
 describe("readSyncableSkillSources", () => {
   it("discovers registry and harness skills", async () => {
-    const registryRootPath = createFixtureRoot("discovers-sources");
+    const registryRootPath = factory_testDirectory("discovers-sources");
     writeSkill(registryRootPath, "skills/bun", "---\nname: bun\ndescription: bun\n---\n");
     writeSkill(
       registryRootPath,
@@ -62,7 +46,7 @@ describe("readSyncableSkillSources", () => {
   });
 
   it("rejects duplicate skill names across sources", async () => {
-    const registryRootPath = createFixtureRoot("duplicate-sources");
+    const registryRootPath = factory_testDirectory("duplicate-sources");
     writeSkill(registryRootPath, "skills/bun", "---\nname: bun\ndescription: bun\n---\n");
     writeSkill(registryRootPath, "harnesses/opencode/skills/bun", "---\nname: bun\ndescription: duplicated bun\n---\n");
 
@@ -72,7 +56,7 @@ describe("readSyncableSkillSources", () => {
   });
 
   it("discovers skills grouped into agent and user subdirectories", async () => {
-    const registryRootPath = createFixtureRoot("discovers-sources");
+    const registryRootPath = factory_testDirectory("discovers-sources");
     writeSkill(registryRootPath, "skills/agent/bun", "---\nname: bun\ndescription: bun\n---\n");
     writeSkill(
       registryRootPath,

@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { lstat, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -8,7 +9,7 @@ import type { IRegistryPaths } from "../../lib/getRegistryPaths";
 import type { IGeneratedOutputManifest } from "../../lib/generatedOutputUtils";
 import { REPOSITORY_ROOT, loadTestShellEnvironment } from "./helpers";
 
-const TEST_ROOT = join(import.meta.dir, "../../../../../.tmp/build-hostname-tests");
+const TEST_ROOT = factory_testRoot("build-hostname-tests");
 
 afterAll(async () => {
   await rm(TEST_ROOT, { recursive: true, force: true });

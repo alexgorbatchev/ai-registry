@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import assert from "node:assert";
 import { afterAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
@@ -10,7 +11,7 @@ import {
   syncManagedGeneratedOutputs,
 } from "../generatedOutputUtils";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "generated-output-utils-tests");
+const TEST_ROOT = factory_testRoot("generated-output-utils-tests");
 const createdDirectories: string[] = [];
 
 async function createTestDirectory(): Promise<string> {

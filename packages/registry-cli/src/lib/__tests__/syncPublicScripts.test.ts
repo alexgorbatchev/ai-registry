@@ -1,10 +1,11 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, readFile, readdir, readlink, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { syncPublicScripts } from "../syncPublicScripts";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "sync-public-scripts-tests");
+const TEST_ROOT = factory_testRoot("sync-public-scripts-tests");
 const createdDirectories: string[] = [];
 
 async function createTestDirectory(): Promise<string> {

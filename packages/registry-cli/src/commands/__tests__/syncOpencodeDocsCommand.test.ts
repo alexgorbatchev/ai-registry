@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { existsSync } from "fs";
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "fs/promises";
@@ -6,7 +7,7 @@ import { join } from "path";
 import { syncOpencodeDocsCommand, type ISyncOpencodeDocsDependencies } from "../syncOpencodeDocsCommand";
 import type { IRegistryPaths } from "../../lib/getRegistryPaths";
 
-const TEST_ROOT = join(import.meta.dir, "..", "..", "..", ".tmp", "sync-opencode-docs-tests");
+const TEST_ROOT = factory_testRoot("sync-opencode-docs-tests");
 
 afterAll(async () => {
   await rm(TEST_ROOT, { recursive: true, force: true });

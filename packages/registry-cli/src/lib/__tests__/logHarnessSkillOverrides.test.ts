@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
@@ -5,7 +6,7 @@ import { dirname, join } from "path";
 import { logHarnessSkillOverrides } from "../logHarnessSkillOverrides";
 import type { IHarnessBuildContext } from "../harnessBuild";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "log-harness-skill-overrides-tests");
+const TEST_ROOT = factory_testRoot("log-harness-skill-overrides-tests");
 const createdDirectories: string[] = [];
 
 async function createTestDirectory(): Promise<string> {

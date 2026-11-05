@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -5,10 +6,11 @@ import { join, resolve } from "node:path";
 import { pruneScheduledUpdateLog } from "../pruneScheduledUpdateLog";
 import { REPOSITORY_ROOT } from "./helpers";
 
+const parentPath = factory_testRoot("scheduled-log-tests");
+
 const testDirectories: string[] = [];
 
 async function createLogPath(): Promise<string> {
-  const parentPath = resolve(REPOSITORY_ROOT, ".tmp/scheduled-log-tests");
   await mkdir(parentPath, { recursive: true });
   const directory = await mkdtemp(join(parentPath, "logs with 'quotes' "));
   testDirectories.push(directory);

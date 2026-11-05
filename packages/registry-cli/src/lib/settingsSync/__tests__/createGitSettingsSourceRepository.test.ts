@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { $ } from "bun";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
@@ -5,7 +6,7 @@ import { join } from "path";
 
 import { createGitSettingsSourceRepository } from "../createGitSettingsSourceRepository";
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "git-settings-source-repository-tests");
+const TEST_ROOT = factory_testRoot("git-settings-source-repository-tests");
 const createdDirectories: string[] = [];
 
 async function createRepository(): Promise<string> {

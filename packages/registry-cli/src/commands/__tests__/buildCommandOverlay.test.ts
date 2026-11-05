@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { existsSync } from "fs";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
@@ -7,7 +8,7 @@ import { buildCommand } from "../buildCommand";
 import { type IRegistryPaths } from "../../lib/getRegistryPaths";
 import { copyRepositoryHarnesses, loadTestShellEnvironment } from "./helpers";
 
-const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-overlay-tests");
+const TEST_ROOT = factory_testRoot("build-overlay-tests");
 
 afterAll(async () => {
   await rm(TEST_ROOT, { recursive: true, force: true });

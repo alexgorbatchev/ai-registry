@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import assert from "node:assert";
 import { existsSync } from "node:fs";
 import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
@@ -11,7 +12,7 @@ import { readGeneratedOutputManifest } from "../../lib/readGeneratedOutputManife
 import { applySettingsChanges } from "../../lib/settingsSync/applySettingsChanges";
 import { copyRepositoryHarnesses, loadTestShellEnvironment } from "./helpers";
 
-const TEST_ROOT = join(import.meta.dir, "..", "..", "..", "..", "..", ".tmp", "build-settings-sync-tests");
+const TEST_ROOT = factory_testRoot("build-settings-sync-tests");
 
 afterAll(async () => {
   await rm(TEST_ROOT, { recursive: true, force: true });

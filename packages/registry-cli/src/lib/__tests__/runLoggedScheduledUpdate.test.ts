@@ -1,11 +1,12 @@
+import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
 import { runLoggedScheduledUpdate } from "../runLoggedScheduledUpdate";
-import { REPOSITORY_ROOT, readTimestampedLog } from "./helpers";
+import { readTimestampedLog } from "./helpers";
 
-const PARENT_PATH = resolve(REPOSITORY_ROOT, ".tmp/scheduled-logged-worker-tests");
+const PARENT_PATH = factory_testRoot("scheduled-logged-worker-tests");
 const testDirectories: string[] = [];
 
 afterEach(async () => {

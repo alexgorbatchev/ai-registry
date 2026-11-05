@@ -1,3 +1,4 @@
+import { factory_testRoot } from "./fixtures";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import assert from "node:assert";
 import { existsSync } from "node:fs";
@@ -11,7 +12,7 @@ import plugin from "../build";
 
 const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
 
-const TEST_ROOT = join(import.meta.dir, "..", ".tmp", "claude-code-build-tests");
+const TEST_ROOT = factory_testRoot("claude-code-build-tests");
 
 let testDirectoryIndex = 0;
 

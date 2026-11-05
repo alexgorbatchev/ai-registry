@@ -1,8 +1,11 @@
+import { factory_testRoot } from "./fixtures";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { join } from "path";
 
 import { resolveRegistryAssets } from "../resolveRegistryAssets";
+
+const TEST_ROOT = factory_testRoot("resolveRegistryAssets");
 
 describe("resolveRegistryAssets", () => {
   let tempDir: string;
@@ -10,8 +13,7 @@ describe("resolveRegistryAssets", () => {
   let overlayDir: string;
 
   beforeEach(async () => {
-    await mkdir(join(import.meta.dir, "..", ".tmp"), { recursive: true });
-    tempDir = await mkdtemp(join(import.meta.dir, "..", ".tmp", "registry-assets-test-"));
+    tempDir = await mkdtemp(join(TEST_ROOT, "registry-assets-test-"));
     baseDir = join(tempDir, "base");
     overlayDir = join(tempDir, "overlay");
     await mkdir(baseDir, { recursive: true });

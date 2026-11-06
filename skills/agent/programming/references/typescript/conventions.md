@@ -248,8 +248,25 @@ export * from './UserService';
 - Keep `index.ts` as a pure barrel instead of mixing in local runtime logic.
 - Keep `constants.ts` value-only.
 - Keep `types.ts` type-only.
-- Do not import types from `constants.ts`.
+- Import declared types from their owning type modules, never from `constants.ts`.
+- Allow named erased imports from `constants.ts` (`import type { VALUE }` or `import { type VALUE }`) only when the imported binding has at least one use and every resolved reference is the value root of a `typeof` query. Aliases and qualified property queries follow the imported binding; a shadowed local does not qualify an unused import.
+- Keep actual type references, local type re-exports of imported bindings, unused type imports, default or namespace type imports, and inline `import()` type expressions outside this exception.
+- Run TypeScript checking to confirm the queried export is a value. The lint rule checks local binding use, not cross-module types.
 - Do not leak values from `types.ts`.
+
+Derive a union from runtime constants without retaining a runtime import under `verbatimModuleSyntax`:
+
+```typescript
+// constants.ts
+export const USER_STATUSES = ['active', 'inactive'] as const;
+```
+
+```typescript
+// types.ts
+import type { USER_STATUSES } from './constants';
+
+export type UserStatus = (typeof USER_STATUSES)[number];
+```
 
 ## Functional Programming
 

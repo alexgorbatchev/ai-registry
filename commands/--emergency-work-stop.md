@@ -2,7 +2,7 @@
 description: stop all work
 ---
 
-We need to stop all work immediately to relocate the project.
+We need to stop all work immediately to relocate the project. You are the last agent working here, there are no others. All current work must be preserved.
 
 - If there's uncommitted work on main/master branch, make new branch and commit without any checks.
 - If there's uncommitted work on other branches, commit without any checks.

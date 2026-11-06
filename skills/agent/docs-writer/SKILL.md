@@ -4,7 +4,7 @@ description: Read, write, rewrite, reorganize, and archive project and internal 
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-04 11:44
-  last_modified: 2026-11-02 14:06
+  last_modified: 2026-11-05 16:17
   status: current
 ---
 
@@ -70,6 +70,7 @@ For maintaining, generating, auditing, or topology splits of canonical root or n
 -   Automatically record explicit standing user instructions without requiring a separate request to save them. Preserve standing project rules and substantive technical details. Apply the persistence filter in `references/agents.md`; exclude task history, progress, handoffs, and dated user amendments.
 -   **Guidelines:** Read `references/agents.md`
 -   **Code projects:** Apply that reference's meaningful behavioral-test and per-package line/function coverage rule; verify the documented coverage configuration rather than inventing a passing gate.
+-   **Projects with checks:** Apply that reference's rule to skip checks whose inputs are unchanged, without bypassing hooks, CI, or other required gates.
 -   **Cleanup or conformance requests:** Follow "Full Rewrite of Existing Agent Instructions" in that reference. Rewrite the requested files completely while accounting for every technical detail; adapt sections when the templates do not fit.
 -   **Templates:** Use `assets/agents-templates.md`
 

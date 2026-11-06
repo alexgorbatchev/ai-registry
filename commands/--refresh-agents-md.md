@@ -28,7 +28,7 @@ For every discovered `AGENTS.md` file, evaluate against the audit criteria:
 3. Is required setup/prerequisite state documented when it blocks execution?
 4. Is at least one real project-specific gotcha or non-obvious failure mode documented with corrective action?
 5. Are implementation-affecting conventions explicit with concrete examples?
-6. Are explicit boundaries (`Always`, `Ask first`, `Never`) present and grounded in repository risk (including mandatory test file updates and 90% code coverage requirement for code-based projects, excluding `scripts/`)?
+6. Are explicit boundaries (`Always`, `Ask first`, `Never`) present and grounded in repository risk (including mandatory test file updates and 90% code coverage requirement for code-based projects, excluding `scripts/`, and skipping checks whose inputs are unchanged without bypassing required gates)?
 7. Does every line earn its keep (high signal-to-density ratio)?
 8. Is the file free of generic filler ("write clean code"), framework overviews, and `README.md` duplication?
 9. Are linked paths, package names, and nested file references current?
@@ -68,7 +68,7 @@ Validate every updated `AGENTS.md` file against the final quality checklist:
 - [ ] All commands are copy-paste ready and verified against repository scripts.
 - [ ] Guidance and technical context are repository-specific; technical details were preserved regardless of template fit or inferability.
 - [ ] At least one real gotcha or counterintuitive pattern is documented with corrective action.
-- [ ] Explicit risk boundaries (`Always`, `Ask first`, `Never`) are present (including mandatory test updates & 90% code coverage for code-based projects, excluding `scripts/`).
+- [ ] Explicit risk boundaries (`Always`, `Ask first`, `Never`) are present (including mandatory test updates & 90% code coverage for code-based projects, excluding `scripts/`, and skipping checks whose inputs are unchanged without bypassing required gates).
 - [ ] Root file acts as routing/navigation layer; nested files cover package/workspace specifics.
 - [ ] No generic filler, framework overviews, or `README.md` duplication remains.
 - [ ] Standing project instructions and technical context remain; changed rules are updated in place, with no task history, progress, handoffs, or dated amendments.

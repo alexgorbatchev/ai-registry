@@ -62,8 +62,24 @@
    - Once every item has a disposition, state the agreed queue and execute its authorized work. Do not request another blanket confirmation or re-ask approvals already given. Complete and verify fixes before posting their approved replies; authorization to fix alone does not authorize a reply or thread resolution.
 7. For each approved reply action, such as `F2A1`, post after the decision phase and any required fix verification, without asking again. Use the proposed text or the user's corrections. Write the body to `.tmp/pr-<number>/reply-<ID>.md` and pass it with `-F body=@<file>`.
    - Inline review comment: `POST repos/{owner}/{repo}/pulls/{number}/comments/{comment_id}/replies`. Reply to the thread's top-level comment; GitHub rejects replies to replies.
-   - Conversation comment: `POST repos/{owner}/{repo}/issues/{number}/comments`, quoting the comment being answered.
-8. After posting a reply, remove the account owner's `eyes` reaction from the comment it answers. List its reactions, then delete the owner's `eyes` reaction with `DELETE repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}` (or `issues/comments/...` for conversation comments). Expect `204`, and report the posted reply's link. This does not resolve the review thread.
+   - PR-level feedback, including review-submission bodies and conversation comments: reply inline on the changed code that addresses each concern. Start the reply body with a Markdown blockquote containing the **verbatim passage from the original PR-level comment being addressed**; put no greeting, attribution, or explanation before it. Follow with the first-person answer and a link to the original review or comment. Quote the specific concern, not an unrelated passage or a paraphrase. Use the same quote-first body in the publication preview.
+   - Create that inline response with `POST repos/{owner}/{repo}/pulls/{number}/comments`, passing the current `commit_id`, `path`, `side`, and `line` (plus `start_line` and `start_side` for a range). Choose the code that directly implements or demonstrates the answer. This is the response location, not an original inline target of the PR-level review. If no valid code anchor exists, state that limitation and use `POST repos/{owner}/{repo}/issues/{number}/comments` with the same quote-first format; never attach the answer to arbitrary code.
+
+   Example body for a response to one concern in a PR-level review:
+
+   ```markdown
+   > The query retries on errors.
+
+   I disabled automatic retries and added coverage for an explicit retry after failure.
+
+   Responding to [@reviewer's review](https://github.com/owner/repo/pull/123#pullrequestreview-456).
+   ```
+
+   Read each published response back and record its URL against the original source ID and concern in the decision record. Verify the opening quote, source link, answer, and code anchor. A multi-point review needs a response mapped to every concern; standalone author explanations without this connection do not count as replies.
+8. Once every concern in the source comment is addressed and its approved responses are posted and verified, replace the account owner's `eyes` reaction on that original comment with `+1` (thumbs up). Keep `eyes` while any concern remains unanswered or deferred.
+   - List the original comment's reactions. Delete only the owner's `eyes` reaction with `DELETE repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}` (or `issues/comments/...` for conversation comments); expect `204`.
+   - If the owner's `+1` is absent, add it with `POST repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions -f content=+1` (or `issues/comments/...`). Accept `200` for an existing reaction or `201` for a new one. Read the reactions back to verify the owner's `eyes` is absent and `+1` is present; preserve everyone else's reactions and report failures without claiming completion.
+   - Review-submission bodies have no reactions endpoint; record their addressed concerns and verified response links instead. Report the posted reply's link. An addressed marker does not resolve the review thread or authorize the closing message, re-review request, or merge.
 9. When the user asks to resolve a reviewer's comments, resolve each of that reviewer's review threads with the GraphQL `resolveReviewThread` mutation. List the threads first with `pullRequest.reviewThreads` (`id`, `isResolved`, and the first comment's author), resolve only threads the named reviewer started, and leave the account owner's own explanatory comments open for reviewers.
 10. After publishing the approved comments and replies, give the user the PR link and end the turn for their inspection. Wait for separate, explicit approval to post the closing message and request re-review; approval to fix or publish comments does not authorize that handoff. Record comment publication, closing-message approval, and re-review-request approval separately in the per-PR decision record. The user may approve the latter two together, such as saying "we good" after reviewing the PR when both actions are the agreed next step. Then perform the [re-review handoff](#re-review-handoff) once for this PR; do not notify downstream PRs that only inherited fixes.
 

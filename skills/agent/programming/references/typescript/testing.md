@@ -103,11 +103,27 @@ Do not mock whole modules. Inject collaborators and stub the injected dependency
 
 ## Fixture Rules
 
-- Keep shared fixture exports behind the local `./fixtures` entrypoint.
-- Give fixture exports explicit concrete types imported from outside the fixture file.
-- Do not declare local interfaces, type aliases, or enums inside fixture files.
+- Use one local fixture entrypoint per test or story area: `fixtures.ts`, `fixtures.tsx`, or `fixtures/index.ts`.
+- Declare shared fixtures and factories in `fixtures.ts[x]` files under `__tests__/` or `stories/`. Use direct `export const fixture_<lowerCamelCase>` or `export function factory_<lowerCamelCase>` declarations, with explicit concrete types imported from outside the declaration file. Do not declare local interfaces, type aliases, or enums there.
+- For the directory form, keep `fixtures/index.ts` a pure re-export barrel. Re-export values from checked `fixtures.ts[x]` declaration files inside that same fixture directory, including nested owners. Use unaliased named exports or bare wildcard exports; preserve the fixture and factory binding names.
+- Extensionless relative re-export sources require an existing matching `.ts` or `.tsx` declaration file. Do not point them at extensionless files or directory-only barrels, and do not end source paths with `/`.
+- Keep local declarations, default exports, namespace exports, type-only exports, and `index.tsx` out of fixture barrels. Do not re-export fixtures through helpers, runtime modules, another fixture area, or arbitrary support files. Wildcard syntax does not bypass these ownership rules.
 - Do not declare `fixture_...` or `factory_...` bindings inline inside consumer tests.
-- Import fixtures with named imports from `./fixtures` and do not alias those bindings.
+- Import fixtures with unaliased named imports from the same area's canonical relative `fixtures` entrypoint; do not import private declaration files directly.
+
+Both canonical barrel forms are valid:
+
+```typescript
+// __tests__/fixtures/index.ts — named form
+export { fixture_account, factory_account } from './fixtures';
+```
+
+```typescript
+// __tests__/fixtures/index.ts — wildcard form
+export * from './fixtures';
+```
+
+The shared lint policy checks direct relative re-export edges and fixture-like exported names. It does not resolve arbitrary package aliases, symbolic links, or transitive module graphs; inspect those boundaries explicitly rather than treating a clean lint result as proof of fixture isolation.
 
 ## Test Structure Best Practices
 

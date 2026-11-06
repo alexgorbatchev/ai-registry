@@ -229,6 +229,8 @@ src/
 
 Prefer explicit exports in boundary `index.ts` files for stable public APIs. Wildcard exports are acceptable for small internal modules with low collision risk.
 
+For test and story fixtures, `fixtures/index.ts` is a pure barrel over checked `fixtures.ts[x]` declaration files inside its own fixture directory, including nested owners. Re-export values using unaliased named exports or bare wildcard exports while preserving the fixture and factory names. Keep local declarations, default exports, namespace exports, type-only exports, and `index.tsx` out of this barrel; neither syntax permits re-exporting fixtures through other modules or fixture areas. Follow the declaration typing, naming, and consumer-import requirements in [Fixture Rules](testing.md#fixture-rules).
+
 ```typescript
 // ✅ package boundary index.ts
 export { createUser } from './createUser';

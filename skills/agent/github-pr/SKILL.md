@@ -4,21 +4,21 @@ description: >-
   Use when preparing, writing, creating, or updating GitHub pull requests with
   the gh CLI, including PR titles and descriptions, attaching screenshots or
   videos to PR descriptions and comments, when reviewing and responding to
-  review comments on a GitHub pull request, or when merging, closing, or
+  review comments on a GitHub pull request, requesting re-review, or merging, closing, or
   superseding a GitHub pull request.
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-01 21:08
-  last_modified: 2026-11-05 15:43
+  last_modified: 2026-11-06 11:13
   status: current
 ---
 
 Choose the mode from the request and follow its reference.
 
-| Request                                            | Read and follow                      |
-| -------------------------------------------------- | ------------------------------------ |
-| Draft, create, or update a PR title or description | [Creating](references/creating.md)   |
-| Review or respond to comments left on a PR         | [Reviewing](references/reviewing.md) |
+| Request | Read and follow |
+| --- | --- |
+| Draft, create, or update a PR title or description | [Creating](references/creating.md) |
+| Review or respond to PR feedback, or request re-review after addressing it | [Reviewing](references/reviewing.md) |
 
 Every mode also applies [External Contributors](#external-contributors) whenever a PR is merged, closed, or replaced by another PR.
 

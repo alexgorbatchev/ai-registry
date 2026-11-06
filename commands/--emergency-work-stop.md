@@ -16,3 +16,5 @@ Important considerations:
 
 - If continuing work requires artifacts that would not be committed, alert the user and ask for guidance.
 - Do not assume that new project location will in the same path or that new environment will be the same.
+
+Repot final status TLDR style. Omit useless information like 'this dir is empty'.

@@ -46,6 +46,8 @@ Do not write tests that only verify static constants, raw configs, or hardcoded 
 
 Do not narrow scope without the user's consent.
 
+Keep investigation and implementation proportional to the demonstrated problem. Distinguish user-visible defects from internal tooling gaps, theoretical edge cases, and failures introduced by a proposed repair; state the realistic trigger and consequence before assigning urgency. A missing coverage-report entry alone proves neither a product defect nor insufficient coverage and does not justify high priority. Preserve applicable testing and coverage requirements, but do not turn an incidental measurement gap into new process supervision, infrastructure, or a broad dependency investigation without establishing why that expansion is necessary for the authorized outcome. If a repair creates a larger problem, reassess the approach and report the tradeoff before expanding the task.
+
 Do not introduce backwards compatibility layers, migrations, or shims for old behavior unless explicitly asked to. The user iterates on projects quickly and asks for compatibility work when it is needed.
 
 # Git Authorization

@@ -1,3 +1,6 @@
+import type { Stats } from 'node:fs';
+
+export type AssessmentScanOptions = { concurrency?: number; stat?: (path: string) => Promise<Stats> };
 export type Dependency = {
   path: string;
   repository: string | null;
@@ -21,6 +24,9 @@ export type Worktree = {
   isLocked: boolean;
   isPrunable: boolean;
 };
+export type RepositoryWorktrees =
+  | { repository: string; commonDirectory: string; worktrees: Worktree[] }
+  | { repository: string; error: string };
 export type WorktreeReport = Worktree & {
   repository: string | null;
   bytes: number | null;

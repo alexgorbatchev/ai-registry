@@ -1,5 +1,6 @@
 import { lstat, readdir, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
+import pMap from 'p-map';
 import { diskBytes, ensureUntracked, git, isWithin } from './filesystemUtils';
 import type { Dependency, Inventory, Workspace, InspectionError } from './types';
 
@@ -58,46 +59,51 @@ export async function inspectDependencies(
   onError: (error: InspectionError) => void = () => {},
   sharedInventory?: Inventory,
   measure: (path: string) => Promise<number> = diskBytes,
+  activityFor: typeof latestGitActivity = latestGitActivity,
 ): Promise<Dependency[]> {
   const items = sharedInventory ?? (await inventory(root));
   for (const error of items.errors) onError(error);
-  const activity = new Map<string, number | null>();
-  const result: Dependency[] = [];
+  const activity = new Map<string, Promise<number | null>>();
   const cutoff = Math.floor(Date.now() / 1000) - days * 86400;
-  for (const item of items.dependencies) {
-    let isSymlink: boolean | null = null;
-    let bytes: number | null = null;
-    let latestActivity: number | null = null;
-    let eligible: boolean = false;
-    let reason: string = 'no owning Git repository';
-    try {
-      isSymlink = item.isSymlink ?? (await lstat(item.path)).isSymbolicLink();
-      bytes = await measure(item.path);
-      if (isSymlink) reason = 'symbolic link';
-      else if (item.repository) {
-        if (!activity.has(item.repository)) activity.set(item.repository, await latestGitActivity(item.repository));
-        latestActivity = activity.get(item.repository) ?? null;
-        reason = 'no verifiable Git history';
-        if (latestActivity !== null) {
-          reason = 'recent Git activity';
-          if (latestActivity < cutoff) {
-            try {
-              await ensureUntracked(item.repository, item.path);
-              eligible = true;
-              reason = `no Git activity within ${days} days`;
-            } catch (error) {
-              if (!(error instanceof Error && error.message.startsWith('Contains Git-tracked files:'))) throw error;
-              reason = error.message;
+  const result = await pMap(
+    items.dependencies,
+    async (item): Promise<Dependency> => {
+      let isSymlink: boolean | null = null;
+      let bytes: number | null = null;
+      let latestActivity: number | null = null;
+      let eligible: boolean = false;
+      let reason: string = 'no owning Git repository';
+      try {
+        isSymlink = item.isSymlink ?? (await lstat(item.path)).isSymbolicLink();
+        bytes = await measure(item.path);
+        if (isSymlink) reason = 'symbolic link';
+        else if (item.repository) {
+          const pending = activity.get(item.repository) ?? activityFor(item.repository);
+          activity.set(item.repository, pending);
+          latestActivity = await pending;
+          reason = 'no verifiable Git history';
+          if (latestActivity !== null) {
+            reason = 'recent Git activity';
+            if (latestActivity < cutoff) {
+              try {
+                await ensureUntracked(item.repository, item.path);
+                eligible = true;
+                reason = `no Git activity within ${days} days`;
+              } catch (error) {
+                if (!(error instanceof Error && error.message.startsWith('Contains Git-tracked files:'))) throw error;
+                reason = error.message;
+              }
             }
           }
         }
+      } catch (error) {
+        reason = String(error);
+        onError({ repository: item.path, message: reason });
       }
-    } catch (error) {
-      reason = String(error);
-      onError({ repository: item.path, message: reason });
-    }
-    result.push({ ...item, isSymlink, bytes, latestActivity, eligible, reason });
-  }
+      return { ...item, isSymlink, bytes, latestActivity, eligible, reason };
+    },
+    { concurrency: 4 },
+  );
   return result.sort((left, right) => (right.bytes ?? -1) - (left.bytes ?? -1));
 }
 

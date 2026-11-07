@@ -4,6 +4,13 @@ import { factory_testDirectory } from './fixtures';
 
 const skillPath = join(import.meta.dir, '../..');
 type CliResult = { exitCode: number; stdout: string; stderr: string };
+export type InspectionGate<T> = {
+  run: (path: string) => Promise<T>;
+  ready: Promise<void>;
+  release: () => void;
+  paths: string[];
+  maximum: () => number;
+};
 export async function createRoot(): Promise<string> {
   return factory_testDirectory('cleanup-test');
 }

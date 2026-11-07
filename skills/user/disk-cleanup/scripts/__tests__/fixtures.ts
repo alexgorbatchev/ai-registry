@@ -2,8 +2,39 @@ import { link, mkdir, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { runInspectionCommand } from '../runInspectionCommand';
 import type { InspectionRunner } from '../types';
+import type { InspectionGate } from './helpers';
 
 export { factory_testDirectory, factory_testRoot } from '../../../../../packages/registry-cli/src/__tests__/fixtures';
+
+export function factory_inspectionGate<T>(
+  operation: (path: string) => Promise<T>,
+  capacity: number,
+  excluded: string[] = [],
+): InspectionGate<T> {
+  const gate = Promise.withResolvers<void>();
+  const ready = Promise.withResolvers<void>();
+  const paths: string[] = [];
+  let active = 0;
+  let maximum = 0;
+  return {
+    ready: ready.promise,
+    release: () => gate.resolve(),
+    paths,
+    maximum: () => maximum,
+    run: async (path) => {
+      if (excluded.includes(path)) return operation(path);
+      paths.push(path);
+      maximum = Math.max(maximum, ++active);
+      if (paths.length === capacity) ready.resolve();
+      try {
+        await gate.promise;
+        return await operation(path);
+      } finally {
+        active--;
+      }
+    },
+  };
+}
 
 export async function factory_linkedCaches(root: string, count: number, isSymlink = false): Promise<string[]> {
   const paths = Array.from({ length: count }, (_, index) => join(root, `cache/${index}`));

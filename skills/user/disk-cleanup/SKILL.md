@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-07 06:34
+  last_modified: 2026-11-07 07:02
   status: current
 ---
 
@@ -306,6 +306,10 @@ On the first removal or verification failure, stop the batch and retain its part
 `disk assess` always streams readable text and progress to stdout. For other commands, set `AGENT=1`, `true`, or `yes` for compact JSON and untruncated help/errors. Other values use indented JSON,
 tree help wrapped to `COLUMNS` or the terminal width (unwrapped when neither is known), and concise errors. Help text
 is never truncated. Agent help begins with the skill alert.
+Assessment metadata reads overlap with a per-scope limit of 64 and bounded lookahead; aggregation stays in
+directory traversal order for hard-link accounting and stale-folder pruning. Dependency and worktree inspections
+each run at most four independent jobs. Dependencies sharing a repository share its in-flight Git activity check;
+linked worktrees share their common repository's registration query. Git history and status checks remain complete.
 Rust inspection inherits Cargo configuration and environment overrides, and disables rustup auto-installation
 with `RUSTUP_AUTO_INSTALL=0`. Other commands have no additional cleanup environment settings.
 Each nonempty artifact/worktree execution creates `.state/cleanup-*/execution.json` under root,

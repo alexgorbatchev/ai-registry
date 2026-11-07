@@ -1,8 +1,11 @@
 import { lstat, readdir } from 'node:fs/promises';
 import { basename, join, relative, sep } from 'node:path';
+import pLimit from 'p-limit';
+import { pMapIterable } from 'p-map';
 import { isWithin } from './filesystemUtils';
 import { formatBytes } from './inspectFolders';
-import type { AssessmentScanProgress, DiskUsage, Inventory, StaleFolder } from './types';
+import type { AssessmentScanOptions, AssessmentScanProgress, DiskUsage, Inventory, StaleFolder } from './types';
+import type { Stats } from 'node:fs';
 
 type Summary = {
   bytes: number;
@@ -32,7 +35,9 @@ export async function scanAssessment(
   read: typeof readDirectory = readDirectory,
   reportRoot: string = root,
   progress: (value: AssessmentScanProgress, largePath?: DiskUsage) => void = () => {},
+  { concurrency = 64, stat = lstat }: AssessmentScanOptions = {},
 ): Promise<AssessmentScan> {
+  const metadata = pLimit(concurrency);
   const result: AssessmentScan = {
     inventory: { repositories: [], dependencies: [], workspaces: [], errors: [] },
     overview: [],
@@ -40,13 +45,18 @@ export async function scanAssessment(
     staleFolders: [],
     allocations: new Map(),
   };
-  const rootInfo = await lstat(root);
+  const rootInfo = await stat(root);
   const device = rootInfo.dev;
   const seen = new Set<string>();
   const now = Date.now();
   const cutoff = now - days * 86400000;
   let entries = 0;
-  async function walk(path: string, depth: number, repository: string | null, discover: boolean): Promise<Summary> {
+  async function walk(
+    path: string,
+    metadataResult: PromiseSettledResult<Stats>,
+    repository: string | null,
+    discover: boolean,
+  ): Promise<Summary> {
     progress({ root, path, entries: ++entries });
     let largePath: DiskUsage | undefined;
     const staleStart = result.staleFolders.length;
@@ -60,7 +70,8 @@ export async function scanAssessment(
       links: new Map(),
     };
     try {
-      const info = depth === 0 ? rootInfo : await lstat(path);
+      if (metadataResult.status === 'rejected') throw metadataResult.reason;
+      const info = metadataResult.value;
       if (info.dev !== device) return summary;
       const bytes = info.blocks * 512;
       const key = `${info.dev}:${info.ino}`;
@@ -86,7 +97,16 @@ export async function scanAssessment(
           repository = path;
           result.inventory.repositories.push(path);
         }
-        for (const entry of entries) {
+        // Prefetch metadata only. Ordered traversal owns hard-link attribution and stale-parent pruning.
+        const children = pMapIterable(
+          entries,
+          async (entry) => {
+            const [info] = await Promise.allSettled([metadata(stat, join(path, entry.name))]);
+            return { entry, info };
+          },
+          { concurrency, backpressure: concurrency },
+        );
+        for await (const { entry, info } of children) {
           const childPath = join(path, entry.name);
           if (discover && basename(path) === '.workspaces' && entry.isDirectory())
             result.inventory.workspaces.push({ path: childPath, repository });
@@ -94,7 +114,7 @@ export async function scanAssessment(
             result.inventory.dependencies.push({ path: childPath, repository, isSymlink: entry.isSymbolicLink() });
           const child = await walk(
             childPath,
-            depth + 1,
+            info,
             repository,
             discover && entry.name !== '.git' && entry.name !== 'node_modules' && !entry.isSymbolicLink(),
           );
@@ -147,7 +167,7 @@ export async function scanAssessment(
     if (largePath) progress({ root, path, entries }, largePath);
     return summary;
   }
-  await walk(root, 0, null, root === reportRoot);
+  await walk(root, { status: 'fulfilled', value: rootInfo }, null, root === reportRoot);
   result.overview.sort((a, b) => b.bytes - a.bytes);
   result.largePaths.sort((a, b) => b.bytes - a.bytes);
   result.staleFolders.sort((a, b) => b.bytes - a.bytes);

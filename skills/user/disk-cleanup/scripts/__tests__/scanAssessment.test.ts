@@ -7,6 +7,8 @@ import { runInspectionCommand } from '../runInspectionCommand';
 import { createRoot, disposeRoot, createRepository, git } from './helpers';
 import { inspectDependencies } from '../inventory';
 import { inspectWorktrees } from '../inspectWorktrees';
+import { factory_inspectionGate } from './fixtures';
+import type { Stats } from 'node:fs';
 
 let root: string;
 beforeEach(async () => {
@@ -53,6 +55,119 @@ test('hard links count once globally and once within each independent subtree', 
   expect(data.allocations.get(a)).toBeGreaterThanOrEqual(fileBytes);
   expect(data.allocations.get(b)).toBeGreaterThanOrEqual(fileBytes);
   expect(data.largePaths.filter((entry) => entry.path.endsWith('/data'))).toHaveLength(1);
+});
+
+test('metadata reads overlap with one global bound across nested directories', async () => {
+  for (const name of ['a', 'b', 'c', 'd', 'e', 'f']) {
+    await mkdir(join(root, name));
+    for (const file of ['one', 'two', 'three', 'four', 'five']) await Bun.write(join(root, name, file), 'data');
+  }
+  const gate = factory_inspectionGate((path) => lstat(path), 4, [root]);
+  const scan = scanAssessment(root, 1, 30, undefined, root, undefined, { concurrency: 4, stat: gate.run });
+  try {
+    await gate.ready;
+    expect(gate.paths).toHaveLength(4);
+    expect(gate.maximum()).toBe(4);
+  } finally {
+    gate.release();
+    await scan;
+  }
+  expect(gate.maximum()).toBe(4);
+  expect(gate.paths).toHaveLength(36);
+  expect((await scan).inventory.errors).toEqual([]);
+});
+
+test('out-of-order metadata preserves hard-link attribution and stale parent pruning', async () => {
+  const a = join(root, 'a');
+  const b = join(root, 'b');
+  await mkdir(join(a, 'nested'), { recursive: true });
+  await mkdir(b);
+  await Bun.write(join(a, 'nested/data'), Buffer.alloc(8192));
+  await utimes(join(a, 'nested/data'), 1, 1);
+  await link(join(a, 'nested/data'), join(b, 'data'));
+  const gate = factory_inspectionGate((path) => lstat(path), 1);
+  const later = Promise.withResolvers<void>();
+  const overrides = new Map<string, (path: string) => Promise<Stats>>([
+    [a, gate.run],
+    [
+      b,
+      async (path) => {
+        const info = await lstat(path);
+        later.resolve();
+        return info;
+      },
+    ],
+  ]);
+  const scan = scanAssessment(
+    root,
+    1,
+    30,
+    async (path) =>
+      (await readdir(path, { withFileTypes: true })).sort((left, right) => left.name.localeCompare(right.name)),
+    root,
+    undefined,
+    { stat: (path) => (overrides.get(path) ?? lstat)(path) },
+  );
+  try {
+    await later.promise;
+    expect(gate.paths).toEqual([a]);
+  } finally {
+    gate.release();
+    await scan;
+  }
+  const result = await scan;
+  expect(result.largePaths.filter((entry) => entry.path.endsWith('/data')).map((entry) => entry.path)).toEqual([
+    join(a, 'nested/data'),
+  ]);
+  expect(result.staleFolders.map((entry) => entry.path)).toEqual([a, b]);
+  expect(result.allocations.get(a)).toBeGreaterThanOrEqual(result.allocations.get(b)!);
+});
+
+test('failed prefetched metadata preserves siblings and marks ancestor allocations incomplete', async () => {
+  const missing = join(root, 'missing');
+  const readable = join(root, 'readable');
+  await Bun.write(missing, 'removed during scan');
+  await mkdir(readable);
+  await Bun.write(join(readable, 'data'), Buffer.alloc(8192));
+  await utimes(join(readable, 'data'), 1, 1);
+  const overrides = new Map<string, (path: string) => Promise<Stats>>([
+    [missing, () => Promise.reject(new Error('entry disappeared'))],
+  ]);
+  const result = await scanAssessment(root, 1, 30, undefined, root, undefined, {
+    stat: (path) => (overrides.get(path) ?? lstat)(path),
+  });
+  expect(result.inventory.errors).toEqual([{ repository: missing, message: 'Error: entry disappeared' }]);
+  expect(result.allocations.get(root)).toBeNull();
+  expect(result.allocations.get(missing)).toBeNull();
+  expect(result.staleFolders.map((entry) => entry.path)).toEqual([readable]);
+});
+
+test('prefetched directories on another device are not traversed', async () => {
+  const mounted = join(root, 'mounted');
+  const readable = join(root, 'readable');
+  await mkdir(mounted);
+  await mkdir(readable);
+  await Bun.write(join(mounted, 'data'), Buffer.alloc(8192));
+  await Bun.write(join(readable, 'data'), Buffer.alloc(8192));
+  const info = await lstat(mounted);
+  const overrides = new Map([[mounted, Object.assign(info, { dev: info.dev + 1 })]]);
+  const reads: string[] = [];
+  const result = await scanAssessment(
+    root,
+    1,
+    30,
+    async (path) => {
+      reads.push(path);
+      return readdir(path, { withFileTypes: true });
+    },
+    root,
+    undefined,
+    { stat: async (path) => overrides.get(path) ?? lstat(path) },
+  );
+  expect(reads.sort()).toEqual([root, readable]);
+  expect(result.allocations.has(mounted)).toBe(false);
+  expect(result.allocations.get(readable)).toBeGreaterThanOrEqual(8192);
+  expect(result.inventory.errors).toEqual([]);
 });
 
 test('unreadable subtrees keep readable results and prevent unsafe stale classification', async () => {

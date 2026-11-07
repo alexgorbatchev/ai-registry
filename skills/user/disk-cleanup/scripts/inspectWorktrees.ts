@@ -1,7 +1,15 @@
 import { realpath } from 'node:fs/promises';
+import pMap from 'p-map';
 import { diskBytes, git, isWithin, validatePath } from './filesystemUtils';
 import { inventory } from './inventory';
-import type { InspectionError, Inventory, Worktree, WorktreeInspection, WorktreeReport } from './types';
+import type {
+  InspectionError,
+  Inventory,
+  RepositoryWorktrees,
+  Worktree,
+  WorktreeInspection,
+  WorktreeReport,
+} from './types';
 
 export async function registeredWorktrees(repository: string): Promise<Worktree[]> {
   const output = await git(repository, ['worktree', 'list', '--porcelain', '-z']);
@@ -42,6 +50,42 @@ async function statusEntries(path: string) {
   };
 }
 
+async function inspectRegistrations(repositories: string[]): Promise<RepositoryWorktrees[]> {
+  const registrations = new Map<string, Promise<Worktree[]>>();
+  return pMap(
+    repositories,
+    async (repository): Promise<RepositoryWorktrees> => {
+      try {
+        const commonDirectory = (
+          await git(repository, ['rev-parse', '--path-format=absolute', '--git-common-dir'])
+        ).trim();
+        const pending = registrations.get(commonDirectory) ?? registeredWorktrees(repository);
+        registrations.set(commonDirectory, pending);
+        return { repository, commonDirectory, worktrees: await pending };
+      } catch (error) {
+        return { repository, error: String(error) };
+      }
+    },
+    { concurrency: 4 },
+  );
+}
+
+async function inspectRegisteredWorktree(
+  report: WorktreeReport,
+  measure: (path: string) => Promise<number>,
+  errors: InspectionError[],
+): Promise<WorktreeReport> {
+  try {
+    if (!report.isPrunable) {
+      report.bytes = await measure(report.path);
+      Object.assign(report, await statusEntries(report.path));
+    }
+  } catch (error) {
+    errors.push({ repository: report.path, message: String(error) });
+  }
+  return report;
+}
+
 export async function inspectWorktrees(
   root: string,
   sharedInventory?: Inventory,
@@ -52,59 +96,59 @@ export async function inspectWorktrees(
   const commonDirectories = new Set<string>();
   const errors: InspectionError[] = [...items.errors];
   const failedRepositories = new Set<string>();
-  for (const repository of items.repositories) {
-    try {
-      const commonDirectory = (
-        await git(repository, ['rev-parse', '--path-format=absolute', '--git-common-dir'])
-      ).trim();
-      if (commonDirectories.has(commonDirectory)) continue;
-      const worktrees = await registeredWorktrees(repository);
-      commonDirectories.add(commonDirectory);
-      for (const worktree of worktrees.slice(1)) {
-        if (!isWithin(root, worktree.path)) continue;
-        const report: WorktreeReport = {
-          ...worktree,
-          repository,
-          isRegistered: true,
-          bytes: null,
-          changedEntries: null,
-          ignoredEntries: null,
-        };
-        try {
-          if (!worktree.isPrunable) {
-            report.bytes = await measure(worktree.path);
-            Object.assign(report, await statusEntries(worktree.path));
-          }
-        } catch (error) {
-          errors.push({ repository: worktree.path, message: String(error) });
-        }
-        known.set(worktree.path, report);
+  const repositories = await inspectRegistrations(items.repositories);
+  const candidates = repositories.flatMap((entry) => {
+    if ('error' in entry) {
+      errors.push({ repository: entry.repository, message: entry.error });
+      failedRepositories.add(entry.repository);
+      return [];
+    }
+    if (commonDirectories.has(entry.commonDirectory)) return [];
+    commonDirectories.add(entry.commonDirectory);
+    return entry.worktrees
+      .slice(1)
+      .filter((worktree) => isWithin(root, worktree.path))
+      .map((worktree) => ({ ...worktree, repository: entry.repository }));
+  });
+  const reports = await pMap(
+    candidates,
+    async (worktree): Promise<WorktreeReport> => {
+      const report: WorktreeReport = {
+        ...worktree,
+        isRegistered: true,
+        bytes: null,
+        changedEntries: null,
+        ignoredEntries: null,
+      };
+      return inspectRegisteredWorktree(report, measure, errors);
+    },
+    { concurrency: 4 },
+  );
+  for (const report of reports) known.set(report.path, report);
+  const workspaces = await pMap(
+    items.workspaces.filter((workspace) => !known.has(workspace.path)),
+    async (workspace): Promise<WorktreeReport> => {
+      let bytes: number | null = null;
+      try {
+        bytes = await measure(workspace.path);
+      } catch (error) {
+        errors.push({ repository: workspace.path, message: String(error) });
       }
-    } catch (error) {
-      errors.push({ repository, message: String(error) });
-      failedRepositories.add(repository);
-    }
-  }
-  for (const workspace of items.workspaces) {
-    if (known.has(workspace.path)) continue;
-    let bytes: number | null = null;
-    try {
-      bytes = await measure(workspace.path);
-    } catch (error) {
-      errors.push({ repository: workspace.path, message: String(error) });
-    }
-    known.set(workspace.path, {
-      ...workspace,
-      bytes,
-      isRegistered: workspace.repository && failedRepositories.has(workspace.repository) ? null : false,
-      head: null,
-      branch: null,
-      isLocked: false,
-      isPrunable: false,
-      changedEntries: null,
-      ignoredEntries: null,
-    });
-  }
+      return {
+        ...workspace,
+        bytes,
+        isRegistered: workspace.repository && failedRepositories.has(workspace.repository) ? null : false,
+        head: null,
+        branch: null,
+        isLocked: false,
+        isPrunable: false,
+        changedEntries: null,
+        ignoredEntries: null,
+      };
+    },
+    { concurrency: 4 },
+  );
+  for (const workspace of workspaces) known.set(workspace.path, workspace);
   return { worktrees: [...known.values()].sort((left, right) => (right.bytes ?? -1) - (left.bytes ?? -1)), errors };
 }
 

@@ -1,39 +1,7 @@
-import { lstat, readdir, stat } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { lstat, stat } from 'node:fs/promises';
 import pMap from 'p-map';
-import { diskBytes, ensureUntracked, git, isWithin, repositoryChecker } from './filesystemUtils';
-import type { Dependency, Inventory, Workspace, InspectionError, RepositoryChecker } from './types';
-
-export async function inventory(root: string): Promise<Inventory> {
-  const repositories: string[] = [];
-  const dependencies: Workspace[] = [];
-  const workspaces: Workspace[] = [];
-  const errors: InspectionError[] = [];
-  const rootDevice = (await stat(root)).dev;
-  async function walk(path: string, repository: string | null): Promise<void> {
-    try {
-      if ((await stat(path)).dev !== rootDevice) return;
-      const entries = await readdir(path, { withFileTypes: true });
-      if (entries.some((entry) => entry.name === '.git')) {
-        repository = path;
-        repositories.push(path);
-      }
-      for (const entry of entries) {
-        const childPath = join(path, entry.name);
-        if (basename(path) === '.workspaces' && entry.isDirectory()) workspaces.push({ path: childPath, repository });
-        if (entry.name === 'node_modules' && (entry.isDirectory() || entry.isSymbolicLink())) {
-          dependencies.push({ path: childPath, repository });
-        } else if (entry.isDirectory() && entry.name !== '.git') {
-          await walk(childPath, repository);
-        }
-      }
-    } catch (error) {
-      errors.push({ repository: path, message: String(error) });
-    }
-  }
-  await walk(root, null);
-  return { repositories, dependencies, workspaces, errors };
-}
+import { ensureUntracked, git, isVanished, isWithin, repositoryChecker } from './filesystemUtils';
+import type { Dependency, Inventory, InspectionError, RepositoryChecker } from './types';
 
 export async function latestGitActivity(repository: string): Promise<number | null> {
   let latest: number = 0;
@@ -54,21 +22,19 @@ export async function latestGitActivity(repository: string): Promise<number | nu
 }
 
 export async function inspectDependencies(
-  root: string,
   days: number,
+  items: Inventory,
+  measure: (path: string) => Promise<number>,
   onError: (error: InspectionError) => void = () => {},
-  sharedInventory?: Inventory,
-  measure: (path: string) => Promise<number> = diskBytes,
   activityFor: typeof latestGitActivity = latestGitActivity,
   check: RepositoryChecker = repositoryChecker(),
 ): Promise<Dependency[]> {
-  const items = sharedInventory ?? (await inventory(root));
   for (const error of items.errors) onError(error);
   const activity = new Map<string, Promise<number | null>>();
   const cutoff = Math.floor(Date.now() / 1000) - days * 86400;
   const result = await pMap(
     items.dependencies,
-    async (item): Promise<Dependency> => {
+    async (item): Promise<Dependency | null> => {
       let isSymlink: boolean | null = null;
       let bytes: number | null = null;
       let latestActivity: number | null = null;
@@ -99,6 +65,8 @@ export async function inspectDependencies(
           }
         }
       } catch (error) {
+        // A dependency removed during inspection no longer exists to classify.
+        if (await isVanished(item.path)) return null;
         reason = String(error);
         onError({ repository: item.path, message: reason });
       }
@@ -106,7 +74,9 @@ export async function inspectDependencies(
     },
     { concurrency: 4 },
   );
-  return result.sort((left, right) => (right.bytes ?? -1) - (left.bytes ?? -1));
+  return result
+    .filter((item): item is Dependency => item !== null)
+    .sort((left, right) => (right.bytes ?? -1) - (left.bytes ?? -1));
 }
 
 export function assertDisjoint(root: string, paths: string[]): void {

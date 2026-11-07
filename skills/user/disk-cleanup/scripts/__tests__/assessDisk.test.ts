@@ -125,16 +125,17 @@ test('a permission-denied subtree is a listed exclusion, not a failed section', 
       undefined,
       (event) => events.push(event),
     );
-    // Render first: Bun's toMatchObject replaces matched arrays in the received object.
     const lines = events.map(createAssessmentRenderer()).join('\n').split('\n');
     expect(lines.filter((line) => line === 'denied')).toHaveLength(1);
     expect(lines.at(-1)).toBe('assessment INCOMPLETE: docker; 1 restricted paths excluded');
-    expect(sectionOf(report, 'large', 'paths')).toMatchObject({
-      isComplete: true,
-      restricted: [denied],
-      errors: [],
-      data: expect.arrayContaining([{ path: join(root, 'data'), bytes: 8192 }]),
-    });
+    expect(sectionOf(report, 'large', 'paths')).toEqual(
+      expect.objectContaining({
+        isComplete: true,
+        restricted: [denied],
+        errors: [],
+        data: expect.arrayContaining([{ path: join(root, 'data'), bytes: 8192 }]),
+      }),
+    );
     expect(sectionOf(report, 'stale', 'stale').isComplete).toBe(true);
     expect(events.at(-1)).toEqual({ type: 'complete', isComplete: false, failed: ['docker'] });
   } finally {

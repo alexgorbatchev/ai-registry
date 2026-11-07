@@ -1,7 +1,6 @@
 import { realpath } from 'node:fs/promises';
 import pMap from 'p-map';
-import { diskBytes, git, isWithin, repositoryChecker, validatePath } from './filesystemUtils';
-import { inventory } from './inventory';
+import { git, isVanished, isWithin, repositoryChecker, validatePath } from './filesystemUtils';
 import type {
   InspectionError,
   Inventory,
@@ -54,9 +53,9 @@ async function statusEntries(path: string) {
 
 async function inspectRegistrations(repositories: string[], check: RepositoryChecker): Promise<RepositoryWorktrees[]> {
   const registrations = new Map<string, Promise<Worktree[]>>();
-  return pMap(
+  const results = await pMap(
     repositories,
-    async (repository): Promise<RepositoryWorktrees> => {
+    async (repository): Promise<RepositoryWorktrees | null> => {
       try {
         const checked = await check(repository);
         if ('invalid' in checked) return { repository, invalid: checked.invalid };
@@ -65,24 +64,28 @@ async function inspectRegistrations(repositories: string[], check: RepositoryChe
         registrations.set(commonDirectory, pending);
         return { repository, commonDirectory, worktrees: await pending };
       } catch (error) {
+        // A repository removed during inspection has nothing left to register or measure.
+        if (await isVanished(repository)) return null;
         return { repository, error: String(error) };
       }
     },
     { concurrency: 4 },
   );
+  return results.filter((entry) => entry !== null);
 }
 
 async function inspectRegisteredWorktree(
   report: WorktreeReport,
   measure: (path: string) => Promise<number>,
   errors: InspectionError[],
-): Promise<WorktreeReport> {
+): Promise<WorktreeReport | null> {
   try {
     if (!report.isPrunable) {
       report.bytes = await measure(report.path);
       Object.assign(report, await statusEntries(report.path));
     }
   } catch (error) {
+    if (await isVanished(report.path)) return null;
     errors.push({ repository: report.path, message: String(error) });
   }
   return report;
@@ -90,11 +93,10 @@ async function inspectRegisteredWorktree(
 
 export async function inspectWorktrees(
   root: string,
-  sharedInventory?: Inventory,
-  measure: (path: string) => Promise<number> = diskBytes,
+  items: Inventory,
+  measure: (path: string) => Promise<number>,
   check: RepositoryChecker = repositoryChecker(),
 ): Promise<WorktreeInspection> {
-  const items = sharedInventory ?? (await inventory(root));
   const known = new Map<string, WorktreeReport>();
   const commonDirectories = new Set<string>();
   const errors: InspectionError[] = [...items.errors];
@@ -121,7 +123,7 @@ export async function inspectWorktrees(
   });
   const reports = await pMap(
     candidates,
-    async (worktree): Promise<WorktreeReport> => {
+    async (worktree): Promise<WorktreeReport | null> => {
       const report: WorktreeReport = {
         ...worktree,
         isRegistered: true,
@@ -133,14 +135,16 @@ export async function inspectWorktrees(
     },
     { concurrency: 4 },
   );
-  for (const report of reports) known.set(report.path, report);
+  for (const report of reports) if (report) known.set(report.path, report);
+  const registered = new Set(candidates.map((worktree) => worktree.path));
   const workspaces = await pMap(
-    items.workspaces.filter((workspace) => !known.has(workspace.path)),
-    async (workspace): Promise<WorktreeReport> => {
+    items.workspaces.filter((workspace) => !registered.has(workspace.path)),
+    async (workspace): Promise<WorktreeReport | null> => {
       let bytes: number | null = null;
       try {
         bytes = await measure(workspace.path);
       } catch (error) {
+        if (await isVanished(workspace.path)) return null;
         errors.push({ repository: workspace.path, message: String(error) });
       }
       return {
@@ -157,7 +161,7 @@ export async function inspectWorktrees(
     },
     { concurrency: 4 },
   );
-  for (const workspace of workspaces) known.set(workspace.path, workspace);
+  for (const workspace of workspaces) if (workspace) known.set(workspace.path, workspace);
   return {
     worktrees: [...known.values()].sort((left, right) => (right.bytes ?? -1) - (left.bytes ?? -1)),
     invalidRepositories,

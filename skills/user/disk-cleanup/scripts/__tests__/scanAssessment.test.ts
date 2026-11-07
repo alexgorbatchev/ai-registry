@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
 import { link, lstat, mkdir, readdir, symlink, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
-import { scanAssessment } from '../scanAssessment';
+import { discover, scanAssessment } from '../scanAssessment';
 import { assessDisk } from '../assessDisk';
 import { runInspectionCommand } from '../runInspectionCommand';
 import { createRoot, disposeRoot, createRepository, git, sectionOf } from './helpers';
@@ -142,6 +142,30 @@ test('failed prefetched metadata preserves siblings and marks ancestor allocatio
   expect(result.staleFolders.map((entry) => entry.path)).toEqual([readable]);
 });
 
+test('entries removed during the scan count as gone rather than failing the scan', async () => {
+  const vanished = join(root, 'vanished');
+  const emptied = join(root, 'emptied');
+  await mkdir(vanished);
+  await mkdir(emptied);
+  await Bun.write(join(root, 'data'), Buffer.alloc(8192));
+  const gone = () => Promise.reject(Object.assign(new Error('ENOENT: no such file or directory'), { code: 'ENOENT' }));
+  const result = await scanAssessment(
+    root,
+    1,
+    30,
+    async (path) => (path === emptied ? gone() : readdir(path, { withFileTypes: true })),
+    root,
+    undefined,
+    { stat: (path) => (path === vanished ? gone() : lstat(path)) },
+  );
+  expect(result.inventory.errors).toEqual([]);
+  expect(result.restricted).toEqual([]);
+  expect(result.allocations.has(vanished)).toBe(false);
+  expect(result.allocations.has(emptied)).toBe(false);
+  expect(result.allocations.get(root)).toBeGreaterThanOrEqual(8192);
+  expect(result.largePaths.map((entry) => entry.path)).not.toContain(emptied);
+});
+
 test('prefetched directories on another device are not traversed', async () => {
   const mounted = join(root, 'mounted');
   const readable = join(root, 'readable');
@@ -252,10 +276,15 @@ test('shared allocations and discovery preserve standalone dependency and worktr
   const dependencies = sectionOf(report, 'deps', 'dependencies');
   const worktrees = sectionOf(report, 'worktrees', 'worktrees');
   expect(dependencies.isComplete).toBe(true);
-  expect(dependencies.data).toMatchObject(await inspectDependencies(root, 30));
+  const { inventory, measure } = await discover(root);
+  expect(dependencies.data).toEqual(await inspectDependencies(30, inventory, measure));
   expect(worktrees.isComplete).toBe(true);
-  expect(worktrees.data).toMatchObject(await inspectWorktrees(root));
-  expect(worktrees.data).toMatchObject({
-    worktrees: [{ path: workspace, isRegistered: true, changedEntries: 1, bytes: expect.any(Number) }],
-  });
+  expect(worktrees.data).toEqual(await inspectWorktrees(root, inventory, measure));
+  expect(worktrees.data).toEqual(
+    expect.objectContaining({
+      worktrees: [
+        expect.objectContaining({ path: workspace, isRegistered: true, changedEntries: 1, bytes: expect.any(Number) }),
+      ],
+    }),
+  );
 });

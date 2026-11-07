@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
-import { diskBytes } from '../filesystemUtils';
-import { inspectDependencies, inventory, latestGitActivity } from '../inventory';
+import { inspectDependencies, latestGitActivity } from '../inventory';
+import { discover } from '../scanAssessment';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { factory_inspectionGate } from './fixtures';
@@ -21,7 +21,8 @@ test('dependencies with the same owner share one in-flight Git activity inspecti
   await Bun.write(join(nested, 'data'), 'dependency');
   const calls: string[] = [];
   const pending = latestGitActivity(repository);
-  const result = await inspectDependencies(root, 30, undefined, undefined, diskBytes, (path) => {
+  const { inventory, measure } = await discover(root);
+  const result = await inspectDependencies(30, inventory, measure, undefined, (path) => {
     calls.push(path);
     return pending;
   });
@@ -32,9 +33,9 @@ test('dependencies with the same owner share one in-flight Git activity inspecti
 
 test('independent dependency inspections overlap within a bound and preserve inactivity checks', async () => {
   for (const name of ['a', 'b', 'c', 'd', 'e', 'f']) await createRepository(root, name);
-  const items = await inventory(root);
-  const gate = factory_inspectionGate(diskBytes, 4);
-  const inspection = inspectDependencies(root, 30, undefined, items, gate.run);
+  const { inventory, measure } = await discover(root);
+  const gate = factory_inspectionGate(measure, 4);
+  const inspection = inspectDependencies(30, inventory, gate.run);
   try {
     await gate.ready;
     expect(gate.paths).toHaveLength(4);
@@ -48,5 +49,5 @@ test('independent dependency inspections overlap within a bound and preserve ina
   expect(result).toHaveLength(6);
   expect(result.map((item) => item.eligible)).toEqual(Array.from({ length: 6 }, () => true));
   expect(result.map((item) => item.reason)).toEqual(Array.from({ length: 6 }, () => 'no Git activity within 30 days'));
-  expect(result).toEqual(await inspectDependencies(root, 30, undefined, items));
+  expect(result).toEqual(await inspectDependencies(30, inventory, measure));
 });

@@ -52,19 +52,23 @@ test('inspection finds prefixed GNU utilities when unprefixed tools are BSD', as
   expect(JSON.parse(result.stdout.toString()).isComplete).toBe(true);
 });
 
-test('all discovery commands retain readable siblings of an inaccessible directory', async () => {
-  await mkdir(join(root, 'a-denied'));
+test('discovery commands list an inaccessible directory as restricted and keep readable siblings', async () => {
+  const denied = join(root, 'a-denied');
+  await mkdir(denied);
   const repository = await createRepository(root, 'z-readable');
-  await chmod(join(root, 'a-denied'), 0);
+  await chmod(denied, 0);
   try {
     const dependencies = cli(root, ['dependencies', 'list', '--root', root]);
-    expect(dependencies.exitCode).toBe(1);
+    expect(dependencies.exitCode).toBe(0);
     const report = JSON.parse(dependencies.stdout);
-    expect(report.dependencies[0].path).toBe(join(repository, 'node_modules'));
-    expect(report.errors.length).toBe(1);
+    expect(report.dependencies.map((entry: { path: string }) => entry.path)).toEqual([
+      join(repository, 'node_modules'),
+    ]);
+    expect(report.restricted).toEqual([denied]);
+    expect(report.errors).toEqual([]);
     const worktrees = cli(root, ['worktrees', 'list', '--root', root]);
-    expect(worktrees.exitCode).toBe(1);
-    expect(JSON.parse(worktrees.stdout).errors.length).toBe(1);
+    expect(worktrees.exitCode).toBe(0);
+    expect(JSON.parse(worktrees.stdout)).toEqual(expect.objectContaining({ restricted: [denied], errors: [] }));
     const usage = cli(root, ['disk', 'inspect', '--root', root]);
     expect(usage.exitCode).toBe(1);
     expect(JSON.parse(usage.stdout).folders).toEqual(

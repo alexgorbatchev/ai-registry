@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-07 09:10
+  last_modified: 2026-11-07 09:50
   status: current
 ---
 
@@ -72,14 +72,14 @@ Read [scripts/inventory.ts](scripts/inventory.ts) when changing activity classif
 | `disk assess` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--system` default false | Stream compact agent-oriented text: heartbeat, completed sections, then final completion. Include platform cache, temp, library, and log scopes when selected. `--size` sets large-path and stale-folder thresholds; `--days` controls inactivity. No deletion or log files. |
 | `disk inspect` | `--root <directory>` default `.`, `--depth <levels>` default `2` | Return capacity, sorted directory allocations, `errors`, and `isComplete`. Preserve successful output when either command fails; incomplete inspection exits `1`. |
 | `folders list` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--time <mode>` default `either`, `--depth <levels>`, `--no-prune` | Return directories exceeding size and staleness thresholds with access/modification timestamps, pruning nested matching children by default. |
-| `dependencies list` | `--root <directory>` default `.`, `--days <count>` default `30` | Return discovered outermost `node_modules` folders with owner, allocation, activity, eligibility, reason, and top-level `errors`. Owners with invalid Git metadata give reason `invalid Git metadata` and stay ineligible without an error. Preserve readable siblings on errors; incomplete inspection exits `1`. Unknown allocation is null. |
+| `dependencies list` | `--root <directory>` default `.`, `--days <count>` default `30` | Return discovered outermost `node_modules` folders with owner, allocation, activity, eligibility, reason, and top-level `errors`. Owners with invalid Git metadata give reason `invalid Git metadata` and stay ineligible without an error. `restricted` lists permission-denied paths excluded from discovery; they do not fail the command. Preserve readable siblings on errors; incomplete inspection exits `1`. Unknown allocation is null. |
 | `dependencies remove` | Same options plus `--execute` default false | Preview or delete all eligible folders under the selected root. |
 | `rust list` | `--root <directory>` default `.`, `--idle <duration>` default `30m` | Inspect direct child Cargo projects; return activity, process IDs, warnings, eligibility, and separate `.tmp`, coverage, and target allocations. Coverage is included in the target total. Inspection errors return exit code `1`. |
 | `rust remove <projects...>` | Exact direct child projects; `--root` and `--idle` as above; required `--artifacts <kinds>`; `--execute` default false | Preview or remove explicitly selected `tmp`, `coverage`, and/or `target` artifacts in idle projects. Preserve active projects and protected contents. Recheck before every removal. |
 | `paths remove <paths...>` | One or more exact paths; `--root <directory>` default `.`, `--execute` default false | Preview or delete reviewed artifacts beneath `.tmp`, `.cache`, `node_modules`, `target`, or `dist`. |
 | `native review <paths...>` | Exact reviewed cache/temp directories; `--root <directory>` default `.`, `--verbose` default false | Save an exact manifest beneath root's `.state/native-cleanup-*`. Return its path and counts; `--verbose` includes the full manifest. Writes the review record only; never deletes targets. |
 | `native remove <manifest>` | Manifest path relative to root or absolute inside it; `--root <directory>` default `.`, `--execute` default false, `--verbose` default false | Validate the saved selection; preview by default. Execute only its unchanged, inactive targets and retain a receipt. Return counts, failure, log path, and free-space change; `--verbose` includes full target/command records. |
-| `worktrees list` | `--root <directory>` default `.` | Return linked worktrees and `.workspaces` entries, allocations, branches/HEADs, locks, registration, status counts, `invalidRepositories`, and inspection errors. Partial scans return exit code `1`; invalid metadata alone does not. |
+| `worktrees list` | `--root <directory>` default `.` | Return linked worktrees and `.workspaces` entries, allocations, branches/HEADs, locks, registration, status counts, `invalidRepositories`, `restricted`, and inspection errors. Partial scans return exit code `1`; invalid metadata or restricted paths alone do not. |
 | `worktrees remove <paths...>` | One or more exact paths; `--root <directory>` default `.`, `--execute` default false | Preview or remove validated registered linked worktrees through Git. |
 | `skill` | No positional arguments or command-specific flags | Print this entire file verbatim, including frontmatter. |
 | `help [command]` | One immediate subcommand name, or `-h`/`--help` on any command | Show commands and options. Use a group's `help` to select its child. No completion or version command is provided. |
@@ -147,6 +147,14 @@ Permission-denied (`EACCES`/`EPERM`) paths below a scan root are restricted: the
 section incomplete. Their ancestors' allocations stay unknown, so dependency and worktree sizes above them still
 fail as errors, and stale-folder classification skips them. On macOS, granting the terminal Full Disk Access
 brings most of them into scope. An unreadable scan root itself remains an error.
+
+Paths deleted while inspection runs no longer occupy space: the scan counts nothing for them, dependency and
+unregistered workspace entries that vanish before classification are omitted, and repositories that vanish
+skip registration. A deleted directory that Git still registers is reported as a `prunable` worktree.
+Only a missing path (`ENOENT`) qualifies; any other failure stays an error. A missing scan root is an error.
+
+`dependencies list`, `dependencies remove`, and `worktrees list` use this same single traversal for discovery
+and allocations, with the same restricted-path, vanished-path, and invalid-metadata handling.
 
 A `.git` entry is invalid metadata when `git rev-parse` reports it as not a repository, a broken or malformed
 gitfile, or a missing configured work tree, or when Git resolves the directory to a different top level.

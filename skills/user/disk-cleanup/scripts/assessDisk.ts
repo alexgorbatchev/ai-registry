@@ -2,7 +2,7 @@ import { lstat } from 'node:fs/promises';
 import { isWithin, repositoryChecker } from './filesystemUtils';
 import { inspectDependencies } from './inventory';
 import { inspectWorktrees } from './inspectWorktrees';
-import { scanAssessment } from './scanAssessment';
+import { allocationReader, scanAssessment } from './scanAssessment';
 import type { AssessmentScan } from './scanAssessment';
 import type {
   AssessmentReporter,
@@ -89,10 +89,7 @@ export async function assessDisk(
     };
   }
   async function measure(path: string): Promise<number> {
-    const data = await forRoot(root);
-    const bytes = data.allocations.get(path);
-    if (bytes === null || bytes === undefined) throw new Error(`Allocation unavailable: ${path}`);
-    return bytes;
+    return allocationReader((await forRoot(root)).allocations)(path);
   }
   // Dependencies and worktrees share one Git metadata validation per repository.
   const check = repositoryChecker();
@@ -135,11 +132,10 @@ export async function assessDisk(
         const data = await forRoot(root);
         const errors = [...data.inventory.errors];
         const dependencies = await inspectDependencies(
-          root,
           days,
-          (error) => errors.push(error),
           { ...data.inventory, errors: [] },
           measure,
+          (error) => errors.push(error),
           undefined,
           check,
         );

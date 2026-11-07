@@ -1,5 +1,6 @@
 import { Command, InvalidArgumentError, Option, type Help } from 'commander';
 import { assessDisk } from './assessDisk';
+import { discover } from './scanAssessment';
 import { createAssessmentRenderer } from './renderAssessment';
 import { realpath } from 'node:fs/promises';
 import { inspectDisk } from './inspectDisk';
@@ -149,9 +150,10 @@ for (const verb of ['list', 'remove']) {
     .action(async (options: DependencyOptions) => {
       const root = await resolveRoot(options.root);
       const errors: InspectionError[] = [];
-      const report = await inspectDependencies(root, options.days, (error) => errors.push(error));
+      const { inventory, measure, restricted } = await discover(root);
+      const report = await inspectDependencies(options.days, inventory, measure, (error) => errors.push(error));
       if (verb === 'list') {
-        output({ root, days: options.days, dependencies: report, errors });
+        output({ root, days: options.days, dependencies: report, restricted, errors });
         if (errors.length) process.exitCode = 1;
         return;
       }
@@ -284,8 +286,9 @@ const worktrees = program.command('worktrees').description('Review registered wo
 scoped(worktrees.command('list').description('List sizes, registration, branches, locks, and file status')).action(
   async (options: RunOptions) => {
     const root = await resolveRoot(options.root);
-    const report = await inspectWorktrees(root);
-    output({ root, ...report });
+    const { inventory, measure, restricted } = await discover(root);
+    const report = await inspectWorktrees(root, inventory, measure);
+    output({ root, ...report, restricted });
     if (report.errors.length > 0) process.exitCode = 1;
   },
 );

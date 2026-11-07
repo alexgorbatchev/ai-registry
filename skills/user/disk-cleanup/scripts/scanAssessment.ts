@@ -2,7 +2,7 @@ import { lstat, readdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import pLimit from 'p-limit';
 import { pMapIterable } from 'p-map';
-import { isWithin } from './filesystemUtils';
+import { isMissing, isWithin } from './filesystemUtils';
 import { formatBytes } from './inspectFolders';
 import type { AssessmentScanOptions, AssessmentScanProgress, DiskUsage, Inventory, StaleFolder } from './types';
 import type { Stats } from 'node:fs';
@@ -157,6 +157,11 @@ export async function scanAssessment(
       }
       if (summary.bytes >= minimumBytes) result.largePaths.push({ path, bytes: summary.bytes });
     } catch (error) {
+      // A descendant removed after its parent was listed no longer occupies space: count nothing for it.
+      if (path !== root && isMissing(error)) {
+        result.staleFolders.splice(staleStart);
+        return { bytes: 0, allocated: 0, fileBytes: 0, mtime: 0, atime: 0, complete: true, links: new Map() };
+      }
       summary.complete = false;
       result.allocations.set(path, null);
       // An unreadable scan root is a failure; an unreadable descendant is a reported exclusion.
@@ -169,4 +174,21 @@ export async function scanAssessment(
   result.largePaths.sort((a, b) => b.bytes - a.bytes);
   result.staleFolders.sort((a, b) => b.bytes - a.bytes);
   return result;
+}
+
+/** Reads a directory allocation recorded by a scan; incomplete or unscanned paths are unavailable. */
+export function allocationReader(allocations: Map<string, number | null>): (path: string) => Promise<number> {
+  return async (path) => {
+    const bytes = allocations.get(path);
+    if (bytes === null || bytes === undefined) throw new Error(`Allocation unavailable: ${path}`);
+    return bytes;
+  };
+}
+
+export type Discovery = { inventory: Inventory; restricted: string[]; measure: (path: string) => Promise<number> };
+
+/** Discovers repositories, dependencies, and workspaces with their allocations in one traversal. */
+export async function discover(root: string): Promise<Discovery> {
+  const scan = await scanAssessment(root, Number.POSITIVE_INFINITY, 0);
+  return { inventory: scan.inventory, restricted: scan.restricted, measure: allocationReader(scan.allocations) };
 }

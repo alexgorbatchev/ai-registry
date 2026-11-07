@@ -1,6 +1,6 @@
 ---
 created_on: '2026-10-05 07:24'
-last_modified: '2026-11-05 04:37'
+last_modified: '2026-11-07 09:40'
 status: current
 ---
 
@@ -19,6 +19,10 @@ Maintain the portable development-folder cleanup skill and its Bun scripts in th
 Update `SKILL.md` and its `last_modified` in the same change as any command, argument, option, default,
 environment handling, output, error, or filesystem side-effect change. Check the skill against the live Commander
 command tree; preserve verbatim `skill` output and the single alert on every agent help path.
+
+Do not pass nested asymmetric matchers (`expect.any`, `expect.arrayContaining`, `expect.objectContaining`) to
+`toMatchObject`: Bun mutates the received value (https://github.com/oven-sh/bun/issues/3521). Use
+`toEqual(expect.objectContaining(...))` instead.
 
 Use real disposable Git repositories for cleanup tests. Keep removal previews read-only. Write manifests and execution
 receipts under root's `.state`, which holds retained records rather than `.tmp` scratch; reject deletions inside it.

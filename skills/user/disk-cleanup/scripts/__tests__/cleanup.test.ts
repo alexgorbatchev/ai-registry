@@ -309,8 +309,8 @@ test('disk assessment includes deep project artifacts alongside caches and all i
   );
   const dependencies = sectionOf(report, 'deps', 'dependencies');
   expect(dependencies.isComplete).toBe(true);
-  expect(dependencies.data).toMatchObject([
-    { path: join(repositoryPath, 'node_modules'), eligible: true, bytes: expect.any(Number) },
+  expect(dependencies.data).toEqual([
+    expect.objectContaining({ path: join(repositoryPath, 'node_modules'), eligible: true, bytes: expect.any(Number) }),
   ]);
   expect(await Bun.file(artifactPath).size).toBe(128 * 1024);
 });
@@ -366,11 +366,13 @@ test('disk assessment waits for the shared scan and preserves readable partial r
   release.resolve();
   const report = await assessment;
   expect(report.isComplete).toBe(false);
-  expect(sectionOf(report, 'large', 'paths')).toMatchObject({
-    isComplete: false,
-    data: expect.arrayContaining([expect.objectContaining({ path: join(rootPath, 'data') })]),
-    errors: [{ repository: rootPath, message: 'unreadable child' }],
-  });
+  expect(sectionOf(report, 'large', 'paths')).toEqual(
+    expect.objectContaining({
+      isComplete: false,
+      data: expect.arrayContaining([expect.objectContaining({ path: join(rootPath, 'data') })]),
+      errors: [{ repository: rootPath, message: 'unreadable child' }],
+    }),
+  );
   expect(report.sections.map((section) => section.name)).toEqual([
     'disk',
     'large',

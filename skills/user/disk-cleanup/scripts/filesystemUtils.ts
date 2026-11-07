@@ -40,6 +40,20 @@ export async function checkRepository(repository: string): Promise<RepositoryChe
   return { commonDirectory };
 }
 
+export function isMissing(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT';
+}
+
+/** True when a path no longer exists. Paths removed during inspection no longer occupy disk space. */
+export async function isVanished(path: string): Promise<boolean> {
+  try {
+    await lstat(path);
+    return false;
+  } catch (error) {
+    return isMissing(error);
+  }
+}
+
 export function repositoryChecker(): RepositoryChecker {
   const checks = new Map<string, Promise<RepositoryCheck>>();
   return (repository) => {

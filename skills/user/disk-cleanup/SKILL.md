@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-07 07:02
+  last_modified: 2026-11-07 07:30
   status: current
 ---
 
@@ -211,9 +211,11 @@ browser staging clones, and application caches. A location or runtime-looking na
    removed paths are still absent. Report `freeBeforeBytes`, `freeAfterBytes`, and `reclaimedBytes` as the observed
    filesystem change, separate from allocation estimates. Concurrent writes may make this delta negative.
 
-Global `lsof -nP -F0pn` snapshots cover visible open/mapped files, executables, and working directories at review
-and immediately before each batch's final validation and removal. Normalize macOS `/var` aliases and conservatively
-preserve ambiguous escaped names. Related mount warnings and malformed/failed snapshots block cleanup; unrelated mount warnings are recorded.
+Global `lsof -nP -F0pfnDi` snapshots cover visible open/mapped files, executables, and working directories at review
+and immediately before each batch's final validation and removal. Match paths and shared device/inode identities;
+preserve every selected hard-link alias when any visible alias is open, even outside the selected directories.
+Keep device and inode fields within their file/process records; never combine incomplete records. Normalize macOS
+`/var` aliases and conservatively preserve ambiguous escaped names. Related mount warnings and malformed/failed snapshots block cleanup; unrelated mount warnings are recorded.
 Process visibility is limited by the invoking user's permissions. Snapshots and repeated identity checks cannot
 lock out a producer that starts or writes afterward; coordinate stopping the producer before cleanup when needed.
 Do not weaken Git guards to remove copied repositories. Review source changes through a separate authorized workflow.

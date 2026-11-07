@@ -159,7 +159,7 @@ test('native removal batches process snapshots and commands while refreshing act
   const result = await removeNativeTargets(root, review.manifestPath, true, async (args) => {
     if (args[0] === 'lsof') {
       snapshots++;
-      return { stdout: `p123\0n${snapshots === 2 ? paths[34] : '/outside'}/data\0`, stderr: '', exitCode: 0 };
+      return { stdout: `p123\0\nf3\0n${snapshots === 2 ? paths[34] : '/outside'}/data\0`, stderr: '', exitCode: 0 };
     }
     if (args[0] === 'rm') removals.push(args.slice(3));
     return runInspectionCommand(args);
@@ -181,7 +181,7 @@ test('a change during the batch process snapshot stops every removal in that bat
   const result = await removeNativeTargets(root, review.manifestPath, true, async (args) => {
     if (args[0] === 'lsof') {
       await mkdir(join(root, 'second/.git'));
-      return { stdout: 'p123\0n/outside/data\0', stderr: '', exitCode: 0 };
+      return { stdout: 'p123\0\nf3\0n/outside/data\0', stderr: '', exitCode: 0 };
     }
     if (args[0] === 'rm') removals++;
     return runInspectionCommand(args);
@@ -322,4 +322,57 @@ test('native removal handles hard-linked symlinks without following their target
   expect(result.failure).toBeNull();
   expect(result.removed).toEqual(paths);
   expect(await readdir(join(root, 'cache'))).toEqual([]);
+});
+
+test('native review preserves every alias of an open hard-linked file', async () => {
+  const paths = await factory_linkedCaches(root, 33);
+  const outside = join(root, 'outside-link');
+  await link(join(paths[0]!, 'data'), outside);
+  await mkdir(join(root, 'idle'));
+  const handle = await open(outside);
+  try {
+    const review = await reviewNativeTargets(root, [...paths, join(root, 'idle')]);
+    expect(review.manifest.actions.map((action) => action.path)).toEqual([join(root, 'idle')]);
+    expect(review.manifest.preserved.map((entry) => entry.path)).toEqual(paths);
+    for (const path of paths) expect(await Bun.file(join(path, 'data')).text()).toBe('reviewed cache');
+  } finally {
+    await handle.close();
+  }
+});
+
+test('native removal preserves aliases opened after review across batches and removes an idle sibling', async () => {
+  const paths = await factory_linkedCaches(root, 65);
+  const outside = join(root, 'outside-link');
+  await link(join(paths[0]!, 'data'), outside);
+  await mkdir(join(root, 'idle'));
+  const review = await reviewNativeTargets(root, [...paths, join(root, 'idle')]);
+  const handle = await open(outside);
+  try {
+    const result = await removeNativeTargets(root, review.manifestPath, true);
+    expect(result.failure).toBeNull();
+    expect(result.removed).toEqual([join(root, 'idle')]);
+    expect(result.preserved).toEqual(paths.map((path) => ({ path, reason: 'Became active since review' })));
+    for (const path of paths) expect(await Bun.file(join(path, 'data')).text()).toBe('reviewed cache');
+    expect(await Bun.file(outside).text()).toBe('reviewed cache');
+    expect(await Bun.file(result.logPath!).json()).toEqual(result);
+  } finally {
+    await handle.close();
+  }
+});
+
+test('an unlinked but open outside alias still protects the last selected link', async () => {
+  const paths = await factory_linkedCaches(root, 1);
+  const outside = join(root, 'outside-link');
+  await link(join(paths[0]!, 'data'), outside);
+  const handle = await open(outside);
+  try {
+    await Bun.file(outside).delete();
+    expect((await lstat(join(paths[0]!, 'data'))).nlink).toBe(1);
+    const review = await reviewNativeTargets(root, paths);
+    expect(review.manifest.actions).toEqual([]);
+    expect(review.manifest.preserved.map((entry) => entry.path)).toEqual(paths);
+    expect(await Bun.file(join(paths[0]!, 'data')).text()).toBe('reviewed cache');
+  } finally {
+    await handle.close();
+  }
 });

@@ -1,7 +1,7 @@
 import type { Action, PreservedArtifact } from './types';
 
 export type NativeAction = Action & { identity: string };
-export type NativeInspection = { path: string; identity: string; bytes: number; hardlinks: string[] };
+export type NativeInspection = { path: string; identity: string; bytes: number; hardlinks: string[]; inodes: string[] };
 export type NativeHardlink = { ctimeMs: number; nlink: number; fingerprint: string };
 export type NativeHardlinks = { baseline: Map<string, NativeHardlink>; removed: Map<string, number> };
 export type NativeScope = { path: string; entries: string[] };

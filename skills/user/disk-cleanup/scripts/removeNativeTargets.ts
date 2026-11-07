@@ -32,10 +32,12 @@ export async function removeNativeTargets(
   for (const scope of manifest.scopes) if (scope.path !== root) await validatePath(root, scope.path);
   const hardlinkState: NativeHardlinks = { baseline: new Map(), removed: new Map() };
   const targetLinks = new Map<string, string[]>();
+  const targetInodes = new Map<string, string[]>();
   async function validate(action: NativeAction): Promise<void> {
     const inspection = await inspectNativeTarget(root, action.path, execute ? hardlinkState : undefined);
     if (inspection.identity !== action.identity) throw new Error(`Target changed since review: ${action.path}`);
     targetLinks.set(action.path, inspection.hardlinks);
+    targetInodes.set(action.path, inspection.inodes);
   }
   // A replacement or newly embedded repository invalidates the entire batch before the first removal.
   for (const action of manifest.actions) await validate(action);
@@ -81,6 +83,7 @@ export async function removeNativeTargets(
       const processes = await inspectNativeProcesses(
         batch.map((action) => action.path),
         recordedRunner,
+        targetInodes,
       );
       const active = new Set(processes.active);
       const idle = batch.filter((action) => !active.has(action.path));

@@ -21,18 +21,16 @@ export async function inspectNativeTarget(
   const hash = createHash('sha256');
   const links = new Set<number>();
   const hardlinks: string[] = [];
+  const inodes: string[] = [];
   let bytes = 0;
   async function walk(current: string): Promise<void> {
     const info = current === path ? rootInfo : await lstat(current);
     if (info.dev !== rootInfo.dev) throw new Error(`Target crosses a filesystem boundary: ${current}`);
     const key = `${info.dev}:${info.ino}`;
+    inodes.push(key);
     let ctimeMs = info.ctimeMs;
-    if (
-      hardlinkState &&
-      (info.isFile() || info.isSymbolicLink()) &&
-      (info.nlink > 1 || hardlinkState.baseline.has(key))
-    ) {
-      ctimeMs = await inspectNativeHardlink(current, info, hardlinkState);
+    if ((info.isFile() || info.isSymbolicLink()) && (info.nlink > 1 || hardlinkState?.baseline.has(key))) {
+      if (hardlinkState) ctimeMs = await inspectNativeHardlink(current, info, hardlinkState);
       hardlinks.push(key);
     }
     hash.update(JSON.stringify([current, info.dev, info.ino, ctimeMs, info.mtimeMs, info.size]));
@@ -46,7 +44,7 @@ export async function inspectNativeTarget(
     for (const name of names) await walk(join(current, name));
   }
   await walk(path);
-  return { path, identity: hash.digest('hex'), bytes, hardlinks };
+  return { path, identity: hash.digest('hex'), bytes, hardlinks, inodes };
 }
 
 export async function createNativeLog(root: string): Promise<string> {
@@ -60,21 +58,25 @@ export async function reviewNativeTargets(
 ): Promise<NativeReview> {
   const actions: NativeAction[] = [];
   const preserved: PreservedArtifact[] = [];
+  const targetInodes = new Map<string, string[]>();
   // Validate lexical scope for the whole selection before classifying individual entries.
   const paths = await Promise.all(inputs.map((input) => validatePath(root, input)));
   assertDisjoint(root, paths);
   if (paths.some((path) => isRecordPath(root, path))) throw new Error('Preserve the root .state cleanup records');
   for (const path of paths) {
     try {
-      const { identity, bytes } = await inspectNativeTarget(root, path);
+      const { identity, bytes, inodes } = await inspectNativeTarget(root, path);
       if (identity !== (await inspectNativeTarget(root, path)).identity)
         throw new Error(`Target changed during review: ${path}`);
       actions.push({ path, identity, bytes, repository: null, kind: 'cache' });
+      targetInodes.set(path, inodes);
     } catch (error) {
       preserved.push({ path, reason: String(error) });
     }
   }
-  const processes = paths.length ? await inspectNativeProcesses(paths, runner) : { active: [], warnings: [] };
+  const processes = paths.length
+    ? await inspectNativeProcesses(paths, runner, targetInodes)
+    : { active: [], warnings: [] };
   for (const path of processes.active) {
     const index = actions.findIndex((action) => action.path === path);
     if (index >= 0) {

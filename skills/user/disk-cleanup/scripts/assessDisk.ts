@@ -4,7 +4,14 @@ import { inspectDependencies } from './inventory';
 import { inspectWorktrees } from './inspectWorktrees';
 import { scanAssessment } from './scanAssessment';
 import type { AssessmentScan } from './scanAssessment';
-import type { AssessmentSection, AssessmentTask, DiskAssessment, InspectionRunner } from './types';
+import type {
+  AssessmentReporter,
+  AssessmentScanProgress,
+  AssessmentSection,
+  AssessmentTask,
+  DiskAssessment,
+  InspectionRunner,
+} from './types';
 
 export async function assessDisk(
   root: string,
@@ -13,7 +20,18 @@ export async function assessDisk(
   runCommand: InspectionRunner,
   systemRoots: string[] = [],
   scan: typeof scanAssessment = scanAssessment,
+  report: AssessmentReporter = () => {},
 ): Promise<DiskAssessment> {
+  const scope: DiskAssessment['scope'] = {
+    roots: [root, ...new Set(systemRoots)],
+    exclusions: [
+      'Other paths and users outside the listed roots',
+      'Nested filesystems and symbolic-link traversal',
+      'Unreadable paths reported in section errors',
+    ],
+    docker: 'Reported Docker context; may be remote',
+  };
+  report({ type: 'start', root, scope });
   async function command(name: string, args: string[], format: 'text' | 'json'): Promise<AssessmentSection> {
     let result;
     try {
@@ -38,6 +56,7 @@ export async function assessDisk(
     };
   }
   const scans = new Map<string, Promise<AssessmentScan>>();
+  const activeScans = new Map<string, AssessmentScanProgress>();
   const roots = [...new Set([root, ...systemRoots])];
   const devices = new Map(
     await Promise.all(
@@ -54,7 +73,14 @@ export async function assessDisk(
   for (const path of [...roots].sort((a, b) => a.length - b.length)) {
     if (![...scans.keys()].some((scope) => isWithin(scope, path) && devices.get(scope) === devices.get(path))) {
       const reportRoot = path === root || isWithin(path, root) ? root : path;
-      scans.set(path, scan(path, minimumBytes, days, undefined, reportRoot));
+      activeScans.set(path, { root: path, path, entries: 0 });
+      scans.set(
+        path,
+        scan(path, minimumBytes, days, undefined, reportRoot, (value, entry) => {
+          activeScans.set(path, value);
+          if (entry) report({ type: 'largePath', root: path, entry });
+        }).finally(() => activeScans.delete(path)),
+      );
     }
   }
   async function forRoot(path: string): Promise<AssessmentScan> {
@@ -195,27 +221,38 @@ export async function assessDisk(
       },
     });
   }
-  const sections = await Promise.all(
-    tasks.map(async (task): Promise<AssessmentSection> => {
-      try {
-        return await task.inspect();
-      } catch (error) {
-        return { name: task.name, isComplete: false, data: null, errors: [String(error)] };
-      }
-    }),
-  );
+  const pending = new Set(tasks.map((task) => task.name));
+  const heartbeat = setInterval(() => {
+    report({ type: 'progress', pending: [...pending], scans: [...activeScans.values()] });
+  }, 5000);
+  let sections: AssessmentSection[];
+  try {
+    sections = await Promise.all(
+      tasks.map(async (task): Promise<AssessmentSection> => {
+        let section: AssessmentSection;
+        try {
+          section = await task.inspect();
+        } catch (error) {
+          section = { name: task.name, isComplete: false, data: null, errors: [String(error)] };
+        }
+        pending.delete(task.name);
+        report({ type: 'section', section });
+        return section;
+      }),
+    );
+  } finally {
+    clearInterval(heartbeat);
+  }
+  const isComplete = sections.every((section) => section.isComplete);
+  report({
+    type: 'complete',
+    isComplete,
+    failed: sections.filter((section) => !section.isComplete).map((s) => s.name),
+  });
   return {
     root,
-    isComplete: sections.every((section) => section.isComplete),
+    isComplete,
     sections,
-    scope: {
-      roots: [root, ...new Set(systemRoots)],
-      exclusions: [
-        'Other paths and users outside the listed roots',
-        'Nested filesystems and symbolic-link traversal',
-        'Unreadable paths reported in section errors',
-      ],
-      docker: 'Reported Docker context; may be remote',
-    },
+    scope,
   };
 }

@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-05 12:02
+  last_modified: 2026-11-06 17:00
   status: current
 ---
 
@@ -20,12 +20,12 @@ Native cleanup also requires Unix `lsof`. The tool resolves and verifies GNU uti
 
 1. Identify the user's target root, default to $HOME. Pass it explicitly as `--root`; the default is the working directory.
 2. Run `disk assess --root <target> --system` for a general machine disk-space request on macOS or Linux.
-   Omit `--system` when the user selected only a project or directory. Await its final JSON and process exit;
+   Omit `--system` when the user selected only a project or directory. Read its streaming stdout and await the final status and process exit;
    resume every yielded tool call until it finishes. This command collects filesystem capacity, a three-level
    overview, files and directories of at least 1G at every depth, dependencies, worktrees, stale folders, and Docker.
    Report the largest paths across the entire selected root, including development projects and hidden directories.
    Do not end the assessment or ask about deletion based on an early cache result while any inspection is pending.
-   When `isComplete` is false, report successful results together with each failed section and its errors;
+   When the final status is `INCOMPLETE`, report successful results together with each failed section and its errors;
    never present incomplete coverage as a full assessment. Report nested directory totals without adding them together.
 3. Use `dependencies list` for inactivity decisions and `worktrees list` for workspace registration and file status.
    For Rust builds, use `rust list` and the [Rust cleanup workflow](references/rust-cleanup.md).
@@ -68,7 +68,7 @@ Read [scripts/inventory.ts](scripts/inventory.ts) when changing activity classif
 
 | Command | Arguments and options | Behavior |
 |---|---|---|
-| `disk assess` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--system` default false | Await all inspection sections and emit one combined report. Include platform cache, temp, library, and log scopes when selected. `--size` sets large-path and stale-folder thresholds; `--days` controls inactivity. No deletion or log files. |
+| `disk assess` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--system` default false | Stream readable progress and completed section results to stdout, then report final completion. Include platform cache, temp, library, and log scopes when selected. `--size` sets large-path and stale-folder thresholds; `--days` controls inactivity. No deletion or log files. |
 | `disk inspect` | `--root <directory>` default `.`, `--depth <levels>` default `2` | Return capacity, sorted directory allocations, `errors`, and `isComplete`. Preserve successful output when either command fails; incomplete inspection exits `1`. |
 | `folders list` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--time <mode>` default `either`, `--depth <levels>`, `--no-prune` | Return directories exceeding size and staleness thresholds with access/modification timestamps, pruning nested matching children by default. |
 | `dependencies list` | `--root <directory>` default `.`, `--days <count>` default `30` | Return discovered outermost `node_modules` folders with owner, allocation, activity, eligibility, reason, and top-level `errors`. Preserve readable siblings on errors; incomplete inspection exits `1`. Unknown allocation is null. |
@@ -107,24 +107,31 @@ respective package manager or CLI uninstaller.
 Folder scans stay on the root filesystem and report unreadable paths in `errors` alongside successful matches;
 any recorded error returns exit code `1`.
 
-### Combined assessment output
+### Streaming assessment output
 
-`disk assess` emits `{root, isComplete, sections, scope}` only after every section finishes. Each section has `name`,
-`isComplete`, `data`, and `errors`. Names are `filesystem`, `overview`, `largePaths`, `dependencies`, `worktrees`,
-`staleFolders`, and `docker`. Overview and large-path data are arrays of `{bytes, path}` sorted largest first.
+`disk assess` streams readable text to stdout in both human and agent modes; it does not emit JSON.
+Read the initial root and scope, large-path discoveries as their allocations become available, each section's
+result as it finishes, and a heartbeat every five seconds while
+inspection remains pending. Heartbeats list pending sections and each active filesystem scan's visited-entry
+count and current path. Section order follows completion, not a fixed sequence. Section headings state `complete`
+or `INCOMPLETE`; successful data and errors remain visible together. Names are `filesystem`, `overview`, `largePaths`,
+`dependencies`, `worktrees`, `staleFolders`, and `docker`. Allocation rows show readable sizes and quoted paths,
+sorted largest first within each completed section; other section data retains all nested fields without truncation.
+Live `Found` rows are discovery-order allocation estimates, repeated in the final sorted sections; do not add them together.
+Await the final `Assessment complete` or `Assessment INCOMPLETE` status and process exit before making recommendations.
 The overview includes directories through depth three regardless of size; large paths include files and directories
 at every depth meeting `--size`. These are overlapping allocations, not independent reclaimable totals.
 Reuse one filesystem traversal per disjoint scope for overview, large paths, discovery, allocations, and stale folders.
 Coalesce overlapping roots on the same filesystem; keep explicitly selected mount roots separate. Git activity/status,
 filesystem capacity, and Docker queries remain separate. Assessment metadata is a snapshot; removal commands still
 revalidate their targets immediately before deletion.
-Filesystem data is raw `df` output. Dependency, worktree, and stale-folder data retain their list-command JSON.
+Filesystem data is raw `df` output. Dependency, worktree, and stale-folder data retain their list-command fields.
 Docker data contains individual command reports for context, endpoint, data root, usage, verbose details, containers,
 container IDs, and mounts when containers exist. All daemon queries use the initially selected context; inspect its
 endpoint before attributing usage to this machine. A missing Docker executable or unavailable daemon is an error,
 not zero usage. A failed context lookup prevents dependent Docker queries.
 Nonzero commands retain available stdout and stderr; failed sections never hide successful sibling sections.
-`isComplete` describes scan completion only, never deletion safety. Exit code is `1` if any section is incomplete.
+Section and final completion describe scan completion only, never deletion safety. Exit code is `1` if any section is incomplete.
 `scope` lists inspected roots, exclusions, and the Docker context boundary. With `--system`, macOS adds the current
 user's OS temp directory, its sibling `X` staging directory, `~/Library/Caches`, `/Library`, and `/private/var/log`.
 Linux adds the OS temp directory, `/var/tmp`, `/var/cache`, `/var/log`, and `~/.cache`. Resolve existing root aliases
@@ -293,7 +300,7 @@ On the first removal or verification failure, stop the batch and retain its part
 
 ## Output and maintenance
 
-Set `AGENT=1`, `true`, or `yes` for compact JSON and untruncated help/errors. Other values use indented JSON,
+`disk assess` always streams readable text and progress to stdout. For other commands, set `AGENT=1`, `true`, or `yes` for compact JSON and untruncated help/errors. Other values use indented JSON,
 tree help wrapped to `COLUMNS` or the terminal width (unwrapped when neither is known), and concise errors. Help text
 is never truncated. Agent help begins with the skill alert.
 Rust inspection inherits Cargo configuration and environment overrides, and disables rustup auto-installation

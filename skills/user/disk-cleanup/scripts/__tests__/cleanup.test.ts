@@ -3,6 +3,7 @@ import { lstat, mkdir, symlink, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { cli, createRepository, createRoot, disposeRoot, git } from './helpers';
 import { assessDisk } from '../assessDisk';
+import { renderAssessment } from '../renderAssessment';
 import { scanAssessment } from '../scanAssessment';
 import { runInspectionCommand } from '../runInspectionCommand';
 
@@ -286,7 +287,13 @@ test('disk assessment includes deep project artifacts alongside caches and all i
   await Bun.write(artifactPath, Buffer.alloc(128 * 1024));
   await Bun.write(join(rootPath, '.cache/compiler/cache.bin'), Buffer.alloc(64 * 1024));
   const result = cli(rootPath, ['disk', 'assess', '--root', rootPath, '--size', '32K']);
-  const report = JSON.parse(result.stdout);
+  const report = await assessDisk(rootPath, 32 * 1024, 30, runInspectionCommand);
+  expect(
+    result.stdout
+      .split('\n')
+      .filter((line) => /^(filesystem|overview|largePaths|dependencies|worktrees|staleFolders|docker): /.test(line))
+      .sort(),
+  ).toEqual(report.sections.map((section) => renderAssessment({ type: 'section', section }).split('\n')[0]!).sort());
   expect(report.sections.map((section: { name: string }) => section.name)).toEqual([
     'filesystem',
     'overview',
@@ -296,17 +303,21 @@ test('disk assessment includes deep project artifacts alongside caches and all i
     'staleFolders',
     'docker',
   ]);
-  expect(report.sections[2].data).toEqual(
+  expect(report.sections[2]?.data).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ path: artifactPath, bytes: 128 * 1024 }),
       expect.objectContaining({ path: join(rootPath, '.cache/compiler/cache.bin'), bytes: 64 * 1024 }),
     ]),
   );
-  expect(report.sections[3].isComplete).toBe(true);
-  expect(report.sections[3].data.dependencies[0]).toMatchObject({
-    path: join(repositoryPath, 'node_modules'),
-    eligible: true,
-    bytes: expect.any(Number),
+  expect(report.sections[3]?.isComplete).toBe(true);
+  expect(report.sections[3]?.data).toMatchObject({
+    dependencies: [
+      {
+        path: join(repositoryPath, 'node_modules'),
+        eligible: true,
+        bytes: expect.any(Number),
+      },
+    ],
   });
   expect(await Bun.file(artifactPath).size).toBe(128 * 1024);
 });
@@ -317,11 +328,17 @@ test('disk assessment retains successful sections when Git inspection fails', as
   await Bun.write(join(rootPath, 'keep.txt'), 'keep\n');
   const result = cli(rootPath, ['disk', 'assess', '--root', rootPath, '--size', '1B']);
   expect(result.exitCode).toBe(1);
-  const report = JSON.parse(result.stdout);
+  const report = await assessDisk(rootPath, 1, 30, runInspectionCommand);
+  expect(result.stdout.split('\n').filter((line) => line.startsWith('Assessment '))).toEqual([
+    `Assessment INCOMPLETE. Failed sections: ${report.sections
+      .filter((section) => !section.isComplete)
+      .map((section) => section.name)
+      .join(', ')}. Successful results are shown above.`,
+  ]);
   expect(report.isComplete).toBe(false);
-  expect(report.sections[0].isComplete).toBe(true);
-  expect(report.sections[1].data).toEqual(expect.arrayContaining([expect.objectContaining({ path: rootPath })]));
-  expect(report.sections[4].isComplete).toBe(false);
+  expect(report.sections[0]?.isComplete).toBe(true);
+  expect(report.sections[1]?.data).toEqual(expect.arrayContaining([expect.objectContaining({ path: rootPath })]));
+  expect(report.sections[4]?.isComplete).toBe(false);
   expect(await Bun.file(join(rootPath, 'keep.txt')).text()).toBe('keep\n');
 });
 

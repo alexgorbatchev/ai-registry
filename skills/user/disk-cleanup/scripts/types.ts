@@ -91,6 +91,14 @@ export type InspectionRunner = (args: string[]) => Promise<InspectionCommandResu
 export type AssessmentOptions = { root: string; size: string; days: number; system: boolean };
 export type AssessmentTask = { name: string; inspect: () => Promise<AssessmentSection> };
 export type AssessmentSection = { name: string; isComplete: boolean; data: unknown; errors: string[] };
+export type AssessmentScanProgress = { root: string; path: string; entries: number };
+export type AssessmentEvent =
+  | { type: 'start'; root: string; scope: DiskAssessment['scope'] }
+  | { type: 'progress'; pending: string[]; scans: AssessmentScanProgress[] }
+  | { type: 'largePath'; root: string; entry: DiskUsage }
+  | { type: 'section'; section: AssessmentSection }
+  | { type: 'complete'; isComplete: boolean; failed: string[] };
+export type AssessmentReporter = (event: AssessmentEvent) => void;
 export type DiskAssessment = {
   root: string;
   isComplete: boolean;

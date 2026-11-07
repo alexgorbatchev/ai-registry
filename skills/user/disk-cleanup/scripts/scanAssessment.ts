@@ -2,7 +2,7 @@ import { lstat, readdir } from 'node:fs/promises';
 import { basename, join, relative, sep } from 'node:path';
 import { isWithin } from './filesystemUtils';
 import { formatBytes } from './inspectFolders';
-import type { DiskUsage, Inventory, StaleFolder } from './types';
+import type { AssessmentScanProgress, DiskUsage, Inventory, StaleFolder } from './types';
 
 type Summary = {
   bytes: number;
@@ -31,6 +31,7 @@ export async function scanAssessment(
   days: number,
   read: typeof readDirectory = readDirectory,
   reportRoot: string = root,
+  progress: (value: AssessmentScanProgress, largePath?: DiskUsage) => void = () => {},
 ): Promise<AssessmentScan> {
   const result: AssessmentScan = {
     inventory: { repositories: [], dependencies: [], workspaces: [], errors: [] },
@@ -44,7 +45,10 @@ export async function scanAssessment(
   const seen = new Set<string>();
   const now = Date.now();
   const cutoff = now - days * 86400000;
+  let entries = 0;
   async function walk(path: string, depth: number, repository: string | null, discover: boolean): Promise<Summary> {
+    progress({ root, path, entries: ++entries });
+    let largePath: DiskUsage | undefined;
     const staleStart = result.staleFolders.length;
     const summary: Summary = {
       bytes: 0,
@@ -131,12 +135,16 @@ export async function scanAssessment(
       } else if (info.isSymbolicLink() && basename(path) === 'node_modules') {
         result.allocations.set(path, bytes);
       }
-      if (summary.bytes >= minimumBytes) result.largePaths.push({ path, bytes: summary.bytes });
+      if (summary.bytes >= minimumBytes) {
+        largePath = { path, bytes: summary.bytes };
+        result.largePaths.push(largePath);
+      }
     } catch (error) {
       summary.complete = false;
       result.allocations.set(path, null);
       result.inventory.errors.push({ repository: path, message: String(error) });
     }
+    if (largePath) progress({ root, path, entries }, largePath);
     return summary;
   }
   await walk(root, 0, null, root === reportRoot);

@@ -1,5 +1,6 @@
 import { Command, InvalidArgumentError, Option, type Help } from 'commander';
 import { assessDisk } from './assessDisk';
+import { renderAssessment } from './renderAssessment';
 import { realpath } from 'node:fs/promises';
 import { inspectDisk } from './inspectDisk';
 import { systemAssessmentRoots } from './systemAssessmentRoots';
@@ -57,7 +58,7 @@ program
   });
 
 const disk = program.command('disk').description('Measure allocated space');
-scoped(disk.command('assess').description('Await a combined disk, project, cache, and Docker assessment'))
+scoped(disk.command('assess').description('Stream disk, project, cache, and Docker assessment progress and results'))
   .option('--size <size>', 'Minimum allocation for files and folders at every depth', '1G')
   .option('--system', 'Also inspect platform temporary, cache, library, and log paths', false)
   .option('--days <count>', 'Required inactivity for dependency decisions', positiveInteger, 30)
@@ -80,8 +81,9 @@ scoped(disk.command('assess').description('Await a combined disk, project, cache
       options.days,
       runInspectionCommand,
       systemRoots,
+      undefined,
+      (event) => console.log(renderAssessment(event)),
     );
-    output(report);
     if (!report.isComplete) process.exitCode = 1;
   });
 scoped(disk.command('inspect').description('Report filesystem capacity and largest folders'))

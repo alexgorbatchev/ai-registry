@@ -4,25 +4,38 @@ import { createHash } from 'node:crypto';
 import { createRecordDirectory, ensureUntrackedInParent, isRecordPath, validatePath } from './filesystemUtils';
 import { assertDisjoint } from './inventory';
 import { inspectNativeProcesses } from './inspectNativeProcesses';
+import { inspectNativeHardlink } from './inspectNativeHardlink';
 import { runInspectionCommand } from './runInspectionCommand';
-import type { NativeAction, NativeManifest, NativeReview } from './nativeTypes';
+import type { NativeAction, NativeHardlinks, NativeInspection, NativeManifest, NativeReview } from './nativeTypes';
 import type { InspectionRunner, PreservedArtifact } from './types';
 
 export async function inspectNativeTarget(
   root: string,
   input: string,
-): Promise<{ path: string; identity: string; bytes: number }> {
+  hardlinkState?: NativeHardlinks,
+): Promise<NativeInspection> {
   const path = await validatePath(root, input);
   const rootInfo = await lstat(path);
   if (!rootInfo.isDirectory()) throw new Error(`Native target must be a directory: ${path}`);
   await ensureUntrackedInParent(path);
   const hash = createHash('sha256');
   const links = new Set<number>();
+  const hardlinks: string[] = [];
   let bytes = 0;
   async function walk(current: string): Promise<void> {
     const info = current === path ? rootInfo : await lstat(current);
     if (info.dev !== rootInfo.dev) throw new Error(`Target crosses a filesystem boundary: ${current}`);
-    hash.update(JSON.stringify([current, info.dev, info.ino, info.ctimeMs, info.mtimeMs, info.size]));
+    const key = `${info.dev}:${info.ino}`;
+    let ctimeMs = info.ctimeMs;
+    if (
+      hardlinkState &&
+      (info.isFile() || info.isSymbolicLink()) &&
+      (info.nlink > 1 || hardlinkState.baseline.has(key))
+    ) {
+      ctimeMs = await inspectNativeHardlink(current, info, hardlinkState);
+      hardlinks.push(key);
+    }
+    hash.update(JSON.stringify([current, info.dev, info.ino, ctimeMs, info.mtimeMs, info.size]));
     if (info.nlink > 1 && !info.isDirectory()) {
       if (!links.has(info.ino)) bytes += info.blocks * 512;
       links.add(info.ino);
@@ -33,7 +46,7 @@ export async function inspectNativeTarget(
     for (const name of names) await walk(join(current, name));
   }
   await walk(path);
-  return { path, identity: hash.digest('hex'), bytes };
+  return { path, identity: hash.digest('hex'), bytes, hardlinks };
 }
 
 export async function createNativeLog(root: string): Promise<string> {

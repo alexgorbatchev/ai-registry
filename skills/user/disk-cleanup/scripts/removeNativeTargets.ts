@@ -6,7 +6,7 @@ import { inspectNativeProcesses } from './inspectNativeProcesses';
 import { readNativeManifest } from './readNativeManifest';
 import { createNativeLog, inspectNativeTarget } from './reviewNativeTargets';
 import { runInspectionCommand } from './runInspectionCommand';
-import type { NativeAction, NativeRemoval } from './nativeTypes';
+import type { NativeAction, NativeHardlinks, NativeRemoval } from './nativeTypes';
 import type { InspectionRunner } from './types';
 
 export async function removeNativeTargets(
@@ -30,9 +30,12 @@ export async function removeNativeTargets(
     throw new Error('Manifest scopes do not match the reviewed target parents');
   }
   for (const scope of manifest.scopes) if (scope.path !== root) await validatePath(root, scope.path);
+  const hardlinkState: NativeHardlinks = { baseline: new Map(), removed: new Map() };
+  const targetLinks = new Map<string, string[]>();
   async function validate(action: NativeAction): Promise<void> {
-    if ((await inspectNativeTarget(root, action.path)).identity !== action.identity)
-      throw new Error(`Target changed since review: ${action.path}`);
+    const inspection = await inspectNativeTarget(root, action.path, execute ? hardlinkState : undefined);
+    if (inspection.identity !== action.identity) throw new Error(`Target changed since review: ${action.path}`);
+    targetLinks.set(action.path, inspection.hardlinks);
   }
   // A replacement or newly embedded repository invalidates the entire batch before the first removal.
   for (const action of manifest.actions) await validate(action);
@@ -99,6 +102,8 @@ export async function removeNativeTargets(
         try {
           await ensureAbsent(action.path);
           result.removed.push(action.path);
+          for (const key of targetLinks.get(action.path) ?? [])
+            hardlinkState.removed.set(key, (hardlinkState.removed.get(key) ?? 0) + 1);
         } catch (error) {
           failures.push(String(error));
         }

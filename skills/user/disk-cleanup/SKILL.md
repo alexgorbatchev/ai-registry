@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-06 17:00
+  last_modified: 2026-11-07 06:34
   status: current
 ---
 
@@ -199,6 +199,9 @@ browser staging clones, and application caches. A location or runtime-looking na
 4. Add `--execute` within existing authorization. Revalidate the entire selection before the first deletion.
    Process batches of at most 32 targets and 16 KiB of path arguments. Take one fresh process snapshot per batch,
    preserve newly active targets, then revalidate every idle target before one native GNU `rm -r -- <exact-paths...>`.
+   For regular files and symlinks shared through hard links, execution also records content and metadata fingerprints.
+   Accept ctime changes across batches only when fingerprints still match and the link-count decrease exactly matches
+   this execution's verified removals. Unexpected link counts, content changes, or replacements stop cleanup.
    A failed removal can still delete other targets in that batch; verify every operand and record all confirmed
    removals. Stop before the next batch on any validation, process, removal, or verification failure.
    Save command exit statuses, selected actions, verified removals, preserved entries, failure, and before/after

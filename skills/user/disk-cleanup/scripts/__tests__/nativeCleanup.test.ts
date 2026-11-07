@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
-import { link, mkdir, open, rename, readdir, symlink } from 'node:fs/promises';
+import { link, lstat, mkdir, open, rename, readdir, symlink, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { cli, createRepository, createRoot, disposeRoot, git } from './helpers';
 import { inspectNativeTarget, reviewNativeTargets } from '../reviewNativeTargets';
 import { removeNativeTargets } from '../removeNativeTargets';
 import { runInspectionCommand } from '../runInspectionCommand';
 import { diskBytes } from '../filesystemUtils';
+import { factory_afterRemoval, factory_linkedCaches } from './fixtures';
 
 let root: string;
 beforeEach(async () => {
@@ -233,4 +234,92 @@ test('native inspection rejects Git-tracked targets and accepts untracked ones',
 
   await expect(inspectNativeTarget(root, trackedPath)).rejects.toThrow(`Contains Git-tracked files: ${trackedPath}`);
   expect((await inspectNativeTarget(root, untrackedPath)).path).toBe(untrackedPath);
+});
+
+test('native removal handles shared hard links across three bounded batches', async () => {
+  const paths = await factory_linkedCaches(root, 65);
+  const review = await reviewNativeTargets(root, paths);
+  const batches: string[][] = [];
+  const result = await removeNativeTargets(
+    root,
+    review.manifestPath,
+    true,
+    factory_afterRemoval(async (batch) => {
+      batches.push(batch);
+    }),
+  );
+  expect(result.failure).toBeNull();
+  expect(result.removed).toEqual(paths);
+  expect(batches.map((batch) => batch.length)).toEqual([32, 32, 1]);
+  expect(await readdir(join(root, 'cache'))).toEqual([]);
+  expect(await Bun.file(result.logPath!).json()).toEqual(result);
+});
+
+test('native removal detects same-size hard-link content changes with restored mtime between batches', async () => {
+  const paths = await factory_linkedCaches(root, 33);
+  const last = join(paths[32]!, 'data');
+  await utimes(last, 1700000000, 1700000000);
+  const original = await lstat(last);
+  const review = await reviewNativeTargets(root, paths);
+  const result = await removeNativeTargets(
+    root,
+    review.manifestPath,
+    true,
+    factory_afterRemoval(async () => {
+      await Bun.write(last, 'modified cache');
+      await utimes(last, original.atime, original.mtime);
+      expect((await lstat(last)).mtimeMs).toBe(original.mtimeMs);
+    }),
+  );
+  expect(result.failure).toBe(`Error: Hard-linked file changed since validation: ${last}`);
+  expect(result.removed).toEqual(paths.slice(0, 32));
+  expect(await Bun.file(last).text()).toBe('modified cache');
+  expect(await Bun.file(result.logPath!).json()).toEqual(result);
+});
+
+test('native removal rejects unexplained hard-link count changes between batches', async () => {
+  const paths = await factory_linkedCaches(root, 33);
+  const last = join(paths[32]!, 'data');
+  const outside = join(root, 'outside-link');
+  const review = await reviewNativeTargets(root, paths);
+  const result = await removeNativeTargets(
+    root,
+    review.manifestPath,
+    true,
+    factory_afterRemoval(async () => {
+      await link(last, outside);
+    }),
+  );
+  expect(result.failure).toBe(`Error: Hard-linked file changed since validation: ${last}`);
+  expect(result.removed).toEqual(paths.slice(0, 32));
+  expect(await Bun.file(last).text()).toBe('reviewed cache');
+  expect(await Bun.file(outside).text()).toBe('reviewed cache');
+});
+
+test('native removal accounts for multiple links per target and leaves active links intact', async () => {
+  const paths = await factory_linkedCaches(root, 33);
+  await link(join(paths[0]!, 'data'), join(paths[1]!, 'second-link'));
+  await Bun.write(join(paths[0]!, 'active'), 'live');
+  const review = await reviewNativeTargets(root, paths);
+  const handle = await open(join(paths[0]!, 'active'));
+  try {
+    const result = await removeNativeTargets(root, review.manifestPath, true);
+    expect(result.failure).toBeNull();
+    expect(result.removed).toEqual(paths.slice(1));
+    expect(result.preserved).toEqual([{ path: paths[0]!, reason: 'Became active since review' }]);
+    expect(await Bun.file(join(paths[0]!, 'data')).text()).toBe('reviewed cache');
+    expect((await lstat(join(paths[0]!, 'data'))).nlink).toBe(1);
+  } finally {
+    await handle.close();
+  }
+});
+
+test('native removal handles hard-linked symlinks without following their targets', async () => {
+  const paths = await factory_linkedCaches(root, 33, true);
+  expect((await lstat(join(paths[0]!, 'data'))).nlink).toBe(33);
+  const review = await reviewNativeTargets(root, paths);
+  const result = await removeNativeTargets(root, review.manifestPath, true);
+  expect(result.failure).toBeNull();
+  expect(result.removed).toEqual(paths);
+  expect(await readdir(join(root, 'cache'))).toEqual([]);
 });

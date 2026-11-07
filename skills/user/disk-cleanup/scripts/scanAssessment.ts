@@ -1,9 +1,9 @@
 import { lstat, readdir } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename, join, relative, sep } from 'node:path';
 import pLimit from 'p-limit';
 import { pMapIterable } from 'p-map';
 import { isMissing, isWithin } from './filesystemUtils';
-import { formatBytes } from './inspectFolders';
+import { formatBytes } from './sizes';
 import type { AssessmentScanOptions, AssessmentScanProgress, DiskUsage, Inventory, StaleFolder } from './types';
 import type { Stats } from 'node:fs';
 
@@ -40,7 +40,7 @@ export async function scanAssessment(
   read: typeof readDirectory = readDirectory,
   reportRoot: string = root,
   progress: (value: AssessmentScanProgress) => void = () => {},
-  { concurrency = 64, stat = lstat }: AssessmentScanOptions = {},
+  { concurrency = 64, stat = lstat, staleTime = 'either', prune = true, staleDepth }: AssessmentScanOptions = {},
 ): Promise<AssessmentScan> {
   const metadata = pLimit(concurrency);
   const result: AssessmentScan = {
@@ -56,6 +56,13 @@ export async function scanAssessment(
   const now = Date.now();
   const cutoff = now - days * 86400000;
   let entries = 0;
+  function isStale(summary: Summary): boolean {
+    const modified = summary.mtime <= cutoff;
+    const accessed = summary.atime <= cutoff;
+    if (staleTime === 'modified') return summary.mtime > 0 && modified;
+    if (staleTime === 'accessed') return summary.atime > 0 && accessed;
+    return modified && accessed;
+  }
   async function walk(
     path: string,
     metadataResult: PromiseSettledResult<Stats>,
@@ -136,12 +143,12 @@ export async function scanAssessment(
         result.allocations.set(path, summary.complete ? summary.allocated : null);
         if (
           isWithin(reportRoot, path) &&
+          (staleDepth === undefined || relative(reportRoot, path).split(sep).length <= staleDepth) &&
           summary.complete &&
           summary.fileBytes >= minimumBytes &&
-          summary.mtime <= cutoff &&
-          summary.atime <= cutoff
+          isStale(summary)
         ) {
-          result.staleFolders.splice(staleStart);
+          if (prune) result.staleFolders.splice(staleStart);
           result.staleFolders.push({
             path,
             bytes: summary.fileBytes,

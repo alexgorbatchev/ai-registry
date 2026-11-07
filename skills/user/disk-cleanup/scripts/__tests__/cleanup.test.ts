@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
-import { lstat, mkdir, symlink, utimes } from 'node:fs/promises';
+import { chmod, lstat, mkdir, symlink, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { cli, createRepository, createRoot, disposeRoot, git, sectionOf } from './helpers';
 import { assessDisk } from '../assessDisk';
@@ -481,6 +481,38 @@ test('folders list prunes nested matches by default and includes them with --no-
   expect(unprunedResult.exitCode).toBe(0);
   const unprunedParsed = JSON.parse(unprunedResult.stdout);
   expect(unprunedParsed.folders.length).toBe(2);
+});
+
+test('folders list applies time modes and depth to reporting while sizing whole subtrees', async () => {
+  const modifiedOnly = join(rootPath, 'modified-only');
+  const deep = join(rootPath, 'outer/inner');
+  const denied = join(rootPath, 'denied');
+  await mkdir(modifiedOnly);
+  await mkdir(join(deep, 'deeper'), { recursive: true });
+  await mkdir(denied);
+  const old = Math.floor((Date.now() - 60 * 86400000) / 1000);
+  const now = Math.floor(Date.now() / 1000);
+  await Bun.write(join(modifiedOnly, 'data'), Buffer.alloc(200 * 1024));
+  await utimes(join(modifiedOnly, 'data'), now, old);
+  await Bun.write(join(deep, 'deeper/data'), Buffer.alloc(200 * 1024));
+  await utimes(join(deep, 'deeper/data'), old, old);
+  await chmod(denied, 0);
+  try {
+    const list = (...args: string[]) => {
+      const result = cli(rootPath, ['folders', 'list', '--root', rootPath, '--size', '100K', ...args]);
+      expect(result.exitCode).toBe(0);
+      return JSON.parse(result.stdout);
+    };
+    const paths = (report: { folders: { path: string }[] }) => report.folders.map((entry) => entry.path).sort();
+    expect(paths(list('--time', 'modified'))).toEqual([modifiedOnly, join(rootPath, 'outer')]);
+    expect(paths(list('--time', 'accessed'))).toEqual([join(rootPath, 'outer')]);
+    const shallow = list('--time', 'accessed', '--depth', '2', '--no-prune');
+    expect(paths(shallow)).toEqual([join(rootPath, 'outer'), deep]);
+    expect(shallow.folders.every((entry: { bytes: number }) => entry.bytes >= 200 * 1024)).toBe(true);
+    expect(shallow).toEqual(expect.objectContaining({ restricted: [denied], errors: [] }));
+  } finally {
+    await chmod(denied, 0o700);
+  }
 });
 
 test('folders list rejects invalid size specifications', async () => {

@@ -4,7 +4,7 @@ description: Use when inspecting development, home-directory, or Docker disk usa
 author: alexgorbatchev
 metadata:
   created_on: '2026-10-05 07:10'
-  last_modified: 2026-11-07 09:50
+  last_modified: 2026-11-07 10:05
   status: current
 ---
 
@@ -71,7 +71,7 @@ Read [scripts/inventory.ts](scripts/inventory.ts) when changing activity classif
 |---|---|---|
 | `disk assess` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--system` default false | Stream compact agent-oriented text: heartbeat, completed sections, then final completion. Include platform cache, temp, library, and log scopes when selected. `--size` sets large-path and stale-folder thresholds; `--days` controls inactivity. No deletion or log files. |
 | `disk inspect` | `--root <directory>` default `.`, `--depth <levels>` default `2` | Return capacity, sorted directory allocations, `errors`, and `isComplete`. Preserve successful output when either command fails; incomplete inspection exits `1`. |
-| `folders list` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--time <mode>` default `either`, `--depth <levels>`, `--no-prune` | Return directories exceeding size and staleness thresholds with access/modification timestamps, pruning nested matching children by default. |
+| `folders list` | `--root <directory>` default `.`, `--size <size>` default `1G`, `--days <count>` default `30`, `--time <mode>` default `either`, `--depth <levels>`, `--no-prune` | Return directories exceeding size and staleness thresholds with access/modification timestamps, pruning nested matching children by default, plus `restricted` and `errors`. |
 | `dependencies list` | `--root <directory>` default `.`, `--days <count>` default `30` | Return discovered outermost `node_modules` folders with owner, allocation, activity, eligibility, reason, and top-level `errors`. Owners with invalid Git metadata give reason `invalid Git metadata` and stay ineligible without an error. `restricted` lists permission-denied paths excluded from discovery; they do not fail the command. Preserve readable siblings on errors; incomplete inspection exits `1`. Unknown allocation is null. |
 | `dependencies remove` | Same options plus `--execute` default false | Preview or delete all eligible folders under the selected root. |
 | `rust list` | `--root <directory>` default `.`, `--idle <duration>` default `30m` | Inspect direct child Cargo projects; return activity, process IDs, warnings, eligibility, and separate `.tmp`, coverage, and target allocations. Coverage is included in the target total. Inspection errors return exit code `1`. |
@@ -100,13 +100,16 @@ Evaluate staleness with `--time <mode>`:
 - `accessed`: stale when files have not been read or executed within `--days`.
 
 `folders list` prunes nested matching children by default so an entire stale directory tree is reported as a single
-top-level entry. Pass `--no-prune` to review matching nested subdirectories individually. Limit recursion depth
-with `--depth <levels>`. When candidates are discovered, review their contents before remediation: authorized caches
+top-level entry. Pass `--no-prune` to review matching nested subdirectories individually. `--depth <levels>`
+limits which directories are reported; sizes and timestamps always cover each directory's entire subtree. When candidates are discovered, review their contents before remediation: authorized caches
 under `.cache` or `.tmp` use `paths remove`, registered worktrees use `worktrees remove`, and tool runtimes use their
 respective package manager or CLI uninstaller.
 
-Folder scans stay on the root filesystem and report unreadable paths in `errors` alongside successful matches;
-any recorded error returns exit code `1`.
+Folder scans use the same single traversal as `disk assess`: they stay on the root filesystem, do not follow
+symbolic links, and count each hard-linked file once. Sizes are allocated bytes of regular files; timestamps come
+from regular files only. A directory containing an unreadable or failed path is never reported stale.
+Permission-denied paths are listed in `restricted` and do not fail the command; paths deleted during the scan
+count as gone. Other failures are `{ repository, message }` entries in `errors` and return exit code `1`.
 
 ### Streaming assessment output
 

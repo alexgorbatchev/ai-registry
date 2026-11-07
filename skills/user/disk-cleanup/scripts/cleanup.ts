@@ -1,6 +1,6 @@
 import { Command, InvalidArgumentError, Option, type Help } from 'commander';
 import { assessDisk } from './assessDisk';
-import { discover } from './scanAssessment';
+import { discover, scanAssessment } from './scanAssessment';
 import { createAssessmentRenderer } from './renderAssessment';
 import { realpath } from 'node:fs/promises';
 import { inspectDisk } from './inspectDisk';
@@ -8,7 +8,7 @@ import { systemAssessmentRoots } from './systemAssessmentRoots';
 import { reviewNativeTargets } from './reviewNativeTargets';
 import { removeNativeTargets } from './removeNativeTargets';
 import { runInspectionCommand } from './runInspectionCommand';
-import { parseSizeToBytes } from './inspectFolders';
+import { parseSizeToBytes } from './sizes';
 import type { AssessmentOptions } from './types';
 import { inspectRustProjects } from './inspectRustProjects';
 import { parseIdleDuration, parseRustArtifacts } from './parseIdleDuration';
@@ -16,7 +16,6 @@ import { removeRustArtifacts } from './removeRustArtifacts';
 import type { RustOptions } from './types';
 import skillText from '../SKILL.md' with { type: 'text' };
 import { resolveRoot } from './filesystemUtils';
-import { inspectStaleFolders } from './inspectFolders';
 import { inspectWorktrees, validateWorktree } from './inspectWorktrees';
 import { inspectDependencies } from './inventory';
 import { removeTargets, validateCache, validateDependency, worktreeAction } from './removeTargets';
@@ -118,19 +117,21 @@ scoped(folders.command('list').description('List stale folders by size and last 
       throw new InvalidArgumentError(`Invalid time mode: "${options.time}". Choose from: either, modified, accessed.`);
     }
 
-    const errors: string[] = [];
-    const report = await inspectStaleFolders(
-      {
-        root,
-        size: options.size,
-        days: options.days,
-        time: selectedTimeMode,
-        depth: options.depth,
-        prune: options.prune,
-      },
-      (path, error) => errors.push(`${path}: ${String(error)}`),
-    );
-    output({ root, size: options.size, days: options.days, time: selectedTimeMode, folders: report, errors });
+    const scan = await scanAssessment(root, parseSizeToBytes(options.size), options.days, undefined, root, undefined, {
+      staleTime: selectedTimeMode,
+      prune: options.prune,
+      staleDepth: options.depth,
+    });
+    const errors = scan.inventory.errors;
+    output({
+      root,
+      size: options.size,
+      days: options.days,
+      time: selectedTimeMode,
+      folders: scan.staleFolders,
+      restricted: scan.restricted,
+      errors,
+    });
     if (errors.length > 0) process.exitCode = 1;
   });
 

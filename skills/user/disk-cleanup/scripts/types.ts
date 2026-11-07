@@ -1,6 +1,15 @@
 import type { Stats } from 'node:fs';
 
-export type AssessmentScanOptions = { concurrency?: number; stat?: (path: string) => Promise<Stats> };
+export type AssessmentScanOptions = {
+  concurrency?: number;
+  stat?: (path: string) => Promise<Stats>;
+  /** Timestamp basis for stale folders; `either` requires both to be old. */
+  staleTime?: TimeMode;
+  /** Report only the outermost stale folder of a stale subtree. */
+  prune?: boolean;
+  /** Deepest stale-folder depth below the report root; sizes always include the full subtree. */
+  staleDepth?: number;
+};
 export type Dependency = {
   path: string;
   repository: string | null;

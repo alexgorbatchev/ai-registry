@@ -1,6 +1,6 @@
 import { Command, InvalidArgumentError, Option, type Help } from 'commander';
 import { assessDisk } from './assessDisk';
-import { renderAssessment } from './renderAssessment';
+import { createAssessmentRenderer } from './renderAssessment';
 import { realpath } from 'node:fs/promises';
 import { inspectDisk } from './inspectDisk';
 import { systemAssessmentRoots } from './systemAssessmentRoots';
@@ -75,6 +75,7 @@ scoped(disk.command('assess').description('Stream disk, project, cache, and Dock
           }),
         )
       : [];
+    const render = createAssessmentRenderer();
     const report = await assessDisk(
       root,
       parseSizeToBytes(options.size),
@@ -82,7 +83,7 @@ scoped(disk.command('assess').description('Stream disk, project, cache, and Dock
       runInspectionCommand,
       systemRoots,
       undefined,
-      (event) => console.log(renderAssessment(event)),
+      (event) => console.log(render(event)),
     );
     if (!report.isComplete) process.exitCode = 1;
   });

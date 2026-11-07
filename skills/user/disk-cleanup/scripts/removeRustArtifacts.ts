@@ -6,7 +6,7 @@ import { inspectRustProject } from './inspectRustProjects';
 import { assertDisjoint } from './inventory';
 import { removeTargets, validateCache } from './removeTargets';
 import { selectRustArtifacts } from './selectRustArtifacts';
-import type { Action, PreservedArtifact, RustProject, RustRemovalOptions } from './types';
+import type { Action, PathReason, RustProject, RustRemovalOptions } from './types';
 
 export async function removeRustArtifacts(
   options: RustRemovalOptions,
@@ -18,7 +18,7 @@ export async function removeRustArtifacts(
   if (!options.artifacts.length) throw new Error('Select at least one artifact scope');
   const reports: RustProject[] = [];
   const actions: Action[] = [];
-  const preserved: PreservedArtifact[] = [];
+  const preserved: PathReason[] = [];
   const owners = new Map<string, string>();
   const ownDirectoryChanges = new Map<string, string>();
   const cutoffMs = now - options.idleMs;

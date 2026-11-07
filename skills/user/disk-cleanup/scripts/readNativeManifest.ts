@@ -1,6 +1,6 @@
 import { isAbsolute } from 'node:path';
 import type { NativeAction, NativeManifest, NativeScope } from './nativeTypes';
-import type { PreservedArtifact } from './types';
+import type { PathReason } from './types';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -19,7 +19,7 @@ function isAction(value: unknown): value is NativeAction {
     value.repository === null
   );
 }
-function isPreserved(value: unknown): value is PreservedArtifact {
+function isPreserved(value: unknown): value is PathReason {
   return (
     isObject(value) && typeof value.path === 'string' && isAbsolute(value.path) && typeof value.reason === 'string'
   );

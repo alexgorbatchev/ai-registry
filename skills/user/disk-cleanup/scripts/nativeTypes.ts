@@ -1,4 +1,4 @@
-import type { Action, PreservedArtifact } from './types';
+import type { Action, PathReason } from './types';
 
 export type NativeAction = Action & { identity: string };
 export type NativeInspection = { path: string; identity: string; bytes: number; hardlinks: string[]; inodes: string[] };
@@ -9,7 +9,7 @@ export type NativeManifest = {
   version: 1;
   root: string;
   actions: NativeAction[];
-  preserved: PreservedArtifact[];
+  preserved: PathReason[];
   scopes: NativeScope[];
   processWarnings: string[];
 };
@@ -18,7 +18,7 @@ export type NativeRemoval = {
   execute: boolean;
   actions: NativeAction[];
   removed: string[];
-  preserved: PreservedArtifact[];
+  preserved: PathReason[];
   newEntries: string[];
   failure: string | null;
   before: string | null;

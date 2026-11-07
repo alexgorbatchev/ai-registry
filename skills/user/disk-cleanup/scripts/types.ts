@@ -26,6 +26,7 @@ export type Worktree = {
 };
 export type RepositoryWorktrees =
   | { repository: string; commonDirectory: string; worktrees: Worktree[] }
+  | { repository: string; invalid: string }
   | { repository: string; error: string };
 export type WorktreeReport = Worktree & {
   repository: string | null;
@@ -35,7 +36,13 @@ export type WorktreeReport = Worktree & {
   ignoredEntries: number | null;
 };
 export type InspectionError = { repository: string; message: string };
-export type WorktreeInspection = { worktrees: WorktreeReport[]; errors: InspectionError[] };
+export type RepositoryCheck = { commonDirectory: string } | { invalid: string };
+export type RepositoryChecker = (repository: string) => Promise<RepositoryCheck>;
+export type WorktreeInspection = {
+  worktrees: WorktreeReport[];
+  invalidRepositories: PathReason[];
+  errors: InspectionError[];
+};
 export type Action = {
   path: string;
   repository: string | null;
@@ -89,26 +96,31 @@ export type RustProject = {
   processWarnings: string[];
   artifacts: RustArtifact[];
 };
-export type PreservedArtifact = { path: string; reason: string };
-export type ArtifactSelection = { actions: Action[]; preserved: PreservedArtifact[] };
+export type PathReason = { path: string; reason: string };
+export type ArtifactSelection = { actions: Action[]; preserved: PathReason[] };
 export type ProcessInspection = { pids: number[]; warnings: string[] };
 export type InspectionCommandResult = { stdout: string; stderr: string; exitCode: number };
 export type InspectionRunner = (args: string[]) => Promise<InspectionCommandResult>;
 export type AssessmentOptions = { root: string; size: string; days: number; system: boolean };
 export type AssessmentTask = { name: string; inspect: () => Promise<AssessmentSection> };
-export type AssessmentSection = { name: string; isComplete: boolean; data: unknown; errors: string[] };
-export type AssessmentScanProgress = { root: string; path: string; entries: number };
+export type CommandOutput = { name: string; isComplete: boolean; output: string | null; errors: InspectionError[] };
+type SectionBase = { name: string; isComplete: boolean; errors: InspectionError[] };
+export type AssessmentSection = SectionBase &
+  (
+    | { kind: 'disk'; data: string | null }
+    | { kind: 'paths'; root: string; data: DiskUsage[]; restricted: string[] }
+    | { kind: 'dependencies'; root: string; days: number; data: Dependency[] }
+    | { kind: 'worktrees'; root: string; data: WorktreeInspection }
+    | { kind: 'stale'; root: string; data: StaleFolder[] }
+    | { kind: 'docker'; data: CommandOutput[] }
+    | { kind: 'failed' }
+  );
+export type AssessmentScanProgress = { root: string; entries: number };
 export type AssessmentEvent =
-  | { type: 'start'; root: string; scope: DiskAssessment['scope'] }
+  | { type: 'start'; root: string; minimumBytes: number; days: number; systemRoots: string[] }
   | { type: 'progress'; pending: string[]; scans: AssessmentScanProgress[] }
-  | { type: 'largePath'; root: string; entry: DiskUsage }
   | { type: 'section'; section: AssessmentSection }
   | { type: 'complete'; isComplete: boolean; failed: string[] };
 export type AssessmentReporter = (event: AssessmentEvent) => void;
-export type DiskAssessment = {
-  root: string;
-  isComplete: boolean;
-  sections: AssessmentSection[];
-  scope: { roots: string[]; exclusions: string[]; docker: string };
-};
+export type DiskAssessment = { root: string; isComplete: boolean; sections: AssessmentSection[] };
 export type RustActivity = { latestActivityMs: number; pids: number[]; processWarnings: string[] };

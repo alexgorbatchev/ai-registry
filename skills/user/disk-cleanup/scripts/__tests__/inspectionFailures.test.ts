@@ -103,12 +103,14 @@ test('system assessment includes temporary and library paths with explicit scope
     '/Library',
     '/private/var/log',
   ]);
-  expect(report.scope.roots).toEqual([root, '/Library']);
   expect(report.sections.at(-1)).toEqual({
-    name: 'system:/Library',
+    name: 'system /Library',
+    kind: 'paths',
+    root: '/Library',
     isComplete: false,
     data: [{ bytes: 4096, path: '/Library/readable' }],
-    errors: ['/Library: restricted'],
+    restricted: [],
+    errors: [{ repository: '/Library', message: 'restricted' }],
   });
   expect(commands.some((args) => args[0] === 'du')).toBe(false);
 });

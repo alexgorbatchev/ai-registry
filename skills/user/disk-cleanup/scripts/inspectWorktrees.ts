@@ -1,10 +1,12 @@
 import { realpath } from 'node:fs/promises';
 import pMap from 'p-map';
-import { diskBytes, git, isWithin, validatePath } from './filesystemUtils';
+import { diskBytes, git, isWithin, repositoryChecker, validatePath } from './filesystemUtils';
 import { inventory } from './inventory';
 import type {
   InspectionError,
   Inventory,
+  PathReason,
+  RepositoryChecker,
   RepositoryWorktrees,
   Worktree,
   WorktreeInspection,
@@ -50,15 +52,15 @@ async function statusEntries(path: string) {
   };
 }
 
-async function inspectRegistrations(repositories: string[]): Promise<RepositoryWorktrees[]> {
+async function inspectRegistrations(repositories: string[], check: RepositoryChecker): Promise<RepositoryWorktrees[]> {
   const registrations = new Map<string, Promise<Worktree[]>>();
   return pMap(
     repositories,
     async (repository): Promise<RepositoryWorktrees> => {
       try {
-        const commonDirectory = (
-          await git(repository, ['rev-parse', '--path-format=absolute', '--git-common-dir'])
-        ).trim();
+        const checked = await check(repository);
+        if ('invalid' in checked) return { repository, invalid: checked.invalid };
+        const { commonDirectory } = checked;
         const pending = registrations.get(commonDirectory) ?? registeredWorktrees(repository);
         registrations.set(commonDirectory, pending);
         return { repository, commonDirectory, worktrees: await pending };
@@ -90,14 +92,21 @@ export async function inspectWorktrees(
   root: string,
   sharedInventory?: Inventory,
   measure: (path: string) => Promise<number> = diskBytes,
+  check: RepositoryChecker = repositoryChecker(),
 ): Promise<WorktreeInspection> {
   const items = sharedInventory ?? (await inventory(root));
   const known = new Map<string, WorktreeReport>();
   const commonDirectories = new Set<string>();
   const errors: InspectionError[] = [...items.errors];
+  const invalidRepositories: PathReason[] = [];
   const failedRepositories = new Set<string>();
-  const repositories = await inspectRegistrations(items.repositories);
+  const repositories = await inspectRegistrations(items.repositories, check);
   const candidates = repositories.flatMap((entry) => {
+    if ('invalid' in entry) {
+      invalidRepositories.push({ path: entry.repository, reason: entry.invalid });
+      failedRepositories.add(entry.repository);
+      return [];
+    }
     if ('error' in entry) {
       errors.push({ repository: entry.repository, message: entry.error });
       failedRepositories.add(entry.repository);
@@ -149,7 +158,11 @@ export async function inspectWorktrees(
     { concurrency: 4 },
   );
   for (const workspace of workspaces) known.set(workspace.path, workspace);
-  return { worktrees: [...known.values()].sort((left, right) => (right.bytes ?? -1) - (left.bytes ?? -1)), errors };
+  return {
+    worktrees: [...known.values()].sort((left, right) => (right.bytes ?? -1) - (left.bytes ?? -1)),
+    invalidRepositories,
+    errors,
+  };
 }
 
 export async function validateWorktree(root: string, input: string, repository: string): Promise<void> {

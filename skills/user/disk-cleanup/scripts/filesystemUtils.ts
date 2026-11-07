@@ -1,6 +1,7 @@
 import { lstat, mkdir, mkdtemp, readdir, realpath } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { runInspectionCommand } from './runInspectionCommand';
+import type { RepositoryCheck, RepositoryChecker } from './types';
 
 export async function run(args: string[]): Promise<string> {
   const { stdout, stderr, exitCode } = await runInspectionCommand(args);
@@ -10,6 +11,42 @@ export async function run(args: string[]): Promise<string> {
 
 export async function git(repository: string, args: string[]): Promise<string> {
   return run(['git', '-C', repository, ...args]);
+}
+
+// Git has no structured error codes; these fatal messages mean the `.git` entry itself is unusable.
+const invalidMetadata =
+  /not a git repository|gitfile does not point to a valid repository|invalid gitfile format|cannot chdir to|unable to set up work tree/;
+
+// A directory holding a `.git` entry owns its contents only when Git resolves that directory as its own
+// working tree. A broken entry, or one Git ignores in favor of an outer repository, is invalid metadata.
+export async function checkRepository(repository: string): Promise<RepositoryCheck> {
+  const { stdout, stderr, exitCode } = await runInspectionCommand([
+    'git',
+    '-C',
+    repository,
+    'rev-parse',
+    '--path-format=absolute',
+    '--show-toplevel',
+    '--git-common-dir',
+  ]);
+  if (exitCode !== 0) {
+    const message = stderr.trim().replace(/^fatal: /, '');
+    if (exitCode === 128 && invalidMetadata.test(message)) return { invalid: message };
+    throw new Error(`git failed (${exitCode}): ${stderr.trim()}`);
+  }
+  const [toplevel, commonDirectory] = stdout.trim().split('\n');
+  if (!toplevel || !commonDirectory) throw new Error(`Unexpected git rev-parse output: ${stdout.trim()}`);
+  if (toplevel !== repository) return { invalid: `Git resolves this directory to ${toplevel}` };
+  return { commonDirectory };
+}
+
+export function repositoryChecker(): RepositoryChecker {
+  const checks = new Map<string, Promise<RepositoryCheck>>();
+  return (repository) => {
+    const pending = checks.get(repository) ?? checkRepository(repository);
+    checks.set(repository, pending);
+    return pending;
+  };
 }
 
 export async function resolveRoot(root: string): Promise<string> {

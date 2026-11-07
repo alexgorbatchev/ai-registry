@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
 import { lstat, mkdir, symlink, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
-import { cli, createRepository, createRoot, disposeRoot, git } from './helpers';
+import { cli, createRepository, createRoot, disposeRoot, git, sectionOf } from './helpers';
 import { assessDisk } from '../assessDisk';
-import { renderAssessment } from '../renderAssessment';
 import { scanAssessment } from '../scanAssessment';
 import { runInspectionCommand } from '../runInspectionCommand';
 
@@ -263,10 +262,13 @@ test('reports broken Git metadata alongside intact workspace inventory', async (
   await mkdir(brokenPath, { recursive: true });
   await Bun.write(join(brokenPath, '.git'), 'gitdir: missing-worktree-metadata\n');
   const result = cli(rootPath, ['worktrees', 'list', '--root', rootPath]);
-  expect(result.exitCode).toBe(1);
+  expect(result.exitCode).toBe(0);
   expect(JSON.parse(result.stdout)).toMatchObject({
     root: rootPath,
-    errors: [{ repository: brokenPath }],
+    errors: [],
+    invalidRepositories: [
+      { path: brokenPath, reason: `gitfile does not point to a valid repository: ${join(brokenPath, '.git')}` },
+    ],
     worktrees: [{ path: brokenPath, isRegistered: false }],
   });
 });
@@ -288,64 +290,67 @@ test('disk assessment includes deep project artifacts alongside caches and all i
   await Bun.write(join(rootPath, '.cache/compiler/cache.bin'), Buffer.alloc(64 * 1024));
   const result = cli(rootPath, ['disk', 'assess', '--root', rootPath, '--size', '32K']);
   const report = await assessDisk(rootPath, 32 * 1024, 30, runInspectionCommand);
-  expect(
-    result.stdout
-      .split('\n')
-      .filter((line) => /^(filesystem|overview|largePaths|dependencies|worktrees|staleFolders|docker): /.test(line))
-      .sort(),
-  ).toEqual(report.sections.map((section) => renderAssessment({ type: 'section', section }).split('\n')[0]!).sort());
-  expect(report.sections.map((section: { name: string }) => section.name)).toEqual([
-    'filesystem',
-    'overview',
-    'largePaths',
-    'dependencies',
+  expect(report.sections.map((section) => section.name)).toEqual([
+    'disk',
+    'large',
+    'deps',
     'worktrees',
-    'staleFolders',
+    'stale',
     'docker',
   ]);
-  expect(report.sections[2]?.data).toEqual(
+  expect(result.stdout).toContain('\n# large (size path)\n');
+  expect(result.stdout).toContain('\n128K development/project/build/deep/target/artifact.bin\n');
+  expect(result.stdout).toContain('\n64K .cache/compiler/cache.bin\n');
+  expect(sectionOf(report, 'large', 'paths').data).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ path: artifactPath, bytes: 128 * 1024 }),
-      expect.objectContaining({ path: join(rootPath, '.cache/compiler/cache.bin'), bytes: 64 * 1024 }),
+      { path: artifactPath, bytes: 128 * 1024 },
+      { path: join(rootPath, '.cache/compiler/cache.bin'), bytes: 64 * 1024 },
     ]),
   );
-  expect(report.sections[3]?.isComplete).toBe(true);
-  expect(report.sections[3]?.data).toMatchObject({
-    dependencies: [
-      {
-        path: join(repositoryPath, 'node_modules'),
-        eligible: true,
-        bytes: expect.any(Number),
-      },
-    ],
-  });
+  const dependencies = sectionOf(report, 'deps', 'dependencies');
+  expect(dependencies.isComplete).toBe(true);
+  expect(dependencies.data).toMatchObject([
+    { path: join(repositoryPath, 'node_modules'), eligible: true, bytes: expect.any(Number) },
+  ]);
   expect(await Bun.file(artifactPath).size).toBe(128 * 1024);
 });
 
-test('disk assessment retains successful sections when Git inspection fails', async () => {
-  await mkdir(join(rootPath, 'broken'), { recursive: true });
-  await Bun.write(join(rootPath, 'broken/.git'), 'gitdir: missing-worktree-metadata\n');
-  await Bun.write(join(rootPath, 'keep.txt'), 'keep\n');
-  const result = cli(rootPath, ['disk', 'assess', '--root', rootPath, '--size', '1B']);
-  expect(result.exitCode).toBe(1);
+test('invalid Git metadata is reported as data and keeps its dependencies without failing the assessment', async () => {
+  const broken = join(rootPath, 'broken');
+  const shadowed = join(await createRepository(rootPath, 'outer'), 'inner');
+  await mkdir(join(broken, 'node_modules'), { recursive: true });
+  await Bun.write(join(broken, '.git'), 'gitdir: missing-worktree-metadata\n');
+  await mkdir(join(shadowed, '.git'), { recursive: true });
+  await mkdir(join(shadowed, 'node_modules'));
   const report = await assessDisk(rootPath, 1, 30, runInspectionCommand);
-  expect(result.stdout.split('\n').filter((line) => line.startsWith('Assessment '))).toEqual([
-    `Assessment INCOMPLETE. Failed sections: ${report.sections
-      .filter((section) => !section.isComplete)
-      .map((section) => section.name)
-      .join(', ')}. Successful results are shown above.`,
+  const worktrees = sectionOf(report, 'worktrees', 'worktrees');
+  expect(worktrees.isComplete).toBe(true);
+  expect(worktrees.data.invalidRepositories).toEqual([
+    { path: broken, reason: `gitfile does not point to a valid repository: ${join(broken, '.git')}` },
+    { path: shadowed, reason: `Git resolves this directory to ${join(rootPath, 'outer')}` },
   ]);
-  expect(report.isComplete).toBe(false);
-  expect(report.sections[0]?.isComplete).toBe(true);
-  expect(report.sections[1]?.data).toEqual(expect.arrayContaining([expect.objectContaining({ path: rootPath })]));
-  expect(report.sections[4]?.isComplete).toBe(false);
-  expect(await Bun.file(join(rootPath, 'keep.txt')).text()).toBe('keep\n');
+  const dependencies = sectionOf(report, 'deps', 'dependencies');
+  expect(dependencies.isComplete).toBe(true);
+  expect(dependencies.data).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ path: join(broken, 'node_modules'), eligible: false, reason: 'invalid Git metadata' }),
+      expect.objectContaining({
+        path: join(shadowed, 'node_modules'),
+        eligible: false,
+        reason: 'invalid Git metadata',
+      }),
+    ]),
+  );
+  const result = cli(rootPath, ['disk', 'assess', '--root', rootPath, '--size', '1B']);
+  expect(result.stdout).toContain('\n## invalid Git metadata (not inspected as repositories)\nbroken: ');
+  expect(result.stdout).toContain('\n## preserved: invalid Git metadata n=2 ');
 });
 
 test('disk assessment waits for the shared scan and preserves readable partial results', async () => {
   const started = Promise.withResolvers<void>();
   const release = Promise.withResolvers<void>();
   let hasFinished = false;
+  await Bun.write(join(rootPath, 'data'), Buffer.alloc(8192));
   const assessment = assessDisk(rootPath, 1, 30, runInspectionCommand, [], async (...args) => {
     started.resolve();
     await release.promise;
@@ -361,19 +366,17 @@ test('disk assessment waits for the shared scan and preserves readable partial r
   release.resolve();
   const report = await assessment;
   expect(report.isComplete).toBe(false);
-  expect(report.sections[1]).toMatchObject({
-    name: 'overview',
+  expect(sectionOf(report, 'large', 'paths')).toMatchObject({
     isComplete: false,
-    data: expect.arrayContaining([expect.objectContaining({ path: rootPath })]),
-    errors: [`${rootPath}: unreadable child`],
+    data: expect.arrayContaining([expect.objectContaining({ path: join(rootPath, 'data') })]),
+    errors: [{ repository: rootPath, message: 'unreadable child' }],
   });
   expect(report.sections.map((section) => section.name)).toEqual([
-    'filesystem',
-    'overview',
-    'largePaths',
-    'dependencies',
+    'disk',
+    'large',
+    'deps',
     'worktrees',
-    'staleFolders',
+    'stale',
     'docker',
   ]);
 });

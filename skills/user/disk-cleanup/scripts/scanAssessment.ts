@@ -1,5 +1,5 @@
 import { lstat, readdir } from 'node:fs/promises';
-import { basename, join, relative, sep } from 'node:path';
+import { basename, join } from 'node:path';
 import pLimit from 'p-limit';
 import { pMapIterable } from 'p-map';
 import { isWithin } from './filesystemUtils';
@@ -18,11 +18,16 @@ type Summary = {
 };
 export type AssessmentScan = {
   inventory: Inventory;
-  overview: DiskUsage[];
   largePaths: DiskUsage[];
+  /** Permission-denied paths below the scan root: declared exclusions, not inspection failures. */
+  restricted: string[];
   staleFolders: StaleFolder[];
   allocations: Map<string, number | null>;
 };
+
+function isPermissionDenied(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && (error.code === 'EACCES' || error.code === 'EPERM');
+}
 
 async function readDirectory(path: string) {
   return readdir(path, { withFileTypes: true });
@@ -34,14 +39,14 @@ export async function scanAssessment(
   days: number,
   read: typeof readDirectory = readDirectory,
   reportRoot: string = root,
-  progress: (value: AssessmentScanProgress, largePath?: DiskUsage) => void = () => {},
+  progress: (value: AssessmentScanProgress) => void = () => {},
   { concurrency = 64, stat = lstat }: AssessmentScanOptions = {},
 ): Promise<AssessmentScan> {
   const metadata = pLimit(concurrency);
   const result: AssessmentScan = {
     inventory: { repositories: [], dependencies: [], workspaces: [], errors: [] },
-    overview: [],
     largePaths: [],
+    restricted: [],
     staleFolders: [],
     allocations: new Map(),
   };
@@ -57,8 +62,7 @@ export async function scanAssessment(
     repository: string | null,
     discover: boolean,
   ): Promise<Summary> {
-    progress({ root, path, entries: ++entries });
-    let largePath: DiskUsage | undefined;
+    progress({ root, entries: ++entries });
     const staleStart = result.staleFolders.length;
     const summary: Summary = {
       bytes: 0,
@@ -130,12 +134,8 @@ export async function scanAssessment(
           summary.complete &&= child.complete;
         }
         result.allocations.set(path, summary.complete ? summary.allocated : null);
-        const inReport = path === reportRoot || isWithin(reportRoot, path);
-        const reportDepth = path === reportRoot ? 0 : relative(reportRoot, path).split(sep).length;
-        if (inReport && reportDepth <= 3) result.overview.push({ path, bytes: summary.bytes });
         if (
-          inReport &&
-          path !== reportRoot &&
+          isWithin(reportRoot, path) &&
           summary.complete &&
           summary.fileBytes >= minimumBytes &&
           summary.mtime <= cutoff &&
@@ -155,20 +155,17 @@ export async function scanAssessment(
       } else if (info.isSymbolicLink() && basename(path) === 'node_modules') {
         result.allocations.set(path, bytes);
       }
-      if (summary.bytes >= minimumBytes) {
-        largePath = { path, bytes: summary.bytes };
-        result.largePaths.push(largePath);
-      }
+      if (summary.bytes >= minimumBytes) result.largePaths.push({ path, bytes: summary.bytes });
     } catch (error) {
       summary.complete = false;
       result.allocations.set(path, null);
-      result.inventory.errors.push({ repository: path, message: String(error) });
+      // An unreadable scan root is a failure; an unreadable descendant is a reported exclusion.
+      if (path !== root && isPermissionDenied(error)) result.restricted.push(path);
+      else result.inventory.errors.push({ repository: path, message: String(error) });
     }
-    if (largePath) progress({ root, path, entries }, largePath);
     return summary;
   }
   await walk(root, { status: 'fulfilled', value: rootInfo }, null, root === reportRoot);
-  result.overview.sort((a, b) => b.bytes - a.bytes);
   result.largePaths.sort((a, b) => b.bytes - a.bytes);
   result.staleFolders.sort((a, b) => b.bytes - a.bytes);
   return result;

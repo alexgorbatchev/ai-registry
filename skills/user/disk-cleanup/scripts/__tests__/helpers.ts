@@ -1,6 +1,7 @@
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { factory_testDirectory } from './fixtures';
+import type { AssessmentSection, DiskAssessment } from '../types';
 
 const skillPath = join(import.meta.dir, '../..');
 type CliResult = { exitCode: number; stdout: string; stderr: string };
@@ -58,4 +59,13 @@ export function cli(rootPath: string, args: string[], agent: string = '1', colum
     stderr: 'pipe',
   });
   return { exitCode: result.exitCode, stdout: result.stdout.toString(), stderr: result.stderr.toString() };
+}
+export function sectionOf<K extends AssessmentSection['kind']>(
+  report: DiskAssessment,
+  name: string,
+  kind: K,
+): Extract<AssessmentSection, { kind: K }> {
+  const section = report.sections.find((entry) => entry.name === name);
+  if (section?.kind !== kind) throw new Error(`Expected ${kind} section ${name}, got ${section?.kind}`);
+  return section as Extract<AssessmentSection, { kind: K }>;
 }

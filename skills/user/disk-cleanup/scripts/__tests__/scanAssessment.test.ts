@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { scanAssessment } from '../scanAssessment';
 import { assessDisk } from '../assessDisk';
 import { runInspectionCommand } from '../runInspectionCommand';
-import { createRoot, disposeRoot, createRepository, git } from './helpers';
+import { createRoot, disposeRoot, createRepository, git, sectionOf } from './helpers';
 import { inspectDependencies } from '../inventory';
 import { inspectWorktrees } from '../inspectWorktrees';
 import { factory_inspectionGate } from './fixtures';
@@ -211,11 +211,13 @@ test('assessment reuses nested system scopes and launches no repeated size or in
   expect(scopes).toEqual([root]);
   expect(commands).not.toContain('du');
   expect(commands).not.toContain(process.execPath);
-  expect(report.sections.at(-1)?.data).toContainEqual(expect.objectContaining({ path: join(cache, 'data') }));
-  expect(report.sections.filter((entry) => entry.name === `system:${cache}`)).toHaveLength(1);
+  expect(sectionOf(report, `system ${cache}`, 'paths').data).toContainEqual(
+    expect.objectContaining({ path: join(cache, 'data') }),
+  );
+  expect(report.sections.filter((entry) => entry.name === `system ${cache}`)).toHaveLength(1);
 });
 
-test('an enclosing system scope shares traversal while keeping the selected root discovery and overview', async () => {
+test('an enclosing system scope shares traversal while keeping the selected root discovery and sizes', async () => {
   const selected = join(root, 'selected');
   const project = join(selected, 'one/two/three');
   await mkdir(join(project, 'node_modules'), { recursive: true });
@@ -229,15 +231,16 @@ test('an enclosing system scope shares traversal while keeping the selected root
     return scanAssessment(...args);
   });
   expect(scopes).toEqual([root]);
-  expect(report.sections[1]?.data).toContainEqual(expect.objectContaining({ path: project }));
-  expect(report.sections[1]?.data).not.toContainEqual(expect.objectContaining({ path: root }));
-  const dependencies = report.sections.find((section) => section.name === 'dependencies')?.data as {
-    dependencies: { path: string }[];
-  };
-  expect(dependencies.dependencies.map((entry) => entry.path)).toEqual([join(project, 'node_modules')]);
-  expect(report.sections[2]?.data).not.toContainEqual(expect.objectContaining({ path: join(root, 'outside/data') }));
-  const worktrees = report.sections.find((section) => section.name === 'worktrees');
-  expect(worktrees?.errors.some((error) => error.includes('/outside'))).toBe(false);
+  const large = sectionOf(report, 'large', 'paths').data;
+  expect(large).toContainEqual(expect.objectContaining({ path: project }));
+  expect(large).not.toContainEqual(expect.objectContaining({ path: root }));
+  expect(large).not.toContainEqual(expect.objectContaining({ path: join(root, 'outside/data') }));
+  expect(sectionOf(report, 'deps', 'dependencies').data.map((entry) => entry.path)).toEqual([
+    join(project, 'node_modules'),
+  ]);
+  const worktrees = sectionOf(report, 'worktrees', 'worktrees');
+  expect(worktrees.errors.some((error) => error.repository.includes('/outside'))).toBe(false);
+  expect(worktrees.data.invalidRepositories.map((entry) => entry.path)).toEqual([project]);
 });
 
 test('shared allocations and discovery preserve standalone dependency and worktree reports', async () => {
@@ -246,13 +249,13 @@ test('shared allocations and discovery preserve standalone dependency and worktr
   git(repository, ['worktree', 'add', '-b', 'review', workspace]);
   await Bun.write(join(workspace, 'untracked'), 'keep');
   const report = await assessDisk(root, 1, 30, runInspectionCommand);
-  const dependencies = report.sections.find((section) => section.name === 'dependencies');
-  const worktrees = report.sections.find((section) => section.name === 'worktrees');
-  expect(dependencies?.isComplete).toBe(true);
-  expect(dependencies?.data).toMatchObject({ dependencies: await inspectDependencies(root, 30) });
-  expect(worktrees?.isComplete).toBe(true);
-  expect(worktrees?.data).toMatchObject(await inspectWorktrees(root));
-  expect(worktrees?.data).toMatchObject({
+  const dependencies = sectionOf(report, 'deps', 'dependencies');
+  const worktrees = sectionOf(report, 'worktrees', 'worktrees');
+  expect(dependencies.isComplete).toBe(true);
+  expect(dependencies.data).toMatchObject(await inspectDependencies(root, 30));
+  expect(worktrees.isComplete).toBe(true);
+  expect(worktrees.data).toMatchObject(await inspectWorktrees(root));
+  expect(worktrees.data).toMatchObject({
     worktrees: [{ path: workspace, isRegistered: true, changedEntries: 1, bytes: expect.any(Number) }],
   });
 });

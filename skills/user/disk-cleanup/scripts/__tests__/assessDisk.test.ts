@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
-import { mkdir, readdir } from 'node:fs/promises';
+import { chmod, mkdir, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { assessDisk } from '../assessDisk';
 import { scanAssessment } from '../scanAssessment';
-import { renderAssessment } from '../renderAssessment';
+import { createAssessmentRenderer } from '../renderAssessment';
 import type { AssessmentEvent } from '../types';
-import { cli, createRoot, disposeRoot } from './helpers';
+import { cli, createRoot, disposeRoot, sectionOf } from './helpers';
 
 let root: string;
 beforeEach(async () => {
@@ -45,8 +45,9 @@ test('streams capacity and heartbeat with scan position while the filesystem tra
       ),
     (event) => {
       events.push(event);
-      if (event.type === 'section' && event.section.name === 'filesystem') capacity.resolve();
+      if (event.type === 'section' && event.section.name === 'disk') capacity.resolve();
     },
+    100,
   ).then((report) => {
     finished = true;
     return report;
@@ -54,20 +55,18 @@ test('streams capacity and heartbeat with scan position while the filesystem tra
   try {
     await Promise.all([entered.promise, capacity.promise]);
     expect(finished).toBe(false);
-    expect(events[0]).toMatchObject({ type: 'start', root, scope: { roots: [root] } });
-    expect(events.filter((event) => event.type === 'section').map(renderAssessment)).toEqual([
-      'filesystem: complete\ncapacity available',
-      "docker: INCOMPLETE\n[ { name: 'context', isComplete: false, data: null, errors: [ 'Error: Docker unavailable' ] } ]\nError: Error: Docker unavailable",
+    expect(events[0]).toEqual({ type: 'start', root, minimumBytes: 1, days: 30, systemRoots: [] });
+    expect(events.filter((event) => event.type === 'section').map(createAssessmentRenderer())).toEqual([
+      '# disk\ncapacity available',
+      '# docker INCOMPLETE\n## errors\ncontext: Docker unavailable',
     ]);
-    await Bun.sleep(5100);
+    await Bun.sleep(150);
     expect(finished).toBe(false);
-    expect(events.filter((event) => event.type === 'progress')).toEqual([
-      {
-        type: 'progress',
-        pending: ['overview', 'largePaths', 'dependencies', 'worktrees', 'staleFolders'],
-        scans: [{ root, path: root, entries: 1 }],
-      },
-    ]);
+    expect(events.filter((event) => event.type === 'progress')[0]).toEqual({
+      type: 'progress',
+      pending: ['large', 'deps', 'worktrees', 'stale'],
+      scans: [{ root, entries: 1 }],
+    });
   } finally {
     release.resolve();
     await assessment;
@@ -91,88 +90,71 @@ test('streams scan failures as incomplete sections without hiding capacity or fi
   expect(report.isComplete).toBe(false);
   expect(events.filter((event) => event.type === 'section').map((event) => event.section)).toEqual(
     expect.arrayContaining([
-      { name: 'filesystem', isComplete: true, data: 'capacity', errors: [] },
-      { name: 'overview', isComplete: false, data: null, errors: ['Error: unreadable root'] },
+      { name: 'disk', kind: 'disk', isComplete: true, data: 'capacity', errors: [] },
+      {
+        name: 'large',
+        kind: 'failed',
+        isComplete: false,
+        errors: [{ repository: '', message: 'Error: unreadable root' }],
+      },
     ]),
   );
   expect(events.at(-1)).toEqual({
     type: 'complete',
     isComplete: false,
-    failed: ['overview', 'largePaths', 'dependencies', 'worktrees', 'staleFolders', 'docker'],
+    failed: ['large', 'deps', 'worktrees', 'stale'],
   });
 });
 
-test('streams discovered allocations before the remaining subtree finishes', async () => {
-  const file = join(root, 'a-data');
-  const held = join(root, 'z-held');
-  await Bun.write(file, Buffer.alloc(8192));
-  await mkdir(held);
-  const entered = Promise.withResolvers<void>();
-  const release = Promise.withResolvers<void>();
-  const events: AssessmentEvent[] = [];
-  const assessment = assessDisk(
-    root,
-    8192,
-    30,
-    async () => ({ stdout: '', stderr: '', exitCode: 0 }),
-    [],
-    async (...args) =>
-      scanAssessment(
-        args[0],
-        args[1],
-        args[2],
-        async (path) => {
-          if (path === held) {
-            entered.resolve();
-            await release.promise;
-          }
-          return (await readdir(path, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
-        },
-        args[4],
-        args[5],
-      ),
-    (event) => events.push(event),
-  );
+test('a permission-denied subtree is a listed exclusion, not a failed section', async () => {
+  const denied = join(root, 'denied');
+  await mkdir(denied);
+  await Bun.write(join(root, 'data'), Buffer.alloc(8192));
+  await chmod(denied, 0);
   try {
-    await entered.promise;
-    expect(events.filter((event) => event.type === 'largePath')).toEqual([
-      { type: 'largePath', root, entry: { path: file, bytes: 8192 } },
-    ]);
-    expect(events.filter((event) => event.type === 'largePath').map(renderAssessment)).toEqual([
-      `Found 8.00 KB\t'${file}'`,
-    ]);
-    expect(events.filter((event) => event.type === 'complete')).toEqual([]);
+    const events: AssessmentEvent[] = [];
+    const report = await assessDisk(
+      root,
+      8192,
+      30,
+      async (args) => {
+        if (args[0] === 'df') return { stdout: 'capacity', stderr: '', exitCode: 0 };
+        return { stdout: '', stderr: 'no daemon', exitCode: 1 };
+      },
+      [],
+      undefined,
+      (event) => events.push(event),
+    );
+    // Render first: Bun's toMatchObject replaces matched arrays in the received object.
+    const lines = events.map(createAssessmentRenderer()).join('\n').split('\n');
+    expect(lines.filter((line) => line === 'denied')).toHaveLength(1);
+    expect(lines.at(-1)).toBe('assessment INCOMPLETE: docker; 1 restricted paths excluded');
+    expect(sectionOf(report, 'large', 'paths')).toMatchObject({
+      isComplete: true,
+      restricted: [denied],
+      errors: [],
+      data: expect.arrayContaining([{ path: join(root, 'data'), bytes: 8192 }]),
+    });
+    expect(sectionOf(report, 'stale', 'stale').isComplete).toBe(true);
+    expect(events.at(-1)).toEqual({ type: 'complete', isComplete: false, failed: ['docker'] });
   } finally {
-    release.resolve();
-    await assessment;
+    await chmod(denied, 0o700);
   }
-  expect(events.at(-1)).toEqual({ type: 'complete', isComplete: true, failed: [] });
 });
 
 test.each(['1', ''])(
   'assessment stdout is readable in agent=%s with explicit completion and no scan writes',
   async (agent) => {
     const result = cli(root, ['disk', 'assess', '--root', root], agent);
-    expect(result.stdout.split('\n')[0]).toBe(`Assessing '${root}'`);
+    expect(result.stdout.split('\n')[0]).toBe(`assess root=${root} size>=1.0G days=30`);
     expect(
       result.stdout
         .split('\n')
-        .filter((line) => /^(filesystem|overview|largePaths|dependencies|worktrees|staleFolders|docker): /.test(line))
+        .filter((line) => line.startsWith('# '))
+        .map((line) => line.split(' ')[1])
         .sort(),
-    ).toEqual([
-      'dependencies: complete',
-      expect.stringMatching(/^docker: (complete|INCOMPLETE)$/),
-      'filesystem: complete',
-      'largePaths: complete',
-      'overview: complete',
-      'staleFolders: complete',
-      'worktrees: complete',
-    ]);
-    expect(result.stdout.trimEnd().split('\n').at(-1)).toEqual(
-      expect.stringMatching(
-        /^Assessment (complete\. All sections finished successfully\.|INCOMPLETE\. Failed sections: docker\. Successful results are shown above\.)$/,
-      ),
-    );
+    ).toEqual(['deps', 'disk', 'docker', 'large', 'stale', 'worktrees']);
+    expect(result.stdout.trimEnd().split('\n').at(-1)).toMatch(/^assessment (complete|INCOMPLETE: docker)$/);
     expect(await readdir(root)).toEqual([]);
   },
 );

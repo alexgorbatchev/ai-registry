@@ -7,7 +7,7 @@ import { inspectNativeProcesses } from './inspectNativeProcesses';
 import { inspectNativeHardlink } from './inspectNativeHardlink';
 import { runInspectionCommand } from './runInspectionCommand';
 import type { NativeAction, NativeHardlinks, NativeInspection, NativeManifest, NativeReview } from './nativeTypes';
-import type { InspectionRunner, PreservedArtifact } from './types';
+import type { InspectionRunner, PathReason } from './types';
 
 export async function inspectNativeTarget(
   root: string,
@@ -57,7 +57,7 @@ export async function reviewNativeTargets(
   runner: InspectionRunner = runInspectionCommand,
 ): Promise<NativeReview> {
   const actions: NativeAction[] = [];
-  const preserved: PreservedArtifact[] = [];
+  const preserved: PathReason[] = [];
   const targetInodes = new Map<string, string[]>();
   // Validate lexical scope for the whole selection before classifying individual entries.
   const paths = await Promise.all(inputs.map((input) => validatePath(root, input)));

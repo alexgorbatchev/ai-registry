@@ -1,5 +1,5 @@
 import { lstat } from 'node:fs/promises';
-import { isWithin } from './filesystemUtils';
+import { isWithin, repositoryChecker } from './filesystemUtils';
 import { inspectDependencies } from './inventory';
 import { inspectWorktrees } from './inspectWorktrees';
 import { scanAssessment } from './scanAssessment';
@@ -9,9 +9,14 @@ import type {
   AssessmentScanProgress,
   AssessmentSection,
   AssessmentTask,
+  CommandOutput,
   DiskAssessment,
   InspectionRunner,
 } from './types';
+
+function inside(scope: string, path: string): boolean {
+  return path === scope || isWithin(scope, path);
+}
 
 export async function assessDisk(
   root: string,
@@ -21,43 +26,25 @@ export async function assessDisk(
   systemRoots: string[] = [],
   scan: typeof scanAssessment = scanAssessment,
   report: AssessmentReporter = () => {},
+  heartbeatMs: number = 15000,
 ): Promise<DiskAssessment> {
-  const scope: DiskAssessment['scope'] = {
-    roots: [root, ...new Set(systemRoots)],
-    exclusions: [
-      'Other paths and users outside the listed roots',
-      'Nested filesystems and symbolic-link traversal',
-      'Unreadable paths reported in section errors',
-    ],
-    docker: 'Reported Docker context; may be remote',
-  };
-  report({ type: 'start', root, scope });
-  async function command(name: string, args: string[], format: 'text' | 'json'): Promise<AssessmentSection> {
-    let result;
+  const extraRoots = [...new Set(systemRoots)];
+  report({ type: 'start', root, minimumBytes, days, systemRoots: extraRoots });
+  async function command(name: string, args: string[]): Promise<CommandOutput> {
     try {
-      result = await runCommand(args);
+      const result = await runCommand(args);
+      const errors =
+        result.exitCode === 0
+          ? []
+          : [{ repository: name, message: `${args[0]} exited ${result.exitCode}: ${result.stderr.trim()}` }];
+      return { name, isComplete: errors.length === 0, output: result.stdout, errors };
     } catch (error) {
-      return { name, isComplete: false, data: null, errors: [String(error)] };
+      return { name, isComplete: false, output: null, errors: [{ repository: name, message: String(error) }] };
     }
-    let data: unknown = result.stdout;
-    const errors = result.exitCode === 0 ? [] : [`${args[0]} exited ${result.exitCode}: ${result.stderr.trim()}`];
-    try {
-      if (format === 'json' && result.stdout.trim()) {
-        data = JSON.parse(result.stdout);
-      }
-    } catch (error) {
-      errors.push(`Could not parse output: ${String(error)}`);
-    }
-    return {
-      name,
-      isComplete: errors.length === 0,
-      data,
-      errors,
-    };
   }
   const scans = new Map<string, Promise<AssessmentScan>>();
   const activeScans = new Map<string, AssessmentScanProgress>();
-  const roots = [...new Set([root, ...systemRoots])];
+  const roots = [root, ...extraRoots.filter((path) => path !== root)];
   const devices = new Map(
     await Promise.all(
       roots.map(async (path) => {
@@ -72,14 +59,13 @@ export async function assessDisk(
   // Coalesce overlapping scopes only on the same filesystem. Explicit mount roots stay independent.
   for (const path of [...roots].sort((a, b) => a.length - b.length)) {
     if (![...scans.keys()].some((scope) => isWithin(scope, path) && devices.get(scope) === devices.get(path))) {
-      const reportRoot = path === root || isWithin(path, root) ? root : path;
-      activeScans.set(path, { root: path, path, entries: 0 });
+      const reportRoot = inside(path, root) ? root : path;
+      activeScans.set(path, { root: path, entries: 0 });
       scans.set(
         path,
-        scan(path, minimumBytes, days, undefined, reportRoot, (value, entry) => {
-          activeScans.set(path, value);
-          if (entry) report({ type: 'largePath', root: path, entry });
-        }).finally(() => activeScans.delete(path)),
+        scan(path, minimumBytes, days, undefined, reportRoot, (value) => activeScans.set(path, value)).finally(() =>
+          activeScans.delete(path),
+        ),
       );
     }
   }
@@ -92,18 +78,15 @@ export async function assessDisk(
     const data = await pending;
     return {
       ...data,
+      largePaths: data.largePaths.filter((entry) => inside(path, entry.path)),
+      restricted: data.restricted.filter((entry) => inside(path, entry)),
       inventory: {
         ...data.inventory,
         errors: data.inventory.errors.filter(
-          (error) => error.repository === path || isWithin(path, error.repository) || isWithin(error.repository, path),
+          (error) => inside(path, error.repository) || isWithin(error.repository, path),
         ),
       },
     };
-  }
-  async function scanned(name: string, select: (data: AssessmentScan) => unknown): Promise<AssessmentSection> {
-    const data = await forRoot(root);
-    const errors = data.inventory.errors.map((error) => `${error.repository}: ${error.message}`);
-    return { name, isComplete: errors.length === 0, data: select(data), errors };
   }
   async function measure(path: string): Promise<number> {
     const data = await forRoot(root);
@@ -111,21 +94,43 @@ export async function assessDisk(
     if (bytes === null || bytes === undefined) throw new Error(`Allocation unavailable: ${path}`);
     return bytes;
   }
+  // Dependencies and worktrees share one Git metadata validation per repository.
+  const check = repositoryChecker();
+  function paths(name: string, path: string): AssessmentTask {
+    return {
+      name,
+      inspect: async () => {
+        const data = await forRoot(path);
+        const errors = data.inventory.errors;
+        return {
+          name,
+          kind: 'paths',
+          root: path,
+          isComplete: errors.length === 0,
+          data: data.largePaths,
+          restricted: data.restricted,
+          errors,
+        };
+      },
+    };
+  }
   const tasks: AssessmentTask[] = [
-    { name: 'filesystem', inspect: () => command('filesystem', ['df', '-B1', '--', root], 'text') },
     {
-      name: 'overview',
-      inspect: () => scanned('overview', (data) => data.overview),
+      name: 'disk',
+      inspect: async () => {
+        const result = await command('df', ['df', '-h', '--', root]);
+        return {
+          name: 'disk',
+          kind: 'disk',
+          isComplete: result.isComplete,
+          data: result.output,
+          errors: result.errors,
+        };
+      },
     },
+    paths('large', root),
     {
-      name: 'largePaths',
-      inspect: () =>
-        scanned('largePaths', (data) =>
-          data.largePaths.filter((entry) => entry.path === root || isWithin(root, entry.path)),
-        ),
-    },
-    {
-      name: 'dependencies',
+      name: 'deps',
       inspect: async () => {
         const data = await forRoot(root);
         const errors = [...data.inventory.errors];
@@ -135,12 +140,17 @@ export async function assessDisk(
           (error) => errors.push(error),
           { ...data.inventory, errors: [] },
           measure,
+          undefined,
+          check,
         );
         return {
-          name: 'dependencies',
+          name: 'deps',
+          kind: 'dependencies',
+          root,
+          days,
           isComplete: errors.length === 0,
-          data: { root, days, dependencies, errors },
-          errors: errors.map((error) => `${error.repository}: ${error.message}`),
+          data: dependencies,
+          errors,
         };
       },
     },
@@ -148,83 +158,70 @@ export async function assessDisk(
       name: 'worktrees',
       inspect: async () => {
         const data = await forRoot(root);
-        const report = await inspectWorktrees(root, data.inventory, measure);
+        const inspection = await inspectWorktrees(root, data.inventory, measure, check);
         return {
           name: 'worktrees',
-          isComplete: report.errors.length === 0,
-          data: { root, ...report },
-          errors: report.errors.map((error) => `${error.repository}: ${error.message}`),
+          kind: 'worktrees',
+          root,
+          isComplete: inspection.errors.length === 0,
+          data: inspection,
+          errors: inspection.errors,
         };
       },
     },
     {
-      name: 'staleFolders',
-      inspect: () =>
-        scanned('staleFolders', (data) => ({
-          root,
-          size: `${minimumBytes}B`,
-          days,
-          time: 'either',
-          folders: data.staleFolders,
-          errors: data.inventory.errors.map((error) => `${error.repository}: ${error.message}`),
-        })),
+      name: 'stale',
+      inspect: async () => {
+        const data = await forRoot(root);
+        const errors = data.inventory.errors;
+        return { name: 'stale', kind: 'stale', root, isComplete: errors.length === 0, data: data.staleFolders, errors };
+      },
     },
     {
       name: 'docker',
       inspect: async () => {
-        const context = await command('context', ['docker', 'context', 'show'], 'text');
-        if (!context.isComplete || typeof context.data !== 'string') {
-          return { name: 'docker', isComplete: false, data: [context], errors: context.errors };
+        const context = await command('context', ['docker', 'context', 'show']);
+        const contextName = context.output?.trim();
+        if (!context.isComplete || !contextName) {
+          return { name: 'docker', kind: 'docker', isComplete: false, data: [context], errors: context.errors };
         }
-        const contextName = context.data.trim();
         const docker = ['docker', '--context', contextName];
-        const details = await Promise.all([
-          command('endpoint', ['docker', 'context', 'inspect', contextName], 'json'),
-          command('dataRoot', [...docker, 'info', '--format', '{{.DockerRootDir}}'], 'text'),
-          command('usage', [...docker, 'system', 'df'], 'text'),
-          command('details', [...docker, 'system', 'df', '-v'], 'text'),
-          command('containers', [...docker, 'ps', '-a', '--no-trunc'], 'text'),
-          command('containerIds', [...docker, 'ps', '-aq'], 'text'),
+        const [ids, ...details] = await Promise.all([
+          command('containerIds', [...docker, 'ps', '-aq']),
+          command('endpoint', ['docker', 'context', 'inspect', '--format', '{{.Endpoints.docker.Host}}', contextName]),
+          command('dataRoot', [...docker, 'info', '--format', '{{.DockerRootDir}}']),
+          command('usage', [...docker, 'system', 'df']),
+          command('details', [...docker, 'system', 'df', '-v']),
         ]);
-        const ids = details.at(-1);
-        if (ids?.isComplete && typeof ids.data === 'string' && ids.data.trim()) {
-          details.push(
-            await command(
-              'mounts',
-              [...docker, 'container', 'inspect', '--format', '{{json .Mounts}}', ...ids.data.trim().split('\n')],
-              'text',
-            ),
+        const results = [context, ...details];
+        if (!ids.isComplete) results.push(ids);
+        else if (ids.output?.trim()) {
+          results.push(
+            await command('mounts', [
+              ...docker,
+              'container',
+              'inspect',
+              '--format',
+              '{{.Name}}{{range .Mounts}} {{.Type}}:{{if .Name}}{{.Name}}{{else}}{{.Source}}{{end}}->{{.Destination}}{{if not .RW}}:ro{{end}}{{end}}',
+              ...ids.output.trim().split('\n'),
+            ]),
           );
         }
-        const sections = [context, ...details];
         return {
           name: 'docker',
-          isComplete: sections.every((section) => section.isComplete),
-          data: sections,
-          errors: sections.flatMap((section) => section.errors),
+          kind: 'docker',
+          isComplete: results.every((result) => result.isComplete),
+          data: results,
+          errors: results.flatMap((result) => result.errors),
         };
       },
     },
   ];
-  for (const path of new Set(systemRoots)) {
-    tasks.push({
-      name: `system:${path}`,
-      inspect: async () => {
-        const data = await forRoot(path);
-        const errors = data.inventory.errors.map((error) => `${error.repository}: ${error.message}`);
-        return {
-          name: `system:${path}`,
-          isComplete: errors.length === 0,
-          data: data.largePaths.filter((entry) => entry.path === path || isWithin(path, entry.path)),
-          errors,
-        };
-      },
-    });
-  }
+  for (const path of extraRoots) tasks.push(paths(`system ${path}`, path));
   const pending = new Set(tasks.map((task) => task.name));
   const heartbeat = setInterval(() => {
     report({ type: 'progress', pending: [...pending], scans: [...activeScans.values()] });
-  }, 5000);
+  }, heartbeatMs);
   let sections: AssessmentSection[];
   try {
     sections = await Promise.all(
@@ -233,7 +230,12 @@ export async function assessDisk(
         try {
           section = await task.inspect();
         } catch (error) {
-          section = { name: task.name, isComplete: false, data: null, errors: [String(error)] };
+          section = {
+            name: task.name,
+            kind: 'failed',
+            isComplete: false,
+            errors: [{ repository: '', message: String(error) }],
+          };
         }
         pending.delete(task.name);
         report({ type: 'section', section });
@@ -247,12 +249,7 @@ export async function assessDisk(
   report({
     type: 'complete',
     isComplete,
-    failed: sections.filter((section) => !section.isComplete).map((s) => s.name),
+    failed: sections.filter((section) => !section.isComplete).map((section) => section.name),
   });
-  return {
-    root,
-    isComplete,
-    sections,
-    scope,
-  };
+  return { root, isComplete, sections };
 }

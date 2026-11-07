@@ -1,8 +1,8 @@
 import { lstat, readdir, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import pMap from 'p-map';
-import { diskBytes, ensureUntracked, git, isWithin } from './filesystemUtils';
-import type { Dependency, Inventory, Workspace, InspectionError } from './types';
+import { diskBytes, ensureUntracked, git, isWithin, repositoryChecker } from './filesystemUtils';
+import type { Dependency, Inventory, Workspace, InspectionError, RepositoryChecker } from './types';
 
 export async function inventory(root: string): Promise<Inventory> {
   const repositories: string[] = [];
@@ -60,6 +60,7 @@ export async function inspectDependencies(
   sharedInventory?: Inventory,
   measure: (path: string) => Promise<number> = diskBytes,
   activityFor: typeof latestGitActivity = latestGitActivity,
+  check: RepositoryChecker = repositoryChecker(),
 ): Promise<Dependency[]> {
   const items = sharedInventory ?? (await inventory(root));
   for (const error of items.errors) onError(error);
@@ -77,6 +78,7 @@ export async function inspectDependencies(
         isSymlink = item.isSymlink ?? (await lstat(item.path)).isSymbolicLink();
         bytes = await measure(item.path);
         if (isSymlink) reason = 'symbolic link';
+        else if (item.repository && 'invalid' in (await check(item.repository))) reason = 'invalid Git metadata';
         else if (item.repository) {
           const pending = activity.get(item.repository) ?? activityFor(item.repository);
           activity.set(item.repository, pending);
@@ -91,7 +93,7 @@ export async function inspectDependencies(
                 reason = `no Git activity within ${days} days`;
               } catch (error) {
                 if (!(error instanceof Error && error.message.startsWith('Contains Git-tracked files:'))) throw error;
-                reason = error.message;
+                reason = 'contains Git-tracked files';
               }
             }
           }

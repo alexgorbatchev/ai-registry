@@ -1,5 +1,6 @@
 import { quote } from "shell-quote";
-import { type Environment, readProject, type Runner, spawnRunner } from "./herdr";
+import { type Environment, paneHostsProcess, readProject, type Runner, spawnRunner } from "./herdr";
+import { resolveT3Session, type T3Session } from "./t3";
 
 const RECAP_SOURCE = "recap";
 const RECAP_PLACEHOLDER = "<recap>";
@@ -42,28 +43,45 @@ export function buildHerdrRecapInstruction(env: Environment, project: string | u
 
 /**
  * Return the end-of-turn recap instruction for a T3 Code thread: rename the thread with T3's own
- * `t3_thread_update` tool. T3 lists threads under their project, so the title carries only the recap.
+ * `t3_thread_update` tool. T3 lists threads under their project, so the title carries only the recap. The agent
+ * names the thread only when T3 cannot tell the calling thread itself (`T3Session.toolThreadId`).
  */
-export function buildT3RecapInstruction(threadId: string): string {
+export function buildT3RecapInstruction(session: T3Session): string {
+  const where = session.threadId ? `T3 Code thread ${session.threadId}` : "a T3 Code thread";
+  const target = session.toolThreadId
+    ? `\`threadId\` set to \`${session.toolThreadId}\``
+    : "`threadId` left out so it renames this thread";
   return [
-    `This session runs in T3 Code thread ${threadId}. As the last tool call of this turn, after all other work and before the final reply, call T3's \`t3_thread_update\` tool once (load its schema first if it is deferred) with \`action\` set to \`rename\`, \`threadId\` left out so it renames this thread, and \`title\` set to a plain-text recap of what this session is working on, at most 60 characters.`,
+    `This session runs in ${where}. As the last tool call of this turn, after all other work and before the final reply, call T3's \`t3_thread_update\` tool once (load its schema first if it is deferred) with \`action\` set to \`rename\`, ${target}, and \`title\` set to a plain-text recap of what this session is working on, at most 60 characters.`,
     "",
     "Skip the call when the title you set earlier in this thread still describes the session, or when the user has said not to use tools this turn; otherwise make it even when the turn needs no other tool calls. Do not mention the title update in the reply. If the call fails, state the error in one line and do not retry.",
   ].join("\n");
 }
 
 /**
- * The recap instruction for where the session runs. A T3 Code thread wins over a Herdr pane, because a T3 server
- * started from a Herdr pane passes that pane's variables on to every thread it runs.
+ * The recap instruction for where the session runs. A T3 Code thread wins over a Herdr pane, and a Herdr pane counts
+ * only when it runs the hook (`paneHostsProcess`): T3 and Codex's shared app-server pass the variables of the pane
+ * they started from to every session they run.
  */
-async function recapInstruction(input: string, env: Environment, run: Runner): Promise<string | undefined> {
-  if (env.T3CODE_THREAD_ID) return buildT3RecapInstruction(env.T3CODE_THREAD_ID);
-  if (!env.HERDR_PANE_ID) return undefined;
+async function recapInstruction(
+  input: string,
+  env: Environment,
+  run: Runner,
+  pid: number,
+): Promise<string | undefined> {
+  const session = await resolveT3Session(input, env);
+  if (session) return buildT3RecapInstruction(session);
+  if (!env.HERDR_PANE_ID || !(await paneHostsProcess(env, run, pid))) return undefined;
   return buildHerdrRecapInstruction(env, await readProject(input, env, run));
 }
 
-export async function runUserPromptSubmit(input: string, env: Environment, run: Runner): Promise<string> {
-  const instruction = await recapInstruction(input, env, run);
+export async function runUserPromptSubmit(
+  input: string,
+  env: Environment,
+  run: Runner,
+  pid: number = process.pid,
+): Promise<string> {
+  const instruction = await recapInstruction(input, env, run, pid);
   if (instruction === undefined) return "";
   return JSON.stringify({
     hookSpecificOutput: {

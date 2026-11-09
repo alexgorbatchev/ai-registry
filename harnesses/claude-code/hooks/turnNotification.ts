@@ -1,6 +1,7 @@
 import { quote } from "shell-quote";
 import {
   type Environment,
+  paneHostsProcess,
   projectName,
   readProject,
   type Runner,
@@ -8,7 +9,7 @@ import {
   spawnWithStatus,
   type StatusRunner,
 } from "./herdr";
-import { readT3Thread } from "./t3";
+import { readT3Thread, resolveT3Session, type T3Session } from "./t3";
 
 const SIDEBAR_CLI = "aerospace-sidebar";
 
@@ -154,28 +155,28 @@ export function buildPushArguments(options: {
 }
 
 /**
- * The card for a T3 Code thread (`T3CODE_THREAD_ID`): titled with the thread's title, else the session folder, and
- * opening the thread in the app through its `t3code://` link. When the T3 server does not answer, a click brings
- * the app (`__CFBundleIdentifier`) forward instead.
+ * The card for a T3 Code thread (`T3Session`): titled with the thread's title, else the session folder, and opening
+ * the thread in the app through its `t3code://` link. When the hook cannot name the thread (a top-level Codex
+ * thread) or the T3 server does not answer, a click brings the app (`__CFBundleIdentifier`) forward instead.
  */
-async function t3Target(threadId: string, input: string, env: Environment, run: Runner): Promise<CardTarget> {
-  const thread = await readT3Thread(env, run);
+async function t3Target(session: T3Session, input: string, env: Environment, run: Runner): Promise<CardTarget> {
+  const thread = session.threadId ? await readT3Thread(session.threadId, env, run) : undefined;
   const app = env.__CFBundleIdentifier;
   const action: CardAction | undefined = thread?.appLink
     ? { kind: "open", url: thread.appLink }
     : app
       ? { kind: "run", command: quote(["open", "-b", app]) }
       : undefined;
-  return { title: thread?.title ?? projectName(input), action, key: `t3:${threadId}` };
+  return { title: thread?.title ?? projectName(input), action, key: `t3:${session.key}` };
 }
 
 /**
- * The card for a Herdr pane (`HERDR_PANE_ID`): titled with the project, focusing the pane on click, keyed to the
- * pane. Undefined outside Herdr.
+ * The card for a Herdr pane (`HERDR_PANE_ID`) that runs the hook (`paneHostsProcess`): titled with the project,
+ * focusing the pane on click, keyed to the pane. Undefined outside Herdr.
  */
-async function herdrTarget(input: string, env: Environment, run: Runner): Promise<CardTarget | undefined> {
+async function herdrTarget(input: string, env: Environment, run: Runner, pid: number): Promise<CardTarget | undefined> {
   const focusCommand = buildFocusCommand(env);
-  if (focusCommand === undefined) return undefined;
+  if (focusCommand === undefined || !(await paneHostsProcess(env, run, pid))) return undefined;
   return {
     title: await readProject(input, env, run),
     action: { kind: "run", command: focusCommand },
@@ -184,12 +185,17 @@ async function herdrTarget(input: string, env: Environment, run: Runner): Promis
 }
 
 /**
- * Where the session's card points. A T3 Code thread wins over a Herdr pane, because a T3 server started from a
- * Herdr pane passes that pane's variables on to every thread it runs.
+ * Where the session's card points. A T3 Code thread wins over a Herdr pane, and a Herdr pane counts only when it runs
+ * the hook: T3 and Codex's shared app-server pass the variables of the pane they started from to every session.
  */
-export async function resolveTarget(input: string, env: Environment, run: Runner): Promise<CardTarget | undefined> {
-  const threadId = env.T3CODE_THREAD_ID;
-  return threadId ? t3Target(threadId, input, env, run) : herdrTarget(input, env, run);
+export async function resolveTarget(
+  input: string,
+  env: Environment,
+  run: Runner,
+  pid: number = process.pid,
+): Promise<CardTarget | undefined> {
+  const session = await resolveT3Session(input, env);
+  return session ? t3Target(session, input, env, run) : herdrTarget(input, env, run, pid);
 }
 
 /**
@@ -204,10 +210,11 @@ export async function runStop(
   env: Environment,
   run: Runner,
   push: StatusRunner = spawnWithStatus,
+  pid: number = process.pid,
 ): Promise<boolean> {
   const sidebar = Bun.which(SIDEBAR_CLI, { PATH: env.PATH ?? "" });
   if (sidebar === null) return true;
-  const target = await resolveTarget(input, env, run);
+  const target = await resolveTarget(input, env, run, pid);
   if (target === undefined) return true;
   const message = finalMessage(input);
   let status: number | undefined;

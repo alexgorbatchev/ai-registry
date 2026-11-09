@@ -91,6 +91,26 @@ async function fakeT3(title: string): Promise<string> {
   return script("t3", `printf '%s ' "$@" > '${join(bin, "t3.log")}'; printf '%s' '${thread}'`);
 }
 
+/**
+ * Install a fake `herdr` for a pane whose shell is this test process, which runs the hook in-process and starts it as
+ * a child; it answers `workspace get` with `label`, or fails it without one.
+ */
+async function fakeHerdr(label?: string): Promise<string> {
+  const processInfo = JSON.stringify({ result: { process_info: { shell_pid: process.pid } } });
+  const workspace = label === undefined ? "exit 1" : `printf '%s' '{"result":{"workspace":{"label":"${label}"}}}'`;
+  return script(
+    "herdr",
+    `[ "$2" = process-info ] && printf '%s' '${processInfo}' && exit 0\n[ "$1" = workspace ] && ${workspace} && exit 0\nexit 1`,
+  );
+}
+
+/** Write a Codex rollout opening with `payload` as its session metadata, and return Stop input naming it. */
+async function codexStopInput(payload: Record<string, unknown>): Promise<string> {
+  const path = join(bin, "rollout.jsonl");
+  await writeFile(path, `${JSON.stringify({ type: "session_meta", payload })}\n`);
+  return stopInput({ session_id: "root", transcript_path: path });
+}
+
 beforeEach(async () => {
   bin = factory_testDirectory("herdr-turn");
   pushLog = join(bin, "push.log");
@@ -258,7 +278,7 @@ test("prefers the T3 thread over the Herdr pane a T3 server inherited", async ()
 
 test("pushes a card titled with the workspace label that shows the final message", async () => {
   await fakeSidebar();
-  const herdr = await script("herdr", `printf '%s' '{"result":{"workspace":{"label":"sidebar"}}}'`);
+  const herdr = await fakeHerdr("sidebar");
   const env = herdrEnv(herdr);
   expect(await runStop("claude", stopInput(), env, spawnRunner)).toBe(true);
   expect(await pushedArguments()).toEqual([
@@ -280,16 +300,16 @@ test("pushes a card titled with the workspace label that shows the final message
   ]);
 });
 
-test("titles the card with the project folder when Herdr does not answer", async () => {
+test("titles the card with the project folder when Herdr has no workspace label", async () => {
   await fakeSidebar();
-  const herdr = await script("herdr", "exit 1");
+  const herdr = await fakeHerdr();
   expect(await runStop("codex", stopInput(), herdrEnv(herdr), spawnRunner)).toBe(true);
   expect((await pushedArguments()).slice(2, 4)).toEqual(["--title", "aerospace-sidebar"]);
 });
 
 test("pushes without --key to a CLI that predates it, keeping the markdown", async () => {
   await fakeSidebar(0, ["--key"]);
-  const herdr = await script("herdr", "exit 1");
+  const herdr = await fakeHerdr();
   expect(await runStop("claude", stopInput(), herdrEnv(herdr), spawnRunner)).toBe(true);
   const pushed = await pushedArguments();
   expect(pushed).toContain("--markdown");
@@ -298,7 +318,7 @@ test("pushes without --key to a CLI that predates it, keeping the markdown", asy
 
 test("pushes the message as plain text to a CLI without --key or --markdown", async () => {
   await fakeSidebar(0, ["--key", "--markdown"]);
-  const herdr = await script("herdr", "exit 1");
+  const herdr = await fakeHerdr();
   expect(await runStop("claude", stopInput(), herdrEnv(herdr), spawnRunner)).toBe(true);
   const pushed = await pushedArguments();
   expect(pushed).toContain("--body");
@@ -308,7 +328,7 @@ test("pushes the message as plain text to a CLI without --key or --markdown", as
 
 test("stops retrying once a usage error has no option left to blame", async () => {
   await fakeSidebar(64);
-  const herdr = await script("herdr", "exit 1");
+  const herdr = await fakeHerdr();
   expect(await runStop("claude", stopInput({ last_assistant_message: null }), herdrEnv(herdr), spawnRunner)).toBe(
     false,
   );
@@ -329,12 +349,50 @@ test("does nothing outside Herdr and T3 or without the sidebar CLI", async () =>
 
 test("reports a failed push", async () => {
   await fakeSidebar(1);
-  expect(await runStop("claude", stopInput(), herdrEnv(join(bin, "missing-herdr")), spawnRunner)).toBe(false);
+  expect(await runStop("claude", stopInput(), herdrEnv(await fakeHerdr()), spawnRunner)).toBe(false);
+});
+
+test("pushes nothing for Herdr variables inherited from a pane that does not run the hook", async () => {
+  await fakeSidebar();
+  // The pane is gone.
+  expect(await runStop("codex", stopInput(), herdrEnv(await script("herdr", "exit 1")), spawnRunner)).toBe(true);
+  // The pane runs some other process tree.
+  const elsewhere = JSON.stringify({ result: { process_info: { shell_pid: 2147483646 } } });
+  const herdr = await script("herdr", `printf '%s' '${elsewhere}'`);
+  expect(await runStop("codex", stopInput(), herdrEnv(herdr), spawnRunner)).toBe(true);
+  expect(await Bun.file(pushLog).exists()).toBe(false);
+});
+
+test("pushes a card for a T3 Codex subagent's own thread, found from its rollout", async () => {
+  await fakeSidebar();
+  const t3 = await fakeT3("Docs review");
+  const source = { subagent: { thread_spawn: { parent_thread_id: "root" } } };
+  const input = await codexStopInput({ id: "01a1b099", originator: "T3 Code", source });
+  const { T3CODE_THREAD_ID: _, ...env } = { ...herdrEnv(await fakeHerdr()), ...t3Env(t3) };
+  expect(await runStop("codex", input, env, spawnRunner)).toBe(true);
+  const subagent = "thread:provider:codex:native-thread:01a1b099";
+  expect(await readFile(join(bin, "t3.log"), "utf8")).toBe(`thread show ${subagent} --json --messages 0 `);
+  const pushed = await pushedArguments();
+  expect(pushed.slice(2, 4)).toEqual(["--title", "Docs review"]);
+  expect(pushed.slice(-2)).toEqual(["--key", `t3:${subagent}`]);
+});
+
+test("brings T3 forward for a top-level T3 Codex thread, whose id only T3 knows", async () => {
+  const input = await codexStopInput({ id: "01a1b696", originator: "T3 Code", source: "vscode" });
+  const unused: Runner = async () => {
+    throw new Error("must not run");
+  };
+  const { T3CODE_THREAD_ID: _, ...env } = { ...herdrEnv("herdr"), ...t3Env("t3") };
+  expect(await resolveTarget(input, env, unused)).toEqual({
+    title: "aerospace-sidebar",
+    action: { kind: "run", command: "open -b com.t3tools.t3code" },
+    key: "t3:codex:01a1b696",
+  });
 });
 
 test("runs as a hook process", async () => {
   await fakeSidebar();
-  const herdr = await script("herdr", "exit 1");
+  const herdr = await fakeHerdr();
   const run = async (args: string[], env: Record<string, string>) => {
     const child = Bun.spawn(["bun", HOOK, ...args], {
       env: { ...env, PATH: `${env.PATH}:${process.env.PATH ?? ""}` },

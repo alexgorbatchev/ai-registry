@@ -42,19 +42,7 @@ Solve the requested problem and satisfy the intent of applicable requirements. D
 
 # Due Diligence
 
-Treat discovered problems as work to resolve, not merely findings to report. Verify the problem and its consequence before acting. This applies whether or not the problem relates to the original task, including:
-
-- Correctness bugs
-- Security issues
-- Project-specific policy violations
-- Cross-component contract misalignment
-- Stub implementations
-- Unfinished features
-- Dead code
-- Code duplication (DRY)
-- File size and modularity
-- Optimization opportunities
-- API and design gaps
+Inspect the work and affected context for defects, policy violations, incomplete behavior, and maintainability or design problems, including problems outside the immediate task. Verify each problem and its consequence; treat confirmed problems as work to resolve, not merely findings to report.
 
 Fix confirmed defects and convention violations when the intended correction is clear, preserves intended behavior, and can be validated with available checks. This authorization includes problems discovered outside the original task's files. Neither pre-existing status nor unrelatedness alone justifies deferral.
 
@@ -62,4 +50,4 @@ Complete the original requested outcome. Track independent repairs separately wh
 
 Ask before repairs that require a product or architectural decision, destructive action, a change to intended behavior, or substantially more work. Present the verified problem, proposed correction, and tradeoff; continue independent authorized work.
 
-At the end of the turn, report unresolved findings under `# DUE DILIGENCE` only with a concrete reason they remain unresolved, what was attempted, and the next action or decision needed. Summarize repaired problems with the completed work. Omit the heading when there are no unresolved findings.
+At the end of the turn, report unresolved findings under `# DUE DILIGENCE` with the evidence, a concrete reason they remain unresolved, what was attempted, and the next action or decision needed. Summarize repaired problems and their validation with the completed work. Omit the heading when there are no unresolved findings.

@@ -2,13 +2,7 @@ import { describe, expect, it } from "bun:test";
 
 import type { IJsonObject } from "../types";
 
-import {
-  findOwningLayerIndex,
-  listManagedEntryNames,
-  mergeSettingsLayers,
-  routeSettingsChanges,
-  selectManagedEntries,
-} from "../settingsLayerUtils";
+import { findOwningLayerIndex, mergeSettingsLayers, routeSettingsChanges } from "../settingsLayerUtils";
 
 describe("mergeSettingsLayers", () => {
   it("merges objects key by key and lets later layers replace other values", () => {
@@ -76,42 +70,5 @@ describe("routeSettingsChanges", () => {
         { keyPath: ["model"], value: undefined },
       ],
     ]);
-  });
-});
-
-describe("managed entries", () => {
-  it("selects only the named entries of each table", () => {
-    const document = {
-      theme: "dark",
-      mcpServers: { declared: { url: "a" }, added: { url: "b" } },
-      nested: { servers: { declared: { url: "c" } } },
-    };
-    const tables = [["mcpServers"], ["nested", "servers"], ["missing"]];
-    const entryNames = listManagedEntryNames(tables, [
-      { mcpServers: { declared: {} } },
-      { nested: { servers: { declared: {} } } },
-    ]);
-
-    expect(selectManagedEntries(document, tables, entryNames)).toEqual({
-      mcpServers: { declared: { url: "a" } },
-      nested: { servers: { declared: { url: "c" } } },
-    });
-  });
-
-  it("selects a table with named entries even when the value lacks them", () => {
-    const tables = [["mcpServers"]];
-    const entryNames = listManagedEntryNames(tables, [{ mcpServers: { declared: {} } }]);
-
-    expect(selectManagedEntries({ mcpServers: { added: {} } }, tables, entryNames)).toEqual({ mcpServers: {} });
-    expect(selectManagedEntries({ theme: "dark" }, tables, entryNames)).toEqual({ mcpServers: {} });
-  });
-
-  it("selects nothing from a table without named entries", () => {
-    const tables = [["mcpServers"]];
-
-    expect(selectManagedEntries({ mcpServers: { added: {} } }, tables, listManagedEntryNames(tables, [{}]))).toEqual(
-      {},
-    );
-    expect(selectManagedEntries({ mcpServers: { added: {} } }, tables, new Map())).toEqual({});
   });
 });

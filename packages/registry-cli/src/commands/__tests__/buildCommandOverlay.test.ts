@@ -139,11 +139,12 @@ describe("buildCommand with overlay", () => {
       "---\ndescription: Base command\n---\n# Base Command\n",
     );
   });
-  it("merges overlay harness settings into the live files and keeps them out of the public sources", async () => {
+  it("merges overlay harness settings into the generated output and changes nothing outside the registry", async () => {
     const claudeConfigDir = join(tempDir, "claude-home");
     const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
     process.env.CLAUDE_CONFIG_DIR = claudeConfigDir;
-    await Bun.write(join(claudeConfigDir, ".claude.json"), '{"numStartups":1,"mcpServers":{"local":{"url":"l"}}}\n');
+    const claudeConfigText = '{"numStartups":1,"mcpServers":{"local":{"url":"l"}}}\n';
+    await Bun.write(join(claudeConfigDir, ".claude.json"), claudeConfigText);
     await Bun.write(
       join(overlayDir, "harnesses", "codex", "config.toml"),
       '[mcp_servers.private]\nurl = "https://mcp.example.invalid/<%- repo_root %>"\n',
@@ -171,11 +172,10 @@ describe("buildCommand with overlay", () => {
       mcp_servers: { private: { url: `https://mcp.example.invalid/${repoRoot}` } },
     });
     expect(await Bun.file(join(repoRoot, "harnesses", "codex", "config.toml")).text()).toBe(publicCodexConfig);
-    expect(await Bun.file(join(claudeConfigDir, ".claude.json")).json()).toEqual({
-      numStartups: 1,
-      mcpServers: { local: { url: "l" }, private: { type: "http", url: "https://mcp.example.invalid" } },
+    expect(await Bun.file(join(claudeConfigDir, ".claude.json")).text()).toBe(claudeConfigText);
+    expect(await Bun.file(join(registryPaths.output, "claude-code", "claude.json")).json()).toEqual({
+      mcpServers: { private: { type: "http", url: "https://mcp.example.invalid" } },
     });
-    expect(existsSync(join(registryPaths.output, "claude-code", "claude.json"))).toBe(false);
     const manifest = await readGeneratedOutputManifest(registryPaths.output);
     expect(manifest?.syncedFilePaths).not.toContain("claude-code/claude.json");
     expect(manifest?.syncedFilePaths).toContain("codex/config.toml");

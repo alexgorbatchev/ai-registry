@@ -91,7 +91,7 @@ Each overlay may contain `skills/`, `commands/`, and `harnesses/`. Skill bundles
 
 Overlay harness files carry private settings, such as MCP servers with private URLs. A file at `harnesses/<path>` in an overlay layers the public synced settings file at the same path, for example `harnesses/codex/config.toml` or `harnesses/opencode/opencode.jsonc`. The build renders it as a template and deep-merges it over the public source in overlay order: objects merge per key, and other values, lists included, replace earlier ones. When a harness edits a merged setting, the build writes the change back to the layer defining the longest part of its key path, with later overlays winning ties, and removes a deleted key from every layer that defines it. An overlay file under `harnesses/` that matches no synced settings file fails the build.
 
-Claude Code reads user-scope MCP servers only from its global `.claude.json`. Declare them under `mcpServers` in `harnesses/claude-code/claude.json`, in the public registry or an overlay. The build syncs only the entries the registry declares into `$CLAUDE_CONFIG_DIR/.claude.json` or `~/.claude.json` and leaves every other key, including servers added with `claude mcp add`, alone.
+Claude Code reads user-scope MCP servers only from its global `.claude.json`. Declare them under `mcpServers` in `harnesses/claude-code/claude.json`, in the public registry or an overlay. `just build` only renders them into the generated output; `just bootstrap` writes the declared servers into `$CLAUDE_CONFIG_DIR/.claude.json` or `~/.claude.json`, removes servers the registry stopped declaring, and leaves every other key, including servers added with `claude mcp add`, alone.
 
 ### Hostname Skill Variants
 

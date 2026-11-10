@@ -388,10 +388,10 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
 
   const syncedSettingsFiles = settingsSyncRegistry.getSyncedSettingsFiles();
   const syncedFilePaths = syncedSettingsFiles.map((file) => file.relativePath);
-  // Files a harness keeps outside its home, such as Claude Code's `.claude.json`,
-  // are never linked by bootstrap.
+  // Files bootstrap applies elsewhere, such as Claude Code's MCP servers, are not
+  // linked into a harness home.
   const linkedSyncedFilePaths = syncedSettingsFiles
-    .filter((file) => file.livePath === undefined)
+    .filter((file) => file.shouldLinkIntoHome !== false)
     .map((file) => file.relativePath);
   const unmanagedPaths: IUnmanagedOutputPaths = { syncedFilePaths };
   const overlayLayers = await resolveOverlaySettingsLayers({

@@ -238,6 +238,55 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
 `);
   });
 
+  it("writes the entries a generated settings file declares and reports them", async () => {
+    const entriesPlugin: IUnifiedHarnessPlugin = {
+      target: "entries",
+      async buildOutput(): Promise<void> {},
+      async getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
+        return [
+          {
+            kind: "entries",
+            sourcePath: join(outputDir, "fake", "servers.json"),
+            targetPath: join(homeDir, ".fake.json"),
+            description: "Fake servers",
+            tables: [["servers"]],
+            liveOnlyEntryKeys: [],
+          },
+        ];
+      },
+    };
+    const warnings: string[] = [];
+    spyOn(console, "warn").mockImplementation((...values: unknown[]) => {
+      warnings.push(values.join(" "));
+    });
+    const writeServers = async (content: string): Promise<void> =>
+      writeTestFile(join(registryPaths.output, "fake", "servers.json"), content);
+    await writeTestFile(join(homeDir, ".fake.json"), '{"theme":"dark","servers":{"local":{}}}\n');
+    const dependencies = createDependencies({ plugins: [entriesPlugin] });
+
+    await writeServers('{ "servers": { "private": { "url": "x" } } }\n');
+    await bootstrapCommand(dependencies);
+    await writeTestFile(
+      join(homeDir, ".fake.json"),
+      '{"theme":"dark","servers":{"local":{},"private":{"url":"edited"}}}\n',
+    );
+    await bootstrapCommand(dependencies);
+
+    expect(JSON.parse(await readFile(join(homeDir, ".fake.json"), "utf-8"))).toEqual({
+      theme: "dark",
+      servers: { local: {}, private: { url: "x" } },
+    });
+    expect(logLines).toContain("  applied Fake servers: " + join(homeDir, ".fake.json"));
+    expect(logLines).toContain("    added: servers.private");
+    expect(logLines).toContain("    updated: servers.private");
+    expect(warnings).toEqual([
+      "    ⚠️ replaced servers.private: it changed outside the registry since the last bootstrap",
+    ]);
+
+    await bootstrapCommand(dependencies);
+    expect(logLines).toContain("  reused Fake servers: " + join(homeDir, ".fake.json"));
+  });
+
   it("refuses to run in a linked worktree before installing or building anything", async () => {
     const primary = join(root, "primary");
     const worktree = join(root, "worktree");

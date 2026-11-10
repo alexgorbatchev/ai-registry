@@ -17,7 +17,7 @@ import { dirname, isAbsolute, join, relative } from "path";
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 import walk from "ignore-walk";
 import { resolveSkillVariant } from "./resolveSkillVariant";
-import type { ISyncedSettingsFileOptions } from "./settingsSync/types";
+import type { ISyncedSettingsFileOptions, SettingsKeyPath } from "./settingsSync/types";
 import {
   getOutputSkillName,
   injectDisableModelInvocation,
@@ -71,10 +71,21 @@ export type IHarnessBuildContext = {
 
 // A harness home is a real directory outside the repository that holds the
 // harness's runtime state; bootstrap links the generated output's managed
-// entries into it. A link target replaces one path with a symlink.
+// entries into it. A link target replaces one path with a symlink. An entries
+// target writes the entries a generated settings file declares in `tables` into
+// a settings file the harness owns, such as Claude Code's `.claude.json`.
 export type IBootstrapTarget =
   | { kind: "home"; sourcePath: string; targetPath: string; description: string }
-  | { kind: "link"; sourcePath: string; targetPath: string; description: string };
+  | { kind: "link"; sourcePath: string; targetPath: string; description: string }
+  | {
+      kind: "entries";
+      sourcePath: string;
+      targetPath: string;
+      description: string;
+      tables: SettingsKeyPath[];
+      // Entry fields the target file keeps, such as credentials the harness stores.
+      liveOnlyEntryKeys: string[];
+    };
 
 export type IUnifiedHarnessPlugin = {
   target: string;

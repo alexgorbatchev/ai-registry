@@ -1,7 +1,8 @@
 import { homedir } from "os";
-import { join } from "path";
+import { join, relative } from "path";
 import { parseArgs } from "node:util";
 
+import { applyEntriesTarget, type IEntriesApplyResult } from "../lib/applyEntriesTarget";
 import { applyLinkTarget, type ILinkApplyResult } from "../lib/applyLinkTarget";
 import { getLinkedWorktreePrimaryCheckout } from "../lib/getLinkedWorktreePrimaryCheckout";
 import type { IBootstrapTarget, IUnifiedHarnessPlugin } from "../lib/harnessBuild";
@@ -80,6 +81,20 @@ function printLinkTargetResult(target: ILinkTarget, result: ILinkApplyResult): v
   console.log(`  linked ${target.description}: ${target.targetPath}`);
   if (result.action === "backed_up") {
     console.log(`    backed up previous contents to: ${result.backupPath}`);
+  }
+}
+
+function printEntriesTargetResult(target: IBootstrapTarget, result: IEntriesApplyResult): void {
+  const hasChanges = result.added.length + result.updated.length + result.removed.length > 0;
+  console.log(`  ${hasChanges ? "applied" : "reused"} ${target.description}: ${target.targetPath}`);
+  if (result.added.length > 0) console.log(`    added: ${result.added.join(", ")}`);
+  if (result.updated.length > 0) console.log(`    updated: ${result.updated.join(", ")}`);
+  if (result.removed.length > 0) console.log(`    removed: ${result.removed.join(", ")}`);
+  for (const name of result.replacedExternalEdits) {
+    console.warn(`    ⚠️ replaced ${name}: it changed outside the registry since the last bootstrap`);
+  }
+  for (const name of result.keptExternalEdits) {
+    console.warn(`    ⚠️ kept ${name}: the registry no longer declares it, but it changed outside the registry`);
   }
 }
 
@@ -169,6 +184,15 @@ export async function bootstrapCommand(
   for (const target of bootstrapTargets) {
     if (target.kind === "link") {
       printLinkTargetResult(target, await applyLinkTarget(target, backupSuffix));
+      continue;
+    }
+    if (target.kind === "entries") {
+      const statePath = join(
+        dependencies.registryPaths.state,
+        "bootstrap",
+        `${relative(output, target.sourcePath)}.json`,
+      );
+      printEntriesTargetResult(target, await applyEntriesTarget(target, statePath));
       continue;
     }
 

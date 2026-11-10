@@ -13,15 +13,13 @@ const MEMORY_FILE_NAME = "CLAUDE.md";
 const SYNCED_SETTINGS_FILE_NAMES = ["settings.json", "keybindings.json"];
 const SKILLS_DIR_NAME = "skills";
 // Claude Code reads user-scope MCP servers only from its global config file, which
-// also holds its runtime state. The registry declares servers in `claude.json` and
-// syncs just those `mcpServers` entries into the live file.
+// also holds its runtime state. The build renders the registry's `claude.json` with
+// overlays merged into the generated output; bootstrap writes its `mcpServers` entries
+// into the global config file, so the build itself changes nothing outside the registry.
 const MCP_SERVERS_FILE_NAME = "claude.json";
 const GLOBAL_CONFIG_FILE_NAME = ".claude.json";
-// MCP server fields that can hold credentials.
-const MCP_SERVERS_LIVE_ONLY_KEY_PATHS = [
-  ["mcpServers", "*", "headers"],
-  ["mcpServers", "*", "env"],
-];
+// MCP server fields that can hold credentials Claude Code stores.
+const MCP_SERVER_LIVE_ONLY_KEYS = ["headers", "env"];
 
 async function stageHarnessFiles(context: IHarnessBuildContext, claudeCodeOutputDir: string): Promise<void> {
   if (!existsSync(context.harnessDir)) {
@@ -52,11 +50,7 @@ async function stageMcpServers(context: IHarnessBuildContext, claudeCodeOutputDi
 
   const stagedPath = join(claudeCodeOutputDir, MCP_SERVERS_FILE_NAME);
   await context.buildSupport.stageSourcePath(sourcePath, stagedPath);
-  context.buildSupport.syncSettingsFile(stagedPath, {
-    livePath: getGlobalConfigPath(),
-    managedEntryTables: [["mcpServers"]],
-    liveOnlyKeyPaths: MCP_SERVERS_LIVE_ONLY_KEY_PATHS,
-  });
+  context.buildSupport.syncSettingsFile(stagedPath, { shouldLinkIntoHome: false });
 }
 
 function createLiteLLMHelper(): string {
@@ -173,6 +167,14 @@ async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[
       sourcePath: join(outputDir, CLAUDE_CODE_OUTPUT_DIR_NAME),
       targetPath: process.env.CLAUDE_CONFIG_DIR?.trim() || join(homedir(), ".claude"),
       description: "Claude Code config",
+    },
+    {
+      kind: "entries",
+      sourcePath: join(outputDir, CLAUDE_CODE_OUTPUT_DIR_NAME, MCP_SERVERS_FILE_NAME),
+      targetPath: getGlobalConfigPath(),
+      description: "Claude Code MCP servers",
+      tables: [["mcpServers"]],
+      liveOnlyEntryKeys: MCP_SERVER_LIVE_ONLY_KEYS,
     },
   ];
 }

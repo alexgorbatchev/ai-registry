@@ -132,13 +132,11 @@ describe("Claude Code harness build", () => {
     ]);
   });
 
-  it("syncs the declared MCP servers into the global config file instead of the generated root", async () => {
+  it("renders claude.json for bootstrap without linking it into the Claude Code home", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "harnesses/claude-code/.registry-ignore", "./skills/\n./claude.json\n");
     await writeTestFile(repositoryRoot, "harnesses/claude-code/claude.json", '{\n  "mcpServers": {}\n}\n');
-    const configDir = join(repositoryRoot, "claude-home");
-    process.env.CLAUDE_CONFIG_DIR = `${configDir} `;
 
     const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
     const sourcePathByOutputPath = new Map<string, string>();
@@ -147,30 +145,12 @@ describe("Claude Code harness build", () => {
     const stagedPath = join(repositoryRoot, ".output", "claude-code", "claude.json");
     expect(settingsSyncRegistry.getSyncedSettingsFiles()).toContainEqual({
       relativePath: "claude-code/claude.json",
-      liveOnlyKeyPaths: [
-        ["mcpServers", "*", "headers"],
-        ["mcpServers", "*", "env"],
-      ],
-      livePath: join(configDir, ".claude.json"),
-      managedEntryTables: [["mcpServers"]],
+      liveOnlyKeyPaths: [],
+      shouldLinkIntoHome: false,
     });
     expect(sourcePathByOutputPath.get(stagedPath)).toBe(
       join(repositoryRoot, "harnesses", "claude-code", "claude.json"),
     );
-  });
-
-  it("reads MCP servers into the home directory's .claude.json without CLAUDE_CONFIG_DIR", async () => {
-    const repositoryRoot = await createOutputDirectory();
-    await writeHarnessFixture(repositoryRoot);
-    await writeTestFile(repositoryRoot, "harnesses/claude-code/claude.json", '{ "mcpServers": {} }\n');
-
-    const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
-    await buildOutput(repositoryRoot, { settingsSyncRegistry, skills: [], commands: [] });
-
-    expect(
-      settingsSyncRegistry.getSyncedSettingsFiles().find((file) => file.relativePath === "claude-code/claude.json")
-        ?.livePath,
-    ).toBe(join(homedir(), ".claude.json"));
   });
 
   it("generates the cll helper for litellm", async () => {
@@ -197,7 +177,7 @@ describe("Claude Code harness build", () => {
     await expect(buildOutput(repositoryRoot, { skills: [], commands: [] })).rejects.toThrow("ENOENT");
   });
 
-  it("applies the generated Claude Code root to ~/.claude", async () => {
+  it("applies the generated Claude Code root to ~/.claude and its MCP servers to ~/.claude.json", async () => {
     const outputDir = await createOutputDirectory();
 
     expect(await getBootstrapTargets()(outputDir)).toEqual([
@@ -206,6 +186,14 @@ describe("Claude Code harness build", () => {
         description: "Claude Code config",
         sourcePath: join(outputDir, "claude-code"),
         targetPath: join(homedir(), ".claude"),
+      },
+      {
+        kind: "entries",
+        description: "Claude Code MCP servers",
+        sourcePath: join(outputDir, "claude-code", "claude.json"),
+        targetPath: join(homedir(), ".claude.json"),
+        tables: [["mcpServers"]],
+        liveOnlyEntryKeys: ["headers", "env"],
       },
     ]);
   });
@@ -221,6 +209,14 @@ describe("Claude Code harness build", () => {
         description: "Claude Code config",
         sourcePath: join(outputDir, "claude-code"),
         targetPath,
+      },
+      {
+        kind: "entries",
+        description: "Claude Code MCP servers",
+        sourcePath: join(outputDir, "claude-code", "claude.json"),
+        targetPath: join(targetPath, ".claude.json"),
+        tables: [["mcpServers"]],
+        liveOnlyEntryKeys: ["headers", "env"],
       },
     ]);
   });

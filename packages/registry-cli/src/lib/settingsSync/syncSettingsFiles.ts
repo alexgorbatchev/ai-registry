@@ -8,12 +8,7 @@ import { applySettingsChanges } from "./applySettingsChanges";
 import { listSettingsChanges } from "./listSettingsChanges";
 import { mergeSettingsValues } from "./mergeSettingsValues";
 import { parseSettingsText } from "./parseSettingsText";
-import {
-  listManagedEntryNames,
-  mergeSettingsLayers,
-  routeSettingsChanges,
-  selectManagedEntries,
-} from "./settingsLayerUtils";
+import { mergeSettingsLayers, routeSettingsChanges } from "./settingsLayerUtils";
 import type {
   IJsonObject,
   ISettingsChange,
@@ -117,36 +112,28 @@ async function syncSettingsFile(
   layers: ISettingsSourceLayer[],
   options: ISyncSettingsFilesOptions,
 ): Promise<string[]> {
-  const livePath = file.livePath ?? join(options.outputDir, file.relativePath);
+  const livePath = join(options.outputDir, file.relativePath);
   // Recorded as JSON whatever the settings format, so the extension says how to read it.
   const basePath = join(options.stateDir, `${file.relativePath}.json`);
   const layerValues = layers.map((layer) => parseSettingsText(layer.renderedText, layer.sourcePath));
-  const mergedSource = mergeSettingsLayers(layerValues);
+  const source = mergeSettingsLayers(layerValues);
 
   await mkdir(dirname(basePath), { recursive: true });
-  if (file.livePath === undefined) {
-    await replaceSymlinkWithFile(livePath);
-  }
+  await replaceSymlinkWithFile(livePath);
 
-  // A first build installs the rendered source, still merged so that source entries
-  // conditioned on harness-written tables are left out. A file the harness owns
-  // starts empty, so only the entries the registry declares are added to it.
+  // A first build installs the rendered public source with the overlays merged over it,
+  // still merged so that source entries conditioned on harness-written tables are left out.
   const hasLiveFile = existsSync(livePath);
-  const publicLayer = layers[0];
-  const publicValue = layerValues[0];
+  const [publicLayer] = layers;
+  const [publicValue] = layerValues;
   const initialLiveText =
-    file.managedEntryTables !== undefined || publicLayer === undefined || publicValue === undefined
+    publicLayer === undefined || publicValue === undefined
       ? "{}\n"
-      : applySettingsChanges(publicLayer.renderedText, listSettingsChanges(publicValue, mergedSource), livePath);
+      : applySettingsChanges(publicLayer.renderedText, listSettingsChanges(publicValue, source), livePath);
   const liveText = hasLiveFile ? await Bun.file(livePath).text() : initialLiveText;
-  const liveDocument = parseSettingsText(liveText, livePath);
+  const live = parseSettingsText(liveText, livePath);
   const base =
     hasLiveFile && existsSync(basePath) ? parseSettingsText(await Bun.file(basePath).text(), basePath) : undefined;
-
-  const tables = file.managedEntryTables;
-  const entryNames = tables ? listManagedEntryNames(tables, [mergedSource, ...(base ? [base] : [])]) : undefined;
-  const source = tables && entryNames ? selectManagedEntries(mergedSource, tables, entryNames) : mergedSource;
-  const live = tables && entryNames ? selectManagedEntries(liveDocument, tables, entryNames) : liveDocument;
   const result = mergeSettingsValues({
     base,
     live,
@@ -155,10 +142,8 @@ async function syncSettingsFile(
     sourceJsonObjects: file.sourceJsonObjects,
   });
 
-  const liveChanges = listSettingsChanges(live, result.liveValue);
-  const nextLiveText = applySettingsChanges(liveText, liveChanges, livePath);
-  const shouldInstallLiveFile = !hasLiveFile && (tables === undefined || liveChanges.length > 0);
-  if (shouldInstallLiveFile || (hasLiveFile && nextLiveText !== liveText)) {
+  const nextLiveText = applySettingsChanges(liveText, listSettingsChanges(live, result.liveValue), livePath);
+  if (!hasLiveFile || nextLiveText !== liveText) {
     await mkdir(dirname(livePath), { recursive: true });
     await Bun.write(livePath, nextLiveText);
   }

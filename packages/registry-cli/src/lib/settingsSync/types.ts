@@ -44,13 +44,9 @@ export interface ISyncedSettingsFileOptions {
   liveOnlyKeyPaths?: SettingsKeyPath[];
   // Applied after live-only preservation.
   sourceJsonObjects?: ISourceJsonObjectSetting[];
-  // A live file outside the generated output, such as Claude Code's `.claude.json`.
-  // The staged copy only carries the registry source; bootstrap never links it.
-  livePath?: string;
-  // Tables of a live file the harness otherwise owns, such as `mcpServers`. The
-  // registry syncs only the entries of these tables that its sources declare, or
-  // declared in the previous build, and leaves every other key of the file alone.
-  managedEntryTables?: SettingsKeyPath[];
+  // False for a file the build renders for bootstrap to apply elsewhere, such as Claude
+  // Code's MCP servers, instead of a file bootstrap links into the harness home.
+  shouldLinkIntoHome?: boolean;
 }
 
 // One registry file holding part of a synced settings file's source. The public
@@ -74,6 +70,5 @@ export interface ISyncedSettingsFile {
   relativePath: string;
   liveOnlyKeyPaths: SettingsKeyPath[];
   sourceJsonObjects?: ISourceJsonObjectSetting[];
-  livePath?: string;
-  managedEntryTables?: SettingsKeyPath[];
+  shouldLinkIntoHome?: boolean;
 }

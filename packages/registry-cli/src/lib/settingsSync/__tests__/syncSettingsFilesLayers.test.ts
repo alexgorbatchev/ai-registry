@@ -1,6 +1,5 @@
 import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, describe, expect, it, mock, spyOn } from "bun:test";
-import { existsSync } from "fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
@@ -175,88 +174,5 @@ describe("syncSettingsFiles with overlay layers", () => {
     await expect(
       validateStagedSettingsFiles(await createOptions(layout, file, createRecordingSourceRepository("clean"))),
     ).rejects.toThrow(`Cannot sync settings file ${layout.overlaySourcePath}: ValueExpected at offset 11.`);
-  });
-});
-
-describe("syncSettingsFiles with managed entry tables", () => {
-  function createExternalFile(layout: ILayout): ISyncedSettingsFile {
-    return {
-      relativePath: "harness/claude.json",
-      liveOnlyKeyPaths: [["mcpServers", "*", "headers"]],
-      livePath: join(layout.rootDir, "home", ".claude.json"),
-      managedEntryTables: [["mcpServers"]],
-    };
-  }
-
-  it("adds the declared entries and leaves every other key of the live file alone", async () => {
-    const layout = await createLayout("claude.json");
-    const file = createExternalFile(layout);
-    await writeSources(layout, file, '{ "mcpServers": {} }\n', '{ "mcpServers": { "private": { "url": "x" } } }\n');
-    const liveText = '{"numStartups":3,"mcpServers":{"added":{"url":"local"}},"projects":{"/a":{}}}\n';
-    await writeTestFile(file.livePath ?? "", liveText);
-
-    await runSync(layout, file);
-
-    expect(await readJson(file.livePath ?? "")).toEqual({
-      numStartups: 3,
-      mcpServers: { added: { url: "local" }, private: { url: "x" } },
-      projects: { "/a": {} },
-    });
-    expect(await readJson(join(layout.stateDir, `${file.relativePath}.json`))).toEqual({
-      mcpServers: { private: { url: "x" } },
-    });
-    expect(existsSync(join(layout.outputDir, file.relativePath))).toBe(false);
-  });
-
-  it("syncs edits of declared entries back, ignores servers the harness added, and drops removed entries", async () => {
-    const layout = await createLayout("claude.json");
-    const file = createExternalFile(layout);
-    spyOn(console, "log").mockImplementation(() => {});
-    await writeSources(
-      layout,
-      file,
-      '{ "mcpServers": {} }\n',
-      '{ "mcpServers": { "private": { "url": "x" }, "old": { "url": "o" } } }\n',
-    );
-    await writeTestFile(file.livePath ?? "", '{"mcpServers":{}}\n');
-    await runSync(layout, file);
-    await writeTestFile(
-      file.livePath ?? "",
-      '{"mcpServers":{"private":{"url":"y","headers":{"A":"secret"}},"old":{"url":"o"},"added":{"url":"local"}}}\n',
-    );
-
-    await runSync(layout, file);
-
-    expect(await readJson(layout.overlaySourcePath)).toEqual({
-      mcpServers: { private: { url: "y" }, old: { url: "o" } },
-    });
-    expect(await readJson(layout.publicSourcePath)).toEqual({ mcpServers: {} });
-
-    await writeTestFile(layout.overlaySourcePath, '{ "mcpServers": { "private": { "url": "y" } } }\n');
-    await runSync(layout, file);
-
-    expect(await readJson(file.livePath ?? "")).toEqual({
-      mcpServers: { private: { url: "y", headers: { A: "secret" } }, added: { url: "local" } },
-    });
-  });
-
-  it("creates no live file when the registry declares no entries", async () => {
-    const layout = await createLayout("claude.json");
-    const file = createExternalFile(layout);
-    await writeSources(layout, file, '{ "mcpServers": {} }\n', "{}\n");
-
-    await runSync(layout, file);
-
-    expect(existsSync(file.livePath ?? "")).toBe(false);
-  });
-
-  it("creates the live file with only the declared entries when it does not exist", async () => {
-    const layout = await createLayout("claude.json");
-    const file = createExternalFile(layout);
-    await writeSources(layout, file, '{ "mcpServers": {} }\n', '{ "mcpServers": { "private": { "url": "x" } } }\n');
-
-    await runSync(layout, file);
-
-    expect(await readJson(file.livePath ?? "")).toEqual({ mcpServers: { private: { url: "x" } } });
   });
 });

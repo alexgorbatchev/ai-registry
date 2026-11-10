@@ -8,7 +8,9 @@ import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
 
 const CLAUDE_CODE_OUTPUT_DIR_NAME = "claude-code";
 const MEMORY_FILE_NAME = "CLAUDE.md";
-const SETTINGS_FILE_NAME = "settings.json";
+// Files Claude Code edits at runtime: `/config`, `/model`, and installers write
+// `settings.json`; `/keybindings` and installers write `keybindings.json`.
+const SYNCED_SETTINGS_FILE_NAMES = ["settings.json", "keybindings.json"];
 const SKILLS_DIR_NAME = "skills";
 
 async function stageHarnessFiles(context: IHarnessBuildContext, claudeCodeOutputDir: string): Promise<void> {
@@ -18,10 +20,11 @@ async function stageHarnessFiles(context: IHarnessBuildContext, claudeCodeOutput
 
   await context.buildSupport.stageSourceDirectory(context.harnessDir, claudeCodeOutputDir);
 
-  // Claude Code writes `/config`, `/model`, and installer changes back to this file.
-  const settingsPath = join(claudeCodeOutputDir, SETTINGS_FILE_NAME);
-  if (existsSync(settingsPath)) {
-    context.buildSupport.syncSettingsFile(settingsPath);
+  for (const fileName of SYNCED_SETTINGS_FILE_NAMES) {
+    const settingsPath = join(claudeCodeOutputDir, fileName);
+    if (existsSync(settingsPath)) {
+      context.buildSupport.syncSettingsFile(settingsPath);
+    }
   }
 }
 

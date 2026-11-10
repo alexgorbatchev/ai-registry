@@ -128,14 +128,18 @@ describe("buildCommand settings sync", () => {
     const manifest = await readGeneratedOutputManifest(registryPaths.output);
     assert(manifest !== null);
     expect(manifest.syncedFilePaths).toEqual([
+      "claude-code/keybindings.json",
       "claude-code/settings.json",
       "codex/config.toml",
+      "codex/hooks.json",
       "opencode/opencode.jsonc",
+      "opencode/tui.json",
       "pi/settings.json",
     ]);
     expect(getManagedEntryNames(manifest, registryPaths.output, join(registryPaths.output, "codex"))).toEqual([
       "AGENTS.md",
       "config.toml",
+      "hooks.json",
       "rules",
       "skills",
     ]);

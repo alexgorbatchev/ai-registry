@@ -40,6 +40,11 @@ async function writeHarnessFixture(repositoryRoot: string): Promise<void> {
     "harnesses/opencode/opencode.jsonc",
     '{\n  // shared config\n  "theme": "dark"\n}\n',
   );
+  await writeTestFile(
+    repositoryRoot,
+    "harnesses/opencode/tui.json",
+    '{\n  "$schema": "https://opencode.ai/tui.json"\n}\n',
+  );
 }
 
 function buildOutput(repositoryRoot: string, options: IHarnessBuildContextOptions = {}): Promise<void> {
@@ -98,7 +103,7 @@ describe("OpenCode harness build plugin", () => {
     await buildOutput(repositoryRoot, { skills: ["shared-skill"], commands: ["review.md"] });
 
     const outputDir = join(repositoryRoot, ".output", "opencode");
-    expect((await readdir(outputDir)).sort()).toEqual(["commands", "opencode.jsonc", "skills"]);
+    expect((await readdir(outputDir)).sort()).toEqual(["commands", "opencode.jsonc", "skills", "tui.json"]);
     expect(existsSync(join(outputDir, "agents"))).toBe(false);
     expect((await readdir(join(outputDir, "commands"))).sort()).toEqual(["harness.md", "review.md"]);
     for (const skillName of ["shared-skill", "harness-skill"]) {
@@ -122,7 +127,7 @@ describe("OpenCode harness build plugin", () => {
     );
   });
 
-  it("registers opencode.jsonc for settings sync", async () => {
+  it("registers opencode.jsonc and tui.json for settings sync", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);
 
@@ -137,6 +142,7 @@ describe("OpenCode harness build plugin", () => {
           ["mcp", "*", "environment"],
         ],
       },
+      { relativePath: "opencode/tui.json", liveOnlyKeyPaths: [] },
     ]);
   });
 

@@ -142,6 +142,24 @@ describe("Codex harness build plugin", () => {
     ]);
   });
 
+  it("stages hooks.json and registers it for settings sync, so hooks an installer adds reach the registry source", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "harnesses/codex/hooks.json", '{\n  "hooks": {}\n}\n');
+    const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
+
+    await buildOutput(repositoryRoot, { settingsSyncRegistry });
+
+    expect(await readFile(join(repositoryRoot, ".output", "codex", "hooks.json"), "utf-8")).toBe(
+      '{\n  "hooks": {}\n}\n',
+    );
+    expect(settingsSyncRegistry.getSyncedSettingsFiles().map((file) => file.relativePath)).toEqual([
+      "codex/config.toml",
+      "codex/hooks.json",
+    ]);
+    expect(settingsSyncRegistry.getSyncedSettingsFiles()[1]?.liveOnlyKeyPaths).toEqual([]);
+  });
+
   it("trusts every checkout under the folders listed in AI_REGISTRY_CODEX_TRUSTED_DIRS", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);

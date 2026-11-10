@@ -12,6 +12,7 @@ import { CODEX_TRUSTED_DIRS_ENV, discoverTrustedProjects } from "./discoverTrust
 const CODEX_OUTPUT_DIR_NAME = "codex";
 
 const CONFIG_FILE_NAME = "config.toml";
+const HOOKS_FILE_NAME = "hooks.json";
 
 // Codex keys that never reach the registry source: project trust levels (each
 // project separately, so generated entries fill in projects Codex has not seen), skill
@@ -84,6 +85,20 @@ async function stageCodexConfig(context: IHarnessBuildContext, codexOutputDir: s
   });
 }
 
+// Codex loads user hooks from this file as well as from `config.toml`, and hook
+// installers write here. Syncing it makes an installer's hooks show up as a
+// registry source change instead of running unseen.
+async function stageCodexHooks(context: IHarnessBuildContext, codexOutputDir: string): Promise<void> {
+  const sourceHooksPath = join(context.harnessDir, HOOKS_FILE_NAME);
+  if (!existsSync(sourceHooksPath)) {
+    return;
+  }
+
+  const hooksPath = join(codexOutputDir, HOOKS_FILE_NAME);
+  await context.buildSupport.stageSourcePath(sourceHooksPath, hooksPath);
+  context.buildSupport.syncSettingsFile(hooksPath);
+}
+
 async function stageHarnessRules(context: IHarnessBuildContext, codexOutputDir: string): Promise<void> {
   const harnessRulesDir = join(context.harnessDir, "rules");
   if (!existsSync(harnessRulesDir)) {
@@ -123,6 +138,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await mkdir(skillsDir, { recursive: true });
   await context.buildSupport.stageSourcePath(context.systemPromptPath, join(codexOutputDir, "AGENTS.md"));
   await stageCodexConfig(context, codexOutputDir);
+  await stageCodexHooks(context, codexOutputDir);
   await stageHarnessRules(context, codexOutputDir);
   await context.buildSupport.stageHarnessSkills(context, skillsDir);
   await context.buildSupport.stageRegistryAssets(context, { skillsDir });

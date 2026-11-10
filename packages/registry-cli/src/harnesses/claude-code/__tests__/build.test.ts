@@ -33,6 +33,7 @@ async function writeTestFile(repositoryRoot: string, relativePath: string, conte
 async function writeHarnessFixture(repositoryRoot: string): Promise<void> {
   await writeTestFile(repositoryRoot, "system/system.md", "Follow the repo guidance.\nEscalate risky changes.\n");
   await writeTestFile(repositoryRoot, "harnesses/claude-code/settings.json", '{\n  "theme": "dark"\n}\n');
+  await writeTestFile(repositoryRoot, "harnesses/claude-code/keybindings.json", '{\n  "bindings": []\n}\n');
   await writeTestFile(repositoryRoot, "harnesses/claude-code/.registry-ignore", "./fetch-source.sh\n./skills/\n");
   await writeTestFile(repositoryRoot, "harnesses/claude-code/fetch-source.sh", "#!/bin/bash\n");
   await writeTestFile(repositoryRoot, "harnesses/claude-code/skills/harness-skill/SKILL.md", "# Harness skill\n");
@@ -105,12 +106,18 @@ describe("Claude Code harness build", () => {
     // Session stores, history, and plugins belong to the real `~/.claude` home that
     // bootstrap links these entries into, so the build creates none of them.
     const outputDir = join(repositoryRoot, ".output", "claude-code");
-    expect((await readdir(outputDir)).sort()).toEqual(["CLAUDE.md", "commands", "settings.json", "skills"]);
+    expect((await readdir(outputDir)).sort()).toEqual([
+      "CLAUDE.md",
+      "commands",
+      "keybindings.json",
+      "settings.json",
+      "skills",
+    ]);
     expect(existsSync(join(outputDir, "fetch-source.sh"))).toBe(false);
     expect(existsSync(join(outputDir, ".registry-ignore"))).toBe(false);
   });
 
-  it("registers settings.json for settings sync", async () => {
+  it("registers settings.json and keybindings.json for settings sync", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
@@ -120,6 +127,7 @@ describe("Claude Code harness build", () => {
     await buildOutput(repositoryRoot, { settingsSyncRegistry });
 
     expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
+      { relativePath: "claude-code/keybindings.json", liveOnlyKeyPaths: [] },
       { relativePath: "claude-code/settings.json", liveOnlyKeyPaths: [] },
     ]);
   });

@@ -7,6 +7,7 @@ import type { IBootstrapTarget, IHarnessBuildContext, IUnifiedHarnessPlugin } fr
 import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
 
 const CONFIG_FILE_NAME = "opencode.jsonc";
+const TUI_CONFIG_FILE_NAME = "tui.json";
 const OPENCODE_LIVE_ONLY_KEY_PATHS = [
   ["mcp", "*", "headers"],
   ["mcp", "*", "environment"],
@@ -53,6 +54,11 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   const configPath = join(visibleOutputDir, CONFIG_FILE_NAME);
   if (existsSync(configPath)) {
     context.buildSupport.syncSettingsFile(configPath, { liveOnlyKeyPaths: OPENCODE_LIVE_ONLY_KEY_PATHS });
+  }
+  // Plugin installers add TUI plugins to this file.
+  const tuiConfigPath = join(visibleOutputDir, TUI_CONFIG_FILE_NAME);
+  if (existsSync(tuiConfigPath)) {
+    context.buildSupport.syncSettingsFile(tuiConfigPath);
   }
 
   await context.buildSupport.stageHarnessSkills(context, skillsDir);

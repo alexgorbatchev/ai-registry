@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-10 10:05
+  last_modified: 2026-11-10 10:55
   status: current
 ---
 
@@ -28,7 +28,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 - Automatically record explicit standing user instructions in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save them. Update superseded wording in place; keep one-task directions and session history out of policy files. Ask only when the intended scope or resolution of a material conflict is unclear.
 - Let models choose search and code-navigation tools according to the task and available capabilities. Do not add mandatory search-tool ordering or tool-specific stop rules.
-- Keep dependency investigation and library integration within the authorized task's required capabilities. Follow the shared library guidance in `system/system.md` beneath the repo_root token.
+- Keep dependency investigation and library integration within the authorized task's required capabilities. Follow the library guidance in `skills/agent/programming/SKILL.md` beneath the repo_root token.
 - Keep instruction-maintenance tasks, including their commits and merges, within their authorized scope. Record newly specified but unimplemented enforcement as follow-up work rather than making its implementation a prerequisite. Run existing checks applicable to the actual changes, preserve existing gates and behavior-change testing requirements, and report missing enforcement without claiming compliance. A user-deferred generation or application step suspends only that step and its actual dependents; continue independent validation and authorized source integration.
 - For executable behavior changes, add or update meaningful behavioral tests and follow the root `AGENTS.md` testing and coverage policy beneath the repo_root token: at least 90% line and 90% function coverage across each affected first-party package's non-test source, including unexecuted files and excluding `scripts/` directories. Document and configure the command, source scope, metrics, and exclusions; reproduce blocking baseline failures on the untouched base and make the smallest necessary prerequisite repair. Do not weaken gates or make token test edits.
 - Preserve other actors' changes, index state, locks, and refs. Suspend only conflicting operations; continue independent authorized work in an owned, isolated worktree when safe. Staged-file age does not authorize takeover or a whole-worker halt.

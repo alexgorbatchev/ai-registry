@@ -1,10 +1,10 @@
 ---
 name: programming
-description: Use when working with Go, Python, Rust, TypeScript, Bun, Tailwind, Swift, shell scripts, or justfiles, and when building, designing, refactoring, documenting, or reviewing CLI applications and their command-line interfaces.
+description: Use when designing, implementing, debugging, refactoring, testing, documenting, or reviewing software, including application code, scripts, development tooling, and command-line interfaces.
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-10 10:15
+  last_modified: 2026-11-10 10:55
   status: current
 ---
 
@@ -13,10 +13,23 @@ metadata:
 1. Establish the requested outcome and affected files from the user request and repository instructions. Inspect manifests, lockfiles, toolchain configuration, development recipes, and relevant implementation before choosing commands or changing files.
 2. Select and read every applicable baseline in **Language and tooling references**. Read matching **Topic references** before working in those domains. Apply each language's rules to its own files; combine runtime, UI, CLI, and automation rules where their scopes overlap.
 3. Apply **Work tracking** before editing code or configuration. If the root `AGENTS.md` mentions POC mode or the user requests a POC toggle, read [POC projects](references/poc-projects.md) before choosing an integration or testing workflow.
-4. Perform the authorized work using the selected references and project conventions. Select commands from the actual project's tooling; apply Bun commands to Bun projects. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Verify unfamiliar APIs against the installed version's source or official documentation rather than inventing contracts.
+4. Apply **Implementation rules** and perform the authorized work using the selected references and project conventions. Select commands from the actual project's tooling; apply Bun commands to Bun projects. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Verify unfamiliar APIs against the installed version's source or official documentation rather than inventing contracts.
 5. Apply **Development artifacts**, **Test cleanup**, and **CI dependency caching** whenever the work reaches those areas. Run the applicable checks and finish under **Verify and report**.
 
-For Swift and shell scripts, use the project's own language conventions and this skill's shared rules; no language baseline is bundled here. For work outside the listed languages and CLI scope, follow repository instructions without substituting an unrelated language's rules.
+For languages without a bundled baseline, use the project's language conventions and this skill's shared rules. Do not substitute an unrelated language's rules.
+
+## Implementation rules
+
+- Do not introduce backward-compatibility layers, migrations, or shims for old behavior unless explicitly requested.
+- Implement the required behavior; do not substitute stubs, mock layers, or shallow code for a working implementation. Satisfy the intent of checks and project requirements rather than evading them through cosmetic renaming, hidden files, or inline stubs. Verify applicable platform semantics, accessibility, type safety, security, and performance requirements before declaring completion.
+- Choose the native primitive whose semantics match the requirement. Do not emulate an available suitable primitive with wrappers or overrides. Use supported extension points without violating the primitive's semantic or lifecycle contracts.
+- Distinguish user-visible defects from tooling gaps, theoretical edge cases, and failures introduced by a proposed repair. A missing coverage-report entry alone proves neither a product defect nor insufficient coverage. Preserve applicable testing and coverage requirements; establish why an investigation or repair is necessary before adding process supervision, infrastructure, or a broad dependency investigation.
+
+### Libraries and dependencies
+
+Before implementing a feature, inspect existing dependencies and maintained libraries within the task's required capabilities. Use native or standard-library functionality when it meets the requirements; otherwise prefer a suitable library over custom implementation. Write custom functionality only when suitable existing solutions cannot meet the requirements.
+
+Integrate libraries through their intended APIs and capabilities. When a library is explicitly requested, perform the required integration rather than wrapping existing code in a compatibility layer that bypasses the library.
 
 ## Language and tooling references
 

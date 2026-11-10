@@ -1,12 +1,16 @@
 ---
 created_on: 2026-10-01 11:46
-last_modified: 2026-10-18 15:22
+last_modified: 2026-11-10 10:31
 status: current
 ---
 
 # Generic Skills
 
 This directory contains reusable skills that must work across harnesses.
+
+## Authoring Location
+
+Default new skills to `<project>/.agents/skills/<skill-name>/SKILL.md`, using the target project directory rather than an incidental shell working directory. Honor explicit user destinations and repository source-layout rules: reusable skills maintained in this registry belong in `skills/agent/` or `skills/user/`. Distinguish deployed `skills/<skill-name>/` layouts from source locations; edit source bundles and regenerate installed copies.
 
 ## User Invocation
 

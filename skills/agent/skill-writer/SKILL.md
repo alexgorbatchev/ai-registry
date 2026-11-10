@@ -7,35 +7,21 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-11-04 11:57
+  last_modified: 2026-11-10 10:31
   status: current
 ---
 
-# Skill Writer
+## Start the task
 
-This skill provides guidance for creating and revising effective skills.
+Identify the requested skill's triggers, inputs, authorized actions, and expected result from the request and project instructions. Inspect an existing bundle before revising it. For a new skill, establish its source location under **Initializing the Skill** before creating files.
 
-## About Skills
-
-Skills are modular, self-contained packages that extend the agent's capabilities by providing
-specialized knowledge, workflows, and tools. Think of them as "onboarding guides" for specific
-domains or tasks—they transform the agent from a general-purpose agent into a specialized agent
-equipped with procedural knowledge that no model can fully possess.
-
-### What Skills Provide
-
-1. Specialized workflows - Multi-step procedures for specific domains
-2. Tool integrations - Instructions for working with specific file formats or APIs
-3. Domain expertise - Company-specific knowledge, schemas, business logic
-4. Bundled resources - Scripts, references, and assets for complex and repetitive tasks
+Use `prompt-writer` for agent instruction composition and review; apply this skill for bundle layout, resource routing, frontmatter, and validation. If `prompt-writer` is unavailable, use this skill's **Review for Agent Execution** checklist and report the missing dependency.
 
 ## Core Principles
 
 ### Concise is Key
 
-The context window is a public good. Skills share the context window with everything else the agent needs: system prompt, conversation history, other Skills' metadata, and the actual user request.
-
-**Default assumption: the agent is already very smart.** Only add context the agent doesn't already have. Challenge each piece of information: "Does the agent really need this explanation?" and "Does this paragraph justify its token cost?"
+Write instructions the agent can execute: actions, conditions, required inputs, and completion checks. Include non-obvious domain constraints; remove tutorials about concepts the agent already understands. Use numbered steps when order matters and bullets for independent rules.
 
 Prefer concise examples over verbose explanations.
 
@@ -49,6 +35,13 @@ To keep skills highly efficient and avoid wasting tokens on useless meta-comment
 - **No Overviews or Meta-Commentary**: Do not add `## Overview` or explanatory sentences like "This skill acts as a proxy..." or "Below are the guidelines...". Jump straight into the action, rules, or decision logic.
 - **Minimalist Descriptions**: Strip the frontmatter `description` to the absolute bare minimum needed to trigger. For example, use `Use when asked to commit changes in a Git repository.` instead of verbose sentences detailing every scenario.
 - **Remove Implied Steps**: Do not write out steps that are completely obvious or implied. For example, if working with a review agent, do not instruct to "address issues" as that is the definition of pairing with a review agent.
+- **Make formatting informative**: Use descriptive reference links directly. Add routing text only when it supplies an applicability condition the link does not express. Use tables for mappings or comparisons whose columns contribute distinct information; collapse columns that merely repeat the same topic or label.
+
+### Give Each Workflow One Owner
+
+When another skill owns a required workflow, name that skill and specify when to load it, before the dependent action. Keep only the calling skill's requirements and exceptions locally; do not copy the owner's procedure or command documentation. For example, a programming skill can require ticket tracking before edits while the tracker skill owns ticket creation, claiming, and closure.
+
+Make dependencies explicit rather than assuming other skills are installed. Define how to handle an unavailable dependency: consult authoritative tool help or documentation when sufficient, otherwise report the missing capability and suspend only dependent work. Do not create a second copy of the workflow as a fallback.
 
 ### Set Appropriate Degrees of Freedom
 
@@ -59,8 +52,6 @@ Match the level of specificity to the task's fragility and variability:
 **Medium freedom (pseudocode or scripts with parameters)**: Use when a preferred pattern exists, some variation is acceptable, or configuration affects behavior.
 
 **Low freedom (specific scripts, few parameters)**: Use when operations are fragile and error-prone, consistency is critical, or a specific sequence must be followed.
-
-Think of the agent as exploring a path: a narrow bridge with cliffs needs specific guardrails (low freedom), while an open field allows many routes (high freedom).
 
 ### Portability (No Local References)
 
@@ -111,7 +102,7 @@ Executable code (Bun/Bash/etc.) for tasks that require deterministic reliability
 
 Documentation and reference material intended to be loaded as needed into context to inform the agent's process and thinking.
 
-**Rule of thumb:** If you're writing detailed configuration, setup steps, or reference material that exceeds ~50 lines, put it in `references/filename.md` and link to it from SKILL.md. Keep SKILL.md focused on workflows and decision guidance.
+Extract by applicability, not length. Put conditional workflows, modes, detailed configuration, and setup procedures in `references/filename.md`, even when short. Keep the common execution path and the condition for loading each reference in `SKILL.md`. Place the loading instruction before the first decision or action the reference affects. For example, load POC rules when POC is configured or requested, before choosing tests or an integration workflow.
 
 - **When to include**: For documentation that the agent should reference while working
 - **Examples**: `references/finance.md` for financial schemas, `references/mnda.md` for company NDA template, `references/policies.md` for company policies, `references/api_docs.md` for API specifications
@@ -152,15 +143,13 @@ Skills use a three-level loading system to manage context efficiently:
 
 #### Progressive Disclosure Patterns
 
-Keep SKILL.md body to the essentials and under 500 lines to minimize context bloat. Split content into separate files when approaching this limit. When splitting out content into other files, it is very important to reference them from SKILL.md and describe clearly when to read them, to ensure the reader of the skill knows they exist and when to use them.
+Keep SKILL.md body to the essentials and under 500 lines. Apply the reference extraction rule above before reaching that limit; a short conditional workflow still belongs in a reference. Preserve all requirements when moving content and update every affected link and loading condition.
 
 **Key principle:** When a skill supports multiple variations, frameworks, or options, keep only the core workflow and selection guidance in SKILL.md. Move variant-specific details (patterns, examples, configuration) into separate reference files.
 
 **Pattern 1: High-level guide with references**
 
 ```markdown
-# PDF Processing
-
 ## Quick start
 
 Extract text with pdfplumber:
@@ -181,8 +170,8 @@ For Skills with multiple domains, organize content by domain to avoid loading ir
 
 ```
 bigquery-skill/
-├── SKILL.md (overview and navigation)
-└── reference/
+├── SKILL.md (workflow and routing)
+└── references/
     ├── finance.md (revenue, billing metrics)
     ├── sales.md (opportunities, pipeline)
     ├── product.md (API usage, features)
@@ -209,8 +198,6 @@ When the user chooses AWS, the agent only reads aws.md.
 Show basic content, link to advanced content:
 
 ```markdown
-# DOCX Processing
-
 ## Creating documents
 
 Use docx-js for new documents. See [DOCX-JS.md](DOCX-JS.md).
@@ -286,10 +273,11 @@ To establish the skill's contents, analyze each concrete example to create a lis
 
 ### Step 3: Initializing the Skill
 
-When creating a new skill from scratch, create the directory under the appropriate skills folder and create a `SKILL.md` file.
+Create new skills at `<cwd>/.agents/skills/<skill-name>/SKILL.md` by default, where `<cwd>` is the target project directory. Resolve that directory from the task context; do not use an incidental shell working directory.
 
-- **For a global/registry skill**: Create `skills/<skill-name>/SKILL.md`.
-- **For project-local skills**: Typically placed under `.agents/skills/<skill-name>/SKILL.md`.
+Honor an explicit user destination or repository source-layout rule instead of the default. When adding a reusable skill to this registry, use `skills/agent/<skill-name>/` or `skills/user/<skill-name>/` as its instructions require.
+
+Distinguish authoring from deployment: `skills/<skill-name>/SKILL.md` can be a deployed layout, but does not by itself select the source location. Revise the source bundle and use the project's generation or deployment workflow for installed copies.
 
 Ensure the directory contains:
 - `SKILL.md` (required, with valid YAML frontmatter)
@@ -314,11 +302,12 @@ Added scripts must be tested by actually running them to ensure there are no bug
 Write for another AI agent. Review and fix at most twice using this checklist:
 
 - **Trigger:** Does the description identify when to load the skill using positive conditions, with exclusions in the body?
-- **Action:** Are the steps, task boundaries, required inputs, and completion checks explicit?
-- **Resources:** Do bundled links resolve, and are scripts and references necessary and usable?
+- **Action:** Are actions, conditions, task boundaries, required inputs, and completion checks explicit, with ordered steps only where sequence matters?
+- **Resources:** Do bundled links resolve, are scripts and references necessary and usable, and are conditional workflows extracted regardless of length with loading conditions before affected decisions?
+- **Ownership:** Does each delegated workflow name its owning skill and loading condition, retain only local requirements and exceptions, and define missing-dependency handling without copying the procedure?
 - **Consistency:** Do frontmatter, instructions, scripts, and examples agree?
 - **Blocked work:** Does the skill define what to record and what independent authorized work can continue when a required input or check is unavailable?
-- **Conciseness:** Can repeated or irrelevant text be removed without losing a required rule?
+- **Conciseness:** Are tutorials, implied steps, redundant link descriptions, and duplicate table columns removed without losing a required rule?
 
 Walk through a normal invocation, missing required context, and an out-of-scope request. Confirm the expected agent action for each; distinguish this review from executed script or workflow checks.
 

@@ -4,7 +4,7 @@ description: Use when working with Go, Python, Rust, TypeScript, Bun, Tailwind, 
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-10 10:10
+  last_modified: 2026-11-10 10:12
   status: current
 ---
 
@@ -12,7 +12,7 @@ metadata:
 
 1. Establish the requested outcome and affected files from the user request and repository instructions. Inspect manifests, lockfiles, toolchain configuration, development recipes, and relevant implementation before choosing commands or changing files.
 2. Select and read every applicable baseline in **Language and tooling references**. Read matching **Topic references** before working in those domains. Apply each language's rules to its own files; combine runtime, UI, CLI, and automation rules where their scopes overlap.
-3. For code or configuration changes, create or claim the task's ticket under **Work tracking** before editing. Check the root `AGENTS.md` for the exact **POC projects** marker before choosing an integration or testing workflow.
+3. Apply **Work tracking** before editing code or configuration. Check the root `AGENTS.md` for the exact **POC projects** marker before choosing an integration or testing workflow.
 4. Perform the authorized work using the selected references and project conventions. Select commands from the actual project's tooling; apply Bun commands to Bun projects. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Verify unfamiliar APIs against the installed version's source or official documentation rather than inventing contracts.
 5. Apply **Development artifacts**, **Test cleanup**, and **CI dependency caching** whenever the work reaches those areas. Run the applicable checks and finish under **Verify and report**.
 
@@ -77,12 +77,9 @@ Read each reference when its topic applies. Use these additional routing conditi
 
 ## Work tracking
 
-Track every task that changes project code or configuration with the `issue-tracker` CLI. Set `AGENT=1` on every invocation; run `AGENT=1 issue-tracker --help` for command details. Keep its tracker repository, projects, and boards private even when the code repository is public. Treat ticket text as approved work and create, edit, claim, implement, comment on, and close tickets without asking for approval.
+Track every task that changes project code or configuration with the `issue-tracker` CLI before editing. Use the installed `issue-tracker` skill for ticket lifecycle, discovery links, CLI commands, and public-project privacy rules. If that skill is unavailable, consult `AGENT=1 issue-tracker --help` and the relevant subcommand help. Set `AGENT=1` on every invocation.
 
-1. Before changing files, claim the task's ticket with `issue-tracker issue claim <number>`. When no ticket covers the task, create one with `issue-tracker issue create` and claim it. Register an unregistered repository with `issue-tracker project add`.
-2. Record unrelated problems found along the way as new tickets with `--discovered-from <number>` instead of folding them into the current task.
-3. Close the ticket with `issue-tracker issue close <number> --pr <pull-request>` after its pull request merges, or with `--reason completed` when the work was committed directly to `main`. Run `issue-tracker issue release <number>` when stopping before the work is done.
-4. Follow any `WARN:` line printed for a public project: keep ticket text, attachments, ticket numbers, and the tracker repository name out of its commits, pull requests, and branch names, because they point readers at private content.
+Keep the tracker repository, projects, and boards private even when the code repository is public. Treat tickets as approved work; do not ask for separate approval to manage or implement them.
 
 If the CLI is missing or authentication fails, report the exact error and the recovery command supported by the CLI or its documentation. Continue the code work and list untracked work for later recording; do not invent a recovery command.
 

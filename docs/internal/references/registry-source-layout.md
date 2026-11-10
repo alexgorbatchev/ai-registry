@@ -1,6 +1,6 @@
 ---
 created_on: 2026-11-10 11:33
-last_modified: 2026-11-10 11:33
+last_modified: 2026-11-10 13:36
 status: current
 ---
 
@@ -13,7 +13,6 @@ For agents adding, moving, or editing registry assets. Paths are relative to the
   - **Bundled Skill Dependencies**: Register skill packages needed by repository-wide typechecking as root Bun workspaces, including `skills/user/disk-cleanup` and `harnesses/claude-code/hooks`, so normal installs cover their dependencies. Exclude installed dependencies and scratch directories from generated skill copies through `.registry-ignore`. Ship a bundle's `bun.lock` when its instructions install with `--frozen-lockfile`, and keep that lockfile installable on its own, outside the root workspace.
   - **Skills (`skills/`)**: Skills are grouped into `skills/agent/` for agent-runnable skills and `skills/user/` for user-invokable skills. Each skill resides in its own isolated folder and contains at least a `SKILL.md` file detailing the domain knowledge, workflows, and rules. User skills in `skills/user/` do not contain `disable-model-invocation: true` in their source `SKILL.md`; the build/bootstrap process automatically injects it into generated harness outputs. In generated outputs, skills from `agent/` and `user/` are merged flat into `skills/`.
   - **Commands (`commands/`)**: Slash commands and reusable task prompts belong here.
-  - **GitHub Issue Workflow**: Issue authoring, implementation, review, integration, and historical issue-merge repair live in the `github-issues` skill in the private overlay. Do not recreate them here.
   - **Pull Requests**: Maintain PR-writing and PR review-feedback guidance in `skills/agent/github-pr/`, with one bundled reference per mode, not a duplicate command. PR descriptions, comments, and replies posted from the user's account use the account owner's first-person voice (`I`, `me`, `my`), including approval and landing notices. Do not refer to that account owner as `the user` or narrate an assistant intermediary. Ground actions, results, and approvals in actual work and authorization; separate bot reviews speak for the bot's identity. Keep titles concise and avoid drawn-out explanations. Cover related issues from commit messages, the problem and motivation, change type, tests, and risks. When a PR from an external author (not `OWNER`, `MEMBER`, or `COLLABORATOR`) is merged, closed, or superseded, thank the author on that PR and say where the work landed.
   - **System (`system/`)**: Shared repo-level instruction fragments and memory guidance belong here. `system/system.md` is the shared system prompt every harness ships: Codex as `AGENTS.md`, Pi as `APPEND_SYSTEM.md`, Claude Code as `CLAUDE.md`, and OpenCode through `instructions` in `harnesses/opencode/opencode.jsonc`.
   - **Self-Contained Logic**: Keep skills and commands self-contained; do not assume other skills are present. Matt Pocock's explicitly user-invoked workflows may depend on other bundled user skills; maintain their required dependencies. Keep all skills authored by `mattpocock` under `skills/user/`, as specified in `skills/AGENTS.md`.

@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-10 11:33
+  last_modified: 2026-11-10 13:36
   status: current
 ---
 
@@ -105,7 +105,6 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 ## Add A Command
 
-- Maintain GitHub issue authoring, implementation, review, integration, and historical issue-merge repair in the private overlay's `github-issues` skill. Do not recreate separate issue commands, skills, or harness overrides here.
 - Keep PR-writing and PR review-feedback guidance in the `github-pr` skill under `<%- skills_dir %>/agent/github-pr/`, with one bundled reference per mode; do not recreate a duplicate PR command. PR descriptions, comments, and replies posted from the user's account use the account owner's first-person voice (`I`, `me`, `my`), with actions and approvals grounded in actual work and authorization. Do not refer to that account owner as `the user` or narrate an assistant intermediary. Separate bot reviews speak for the bot's identity.
 - Create the command under the commands_dir token.
 - Use commands for slash-command prompts, reusable task blueprints, and prompt templates.

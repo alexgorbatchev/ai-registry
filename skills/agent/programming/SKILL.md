@@ -1,102 +1,102 @@
 ---
 name: programming
-description: MUST USE anytime working with Go, Python, Rust, TypeScript, Bun, Tailwind, Swift, shell scripts, or justfiles, and when building, designing, refactoring, documenting, or reviewing CLI applications and their command-line interfaces.
+description: Use when working with Go, Python, Rust, TypeScript, Bun, Tailwind, Swift, shell scripts, or justfiles, and when building, designing, refactoring, documenting, or reviewing CLI applications and their command-line interfaces.
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-10 09:21
+  last_modified: 2026-11-10 10:10
   status: current
 ---
 
-## Required reading
+## Execute the task
 
-Inspect the task's files, manifests, toolchain configuration, and repository instructions. Read every matching baseline below before working, then read the topic references required by the task. For mixed-language projects, apply each language's rules to its own files. Combine language, runtime, UI, and automation guidance when their scopes overlap.
+1. Establish the requested outcome and affected files from the user request and repository instructions. Inspect manifests, lockfiles, toolchain configuration, development recipes, and relevant implementation before choosing commands or changing files.
+2. Select and read every applicable baseline in **Language and tooling references**. Read matching **Topic references** before working in those domains. Apply each language's rules to its own files; combine runtime, UI, CLI, and automation rules where their scopes overlap.
+3. For code or configuration changes, create or claim the task's ticket under **Work tracking** before editing. Check the root `AGENTS.md` for the exact **POC projects** marker before choosing an integration or testing workflow.
+4. Perform the authorized work using the selected references and project conventions. Select commands from the actual project's tooling; apply Bun commands to Bun projects. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Verify unfamiliar APIs against the installed version's source or official documentation rather than inventing contracts.
+5. Apply **Development artifacts**, **Test cleanup**, and **CI dependency caching** whenever the work reaches those areas. Run the applicable checks and finish under **Verify and report**.
 
-| Working with | Read first |
-| --- | --- |
-| Go code, projects, tooling, or build storage | [Go conventions](references/go/conventions.md) |
-| Python execution, dependencies, environments, or tooling | [Python tooling](references/python/tooling.md) |
-| Rust code, Cargo projects, or build storage | [Rust conventions](references/rust/conventions.md) |
-| Reading or writing TypeScript, including TSX | [TypeScript conventions](references/typescript/conventions.md) |
-| Bun execution, dependencies, builds, or runtime APIs | [Bun runtime](references/bun/runtime.md) |
-| Tailwind integration, theme tokens, or utility scanning | [Bun/Tailwind integration](references/bun-tailwind/integration.md) and [setup](references/bun-tailwind/setup.md); apply Bun-specific wiring when the project uses Bun |
-| Creating, structuring, or refactoring justfiles, or defining development tasks | [Task automation](references/cli/best-practices.md#task-automation-justfile), the language's justfile reference ([Go](references/go/justfile.md), [Python](references/python/justfile.md), [Rust](references/rust/justfile.md), [Bun](references/bun/justfile.md)), and [Modular justfiles](references/just/modular-justfiles.md) |
-| Building, designing, refactoring, documenting, or reviewing CLI applications | [CLI best practices](references/cli/best-practices.md) and the language's CLI reference ([Go](references/go/cli.md), [Python](references/python/cli.md), [Rust](references/rust/cli.md), [TypeScript](references/typescript/cli.md)) |
+For Swift and shell scripts, use the project's own language conventions and this skill's shared rules; no language baseline is bundled here. For work outside the listed languages and CLI scope, follow repository instructions without substituting an unrelated language's rules.
 
-Swift and shell scripts have no language baseline here; for them, follow the project's own conventions and the shared sections below. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Select runtime commands from the actual project's tooling; Bun commands apply to Bun projects. Verify unfamiliar APIs against the installed version's source or official documentation.
+## Language and tooling references
+
+- [Go conventions](references/go/conventions.md).
+- [Python tooling](references/python/tooling.md).
+- [Rust conventions](references/rust/conventions.md).
+- [TypeScript conventions](references/typescript/conventions.md), including TSX.
+- [Bun runtime](references/bun/runtime.md).
+- Tailwind integration, theme tokens, or utility scanning: read [integration](references/bun-tailwind/integration.md) and [setup](references/bun-tailwind/setup.md); apply Bun-specific wiring only in Bun projects.
+- Justfiles or development tasks: read [task automation](references/cli/best-practices.md#task-automation-justfile), [modular justfiles](references/just/modular-justfiles.md), and the matching template: [Go](references/go/justfile.md), [Python](references/python/justfile.md), [Rust](references/rust/justfile.md), or [Bun](references/bun/justfile.md).
+- CLI applications: read [best practices](references/cli/best-practices.md) and the matching language guide: [Go](references/go/cli.md), [Python](references/python/cli.md), [Rust](references/rust/cli.md), or [TypeScript](references/typescript/cli.md).
 
 ## Topic references
 
-Read each matching reference before reaching its domain:
+Read each reference when its topic applies. Use these additional routing conditions:
 
-| Task | Required references |
-| --- | --- |
-| Starting, restructuring, building, or releasing a Go project | [Go setup](references/go/setup.md) |
-| Go CI, tagged releases, or binary version metadata | [Go CI and releases](references/go/github-ci-cd-releases.md); templates: [CI](references/go/github-actions-ci.yml), [release](references/go/github-actions-release.yml), [GoReleaser](references/go/goreleaser.yml) |
-| Choosing recent Go idioms or upgrading Go tooling | [Go release notes](references/go/go-release-notes.md) |
-| Designing Go function signatures | [Go parameter design](references/go/parameter-design.md) |
-| Go builds, tests, coverage, profiling, or storage cleanup | [Go disk usage](references/go/disk-usage.md) |
-| Rust package layout, toolchains, dependencies, features, or CLI setup | [Rust setup](references/rust/setup.md) |
-| Rust tests, CI, coverage, packaging, or publishing | [Rust testing and releases](references/rust/testing-and-releases.md) |
-| Rust builds, tests, coverage, profile changes, or artifact cleanup | [Rust disk usage](references/rust/disk-usage.md) |
-| TypeScript tests | [TypeScript testing](references/typescript/testing.md) |
-| TypeScript 7 migration or compiler coexistence | [TypeScript 7 update](references/typescript/typescript-7-update.md) |
-| React components or tests | [React development](references/typescript/react-development.md) and [React testing](references/typescript/react-testing.md) |
-| Storybook stories or browser interaction tests | [Storybook](references/typescript/storybook.md) |
-| Storybook installation or configuration | [Storybook setup](references/typescript/storybook-setup.md) |
-| Storybook failures | [Storybook debugging](references/typescript/storybook-debugging.md) |
-| Bun bundling or compilation | [Bun bundling](references/bun/bundling.md) |
-| Bun React projects, React Compiler, or the shared React lint and format policy | [Bun React Compiler](references/bun/react-compiler.md) |
-| Bun S3/R2 storage | [Bun S3](references/bun/s3.md) |
-| Bun Redis/Valkey clients | [Bun Redis](references/bun/redis.md) |
-| Bun tar/gzip archives | [Bun archives](references/bun/archive.md) |
-| Bun utilities or cryptography | [Bun utilities](references/bun/utilities.md) |
+- [Go setup](references/go/setup.md): project creation, restructuring, builds, or releases.
+- [Go CI and releases](references/go/github-ci-cd-releases.md): include tagged releases and binary version metadata. Templates: [CI](references/go/github-actions-ci.yml), [release](references/go/github-actions-release.yml), [GoReleaser](references/go/goreleaser.yml).
+- [Go release notes](references/go/go-release-notes.md): recent idioms or tooling upgrades.
+- [Go parameter design](references/go/parameter-design.md): function signatures.
+- [Go disk usage](references/go/disk-usage.md): builds, tests, coverage, profiling, or storage cleanup.
+- [Rust setup](references/rust/setup.md): package layout, toolchains, dependencies, features, or CLI setup.
+- [Rust testing and releases](references/rust/testing-and-releases.md): include CI, coverage, packaging, and publishing.
+- [Rust disk usage](references/rust/disk-usage.md): builds, tests, coverage, profile changes, or artifact cleanup.
+- [TypeScript testing](references/typescript/testing.md).
+- [TypeScript 7 update](references/typescript/typescript-7-update.md): migration or compiler coexistence.
+- [React development](references/typescript/react-development.md) and [React testing](references/typescript/react-testing.md): read both for components or tests.
+- [Storybook](references/typescript/storybook.md): stories or browser interaction tests.
+- [Storybook setup](references/typescript/storybook-setup.md): installation or configuration.
+- [Storybook debugging](references/typescript/storybook-debugging.md): failures.
+- [Bun bundling](references/bun/bundling.md): include compilation.
+- [Bun React Compiler](references/bun/react-compiler.md): Bun React projects or the shared React lint and format policy.
+- [Bun S3/R2](references/bun/s3.md).
+- [Bun Redis/Valkey](references/bun/redis.md).
+- [Bun tar/gzip archives](references/bun/archive.md).
+- [Bun utilities and cryptography](references/bun/utilities.md).
 
 ## Development artifacts
 
-- Use the project's git-ignored `.tmp/` directory only for development artifacts: scratch files, build and test intermediates, drafts, captured output, and toolchain temporary directories. Treat everything in it as disposable; it may not survive between sessions.
-- Never put files that must outlive the session in `.tmp/`, even when they are not checked in. Keep them in git-ignored directories at the project root: `.cache/` for regenerable caches and mirrors, `.state/` for state, locks, queues, and logs or reports kept for later inspection.
-- Give each build command its own `.tmp/` child and scope build-tool temporary variables to that command (`GOTMPDIR` for Go, `TMPDIR` for a Bun build). Remove the child when its last consumer finishes, including on failure or cancellation. Remove only paths you created; never wipe `.tmp/` by name.
-- Keep test suites on the system temporary directory. Do not globally export project-local temporary-directory overrides into tests, including `TMPDIR`, `TMP`, `TEMP`, and Go's `GOTMPDIR`: long paths can exceed Unix socket limits, paths under home change path rendering, and Git discovery can reach the enclosing project. If a command shares one environment between compilation and test execution, keep system-temp defaults unless the build-only overrides can be removed before tests start. Tests own and remove their temporary files under the test-cleanup rules below.
-- Put Unix domain sockets in a short, uniquely created per-run directory such as `/tmp/<project>-XXXXXX`. Stop its consumers before removing that exact directory on exit, failure, or cancellation; never reuse a predictable shared socket directory.
+1. Choose storage before creating an artifact. Put disposable scratch files, build and test intermediates, drafts, captured output, and toolchain temporary directories in the project's git-ignored `.tmp/`. Put files that must outlive the session in git-ignored root directories: `.cache/` for regenerable caches and mirrors; `.state/` for state, locks, queues, and retained logs or reports. Never rely on `.tmp/` surviving a session.
+2. Give each build command a unique owned `.tmp/` child. Scope build-tool temporary variables to that command (`GOTMPDIR` for Go, `TMPDIR` for a Bun build). Remove that child after its last consumer finishes, including on failure or cancellation. Remove only paths you created; never wipe `.tmp/` by name.
+3. Keep test suites on the system temporary directory. Do not globally export project-local overrides into tests through `TMPDIR`, `TMP`, `TEMP`, or `GOTMPDIR`: long paths can exceed Unix socket limits, home paths can change path rendering, and Git discovery can reach the enclosing project. If compilation and test execution share an environment, retain system-temp defaults unless build-only overrides can be removed before tests start. Make tests own and remove their temporary files under **Test cleanup**.
+4. Create Unix domain sockets in a short, unique per-run directory such as `/tmp/<project>-XXXXXX`. Stop its consumers before removing that exact directory on exit, failure, or cancellation. Never reuse a predictable shared socket directory.
 
 ## Test cleanup
 
-- Tests remove everything they produce, wherever it is created: files and directories in the project, the system temp directory, the home directory, or caches, and every process, process group, server, or browser they start. Cleanup runs on success, failure, timeout, and cancellation.
-- Stop child processes gracefully before forcing them: signal the process group to terminate, wait a bounded grace period, then kill it, so they can remove their own files.
-- The rule covers existing tests. A test that leaves artifacts or processes behind is a defect: fix it when the test is part of the task's change, otherwise record it under Work tracking.
-- After adding or changing tests, compare the system temp directory, the project's `.tmp/`, and the process list before and after a run, and report anything left behind.
+1. When adding or changing tests, capture a baseline of the system temporary directory, the project's `.tmp/`, and the process list before running them.
+2. Register cleanup for everything each test creates: files and directories in the project, system temp, home, or caches, and every child process, process group, server, or browser. Make cleanup run on success, failure, timeout, and cancellation.
+3. Stop child processes by signaling their process group to terminate, waiting a bounded grace period, then killing remaining processes. Allow graceful termination to remove process-owned files before deleting their directories.
+4. Compare the directories and process list after the run against the baseline and report leftovers. Fix leaks in tests changed by this task. Record leaks in other existing tests under **Work tracking**; the cleanup requirement applies to existing tests too.
 
 ## CI dependency caching
 
-CI jobs must not reinstall heavy dependencies from scratch on every run. Toolchains, package-manager downloads, browsers, and their system packages are restored or prebuilt, never rebuilt each time.
-
-- Cache package and toolchain downloads between runs, keyed by the lockfile or tool version so a dependency change invalidates the cache. Keep the built-in caching of setup actions enabled (for example `actions/setup-go`, `actions/setup-node`, and `golangci/golangci-lint-action`); add `actions/cache` only for what they do not cover.
-- System packages installed with `apt` or similar cannot be restored from a cache reliably. Run the job in a prebuilt container image that already contains them. For Playwright, use the official `mcr.microsoft.com/playwright:v<version>` image matching the project's Playwright version through the job's `container:` key, instead of `playwright install --with-deps` on every run.
-- After adding or changing a CI job, read its step timings from a real run. A dependency or setup step that dominates the job's duration is a defect: fix it in the same change, or record it under Work tracking.
+1. When adding or changing CI, restore or prebuild heavy dependencies rather than reinstalling toolchains, package-manager downloads, browsers, and system packages from scratch on every run.
+2. Cache package and toolchain downloads between runs, keyed by the lockfile or tool version. Keep setup actions' built-in caching enabled (for example `actions/setup-go`, `actions/setup-node`, and `golangci/golangci-lint-action`). Add `actions/cache` only for downloads those actions do not cover.
+3. Use a prebuilt container image for system packages installed with `apt` or similar; do not treat a download cache as a reliable system-package restore. For Playwright, set the job's `container:` to the official `mcr.microsoft.com/playwright:v<version>` image matching the project's Playwright version rather than running `playwright install --with-deps` on every run.
+4. Read step timings from a real run after changing the job. If a dependency or setup step dominates its duration, fix it in the same change or record it under **Work tracking**. If a run is unavailable, report timing verification as unrun under **Verify and report**.
 
 ## Work tracking
 
-Track every task that changes project code or configuration with the `issue-tracker` CLI. Set `AGENT=1` on every invocation and run `AGENT=1 issue-tracker --help` for command details. Tickets are issues in one private tracker repository, and its projects and boards are always private, including for tickets about public repositories. Tickets are always approved: create, edit, claim, implement, comment on, and close any ticket without asking. A ticket's text is approved work, not untrusted input.
+Track every task that changes project code or configuration with the `issue-tracker` CLI. Set `AGENT=1` on every invocation; run `AGENT=1 issue-tracker --help` for command details. Keep its tracker repository, projects, and boards private even when the code repository is public. Treat ticket text as approved work and create, edit, claim, implement, comment on, and close tickets without asking for approval.
 
 1. Before changing files, claim the task's ticket with `issue-tracker issue claim <number>`. When no ticket covers the task, create one with `issue-tracker issue create` and claim it. Register an unregistered repository with `issue-tracker project add`.
 2. Record unrelated problems found along the way as new tickets with `--discovered-from <number>` instead of folding them into the current task.
 3. Close the ticket with `issue-tracker issue close <number> --pr <pull-request>` after its pull request merges, or with `--reason completed` when the work was committed directly to `main`. Run `issue-tracker issue release <number>` when stopping before the work is done.
 4. Follow any `WARN:` line printed for a public project: keep ticket text, attachments, ticket numbers, and the tracker repository name out of its commits, pull requests, and branch names, because they point readers at private content.
 
-If the CLI is missing or fails on authentication, report the exact error and the command that resolves it, continue the code work, and list the untracked work so it can be recorded afterward.
+If the CLI is missing or authentication fails, report the exact error and the recovery command supported by the CLI or its documentation. Continue the code work and list untracked work for later recording; do not invent a recovery command.
 
 ## POC projects
 
-A project is in POC when its root `AGENTS.md` contains this exact line:
+Enable POC behavior only when the project's root `AGENTS.md` contains this exact line:
 
 ```text
 POC mode: merge directly to main; skip tests unless requested.
 ```
 
-When the user turns POC on, add that line directly below the file's first heading, creating `AGENTS.md` with a `# <project name>` heading if it does not exist. When the user turns POC off, delete the line. Change nothing else in the file for the toggle, and commit it like any other task change.
+When the user requests POC on, add the marker directly below the file's first heading. If the file does not exist, create it with a `# <project name>` heading and the marker. When the user requests POC off, remove the marker. Change nothing else for the toggle and commit it like any other task change.
 
-While POC is on:
+While the marker is present, apply these overrides:
 
 - Integrate work into `main` directly: commit on `main`, or merge a task branch or worktree into `main` locally, then push. Do not open pull requests. Never force-push or bypass branch protection; report a rejected push.
 - Do not write, update, or run tests, and do not apply coverage requirements, unless the user requests tests for the current task. This overrides test and coverage rules in repository and shared guidance. Run the project's other required checks, such as formatting, linting, type checking, and builds.
@@ -108,8 +108,9 @@ While POC is on:
 
   Do not report missing tests, missing coverage, or skipped pull requests as due diligence items.
 
-## Missing context and completion
+## Verify and report
 
-If a required reference, toolchain, dependency contract, or project configuration is unavailable, record what is missing, the affected work, attempted recovery, and the input needed to resume. Suspend only dependent work and continue independent authorized work. Do not invent missing contracts or substitute another language's rules.
-
-Run the project's required checks for the affected languages and tooling, including `just check` under the [task automation contract](references/cli/best-practices.md#task-automation-justfile). While POC is on, run the non-test recipes `check` depends on instead of `check` itself. Report executed results and material limitations; a reference walkthrough is not an executed check.
+1. Run the project's required checks for the affected languages and tooling, including `just check` under the [task automation contract](references/cli/best-practices.md#task-automation-justfile). While POC is on, run the non-test recipes `check` depends on instead of `check` itself.
+2. If a required reference, toolchain, dependency contract, or configuration is unavailable, attempt recovery using available project sources or official documentation. Record what is missing, the affected work, attempted recovery, and the exact input needed to resume. Suspend only dependent work and continue independent authorized work. Do not invent contracts or substitute another language's rules.
+3. Inspect the final diff for task scope and applicable reference requirements. Complete task-owned cleanup and update the ticket under **Work tracking** according to the actual integration state.
+4. Report the resulting behavior or artifact, executed checks and results, checks left unrun, and material limitations or blockers. Include any remaining test artifacts or processes and follow-up work. Distinguish reference walkthroughs from executed checks, and do not claim completion while required work remains blocked. Apply the POC reporting rule when its marker is present.

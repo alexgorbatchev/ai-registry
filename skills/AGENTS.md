@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-01 11:46
-last_modified: 2026-11-10 10:31
+last_modified: 2026-11-10 11:06
 status: current
 ---
 
@@ -43,7 +43,7 @@ Default new skills to `<project>/.agents/skills/<skill-name>/SKILL.md`, using th
 
 ## Validation
 
-Use `prompt-writer` whenever generating, writing, or revising AI agent instructions, including skill bodies. `skill-writer` adds skill-specific routing, frontmatter, resources, and validation; `docs-writer` owns project documentation structure and maintenance.
+Use `prompt-writer` whenever generating, writing, or revising AI agent instructions, including skill bodies. It owns agent-facing composition and token economy: retain only content that changes a decision, supplies required context, or prevents a concrete failure, while preserving obligations. `skill-writer` requires it and owns skill-specific routing, frontmatter, resources, and validation; `docs-writer` owns project documentation structure and maintenance.
 
 Review instructions for AI agent execution with concrete acceptance checks and at most two review-and-fix rounds. Finish when required checks pass; record unresolved blockers without claiming completion and continue independent authorized work. Do not require numerical quality scores.
 

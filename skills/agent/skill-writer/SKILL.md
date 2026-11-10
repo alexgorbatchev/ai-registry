@@ -1,394 +1,56 @@
 ---
 name: skill-writer
-description: >-
-  Create, revise, and validate effective skills. Use when adding a new skill or
-  changing an existing skill's SKILL.md, bundled scripts, references, assets,
-  scaffold templates, or validation tooling.
+description: Use when creating or revising skills, including SKILL.md instructions, bundled scripts, references, assets, scaffold templates, and validation tooling.
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-11-10 10:31
+  last_modified: 2026-11-10 11:06
   status: current
 ---
 
-## Start the task
+## Required dependency
 
-Identify the requested skill's triggers, inputs, authorized actions, and expected result from the request and project instructions. Inspect an existing bundle before revising it. For a new skill, establish its source location under **Initializing the Skill** before creating files.
+Load `prompt-writer` before composing or reviewing skill instructions. It is required for agent-facing writing, token economy, policy ownership, authorization, and acceptance checks. This skill owns bundle structure, routing, metadata, resources, and validation.
 
-Use `prompt-writer` for agent instruction composition and review; apply this skill for bundle layout, resource routing, frontmatter, and validation. If `prompt-writer` is unavailable, use this skill's **Review for Agent Execution** checklist and report the missing dependency.
+If `prompt-writer` is unavailable, locate it through the available skill catalog or repository sources. If it cannot be loaded, report the missing requirement and suspend instruction composition and review; continue independent bundle inspection or script validation. Do not substitute a copied writing checklist.
 
-## Core Principles
+## Execute the task
 
-### Concise is Key
+1. Inspect the request, repository instructions, and existing bundle. Establish triggers, inputs, authorized actions, and expected results from available context; ask only for consequential missing information.
+2. For a new skill, select its source under **Source location** before creating files. For revisions, inspect affected references, scripts, assets, and callers as well as `SKILL.md`.
+3. Before creating or changing metadata, load [frontmatter rules](references/frontmatter.md). When creating or revising a project-local companion skill, load [addendum rules](references/addenda.md) before choosing its name and trigger.
+4. Implement necessary resources under **Bundle contents**, then write the common execution path and resource loading conditions. Apply the required `prompt-writer` workflow to preserve existing requirements and authorized changes.
+5. Run **Validate and finish**. For later usage feedback, correct the demonstrated failure and repeat the affected checks.
 
-Write instructions the agent can execute: actions, conditions, required inputs, and completion checks. Include non-obvious domain constraints; remove tutorials about concepts the agent already understands. Use numbered steps when order matters and bullets for independent rules.
+## Source location
 
-Prefer concise examples over verbose explanations.
+Create new skills at `<cwd>/.agents/skills/<skill-name>/SKILL.md` by default, where `<cwd>` is the target project directory, not an incidental shell working directory. Honor explicit user destinations and repository source-layout rules; this registry uses `skills/agent/<skill-name>/` or `skills/user/<skill-name>/`.
 
-Treat the frontmatter `description` as routing metadata, not as a mini playbook. It should help the agent decide whether to load the skill, not try to enforce workflow rules before the skill body is read.
+Treat deployed `skills/<skill-name>/` directories separately from authoring locations. Edit the source bundle and regenerate installed copies using the project's workflow. For vendoring in this registry, use `just skills-add` and preserve upstream attribution and content according to repository instructions.
 
-Write descriptions using positive trigger conditions only. Never include negative triggers, exclusions, or “do not use” clauses in `description`; put those boundaries in the skill body.
+## Bundle contents
 
-#### Eliminate Prompt Debt and Redundancy
-To keep skills highly efficient and avoid wasting tokens on useless meta-commentary:
-- **No Markdown Title/Headers**: Do not start `SKILL.md` with `# Skill Name` or similar. The model already knows the skill name from the metadata.
-- **No Overviews or Meta-Commentary**: Do not add `## Overview` or explanatory sentences like "This skill acts as a proxy..." or "Below are the guidelines...". Jump straight into the action, rules, or decision logic.
-- **Minimalist Descriptions**: Strip the frontmatter `description` to the absolute bare minimum needed to trigger. For example, use `Use when asked to commit changes in a Git repository.` instead of verbose sentences detailing every scenario.
-- **Remove Implied Steps**: Do not write out steps that are completely obvious or implied. For example, if working with a review agent, do not instruct to "address issues" as that is the definition of pairing with a review agent.
-- **Make formatting informative**: Use descriptive reference links directly. Add routing text only when it supplies an applicability condition the link does not express. Use tables for mappings or comparisons whose columns contribute distinct information; collapse columns that merely repeat the same topic or label.
+Keep `SKILL.md` focused on the common execution path, local constraints, and resource routing. Start with actionable instructions rather than a repeated skill title or overview. Keep its body under 500 lines; extract conditional details before reaching that limit.
 
-### Give Each Workflow One Owner
+Create only resources the workflow uses:
 
-When another skill owns a required workflow, name that skill and specify when to load it, before the dependent action. Keep only the calling skill's requirements and exceptions locally; do not copy the owner's procedure or command documentation. For example, a programming skill can require ticket tracking before edits while the tracker skill owns ticket creation, claiming, and closure.
+- `scripts/`: executable operations that need deterministic behavior or would otherwise be rewritten repeatedly. Inspect them when changing behavior or adapting execution to the environment.
+- `references/`: conditional workflows, modes, schemas, configuration, or domain details. Extract by applicability, even when short. Put service installation and setup in `references/setup.md`.
+- `assets/`: templates, media, and other files consumed or copied into the result.
 
-Make dependencies explicit rather than assuming other skills are installed. Define how to handle an unavailable dependency: consult authoritative tool help or documentation when sufficient, otherwise report the missing capability and suspend only dependent work. Do not create a second copy of the workflow as a fallback.
+Keep each rule in one place. In `SKILL.md`, link every reference directly and state its loading condition before the first affected decision or action. Keep variant selection in the body and variant-specific procedures in references. For references over 100 lines, add a table of contents; for files over 10,000 words, provide useful search terms without prescribing a search tool.
 
-### Set Appropriate Degrees of Freedom
+Use bundle-relative links for bundled files and runtime parameters or environment variables for external paths. Do not hardcode machine-local absolute paths. Include necessary execution, setup, and verification instructions, but omit authoring history and redundant README, installation-guide, quick-reference, or changelog files unless repository or distribution requirements call for them.
 
-Match the level of specificity to the task's fragility and variability:
+## Validate and finish
 
-**High freedom (text-based instructions)**: Use when multiple approaches are valid, decisions depend on context, or heuristics guide the approach.
+1. Apply `prompt-writer`'s acceptance checks to the instructions. Additionally verify that metadata selects the intended tasks, conditional resources load before affected actions, links resolve, and instructions agree with executable resources. Walk through routing for a matching request and a request outside the skill's scope.
+2. Execute added or behaviorally changed scripts with representative inputs and verify their results. Sampling similar scripts must still cover distinct changed behavior; do not describe unexecuted scripts as tested.
+3. Run the bundled validator against every changed skill directory, resolving the script relative to this skill's directory:
 
-**Medium freedom (pseudocode or scripts with parameters)**: Use when a preferred pattern exists, some variation is acceptable, or configuration affects behavior.
+   ```bash
+   bun scripts/quick-validate.ts <skill-dir-or-SKILL.md> [...more]
+   ```
 
-**Low freedom (specific scripts, few parameters)**: Use when operations are fragile and error-prone, consistency is critical, or a specific sequence must be followed.
-
-### Portability (No Local References)
-
-Skills must be portable and reusable across different environments, machines, and projects. 
-
-**Never include local references or hardcoded absolute paths** in your skill files (`SKILL.md`, scripts, references, etc.).
-- Avoid paths like `/Users/<user>/development/...` or `C:\Users\...`.
-- Use relative paths, or environment variables, or parameterize paths so they are evaluated at runtime by the agent.
-- When referring to other files within the skill itself, always use paths relative to the skill directory (e.g., `scripts/my_script.ts` or `references/docs.md`). 
-
-### Anatomy of a Skill
-
-Every skill consists of a required SKILL.md file and optional bundled resources:
-
-```
-skill-name/
-├── SKILL.md (required)
-│   ├── YAML frontmatter metadata (required)
-│   │   ├── name: (required)
-│   │   ├── description: (required; legacy key name, semantically this is the TRIGGER)
-│   │   └── author: alexgorbatchev (repo convention)
-│   └── Markdown instructions (required)
-└── Bundled Resources (optional)
-    ├── scripts/          - Executable code (Bun/Bash/etc.)
-    ├── references/       - Documentation intended to be loaded into context as needed
-    └── assets/           - Files used in output (templates, icons, fonts, etc.)
-```
-
-#### SKILL.md (required)
-
-Every SKILL.md consists of:
-
-- **Frontmatter** (YAML): `name`, `description`, and `author` (e.g., `author: alexgorbatchev`) are required triggering and attribution fields. Treat the key name `description` as an obsolete standard name that harnesses still require; its real role is `trigger` (see the `description` rule under Frontmatter below). Additionally, in this repository, you **MUST** include a `metadata` dictionary containing `created_on` and `last_modified` (using strict `YYYY-MM-DD HH:MM` format) plus `status: current` to keep track of the skill's history and metadata lifecycle. Keep frontmatter minimal, and place these historical attributes exclusively within the nested `metadata` block.
-- **Body** (Markdown): Instructions and guidance for using the skill. Only loaded AFTER the skill triggers (if at all).
-
-#### Bundled Resources (optional)
-
-##### Scripts (`scripts/`)
-
-Executable code (Bun/Bash/etc.) for tasks that require deterministic reliability or are repeatedly rewritten.
-
-- **When to include**: When the same code is being rewritten repeatedly or deterministic reliability is needed
-- **Example**: `scripts/rotate_pdf.py` for PDF rotation tasks
-- **Benefits**: Token efficient, deterministic, may be executed without loading into context
-- **Note**: Scripts may still need to be read by the agent for patching or environment-specific adjustments
-
-##### References (`references/`)
-
-Documentation and reference material intended to be loaded as needed into context to inform the agent's process and thinking.
-
-Extract by applicability, not length. Put conditional workflows, modes, detailed configuration, and setup procedures in `references/filename.md`, even when short. Keep the common execution path and the condition for loading each reference in `SKILL.md`. Place the loading instruction before the first decision or action the reference affects. For example, load POC rules when POC is configured or requested, before choosing tests or an integration workflow.
-
-- **When to include**: For documentation that the agent should reference while working
-- **Examples**: `references/finance.md` for financial schemas, `references/mnda.md` for company NDA template, `references/policies.md` for company policies, `references/api_docs.md` for API specifications
-- **Use cases**: Database schemas, API documentation, domain knowledge, company policies, detailed workflow guides
-- **Service setup**: Installation, configuration, and infrastructure setup details must be written to `references/setup.md` - this keeps SKILL.md focused on workflows while preserving setup documentation for reference
-- **Benefits**: Keeps SKILL.md lean, loaded only when the agent determines it's needed
-- **Best practice**: If files are large (>10k words), include useful search patterns in SKILL.md without prescribing a search tool.
-- **Avoid duplication**: Information should live in either SKILL.md or references files, not both. Prefer references files for detailed information unless it's truly core to the skill—this keeps SKILL.md lean while making information discoverable without hogging the context window. Keep only essential procedural instructions and workflow guidance in SKILL.md; move detailed reference material, schemas, and examples to references files.
-
-##### Assets (`assets/`)
-
-Files not intended to be loaded into context, but rather used within the output the agent produces.
-
-- **When to include**: When the skill needs files that will be used in the final output
-- **Examples**: `assets/logo.png` for brand assets, `assets/slides.pptx` for PowerPoint templates, `assets/frontend-template/` for HTML/React boilerplate, `assets/font.ttf` for typography
-- **Use cases**: Templates, images, icons, boilerplate code, fonts, sample documents that get copied or modified
-- **Benefits**: Separates output resources from documentation, enables the agent to use files without loading them into context
-
-#### What to Not Include in a Skill
-
-A skill should only contain essential files that directly support its functionality. Do NOT create extraneous documentation or auxiliary files, including:
-
-- README.md
-- INSTALLATION_GUIDE.md
-- QUICK_REFERENCE.md
-- CHANGELOG.md
-- etc.
-
-The skill should only contain the information needed for an AI agent to do the job at hand. It should not contain auxilary context about the process that went into creating it, setup and testing procedures, user-facing documentation, etc. Creating additional documentation files just adds clutter and confusion.
-
-### Progressive Disclosure Design Principle
-
-Skills use a three-level loading system to manage context efficiently:
-
-1. **Metadata (name + description)** - Always in context (~100 words)
-2. **SKILL.md body** - When skill triggers (~5k words)
-3. **Bundled resources** - As needed by the agent (Unlimited because scripts can be executed without reading into context window)
-
-#### Progressive Disclosure Patterns
-
-Keep SKILL.md body to the essentials and under 500 lines. Apply the reference extraction rule above before reaching that limit; a short conditional workflow still belongs in a reference. Preserve all requirements when moving content and update every affected link and loading condition.
-
-**Key principle:** When a skill supports multiple variations, frameworks, or options, keep only the core workflow and selection guidance in SKILL.md. Move variant-specific details (patterns, examples, configuration) into separate reference files.
-
-**Pattern 1: High-level guide with references**
-
-```markdown
-## Quick start
-
-Extract text with pdfplumber:
-[code example]
-
-## Advanced features
-
-- **Form filling**: See [FORMS.md](FORMS.md) for complete guide
-- **API reference**: See [REFERENCE.md](REFERENCE.md) for all methods
-- **Examples**: See [EXAMPLES.md](EXAMPLES.md) for common patterns
-```
-
-The agent loads FORMS.md, REFERENCE.md, or EXAMPLES.md only when needed.
-
-**Pattern 2: Domain-specific organization**
-
-For Skills with multiple domains, organize content by domain to avoid loading irrelevant context:
-
-```
-bigquery-skill/
-├── SKILL.md (workflow and routing)
-└── references/
-    ├── finance.md (revenue, billing metrics)
-    ├── sales.md (opportunities, pipeline)
-    ├── product.md (API usage, features)
-    └── marketing.md (campaigns, attribution)
-```
-
-When a user asks about sales metrics, the agent only reads sales.md.
-
-Similarly, for skills supporting multiple frameworks or variants, organize by variant:
-
-```
-cloud-deploy/
-├── SKILL.md (workflow + provider selection)
-└── references/
-    ├── aws.md (AWS deployment patterns)
-    ├── gcp.md (GCP deployment patterns)
-    └── azure.md (Azure deployment patterns)
-```
-
-When the user chooses AWS, the agent only reads aws.md.
-
-**Pattern 3: Conditional details**
-
-Show basic content, link to advanced content:
-
-```markdown
-## Creating documents
-
-Use docx-js for new documents. See [DOCX-JS.md](DOCX-JS.md).
-
-## Editing documents
-
-For simple edits, modify the XML directly.
-
-**For tracked changes**: See [REDLINING.md](REDLINING.md)
-**For OOXML details**: See [OOXML.md](OOXML.md)
-```
-
-The agent reads REDLINING.md or OOXML.md only when the user needs those features.
-
-**Important guidelines:**
-
-- **Avoid deeply nested references** - Keep references one level deep from SKILL.md. All reference files should link directly from SKILL.md.
-- **Structure longer reference files** - For files longer than 100 lines, include a table of contents at the top so the agent can see the full scope when previewing.
-
-## Skill Writing Process
-
-Skill writing and maintenance involve these steps:
-
-1. Understand the skill with concrete examples
-2. Plan reusable skill contents (scripts, references, assets)
-3. Initialize the skill (create the folder and `SKILL.md` manually, or use `just skills-add` for vendoring)
-4. Edit the skill (implement resources and write SKILL.md)
-5. Validate the skill's formatting and frontmatter against project requirements
-6. Iterate based on real usage
-
-Follow these steps in order, skipping only if there is a clear reason why they are not applicable.
-
-### Step 1: Understanding the Skill with Concrete Examples
-
-Skip this step only when the skill's usage patterns are already clearly understood. It remains valuable even when working with an existing skill.
-
-To create an effective skill, clearly understand concrete examples of how the skill will be used. This understanding can come from either direct user examples or generated examples that are validated with user feedback.
-
-For example, when building an image-editor skill, relevant questions include:
-
-- "What functionality should the image-editor skill support? Editing, rotating, anything else?"
-- "Can you give some examples of how this skill would be used?"
-- "I can imagine users asking for things like 'Remove the red-eye from this image' or 'Rotate this image'. Are there other ways you imagine this skill being used?"
-- "What would a user say that should trigger this skill?"
-
-To avoid overwhelming users, avoid asking too many questions in a single message. Start with the most important questions and follow up as needed for better effectiveness.
-
-Conclude this step when there is a clear sense of the functionality the skill should support.
-
-### Step 2: Planning the Reusable Skill Contents
-
-To turn concrete examples into an effective skill, analyze each example by:
-
-1. Considering how to execute on the example from scratch
-2. Identifying what scripts, references, and assets would be helpful when executing these workflows repeatedly
-
-Example: When building a `pdf-editor` skill to handle queries like "Help me rotate this PDF," the analysis shows:
-
-1. Rotating a PDF requires re-writing the same code each time
-2. A `scripts/rotate_pdf.py` script would be helpful to store in the skill
-
-Example: When designing a `frontend-webapp-builder` skill for queries like "Build me a todo app" or "Build me a dashboard to track my steps," the analysis shows:
-
-1. Writing a frontend webapp requires the same boilerplate HTML/React each time
-2. An `assets/hello-world/` template containing the boilerplate HTML/React project files would be helpful to store in the skill
-
-Example: When building a `big-query` skill to handle queries like "How many users have logged in today?" the analysis shows:
-
-1. Querying BigQuery requires re-discovering the table schemas and relationships each time
-2. A `references/schema.md` file documenting the table schemas would be helpful to store in the skill
-
-To establish the skill's contents, analyze each concrete example to create a list of the reusable resources to include: scripts, references, and assets.
-
-### Step 3: Initializing the Skill
-
-Create new skills at `<cwd>/.agents/skills/<skill-name>/SKILL.md` by default, where `<cwd>` is the target project directory. Resolve that directory from the task context; do not use an incidental shell working directory.
-
-Honor an explicit user destination or repository source-layout rule instead of the default. When adding a reusable skill to this registry, use `skills/agent/<skill-name>/` or `skills/user/<skill-name>/` as its instructions require.
-
-Distinguish authoring from deployment: `skills/<skill-name>/SKILL.md` can be a deployed layout, but does not by itself select the source location. Revise the source bundle and use the project's generation or deployment workflow for installed copies.
-
-Ensure the directory contains:
-- `SKILL.md` (required, with valid YAML frontmatter)
-- Optional `scripts/`, `references/`, or `assets/` directories if the skill contains reusable, portable code, resources, or files.
-
-### Step 4: Edit the Skill
-
-When editing the (newly-generated or existing) skill, remember that the skill is being created for another instance of the agent to use. Include information that would be beneficial and non-obvious to the agent. Consider what procedural knowledge, domain-specific details, or reusable assets would help another agent execute these tasks more effectively.
-
-#### Start with Reusable Skill Contents
-
-To begin implementation, start with the reusable resources identified above: `scripts/`, `references/`, and `assets/` files. Note that this step may require user input. For example, when implementing a `brand-guidelines` skill, the user may need to provide brand assets or templates to store in `assets/`, or documentation to store in `references/`.
-
-Added scripts must be tested by actually running them to ensure there are no bugs and that the output matches what is expected. If there are many similar scripts, only a representative sample needs to be tested to ensure confidence that they all work while balancing time to completion.
-
-#### Update SKILL.md
-
-**Writing Guidelines:** Always use imperative/infinitive form.
-
-#### Review for Agent Execution
-
-Write for another AI agent. Review and fix at most twice using this checklist:
-
-- **Trigger:** Does the description identify when to load the skill using positive conditions, with exclusions in the body?
-- **Action:** Are actions, conditions, task boundaries, required inputs, and completion checks explicit, with ordered steps only where sequence matters?
-- **Resources:** Do bundled links resolve, are scripts and references necessary and usable, and are conditional workflows extracted regardless of length with loading conditions before affected decisions?
-- **Ownership:** Does each delegated workflow name its owning skill and loading condition, retain only local requirements and exceptions, and define missing-dependency handling without copying the procedure?
-- **Consistency:** Do frontmatter, instructions, scripts, and examples agree?
-- **Blocked work:** Does the skill define what to record and what independent authorized work can continue when a required input or check is unavailable?
-- **Conciseness:** Are tutorials, implied steps, redundant link descriptions, and duplicate table columns removed without losing a required rule?
-
-Walk through a normal invocation, missing required context, and an out-of-scope request. Confirm the expected agent action for each; distinguish this review from executed script or workflow checks.
-
-Finish when the checklist and required validation pass. If a required item still fails after two rounds, record the specific blocker and preserve the draft without claiming completion; continue independent authorized work. Do not assign quality scores or keep rewriting for stylistic perfection. Keep negative guardrails in the body, not in the description.
-
-##### Frontmatter
-
-Write the YAML frontmatter with `name`, `description`, and `author`:
-
-- `name`: The skill name
-- `description`: Keep this required frontmatter key and use it as the skill's trigger condition. State the exact positive conditions, actions, and artifacts that identify when to load the skill. Do not use it as a summary of the skill's contents.
-
-  **Positive triggers only:** Never include negative triggers or exclusion clauses in `description`. Prohibit forms such as `Do not use for X`, `Not for X`, `Except when X`, or `Use for X, not Y`, including exclusions hidden in parentheses or subordinate clauses. Put excluded tasks, negative guardrails, and operational boundaries in the body instead. Scope the description by naming the supported work positively.
-
-  **Trigger structure:**
-  1. Name the requested actions, such as writing, reviewing, creating, debugging, or deploying.
-  2. Name the specific artifacts and domains, such as `.go` files, GitHub pull requests, or deployment manifests.
-  3. State the positive conditions that require the skill, including relevant user phrases and supported frameworks.
-
-  **Template:**
-  > Use when **[requested actions]** **[specific artifacts or domains]**, including **[positive trigger conditions]**.
-
-  **Examples:**
-  - `Use when writing, refactoring, or reviewing Go code in .go files.`
-  - `Use when creating or updating AWS deployment manifests, provisioning AWS infrastructure, or diagnosing AWS deployments.`
-  - `Use when preparing, writing, creating, or updating GitHub pull requests, including PR titles and descriptions.`
-  
-  - Include all true trigger information here, not buried only in the body. The body is loaded after triggering.
-  - Do **not** put workflow rules, command requirements, validation criteria, or step-by-step instructions here. Words like "always", "never", "require", and long procedural clauses usually belong in the body.
-  - Narrow exception for project-specific addenda: when authoring a project-local companion skill named `<base-skill>-addendum`, use the description to declare the dependency because current harnesses route skills from `name` and `description`. Use this exact pattern: `If <base-skill> skill is used, this skill must be used as well.`
-  - Keep that exception narrow. Do not make the base global skill describe project-local addenda, do not create multiple addenda for the same base skill in one project, and do not duplicate the global skill into the project just to add project-specific rules.
-- `author`: Use `alexgorbatchev` for skills maintained in this registry (but do not modify existing `author`).
-- `metadata`: **REQUIRED** for all skills in this repository to track history and lifecycle. It must contain:
-  - `created_on`: Creation date and time in `YYYY-MM-DD HH:MM` format, using the user's local timezone. Set once on file creation.
-  - `last_modified`: Last modification date and time in `YYYY-MM-DD HH:MM` format, using the user's local timezone. ALWAYS update this on every revision of the skill.
-  - `status`: Use `current` (active guidance) or `archived` (superseded reference).
-
-Before writing timestamps, verify the current time and timezone with a clock tool or system command. Use the user's stated timezone when supplied; otherwise verify the machine's configured local timezone. Do not default to UTC or copy a UTC tool result into these timezone-less fields. If the local timezone cannot be established, ask for it before writing timestamps. Preserve existing `created_on` values; do not convert historical timestamps whose timezone is unknown.
-
-**Example YAML Frontmatter:**
-```yaml
----
-name: skill-name
-description: REQUIRED when creating...
-author: alexgorbatchev
-metadata:
-  created_on: 2026-07-22 08:30
-  last_modified: 2026-07-22 08:47
-  status: current
----
-```
-
-Default to `name`, `description`, `author`, and `metadata`.
-The allowed extra keys beyond those in this toolchain are `license`, `allowed-tools`, and `disable-model-invocation` (set it to `true` to keep a skill out of automatic routing so it runs only when invoked by name).
-
-##### Body
-
-Write instructions for using the skill and its bundled resources.
-
-For a project-local `<base-skill>-addendum`, keep the body focused on the project-specific delta from the base skill. State clearly that project-specific guidance in the addendum supersedes conflicting guidance from the base skill for that project, and avoid repeating unchanged parts of the base skill.
-
-### Step 5: Validating a Skill
-
-Once development of the skill is complete, run the validator against every skill folder that changed:
-
-```bash
-bun scripts/quick-validate.ts <skill-dir-or-SKILL.md> [...more]
-```
-
-It checks frontmatter keys, kebab-case `name` matching the folder, description constraints, the `metadata` timestamp and status contract, body length, and links to bundled files. It exits non-zero on any error, so it is safe to gate a change on. Fix every reported error; warnings are judgement calls.
-
-The validator cannot judge content. Read the skill once more and confirm that its principles and critical rules are clear, imperative, and actionable.
-
-### Step 6: Iterate
-
-After testing the skill, users may request improvements. Often this happens right after using the skill, with fresh context of how the skill performed.
-
-**Iteration workflow:**
-
-1. Use the skill on real tasks
-2. Notice struggles or inefficiencies
-3. Identify how SKILL.md or bundled resources should be updated
-4. Implement changes and test again
-
+   Fix every error; assess warnings against the task. The validator checks metadata, naming, body length, and bundled links, not instruction semantics.
+4. Run the repository's required build or generation checks and inspect affected outputs. Complete only when required checks pass; report executed checks and any remaining blockers without treating text review as runtime proof.

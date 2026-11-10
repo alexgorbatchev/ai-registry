@@ -4,98 +4,56 @@ description: Use whenever asked to generate, write, rewrite, or improve instruct
 author: alexgorbatchev
 metadata:
   created_on: 2026-07-22 08:45
-  last_modified: 2026-10-15 16:37
+  last_modified: 2026-11-10 11:06
   status: current
 ---
 
-## Workflow
+## Execute the task
 
-Apply this workflow to AI agent instructions in any format or artifact. For skill bundles or project documentation, also follow the applicable artifact's structure and validation rules.
+1. Inspect the request, existing instructions, and target runtime. Identify the required outcome, available inputs, authorization, and applicable artifact conventions. Infer what the context establishes; ask only for missing information that materially changes the result.
+2. Before revising, identify the obligations, permissions, exceptions, and completion conditions to preserve. Apply later clarifications to the whole affected proposal, not just its newest sentence. Distinguish approved changes from suggestions and rejected alternatives.
+3. Place each rule with its owner under **Policy ownership**. Draft only the instructions needed for execution, using **Token economy** and **Structure and authorization**.
+4. Review under **Acceptance checks**, fix concrete failures, and run the artifact's required validation. Verify that every prior requirement was preserved, deliberately changed under authorization, or relocated with working routing.
+5. Deliver the requested artifact or edit. Summarize the behavioral change, checks actually run, and unresolved limitations; do not repeat a file's full contents unless requested.
 
-1. **Identify the Target Runtime**: Determine the interface constraints before drafting (system/developer/user roles, tool calling, structured outputs, or context limits).
-2. **Define the Task**: Write instructions for an AI agent. Specify the action, available inputs, allowed sources, scope, and expected result.
-3. **Choose the Lightest Skeleton**: Start with the smallest, most structured prompt shape that can work. Use consistent Markdown headers or XML-style tags.
-4. **Compose from Labeled Blocks**:
-   - `role`: who the model is for the task
-   - `task`: the exact operational job
-   - `constraints`: concrete rules the agent must follow
-   - `examples`: representative input/output pairs that clarify edge cases
-   - `output_contract`: exact return shape and fallback behaviors
-5. **Review the Instructions**: Apply the checklist below and fix concrete failures.
-6. **Verify the Result**: Use representative scenarios and available checks; distinguish executed checks from proposed ones.
+## Token economy
 
-## Agent Instruction Checklist
+Write for an executing agent. Every passage must change a decision, supply required context, or prevent a concrete failure. Remove lectures, general knowledge the agent already has, repeated rationale, redundant examples, and meta-commentary.
 
-- **Action:** Can the agent identify what to do and what is outside the task?
-- **Inputs:** Are required sources, tools, and references available or retrievable?
-- **Consistency:** Do the rules, examples, and output requirements agree?
-- **Completion:** Is there a concrete result and a way to check it?
-- **Blocked work:** Does the agent know what to record, what would unblock it, and which independent authorized work can continue?
+Preserve explicit actions, authorization boundaries, validation, recovery, and completion conditions even when they seem obvious. Do not remove a required repair step on the assumption that review implies repair. Compress wording without weakening obligations.
 
-Walk through a normal task, a case with missing required information, and a conflicting or out-of-scope request. State the expected agent action for each. Use actual execution where available; a written walkthrough is a review, not proof of runtime behavior.
+Use direct instructions. Use numbered steps only when order matters and bullets for independent rules. Keep examples only when they resolve an ambiguity the rule alone does not. Use descriptive links; add text only for routing information the link does not convey. Use tables only when their columns contribute distinct information.
 
-Review and fix at most twice. Finish as soon as the checklist passes. If a required item still fails after two rounds, report the specific unresolved blocker and preserve the draft without claiming completion. Continue independent authorized work. Do not assign quality scores or keep rewriting for stylistic perfection.
+## Policy ownership
 
-## Writing Rules
+Keep cross-task behavior in shared instructions, domain rules in the owning domain skill, and task-specific requirements in the task. Keep runtime-specific contracts in the appropriate runtime layer.
 
-### Ground the Agent
-- Avoid fanning out into general-purpose knowledge. Supply the exact source material, schemas, and standards needed for the task.
-- Explicitly define the grounding boundary: State whether the model is restricted *only* to the supplied context, or if it may draw on background knowledge.
-- For long-context grounding, place the instructions and final question *after* the bulk data to maximize attention retention.
+When another skill owns a required workflow, name it and specify when to load it before the dependent action. Keep only local requirements and exceptions in the caller; do not copy the owner's procedure or command documentation. Define missing-dependency behavior: consult authoritative help when it supplies the required contract, otherwise suspend only dependent work and state what is needed. Do not duplicate the workflow as a fallback.
 
-### Define the Output
-- Specify the exact sections, schema, citations, allowed output formats, and token limits.
-- State exactly what to do when information is missing, blocked, or ambiguous, leaving zero room for speculation.
-- If a task only requires a delta, patch, or classification, explicitly restrict the output to that slice instead of permitting a full rewrite.
+Remove overlap with baseline agent behavior only when the target environments reliably supply the same obligation. Preserve user preferences and explicit authorization; do not infer cross-runtime guarantees from one agent's defaults.
 
-### Keep Steps Useful
-- Use direct instructions for simple tasks; add checkpoints only where order or verification matters.
-- Request intermediate reasoning ONLY when the workflow requires that specific audit log.
-- For complex, error-prone loops, use structural milestones or checkpoints (e.g., "First verify X, then perform Y") instead of raw prose.
+When moving a rule, update affected references and ensure the owner's trigger covers every task that needs it. Leave a loading condition where required so the rule reaches the agent before the affected decision.
 
-### Define Tool Use and Authorization
-- If the prompt controls tools, define exactly when tools are required, when to stop, and what must be verified before finalizing.
-- Allow parallel execution only for independent steps. Use existing authorization for covered actions; ask only when a required action falls outside it.
+## Structure and authorization
 
-## Prompt Skeleton
+- Use the smallest structure that makes the task executable. Add role, context, examples, schemas, citations, output sections, or token limits only when they constrain a real requirement. Do not impose a fixed prompt skeleton.
+- Specify authoritative sources and whether other knowledge is allowed when correctness depends on that boundary. Delimit supplied data from instructions; organize long inputs so the task and relevant constraints remain easy to locate.
+- Match specificity to failure risk: exact commands or sequences for fragile operations, decision criteria where multiple implementations are valid. Require tools, checkpoints, or audit evidence only where the workflow needs them; do not request private reasoning traces.
+- Carry existing authorization forward. Define when to act, when to escalate, and what evidence completes the task. Distinguish review-only requests from authorized implementation; reporting or creating a ticket must not substitute for authorized repair.
+- Define recovery and continued independent work for missing inputs or failed checks. Ask only when a required decision or action lies outside existing authorization. Allow parallel work only for independent operations.
+- For a requested patch, delta, or classification, constrain the output to that result rather than expanding it into a full rewrite.
 
-Use a simple, cleanly delimited structure:
+## Acceptance checks
 
-```md
-## Role
+Review the resulting instructions against these checks:
 
-[[role]]
+- **Execution:** Are the action, required inputs, source boundaries, and completion evidence available and unambiguous?
+- **Preservation:** Are obligations, permissions, exceptions, and approved clarifications preserved throughout the affected instructions? Do relocated rules remain discoverable?
+- **Consistency:** Do rules, examples, references, and output requirements agree?
+- **Literal compliance:** Could an agent obey the text while leaving the intended outcome unfinished? Check for reporting instead of authorized repair, tickets instead of implementation, redundant approval requests, or success without validation.
+- **Recovery:** Does missing information or a failed check lead to an actionable blocker and continued independent work rather than abandonment or invented results?
+- **Value:** Does each passage affect execution? Remove explanations of familiar concepts and repeated rules without deleting requirements.
 
-## Task
+Walk through a normal task, missing required information, and a conflicting or out-of-scope request. State the expected action for each; use actual execution where available. A textual walkthrough is not proof of runtime behavior.
 
-[[task]]
-
-## Context
-
-[[context]]
-
-## Constraints
-
-- [[constraint_1]]
-- [[constraint_2]]
-
-## Output Contract
-
-- Return [[required_sections_or_schema]].
-- Use [[format]].
-- If information is missing or unsupported, [[fallback_behavior]].
-```
-
-## Anti-Patterns to Avoid
-
-- **Unclear Outcomes**: Asking for something `better` without describing the expected change or how to check it.
-- **Conflicting Rules**: Giving incompatible actions or stop conditions without explaining which applies.
-- **Unsupported Claims**: Treating a review checklist as proof of execution or a guarantee of model reliability.
-- **Cargo-Cult Scaffolds**: Copying heavy Chain-of-Thought or reasoning blocks into simple tasks where direct, structured instructions are more reliable.
-
-## Deliverables
-
-When asked to produce or revise a prompt:
-1. **The Final Composed Prompt**: Cleanly structured and delimited.
-2. **Verification Summary**: Briefly state checks performed, expected actions for the scenarios, and any unresolved blockers. Do not add a score or a separate audit report.
-3. **Further Checks**: List only material checks that still need execution, clearly marked as unrun.
+Use at most two review-and-fix rounds. Finish when these checks and required artifact validation pass. If a required check still fails, preserve the work, report the specific blocker without claiming completion, and continue independent authorized work. Do not assign numerical quality scores or iterate for stylistic perfection.

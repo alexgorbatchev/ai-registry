@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; font-family: var(--font-sans, system-ui, sans-serif); color: var(--foreground, #e5e5e5); }
+  svg { width: 100%; height: auto; display: block; }
+  .box rect { fill: var(--card, #1c1c1c); stroke: var(--border, #3a3a3a); }
+  .box .title { fill: var(--foreground, #e5e5e5); font-size: 12px; font-weight: 700; }
+  .box .line { fill: var(--foreground, #e5e5e5); opacity: .85; font-size: 10.5px; }
+  .edge-label { fill: var(--foreground, #e5e5e5); font-size: 10.5px; }
+  .edge-label-bg { fill: var(--background, #111); }
+</style>
+</head>
+<body>
+<div id="diagram"></div>
+<script>
+// Replace DIAGRAM only. Nodes sit on a grid: col and row start at 0; span widens a node across columns.
+// accent (1-6) colors a node's top bar. Edges join the nearest sides of two nodes; dashed: true for
+// async or optional links.
+const DIAGRAM = {
+  title: "Example architecture",
+  columns: 2,
+  nodes: [
+    { id: "client", col: 0, row: 0, span: 2, title: "client", lines: ["GET/POST only"], accent: 1 },
+    { id: "api", col: 0, row: 1, title: "API", lines: ["1. authorize", "2. insert job", "3. enqueue"], accent: 2 },
+    { id: "worker", col: 1, row: 1, title: "worker", lines: ["4. run job", "5. store result"], accent: 3 },
+    { id: "db", col: 0, row: 2, span: 2, title: "database", lines: ["jobs table"], accent: 4 },
+  ],
+  edges: [
+    { from: "client", to: "api", label: "POST → 202" },
+    { from: "api", to: "db", label: "insert" },
+    { from: "worker", to: "db", label: "poll + write", dashed: true },
+  ],
+};
+
+const WIDTH = 720, GAP_X = 56, GAP_Y = 52, PAD = 4, LINE = 15, HEAD = 28;
+const colW = (WIDTH - PAD * 2 - GAP_X * (DIAGRAM.columns - 1)) / DIAGRAM.columns;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const nodeH = (n) => HEAD + (n.lines || []).length * LINE + 10;
+
+const rowH = [];
+for (const n of DIAGRAM.nodes) rowH[n.row] = Math.max(rowH[n.row] || 0, nodeH(n));
+const rowY = [];
+let acc = PAD;
+for (let r = 0; r < rowH.length; r++) { rowY[r] = acc; acc += (rowH[r] || 0) + GAP_Y; }
+const height = acc - GAP_Y + PAD + 4;
+
+const box = {};
+for (const n of DIAGRAM.nodes) {
+  const span = n.span || 1;
+  box[n.id] = { x: PAD + n.col * (colW + GAP_X), y: rowY[n.row], w: colW * span + GAP_X * (span - 1), h: rowH[n.row] };
+}
+
+function anchor(a, b) {
+  const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
+  const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  if (Math.abs(by - ay) > 1 && overlapX > 20) {
+    const cx = Math.max(a.x, b.x) + overlapX / 2;
+    return by > ay ? [cx, a.y + a.h, cx, b.y] : [cx, a.y, cx, b.y + b.h];
+  }
+  return bx > ax ? [a.x + a.w, ay, b.x, by] : [a.x, ay, b.x + b.w, by];
+}
+
+const edges = DIAGRAM.edges.map((e, i) => {
+  if (!box[e.from] || !box[e.to]) throw new Error(`unknown node in edge ${e.from} → ${e.to}`);
+  const [x1, y1, x2, y2] = anchor(box[e.from], box[e.to]);
+  const color = "var(--muted-foreground, #9ca3af)";
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, w = e.label ? e.label.length * 5.6 + 10 : 0;
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1.5" marker-end="url(#arrow)"${e.dashed ? ' stroke-dasharray="5 3"' : ""}/>` +
+    (e.label ? `<rect class="edge-label-bg" x="${mx - w / 2}" y="${my - 9}" width="${w}" height="16" rx="3"/>` +
+      `<text class="edge-label" x="${mx}" y="${my + 3}" text-anchor="middle">${esc(e.label)}</text>` : "");
+}).join("");
+
+const nodes = DIAGRAM.nodes.map((n) => {
+  const b = box[n.id], accent = `var(--chart-${n.accent || 1}, #60a5fa)`;
+  return `<g class="box"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="8"/>` +
+    `<path d="M${b.x + 8} ${b.y + 1.5} h${b.w - 16}" stroke="${accent}" stroke-width="3" stroke-linecap="round"/>` +
+    `<text class="title" x="${b.x + 12}" y="${b.y + 20}">${esc(n.title)}</text>` +
+    (n.lines || []).map((t, i) => `<text class="line" x="${b.x + 12}" y="${b.y + HEAD + 8 + i * LINE}">${esc(t)}</text>`).join("") + `</g>`;
+}).join("");
+
+document.getElementById("diagram").innerHTML =
+  `<svg viewBox="0 0 ${WIDTH} ${height}" role="img" aria-label="${esc(DIAGRAM.title)}">` +
+  `<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">` +
+  `<path d="M0 0 L10 5 L0 10z" fill="var(--muted-foreground, #9ca3af)"/></marker></defs>${nodes}${edges}</svg>`;
+</script>
+</body>
+</html>

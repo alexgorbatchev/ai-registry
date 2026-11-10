@@ -4,7 +4,7 @@ description: Use when working with Go, Python, Rust, TypeScript, Bun, Tailwind, 
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-10 10:12
+  last_modified: 2026-11-10 10:15
   status: current
 ---
 
@@ -12,7 +12,7 @@ metadata:
 
 1. Establish the requested outcome and affected files from the user request and repository instructions. Inspect manifests, lockfiles, toolchain configuration, development recipes, and relevant implementation before choosing commands or changing files.
 2. Select and read every applicable baseline in **Language and tooling references**. Read matching **Topic references** before working in those domains. Apply each language's rules to its own files; combine runtime, UI, CLI, and automation rules where their scopes overlap.
-3. Apply **Work tracking** before editing code or configuration. Check the root `AGENTS.md` for the exact **POC projects** marker before choosing an integration or testing workflow.
+3. Apply **Work tracking** before editing code or configuration. If the root `AGENTS.md` mentions POC mode or the user requests a POC toggle, read [POC projects](references/poc-projects.md) before choosing an integration or testing workflow.
 4. Perform the authorized work using the selected references and project conventions. Select commands from the actual project's tooling; apply Bun commands to Bun projects. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Verify unfamiliar APIs against the installed version's source or official documentation rather than inventing contracts.
 5. Apply **Development artifacts**, **Test cleanup**, and **CI dependency caching** whenever the work reaches those areas. Run the applicable checks and finish under **Verify and report**.
 
@@ -82,28 +82,6 @@ Track every task that changes project code or configuration with the `issue-trac
 Keep the tracker repository, projects, and boards private even when the code repository is public. Treat tickets as approved work; do not ask for separate approval to manage or implement them.
 
 If the CLI is missing or authentication fails, report the exact error and the recovery command supported by the CLI or its documentation. Continue the code work and list untracked work for later recording; do not invent a recovery command.
-
-## POC projects
-
-Enable POC behavior only when the project's root `AGENTS.md` contains this exact line:
-
-```text
-POC mode: merge directly to main; skip tests unless requested.
-```
-
-When the user requests POC on, add the marker directly below the file's first heading. If the file does not exist, create it with a `# <project name>` heading and the marker. When the user requests POC off, remove the marker. Change nothing else for the toggle and commit it like any other task change.
-
-While the marker is present, apply these overrides:
-
-- Integrate work into `main` directly: commit on `main`, or merge a task branch or worktree into `main` locally, then push. Do not open pull requests. Never force-push or bypass branch protection; report a rejected push.
-- Do not write, update, or run tests, and do not apply coverage requirements, unless the user requests tests for the current task. This overrides test and coverage rules in repository and shared guidance. Run the project's other required checks, such as formatting, linting, type checking, and builds.
-- Start the `DUE DILIGENCE` section with this exact unnumbered line, and include the section even when nothing else is reported:
-
-  ```text
-  POC: tests and PRs skipped (non-actionable).
-  ```
-
-  Do not report missing tests, missing coverage, or skipped pull requests as due diligence items.
 
 ## Verify and report
 

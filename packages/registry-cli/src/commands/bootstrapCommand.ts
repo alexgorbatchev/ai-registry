@@ -212,7 +212,8 @@ export async function bootstrapCommand(
     console.log(`Overlay merged: ${overlay}`);
   }
   for (const target of bootstrapTargets) {
-    console.log(`${target.description} now reads from: ${target.targetPath}`);
+    const verb = target.kind === "entries" ? "are written to" : "now reads from";
+    console.log(`${target.description} ${verb}: ${target.targetPath}`);
   }
   console.log(`Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: ${dependencies.publicBinDir}`);
   console.log(

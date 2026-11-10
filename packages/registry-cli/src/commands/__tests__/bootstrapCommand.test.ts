@@ -285,6 +285,7 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
 
     await bootstrapCommand(dependencies);
     expect(logLines).toContain("  reused Fake servers: " + join(homeDir, ".fake.json"));
+    expect(logLines).toContain("Fake servers are written to: " + join(homeDir, ".fake.json"));
   });
 
   it("refuses to run in a linked worktree before installing or building anything", async () => {

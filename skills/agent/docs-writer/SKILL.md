@@ -1,20 +1,19 @@
 ---
 name: docs-writer
-description: Read, write, rewrite, reorganize, and archive project and internal documentation including README.md files for CLI tools and libraries, engineering designs, tickets, AGENTS guidelines, runbooks, and reference docs. Must be used whenever creating or updating a project README.md, or touching files in the project's internal documentation directory.
+description: Use when reading, writing, reviewing, reorganizing, or archiving project documentation, including README.md files, root or nested AGENTS.md instructions, internal references, runbooks, engineering designs, and tickets.
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-04 11:44
-  last_modified: 2026-11-05 19:19
+  last_modified: 2026-11-10 11:33
   status: current
 ---
 
-# Docs Writer
+## Execute the task
 
-Write and manage high-quality technical documentation: public-facing project `README.md` files for CLI tools and libraries, plus the internal runbooks, engineering designs, tickets, and AGENTS guidelines that people working inside the repository or organization rely on.
-
-Keep all content strictly grounded in actual source materials, write in a factual current-state tone, and enforce appropriate metadata lifecycles on all documents.
-
----
+1. Establish the artifact, audience, requested change, and existing documentation conventions. Inspect the source evidence needed for the affected claims.
+2. Load the matching reference under **Artifact routing** before drafting. For agent instructions, load `prompt-writer` first; it owns composition and acceptance checks. If unavailable, locate it through the catalog or repository sources; suspend dependent writing if it cannot be loaded and continue independent evidence gathering.
+3. Apply the metadata, location, and lifecycle rules below to internal documents. Keep native artifact formats for README.md and AGENTS.md; do not add internal-document frontmatter to them.
+4. Write maintained documentation in present tense; remove stale transitional or changelog narration. Verify affected claims, commands, and links against source evidence, and report unresolved claims without presenting them as verified.
 
 ## Baseline Standards
 
@@ -31,7 +30,7 @@ status: current
 - **Timestamps:** Must use the strict `YYYY-MM-DD HH:MM` format in the user's local timezone. Verify the current time and timezone with a clock tool or system command before writing. Use the user's stated timezone when supplied; otherwise verify the machine's configured local timezone. Do not default to UTC or copy a UTC tool result into these timezone-less fields. If the local timezone cannot be established, ask for it before writing timestamps. Set both to the current local timestamp on file creation; update only `last_modified` when editing. Preserve existing `created_on` values; do not convert historical timestamps whose timezone is unknown.
 - **Status Schema:** Use only `current` (active guidance) or `archived` (superseded historical reference). Do not invent other values unless explicitly requested.
 - **Protect Sensitive Data:** Never write secrets, raw tokens, credentials, or private internal hostnames into a document in a public repository. Private repositories have no such restriction.
-- **Write for Readers:** Put purpose and target audience near the top. Keep procedures ordered, concrete, and copy-pasteable. Use clear headings for scannability.
+- **Human-facing documents:** Put purpose and target audience near the top. Keep procedures ordered and copy-pasteable. Agent instructions follow `prompt-writer`; omit introductory prose that adds no execution context.
 
 ---
 
@@ -51,9 +50,9 @@ status: current
 
 ---
 
-## Sub-Skill Navigation (Progressive Disclosure)
+## Artifact routing
 
-When tasked with a specialized documentation job, immediately read the corresponding reference file and template asset to guide your execution:
+Read the matching reference before writing; use its template when needed for the artifact structure:
 
 ### 1. Engineering Design Documents
 For drafting technical specs, request/response API contracts, TypeScript types, and running ambiguity sweeps:
@@ -65,14 +64,9 @@ For writing wave-based roadmap tickets with detailed problems, value justificati
 -   **Guidelines:** Read `references/tickets.md`
 -   **Template:** Use `assets/tickets-template.md`
 
-### 3. Agent Persona Guidelines (AGENTS.md)
-For maintaining, generating, auditing, or topology splits of canonical root or nested AGENTS.md instructions:
--   Automatically record explicit standing user instructions without requiring a separate request to save them. Preserve standing project rules and substantive technical details. Apply the persistence filter in `references/agents.md`; exclude task history, progress, handoffs, and dated user amendments.
--   **Guidelines:** Read `references/agents.md`
--   **Code projects:** Apply that reference's meaningful behavioral-test and per-package line/function coverage rule; verify the documented coverage configuration rather than inventing a passing gate.
--   **Projects with checks:** Apply that reference's rule to skip checks whose inputs are unchanged, without bypassing hooks, CI, or other required gates.
--   **Cleanup or conformance requests:** Follow "Full Rewrite of Existing Agent Instructions" in that reference. Rewrite the requested files completely while accounting for every technical detail; adapt sections when the templates do not fit.
--   **Templates:** Use `assets/agents-templates.md`
+### 3. Repository agent instructions (AGENTS.md)
+
+Read [AGENTS.md authoring](references/agents.md) for evidence gathering, root/nested placement, standing-rule persistence, and preservation during rewrites. Use [structure options](assets/agents-templates.md) when choosing a layout. Require `prompt-writer` for instruction composition; load `skill-writer` only when the task also edits a skill bundle.
 
 ### 4. Repository READMEs (README.md)
 This skill owns README structure, tone, and content for every project, CLI or not. Read the shared contract first, then exactly one variant:
@@ -81,14 +75,3 @@ This skill owns README structure, tone, and content for every project, CLI or no
 -   **Libraries, packages, services, applications:** Read `references/readme-library.md`, use `assets/readme-library-template.md`
 
 Shared rules live only in `references/readme.md`. Never copy them into a variant file, another skill, or a project.
-
----
-
-## Final Baseline Checklist
-
--   [ ] Frontmatter starts with standard `created_on`, `last_modified`, and `status`.
--   [ ] New or updated timestamps use the strict `YYYY-MM-DD HH:MM` format and verified user-local time.
--   [ ] The document is written in present tense and represents a maintained current-state reference.
--   [ ] All facts and claims are grounded in repository code, config, or verified source docs.
--   [ ] Stale, transitional, or changelog-like narration is completely removed.
--   [ ] Sub-skill references and assets are fully loaded and respected where applicable.

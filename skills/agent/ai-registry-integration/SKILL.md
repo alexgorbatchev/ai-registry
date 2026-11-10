@@ -1,10 +1,10 @@
 ---
 name: ai-registry-integration
-description: Add or update content in the AI registry. Use when a user needs to create or modify skills, commands, the shared system prompt, harness overrides, vendored skills, or related registry documentation in this repository.
+description: Use when creating, reviewing, or modifying skills, commands, the shared system prompt, harness overrides, vendored skills, or related registry documentation in this repository.
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-10 10:55
+  last_modified: 2026-11-10 11:33
   status: current
 ---
 
@@ -25,6 +25,8 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Prefer the most specific path token available. Use `skills_dir`, `commands_dir`, and `output_dir` for those canonical folders. Use `repo_root` for canonical folders that do not have a dedicated token.
 
 ## Core Rules
+
+- Before changing asset placement, generation, state synchronization/bootstrap, or harness output contracts, follow the task-specific reference routing in root `AGENTS.md` beneath the repo_root token. Detailed contracts live under `docs/internal/references/`; preserve their loading routes when reorganizing guidance.
 
 - Automatically record explicit standing user instructions in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save them. Update superseded wording in place; keep one-task directions and session history out of policy files. Ask only when the intended scope or resolution of a material conflict is unclear.
 - Let models choose search and code-navigation tools according to the task and available capabilities. Do not add mandatory search-tool ordering or tool-specific stop rules.

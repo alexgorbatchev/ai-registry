@@ -1,10 +1,10 @@
 ---
 name: git-commit
-description: User when asked to commit changes in a Git repository.
+description: Use when asked to commit changes or when committing task-owned changes to finish authorized work in a Git repository.
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-10 06:25
-  last_modified: 2026-09-21 15:38
+  last_modified: 2026-11-10 11:33
   status: current
 ---
 

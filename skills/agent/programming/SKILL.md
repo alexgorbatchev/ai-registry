@@ -4,7 +4,7 @@ description: Use when designing, implementing, debugging, refactoring, testing, 
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-10 10:55
+  last_modified: 2026-11-10 11:33
   status: current
 ---
 
@@ -13,7 +13,7 @@ metadata:
 1. Establish the requested outcome and affected files from the user request and repository instructions. Inspect manifests, lockfiles, toolchain configuration, development recipes, and relevant implementation before choosing commands or changing files.
 2. Select and read every applicable baseline in **Language and tooling references**. Read matching **Topic references** before working in those domains. Apply each language's rules to its own files; combine runtime, UI, CLI, and automation rules where their scopes overlap.
 3. Apply **Work tracking** before editing code or configuration. If the root `AGENTS.md` mentions POC mode or the user requests a POC toggle, read [POC projects](references/poc-projects.md) before choosing an integration or testing workflow.
-4. Apply **Implementation rules** and perform the authorized work using the selected references and project conventions. Select commands from the actual project's tooling; apply Bun commands to Bun projects. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Verify unfamiliar APIs against the installed version's source or official documentation rather than inventing contracts.
+4. Before selecting checks, changing executable behavior, or defining testing and coverage policy, read [testing and coverage](references/testing-and-coverage.md). Apply **Implementation rules** and perform the authorized work using the selected references and project conventions. Select commands from the actual project's tooling; apply Bun commands to Bun projects. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Verify unfamiliar APIs against the installed version's source or official documentation rather than inventing contracts.
 5. Apply **Development artifacts**, **Test cleanup**, and **CI dependency caching** whenever the work reaches those areas. Run the applicable checks and finish under **Verify and report**.
 
 For languages without a bundled baseline, use the project's language conventions and this skill's shared rules. Do not substitute an unrelated language's rules.

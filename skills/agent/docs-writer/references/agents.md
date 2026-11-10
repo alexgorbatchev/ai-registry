@@ -1,218 +1,32 @@
-# AGENTS.md Guidelines
+# AGENTS.md authoring
 
-These guidelines are for the canonical repository `AGENTS.md` format. Do **not** confuse it with GitHub Copilot custom agent persona files under `.github/agents/*.md`.
+Load `prompt-writer` before composing or reviewing instructions. It owns wording, token economy, authorization, preservation, and acceptance checks. This reference owns repository evidence, instruction placement, and maintenance. Canonical `AGENTS.md` files are separate from persona files such as `.github/agents/*.md`.
 
-## Core Principles
+## Execute the task
 
-- **Keep policy authoring separate from enforcement implementation.** An instruction-maintenance task, including its commits and merges, records newly specified but unimplemented enforcement as follow-up work. Do not turn that gap into an implicit implementation project or completion gate. Run existing checks applicable to the actual changes, preserve existing gates and behavior-change testing requirements, and report unverified compliance accurately. User-deferred operations suspend only themselves and actual dependents; progress records must not add broader approval or completion gates.
-- **Human-curate from repository evidence.** Do not blindly auto-generate and commit.
-- **Preserve technical substance during cleanup.** Preserve project rules and substantive technical details even when they do not fit these templates or preferred sections. Formatting, brevity, inferability, and line-count guidance never justify losing technical content; use the full rewrite procedure below.
-- **Include only non-inferable or high-leverage details.** Do not duplicate what can be easily inferred from code, manifests, or `README.md`.
-- **Put executable commands early** and include copy-paste ready flags when they matter.
-- **Prefer one real example or gotcha** over paragraphs of generic advice.
-- **Make boundaries explicit** with `Always`, `Ask first`, and `Never` when risk is non-trivial. Do not invent approval requirements for dependency changes; preserve only requirements explicitly established by the user or project.
-- **Mandatory Testing & Coverage in Code-Based Projects:** Include the following rule only for code-based projects: For code changes that alter executable behavior, add or update meaningful behavioral tests. Require at least 90% line coverage and 90% function coverage across the non-test source of each affected first-party package; include unexecuted source files and exclude `scripts/` directories. Document and configure the coverage command, source scope, metrics, and exclusions. Reproduce a blocking baseline failure on the untouched base and handle the smallest necessary prerequisite repair. Do not weaken coverage gates or make token test edits to satisfy this rule.
-- **Skip Checks Whose Inputs Are Unchanged:** Include the following rule in every project with checks: Before running a test, lint, typecheck, coverage, build, or other check, compare the changed files with the inputs that check reads, including source, tests, fixtures, configuration, lockfiles, toolchain files, and any documentation it compiles, embeds, or validates. Skip the check when none of its inputs changed, and report it as skipped with that reason. Run it when any input changed or its inputs cannot be determined. Never bypass hooks, CI, or other required gates to skip a check.
-- **Publish releases when the work requires them:** Publish releases, tags, packages, and production deployments automatically when the work requires them, without waiting for explicit user authorization. Preserve an existing project rule that requires authorization.
-- **Persist standing rules automatically.** When the user explicitly establishes a standing instruction, record it in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save it. Apply the persistence filter below, update the relevant rule in place, and never append a chronological amendment.
-- **Keep the root file lean.** Split into nested `AGENTS.md` files when module rules diverge.
-- **Treat `AGENTS.md` as the source of truth.**
+1. Read the requested files, applicable parent and nested instructions, and working diff. Inspect the manifests, task recipes, CI, configuration, source examples, or maintained documentation needed to verify the affected claims. Scale discovery to the change; a local command correction does not require surveying every package.
+2. Inventory existing requirements and technical details before restructuring: commands and flags, paths, contracts, configuration semantics, provenance and licensing, thresholds, exceptions, permissions, and completion conditions. Keep this inventory outside the delivered instructions.
+3. Resolve each item against evidence. Preserve requirements that implementation does not yet satisfy. A recent edit or implementation mismatch does not authorize a policy change. Keep unresolved technical claims with uncertainty explicit, seek the missing decision, and continue independently resolved work.
+4. Choose owners and destinations under **Placement**. For cleanup, rewrite, or conformance requests, rewrite the complete requested files from their preserved substance. For narrow corrections or review-only requests, stay within that scope. Use [structure options](../assets/agents-templates.md) only when helpful.
+5. Write current instructions, applying **Standing rules**. Preserve established authorization and project gates; do not insert release permissions, commit restrictions, coverage thresholds, or other policies merely because a template contains them. Load `programming` when defining software testing or coverage requirements; keep repository-specific commands and exceptions here and shared policy with that skill.
+6. Map every inventory item to its exact replacement location, an equivalent existing owner with working routing, or an evidenced removal reason. Valid removals are equivalent duplication, demonstrated obsolescence, task-only narrative, or explicit user authorization. Length, inferability, and template fit do not justify dropping requirements or technical context.
+7. Verify commands against their definitions, links against destinations, and loading conditions against the tasks that need them. Check preserved scope, exceptions, and rule strength; run applicable artifact checks and `prompt-writer` acceptance checks. Report changes, verification, and unresolved gaps outside the instruction files. Follow existing Git authorization.
 
-## Persistence Filter: Project Rules vs. Task History
+## Placement
 
-Before adding or updating a rule, check all of the following:
+- Root: commands and checks selected by task, repository-wide constraints, cross-component contracts, and routes to specialized guidance.
+- Nested `AGENTS.md`: local commands, exceptions, and contracts that apply to that subtree. Add one when the local rules differ; avoid repeating inherited rules.
+- References: detailed contracts or workflows needed only for particular tasks. Link each from the applicable instruction file with a condition that loads it before the affected decision. A link without a loading condition does not preserve an obligation.
+- Domain skills: reusable workflows. Require their owner before dependent work; keep only project-specific requirements locally. `skill-writer` applies when editing skill bundles, not merely because `AGENTS.md` contains agent instructions.
 
-1. **Future scope:** The guidance applies to future tasks in this repository or subtree, independently of the current task. Automatically persist user instructions when they explicitly establish a standing rule (for example, “always do X” or “never do Y”) or correct an established project convention; do not wait for a separate request to update policy files. Never infer a permanent policy from a one-task request. If that scope is unclear, keep it in the current conversation and ask before persisting it.
-2. **Instruction form:** Write the rule as a present-tense command or constraint. Exclude who requested it, conversation dates, prior decisions, amendment/supersession narration, task IDs, agent assignments, handoffs, source leases, pending work, and test-run results. Metadata timestamps remain metadata.
-3. **Single current rule:** Update or replace the relevant existing rule in the narrowest applicable `AGENTS.md`. Remove obsolete wording; do not preserve conflicting instructions by appending an exception or an "amendment". Apply an explicit user-authorized rule change without asking again; clarify unresolved conflicts before changing a rule.
-4. **Correct destination:** Keep task requirements, progress, temporary authorization boundaries, and coordination details in the conversation or an existing task/handoff document. Put decision history in an existing decision record. Keep technical provenance in maintained dependency documentation when available; otherwise preserve necessary provenance in an appropriate technical section. Do not create extra documents merely to relocate every excluded sentence.
+Use only sections that carry real requirements or context. Keep exact technical details in the requested file when no suitable maintained destination exists. Relocate within authorized scope and update incoming links. Preserve established instruction filenames unless a migration is requested or required; do not overwrite compatibility files destructively.
 
-For mixed paragraphs, preserve standing rules and substantive technical details while omitting the task narrative. Apply the future-scope filter to proposed instructions, not as a reason to discard technical facts. An unresolved task does not justify an entry in `AGENTS.md`.
+## Standing rules
 
-Example:
+Automatically persist explicit standing user instructions in the narrowest applicable `AGENTS.md` or existing policy file. Update the existing rule in place when it changes; ask only when future scope or a material conflict remains unclear. Never infer permanent policy from a one-task request.
 
-- **Task narrative to exclude:** "The user's dated amendment moves this patch into a fork, superseding the earlier plan; the installer migration awaits the handoff and tests still need proof."
-- **Standing rule to retain only when established:** "Maintain dependency patches in the upstream fork and consume an immutable revision."
-- **One-task request:** "Move this patch into the fork for this issue." Do not turn it into the standing rule above.
+Write present-tense rules without task IDs, dated amendments, assignments, handoffs, progress, or test-run results. Preserve technical substance embedded in narrative. Keep task state in the conversation or existing task records, decisions in existing decision records, and dependency provenance in maintained technical documentation; do not create documents just to relocate discarded narration.
 
-## Discovery Before Writing
+## Instruction maintenance and enforcement
 
-Inspect all of the following before drafting or editing:
-- Lockfiles, manifests, workspace files, and task runners.
-- `package.json`/`Makefile`/`justfile`/`Taskfile`/language-specific build files.
-- CI workflows and release automation.
-- Existing `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, and relevant docs.
-- At least one canonical code example in each major area you document.
-- Monorepo and package boundaries.
-
-Never invent commands, folders, or rules.
-
-## Choose the File Topology
-
-*   **Root Only:** Use when the repo is single-package or when nearly all rules are shared.
-*   **Root + Nested:** Use when any of the following are true:
-    - Multiple apps/packages/services have different commands.
-    - Stacks differ across workspaces.
-    - Test/lint/build workflows differ significantly.
-    - Directory-specific boundaries would clutter the root file.
-
-### Root File Responsibilities
-Keep the root file as the routing/navigation layer:
-- Shared commands (Install, Test all, Lint all).
-- Workspace map / nested file pointers (e.g., `apps/web/` -> `apps/web/AGENTS.md`).
-- Shared gotchas and cross-workspace failure modes.
-- Shared boundaries.
-- Shared non-obvious conventions.
-- Navigation to nested `AGENTS.md` files or deeper docs.
-
-### Nested File Responsibilities
-Each nested file should contain:
-- One-sentence local purpose.
-- Local commands (Dev, Test, Lint).
-- Local conventions and gotchas.
-- Local boundaries.
-- Local references.
-
-### Target File Lengths
-Use line counts as guardrails, not as strict goals:
-- Single-project root: usually 40–90 lines.
-- Monorepo root: usually 40–100 lines.
-- Nested file: usually 20–60 lines.
-
-Exceed these ranges or add project-specific sections when needed to preserve technical substance. Do not truncate or replace precise details with vague summaries to meet a size target.
-
----
-
-## Generation and Refactoring Workflow
-
-Use this workflow when creating a new `AGENTS.md` or refactoring a bloated one.
-
-1.  **Target the Right Artifact:** Focus on canonical `AGENTS.md` files. Do not generate specialized persona files unless explicitly requested.
-2.  **Decide What Deserves Space:**
-    *   **Include:** Custom commands, non-standard task runners, counterintuitive patterns that agents get wrong, required setup facts, explicit boundaries, and house-style file examples.
-    *   **Exclude:** Generic architecture essays, framework docs, and aspirational rules. Consolidate duplication without losing unique details; retain project-specific architectural contracts and technical constraints even when they require additional sections.
-3.  **Put Commands First:** List runnable and copy-paste ready commands early. Prefer package-scoped or file-scoped commands over full-repo commands when available.
-4.  **Use Concrete Examples over Prose:** Point to a real file or show a short code block to clarify a convention rather than writing generic guidelines.
-5.  **Make Boundaries Explicit:** Use a three-tier boundary model (`Always` / `Ask first` / `Never`) grounded in actual repository risk (e.g. database migrations or secrets). Include the rule to persist only standing project instructions, update existing rules in place, and exclude task history. For code-based projects, include the mandatory testing and coverage rule from Core Principles; omit it for non-code projects/subtrees. In every project with checks, include the rule from Core Principles to skip checks whose inputs are unchanged. Verify the package boundaries, coverage command, configured source scope, both metrics, unexecuted-file inclusion, and exclusions. Do not present an absent or incomplete coverage gate as configured; record the gap under the existing blocker/prerequisite policy. Explicitly include the rule from Core Principles to publish releases, tags, packages, and production deployments automatically when the work requires them; keep an existing project rule that requires authorization instead.
-6.  **Compatibility Files:** If the repo uses adjacent instruction files or legacy names (like `AGENT.md`), prefer `AGENTS.md` as the canonical name. Migrate or alias if supported and useful, but do not overwrite legacy files destructively without confirmation.
-
----
-
-## Maintenance and Auditing Workflow
-
-Use this workflow when `AGENTS.md` already exists to keep it current and remove drift.
-
-### Audit Mode
-Default to a quick audit by asking:
-1. Are the core commands present and runnable?
-2. Do commands match current scripts/tooling?
-3. Is required setup documented when it blocks execution?
-4. Is at least one real project-specific gotcha documented?
-5. Do gotchas include the corrective action?
-6. Are implementation-affecting conventions explicit?
-7. Does every line earn its keep?
-8. Is the file free of framework-doc or README duplication?
-9. Are linked paths and nested file references current?
-10. Should some of this content move to nested files or external docs?
-11. Does every recorded user instruction pass the persistence filter, with no task history or chronological amendments?
-
-If the answer is "no" to several of these, the file needs updating.
-
-### Repair Order
-Fix problems in this order:
-1. Broken or stale commands.
-2. Stale paths, package names, or workflow references.
-3. Contradictory rules.
-4. Generic filler and duplicated docs.
-5. Missing boundaries or missing non-obvious patterns.
-6. Missing nested files for divergent workspaces.
-
-### Incremental Updates vs. Full Rewrites
-When the user asks to clean up, rewrite, or bring agent instructions into conformance with this skill, fully rewrite the requested files using the procedure below. Useful existing content is input to preserve, not a reason to limit the work to a patch. For a narrowly requested correction or an audit without authorization to rewrite, use targeted edits. Otherwise, a full rewrite is appropriate when:
-- The file is mostly boilerplate or template text.
-- Most commands are wrong.
-- The structure fights the repository topology.
-- Monorepo-specific detail is crammed into root and cannot be salvaged cleanly.
-
-### What to Remove Aggressively
-Delete generic filler unless they are genuinely non-obvious and repo-specific:
-- “Follow best practices” / “Write clean code”.
-- Framework overviews or full directory dumps.
-- Stale architecture or historical notes explaining past migrations.
-- Dated user amendments, supersession narratives, task status, agent handoffs, temporary coordination/authorization state, and test-run reports. Retain any established standing rule by rewriting it in place using the persistence filter.
-- Repeated rules already enforced by linters or formatters.
-
-### What to Preserve Aggressively
-- Commands agents actually run.
-- Failure modes that burned the team before.
-- Intentionally weird patterns that look wrong to outsiders.
-- Security and secrets boundaries.
-- Approval-required changes.
-- Package-local rules in nested files.
-
-### Full Rewrite of Existing Agent Instructions
-
-Use this procedure for cleanup, rewrite, or skill-conformance requests, whether or not the files contain task history and whether or not their content is already committed. Rewrite the complete requested files from their preserved substance and repository evidence. Do not merely delete offending paragraphs, apply the template mechanically, or rewrite Git history.
-
-1. **Establish scope and read the hierarchy:** Inspect the requested files and their inherited/nested instructions, then gather the evidence listed under Discovery Before Writing. Check the working diff and preserve unrelated changes. Rewrite only the files within the requested scope; do not restore an older version wholesale or expand a single-file request into a repository-wide rewrite.
-2. **Inventory before drafting:** Account for every substantive rule and technical detail in the original files, including details embedded in narrative. Capture commands and flags, paths, API contracts, configuration/resolver semantics, dependency versions and immutable origins, licensing/provenance, input/output behavior, exceptions, numeric thresholds, test obligations, and approval boundaries where present. Keep this working inventory outside the instruction files; do not add categories or requirements absent from the source.
-3. **Verify and resolve:** Classify inventory items as current guidance, technical context, duplicates, demonstrably obsolete content, task narrative, or unresolved claims. Use source/configuration, maintained docs, and relevant Git diffs/history where needed. Neither a recent date nor an implementation mismatch establishes a policy change. Report requirements that code does not yet satisfy instead of weakening them. Preserve unresolved technical content with its uncertainty explicit, ask a focused question, and continue rewriting independently resolved material; never silently delete or present it as verified.
-4. **Design the complete replacement:** Organize by current subject and applicable scope. Start from the templates, then add or adapt headings such as architectural contracts, dependency provenance, resolver behavior, or verification requirements to fit actual content. Preserve exact technical semantics and rule strength. Templates, preferred headings, inferability, and length targets cannot override preservation. Keep details in the requested file when no appropriate maintained destination exists. Relocate only within authorized scope, preserve equivalent detail at the destination, and add a resolving link from the applicable instruction file.
-5. **Write the whole file:** Produce coherent current-state instructions and technical context, rather than retaining the old structure with appended corrections. Consolidate only semantically equivalent duplicates; retain their unique qualifiers. Remove task narration using the persistence filter, extract its technical substance first, and replace obsolete statements only with an evidenced current counterpart. Do not create a changelog, move task history into another instruction file, or replace exact details with generic advice.
-6. **Check for information loss:** Map every inventory item to its exact location in the replacement, an equivalent existing reference, or an evidenced removal reason. Valid removal reasons are equivalent duplication, demonstrated obsolescence, task-only narrative, or explicit user authorization; poor template fit, awkward wording, and excessive length are not valid reasons. Compare the before/after content and diff for changed scope, dropped exceptions, altered contracts, and weakened restrictions. Verify commands, paths, and reference destinations. Restore any unintentionally dropped or unresolved detail before finishing.
-7. **Report outside the file:** Summarize the full rewrite, substantive consolidations/relocations, evidenced removals, verification, and unresolved questions in the response or change description. Keep the inventory and cleanup summary out of `AGENTS.md`. Commit only when requested; never amend, reset, or rewrite existing commits merely to clean up their documentation.
-
-For example, given a mixed paragraph saying a dated user amendment moves a patch to a fork, retains the project's 90% coverage requirement, and leaves migration waiting for a handoff:
-
-- Remove the date, amendment/supersession wording, migration status, and handoff condition.
-- Keep the established 90% coverage rule with its original scope and exceptions; consolidate it with the existing testing rule.
-- Keep the fork requirement only if evidence establishes it as a standing project rule. If it is a one-task migration request, exclude it; if its scope is unresolved, ask without inventing a permanent dependency policy.
-- Preserve any exact dependency origin, licensing obligation, resolver semantics, and input/output distinctions embedded in that paragraph. Put them in suitable technical sections even if the template has no matching heading.
-
-### Audit Reporting Format
-When editing an existing `AGENTS.md`, report findings to the user before major rewrites using a compact table like:
-
-```md
-## AGENTS.md audit
-
-| File | Status | Key issues |
-|------|--------|------------|
-| `./AGENTS.md` | Needs update | stale test command, duplicated README guidance |
-| `apps/web/AGENTS.md` | OK | missing local lint command |
-```
-
-For cleanup/conformance requests, report the replacement structure and preservation risks, then perform the authorized full rewrite. For narrow corrections, report and apply targeted changes. The audit report does not introduce an additional approval gate.
-
----
-
-## Final Quality Checklist
-
-Use this checklist before finalizing a new or updated `AGENTS.md`:
-
-*   [ ] **Commands:** Verified against scripts/tooling and ready to copy-paste; unresolved commands are preserved with uncertainty explicit and reported rather than silently removed.
-*   [ ] **Signal:** Contains repository-specific guidance and preserved technical context; template fit and inferability have not caused information loss.
-*   [ ] **Gotchas:** At least one real gotcha or counterintuitive pattern is documented with a clear corrective action.
-*   [ ] **Boundaries:** Explicit where risk exists.
-*   [ ] **Release Boundaries:** Explicitly specifies publishing releases, tags, packages, and production deployments automatically when the work requires them, or preserves an existing project rule that requires authorization.
-*   [ ] **Code Testing & Coverage (Code-Based Projects Only):** Requires meaningful behavioral tests for executable behavior changes and at least 90% line and 90% function coverage across each affected first-party package's non-test source, including unexecuted files and excluding `scripts/` directories. The command, source scope, metrics, and exclusions are documented and configured, or their missing enforcement is explicitly recorded. Blocking baseline failures follow the existing prerequisite policy; gates are not weakened and token test edits do not count. Omit this rule for non-code projects.
-*   [ ] **Unchanged-Input Checks:** Requires skipping a check, and reporting it as skipped, when none of its inputs changed; requires running it when any input changed or its inputs cannot be determined; never permits bypassing hooks, CI, or other required gates. Omit this rule only when the project has no checks.
-*   [ ] **Conventions:** Clear examples or file paths are provided instead of abstract prose.
-*   [ ] **Scope:** Root file contains only shared rules, and nested `AGENTS.md` files exist where package rules diverge.
-*   [ ] **Hygiene:** README/framework duplication is removed, and linked paths resolve.
-*   [ ] **Persistence:** Standing project instructions and technical context remain; changed rules are updated in place, and no task history, progress, handoff, or dated amendment is recorded.
-*   [ ] **Rewrite Preservation:** Every original rule and technical detail is accounted for at an exact destination or has an evidenced removal reason; unresolved details are preserved with uncertainty explicit.
-
-### Automatic Fail Conditions
-Treat the result as failed if:
-- Most commands are stale or unverified.
-- The file is mostly generic template text.
-- The file duplicates framework docs or README sections.
-- A monorepo root file contains package-specific detail with no nested split.
-- Critical boundaries are missing for secrets, deployments, or vendor/generated code.
-- The file records task history, progress, handoffs, dated amendments, or obsolete rules alongside their replacements.
-- Technical details or constraints were lost because they did not fit a template, preferred section, brevity goal, or line-count target.
-
-### Litmus Test
-Ask of every single line:
-> *If this line is removed, is the agent materially more likely to make a mistake?*
-> If the answer is no, consider consolidation or relocation. During a rewrite, deletion still requires an evidenced removal reason under the preservation procedure.
+Instruction maintenance, including committing and merging it, does not make newly specified but unimplemented enforcement a completion prerequisite. Record such gaps as follow-up work, run existing checks applicable to the actual change, and preserve existing gates and behavior-change testing requirements. Do not claim enforcement that was not verified. A user-deferred operation suspends only itself and actual dependents; continue independent authorized work.

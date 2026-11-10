@@ -1,8 +1,0 @@
-#!/usr/bin/env sh
-set -eu
-
-repo_root="$(git rev-parse --show-toplevel)"
-cd "$repo_root"
-
-printf '%s\n' "post-merge: running just bootstrap -y"
-just bootstrap -y

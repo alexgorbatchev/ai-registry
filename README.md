@@ -146,7 +146,7 @@ That command:
 - removes broken public-wrapper symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
 
-After bootstrap configures `core.hooksPath`, future `git pull` operations rerun `just bootstrap -y` automatically through checked-in `post-merge` and `post-rewrite` hooks, covering both merge-based pulls and `git pull --rebase`. That keeps generated outputs, the harness home links, and the repo-local wrapper symlinks refreshed. The checked-in `pre-push` hook scans every commit a push would publish with [gitleaks](https://github.com/gitleaks/gitleaks) and blocks the push on findings, so `gitleaks` must be installed and on `PATH`; record a reviewed false positive in `.gitleaksignore`.
+Run `just bootstrap` from the primary checkout after pulling to refresh the generated outputs, the harness home links, and the repo-local wrapper symlinks; the scheduled update also bootstraps on every run. Bootstrap refuses to run in a linked worktree, because it links the machine's harness homes to the checkout it runs in and a worktree's output disappears with the worktree; use `just build` to verify changes there. After bootstrap configures `core.hooksPath`, the checked-in `pre-push` hook scans every commit a push would publish with [gitleaks](https://github.com/gitleaks/gitleaks) and blocks the push on findings, so `gitleaks` must be installed and on `PATH`; record a reviewed false positive in `.gitleaksignore`.
 
 ### Scheduled updates
 

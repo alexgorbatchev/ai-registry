@@ -3,6 +3,7 @@ import { join } from "path";
 import { parseArgs } from "node:util";
 
 import { applyLinkTarget, type ILinkApplyResult } from "../lib/applyLinkTarget";
+import { getLinkedWorktreePrimaryCheckout } from "../lib/getLinkedWorktreePrimaryCheckout";
 import type { IBootstrapTarget, IUnifiedHarnessPlugin } from "../lib/harnessBuild";
 import { applyHomeTarget, getManagedEntryNames, type IHomeApplyResult } from "../lib/homeTargetUtils";
 import { readGeneratedOutputManifest } from "../lib/readGeneratedOutputManifest";
@@ -124,6 +125,16 @@ export async function bootstrapCommand(
   dependencies: IBootstrapDependencies = createDefaultDependencies(),
 ): Promise<void> {
   const { root, overlays, output } = dependencies.registryPaths;
+  // Harness homes are machine-wide and link into the bootstrapped checkout's output. A
+  // linked worktree's output disappears with the worktree, so only the primary checkout
+  // may own them.
+  const primaryCheckout = await getLinkedWorktreePrimaryCheckout(root);
+  if (primaryCheckout !== null) {
+    throw new Error(
+      `Bootstrap links this machine's harness homes to the checkout it runs in, so it runs only from the primary checkout ${primaryCheckout}, not the linked worktree ${root}. Use \`just build\` to verify changes in a worktree.`,
+    );
+  }
+
   console.log("🚀 Bootstrapping ai-registry...\n");
   for (const overlay of overlays) {
     console.log(`📦 Using overlay: ${overlay}\n`);

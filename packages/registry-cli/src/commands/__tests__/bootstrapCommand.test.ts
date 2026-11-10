@@ -1,7 +1,8 @@
 import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { $ } from "bun";
 import { existsSync } from "fs";
-import { lstat, mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, readlink, realpath, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { bootstrapCommand, type IBootstrapDependencies } from "../bootstrapCommand";
@@ -235,6 +236,25 @@ Fake settings now reads from: <root>/home/fake-settings.json
 Repo-local air-*, claude-*, codex-*, and pi-* commands are linked into: <root>/home/.local/bin
 Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, and CLAUDE_CONFIG_DIR if needed."
 `);
+  });
+
+  it("refuses to run in a linked worktree before installing or building anything", async () => {
+    const primary = join(root, "primary");
+    const worktree = join(root, "worktree");
+    await mkdir(primary, { recursive: true });
+    await $`git init -q -b main && git -c user.name=test -c user.email=test@example.invalid commit -q --allow-empty -m init`
+      .cwd(primary)
+      .quiet();
+    await $`git worktree add -q ${worktree}`.cwd(primary).quiet();
+    const primaryPath = await realpath(primary);
+
+    await expect(
+      bootstrapCommand(createDependencies({ registryPaths: { ...registryPaths, root: worktree } })),
+    ).rejects.toThrow(
+      `Bootstrap links this machine's harness homes to the checkout it runs in, so it runs only from the primary checkout ${primaryPath}, not the linked worktree ${worktree}.`,
+    );
+    expect(spawnedCommands).toEqual([]);
+    expect(existsSync(join(homeDir, ".fake"))).toBe(false);
   });
 
   it("stops before touching any home when the build fails", async () => {

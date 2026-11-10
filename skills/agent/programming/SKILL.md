@@ -1,10 +1,10 @@
 ---
 name: programming
-description: Use when designing, implementing, debugging, refactoring, testing, documenting, or reviewing software, including application code, scripts, development tooling, and command-line interfaces.
+description: Use when designing, implementing, debugging, refactoring, testing, documenting, reviewing software, or managing software releases, including application code, scripts, development tooling, and command-line interfaces.
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-10 11:33
+  last_modified: 2026-11-10 14:46
   status: current
 ---
 
@@ -46,6 +46,7 @@ Integrate libraries through their intended APIs and capabilities. When a library
 
 Read each reference when its topic applies. Use these additional routing conditions:
 
+- [Release policy](references/releases.md): creating, editing, publishing, or verifying releases, release notes, tags, or assets.
 - [Go setup](references/go/setup.md): project creation, restructuring, builds, or releases.
 - [Go CI and releases](references/go/github-ci-cd-releases.md): include tagged releases and binary version metadata. Templates: [CI](references/go/github-actions-ci.yml), [release](references/go/github-actions-release.yml), [GoReleaser](references/go/goreleaser.yml).
 - [Go release notes](references/go/go-release-notes.md): recent idioms or tooling upgrades.

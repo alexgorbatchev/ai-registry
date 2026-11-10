@@ -1,16 +1,18 @@
 ---
 name: github-release
-description: Create, inspect, edit, and publish GitHub releases with the `gh release` CLI, including writing release notes, verifying tags, managing draft/prerelease state, and uploading assets. Use when asked to create a GitHub release, fix or replace release notes, publish an existing tag, inspect release metadata, or attach release assets. Do not use for generic git tagging or repository publishing flows that do not involve GitHub Releases.
+description: Create, inspect, edit, and publish GitHub releases with the `gh release` CLI, including writing release notes, verifying tags, managing draft/prerelease state, and uploading assets. Use when asked to create a GitHub release, fix or replace release notes, publish an existing tag, inspect release metadata, or attach release assets.
 author: alexgorbatchev
 metadata:
   created_on: 2026-05-04 13:11
-  last_modified: 2026-10-24 09:56
+  last_modified: 2026-11-10 13:40
   status: current
 ---
 
 # GitHub Release
 
 Use this workflow to manage GitHub Releases with `gh release` instead of guessing flags or hand-editing release pages in the browser.
+
+Do not use for generic git tagging or repository publishing flows that do not involve GitHub Releases.
 
 ## Core Rules
 

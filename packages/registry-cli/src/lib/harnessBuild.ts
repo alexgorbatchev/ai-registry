@@ -151,7 +151,7 @@ function isIgnoredBySupplementalPrefixes(relativePath: string, prefixes: string[
   return prefixes.some((prefix) => relativePath === prefix || relativePath.startsWith(`${prefix}/`));
 }
 
-async function applyTemplateVariables(
+export async function applyTemplateVariables(
   content: string,
   sourcePath: string,
   templateContext: ITemplateContext,

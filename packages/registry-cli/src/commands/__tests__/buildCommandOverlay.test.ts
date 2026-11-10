@@ -6,6 +6,7 @@ import { join } from "path";
 
 import { buildCommand } from "../buildCommand";
 import { type IRegistryPaths } from "../../lib/getRegistryPaths";
+import { readGeneratedOutputManifest } from "../../lib/readGeneratedOutputManifest";
 import { copyRepositoryHarnesses, loadTestShellEnvironment } from "./helpers";
 
 const TEST_ROOT = factory_testRoot("build-overlay-tests");
@@ -137,5 +138,59 @@ describe("buildCommand with overlay", () => {
     expect(await Bun.file(join(repoRoot, "commands/base-cmd.md")).text()).toBe(
       "---\ndescription: Base command\n---\n# Base Command\n",
     );
+  });
+  it("merges overlay harness settings into the live files and keeps them out of the public sources", async () => {
+    const claudeConfigDir = join(tempDir, "claude-home");
+    const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
+    process.env.CLAUDE_CONFIG_DIR = claudeConfigDir;
+    await Bun.write(join(claudeConfigDir, ".claude.json"), '{"numStartups":1,"mcpServers":{"local":{"url":"l"}}}\n');
+    await Bun.write(
+      join(overlayDir, "harnesses", "codex", "config.toml"),
+      '[mcp_servers.private]\nurl = "https://mcp.example.invalid/<%- repo_root %>"\n',
+    );
+    await Bun.write(
+      join(overlayDir, "harnesses", "claude-code", "claude.json"),
+      '{ "mcpServers": { "private": { "type": "http", "url": "https://mcp.example.invalid" } } }\n',
+    );
+    const publicCodexConfig = await Bun.file(join(repoRoot, "harnesses", "codex", "config.toml")).text();
+    const messages: string[] = [];
+    const logSpy = spyOn(console, "log").mockImplementation((message) => messages.push(String(message)));
+    try {
+      await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
+    } finally {
+      logSpy.mockRestore();
+      if (originalClaudeConfigDir === undefined) {
+        delete process.env.CLAUDE_CONFIG_DIR;
+      } else {
+        process.env.CLAUDE_CONFIG_DIR = originalClaudeConfigDir;
+      }
+    }
+
+    const liveCodexConfig = Bun.TOML.parse(await Bun.file(join(registryPaths.output, "codex", "config.toml")).text());
+    expect(liveCodexConfig).toMatchObject({
+      mcp_servers: { private: { url: `https://mcp.example.invalid/${repoRoot}` } },
+    });
+    expect(await Bun.file(join(repoRoot, "harnesses", "codex", "config.toml")).text()).toBe(publicCodexConfig);
+    expect(await Bun.file(join(claudeConfigDir, ".claude.json")).json()).toEqual({
+      numStartups: 1,
+      mcpServers: { local: { url: "l" }, private: { type: "http", url: "https://mcp.example.invalid" } },
+    });
+    expect(existsSync(join(registryPaths.output, "claude-code", "claude.json"))).toBe(false);
+    const manifest = await readGeneratedOutputManifest(registryPaths.output);
+    expect(manifest?.syncedFilePaths).not.toContain("claude-code/claude.json");
+    expect(manifest?.syncedFilePaths).toContain("codex/config.toml");
+    expect(messages).toContain(
+      `   ↳ overlay settings for codex/config.toml: ${join(overlayDir, "harnesses", "codex", "config.toml")}`,
+    );
+  });
+
+  it("fails before changing outputs when an overlay harness file layers no synced settings file", async () => {
+    const strayPath = join(overlayDir, "harnesses", "codex", "rules", "extra.rules");
+    await Bun.write(strayPath, "rule\n");
+
+    await expect(
+      buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment }),
+    ).rejects.toThrow(`Overlay harness files must layer a synced settings file`);
+    expect(existsSync(join(registryPaths.output, "manifest.json"))).toBe(false);
   });
 });

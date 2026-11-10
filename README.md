@@ -87,7 +87,11 @@ For proprietary or work-specific skills and commands that cannot be committed to
 
 Separate paths with the platform PATH separator (`:` on Linux/macOS, `;` on Windows). Each entry supports `~`; relative paths resolve from the registry checkout. Empty entries are ignored. Repeated normalized paths keep their last occurrence, so `A:B:A` is processed as `B:A`. Missing paths produce warnings and are skipped.
 
-Each overlay may contain `skills/`, `commands/`, or both. Skill bundles are replaced as a whole, not merged file by file. Harness-specific skill overrides retain their precedence over all overlays.
+Each overlay may contain `skills/`, `commands/`, and `harnesses/`. Skill bundles are replaced as a whole, not merged file by file. Harness-specific skill overrides retain their precedence over all overlays.
+
+Overlay harness files carry private settings, such as MCP servers with private URLs. A file at `harnesses/<path>` in an overlay layers the public synced settings file at the same path, for example `harnesses/codex/config.toml` or `harnesses/opencode/opencode.jsonc`. The build renders it as a template and deep-merges it over the public source in overlay order: objects merge per key, and other values, lists included, replace earlier ones. When a harness edits a merged setting, the build writes the change back to the layer defining the longest part of its key path, with later overlays winning ties, and removes a deleted key from every layer that defines it. An overlay file under `harnesses/` that matches no synced settings file fails the build.
+
+Claude Code reads user-scope MCP servers only from its global `.claude.json`. Declare them under `mcpServers` in `harnesses/claude-code/claude.json`, in the public registry or an overlay. The build syncs only the entries the registry declares into `$CLAUDE_CONFIG_DIR/.claude.json` or `~/.claude.json` and leaves every other key, including servers added with `claude mcp add`, alone.
 
 ### Hostname Skill Variants
 

@@ -132,6 +132,47 @@ describe("Claude Code harness build", () => {
     ]);
   });
 
+  it("syncs the declared MCP servers into the global config file instead of the generated root", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "harnesses/claude-code/.registry-ignore", "./skills/\n./claude.json\n");
+    await writeTestFile(repositoryRoot, "harnesses/claude-code/claude.json", '{\n  "mcpServers": {}\n}\n');
+    const configDir = join(repositoryRoot, "claude-home");
+    process.env.CLAUDE_CONFIG_DIR = `${configDir} `;
+
+    const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
+    const sourcePathByOutputPath = new Map<string, string>();
+    await buildOutput(repositoryRoot, { settingsSyncRegistry, sourcePathByOutputPath, skills: [], commands: [] });
+
+    const stagedPath = join(repositoryRoot, ".output", "claude-code", "claude.json");
+    expect(settingsSyncRegistry.getSyncedSettingsFiles()).toContainEqual({
+      relativePath: "claude-code/claude.json",
+      liveOnlyKeyPaths: [
+        ["mcpServers", "*", "headers"],
+        ["mcpServers", "*", "env"],
+      ],
+      livePath: join(configDir, ".claude.json"),
+      managedEntryTables: [["mcpServers"]],
+    });
+    expect(sourcePathByOutputPath.get(stagedPath)).toBe(
+      join(repositoryRoot, "harnesses", "claude-code", "claude.json"),
+    );
+  });
+
+  it("reads MCP servers into the home directory's .claude.json without CLAUDE_CONFIG_DIR", async () => {
+    const repositoryRoot = await createOutputDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "harnesses/claude-code/claude.json", '{ "mcpServers": {} }\n');
+
+    const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
+    await buildOutput(repositoryRoot, { settingsSyncRegistry, skills: [], commands: [] });
+
+    expect(
+      settingsSyncRegistry.getSyncedSettingsFiles().find((file) => file.relativePath === "claude-code/claude.json")
+        ?.livePath,
+    ).toBe(join(homedir(), ".claude.json"));
+  });
+
   it("generates the cll helper for litellm", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);

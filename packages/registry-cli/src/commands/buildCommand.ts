@@ -7,6 +7,7 @@ import {
   type IBuildSupport,
   type IRegistryAssets,
   type IUnifiedHarnessPlugin,
+  applyTemplateVariables,
   applyTemplateVariablesToGeneratedOutput,
   stageSourceDirectory,
   stageSourcePath,
@@ -15,6 +16,7 @@ import {
   stageRegistryAssets,
   writeBinScript,
 } from "../lib/harnessBuild";
+import { resolveOverlaySettingsLayers } from "../lib/resolveOverlaySettingsLayers";
 import { resolveRegistryAssets } from "../lib/resolveRegistryAssets";
 import { createTemplateEnvironment, type ILoadShellEnvironment } from "../lib/createTemplateEnvironment";
 import {
@@ -375,17 +377,35 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     });
   }
 
+  const templateEnvironment = createTemplateEnvironment(process.env, options.loadShellEnvironment);
   await applyTemplateVariablesToGeneratedOutput(
     GENERATED_OUTPUT_STAGING_DIR,
     TEMPLATE_CONTEXT,
     sourcePathByOutputPath,
-    createTemplateEnvironment(process.env, options.loadShellEnvironment),
+    templateEnvironment,
   );
   console.log("   ✅ Successfully compiled unified outputs!");
 
   const syncedSettingsFiles = settingsSyncRegistry.getSyncedSettingsFiles();
   const syncedFilePaths = syncedSettingsFiles.map((file) => file.relativePath);
+  // Files a harness keeps outside its home, such as Claude Code's `.claude.json`,
+  // are never linked by bootstrap.
+  const linkedSyncedFilePaths = syncedSettingsFiles
+    .filter((file) => file.livePath === undefined)
+    .map((file) => file.relativePath);
   const unmanagedPaths: IUnmanagedOutputPaths = { syncedFilePaths };
+  const overlayLayers = await resolveOverlaySettingsLayers({
+    harnessesDir: harnesses,
+    overlayDirs: overlays,
+    syncedSettingsFiles,
+    stagingDir: GENERATED_OUTPUT_STAGING_DIR,
+    sourcePathByOutputPath,
+    renderLayer: (sourcePath, content) =>
+      applyTemplateVariables(content, sourcePath, TEMPLATE_CONTEXT, templateEnvironment),
+  });
+  for (const [relativePath, layers] of overlayLayers) {
+    console.log(`   ↳ overlay settings for ${relativePath}: ${layers.map((layer) => layer.sourcePath).join(", ")}`);
+  }
   const settingsSyncOptions: ISyncSettingsFilesOptions = {
     syncedSettingsFiles,
     stagingDir: GENERATED_OUTPUT_STAGING_DIR,
@@ -395,6 +415,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     templateContext: TEMPLATE_CONTEXT,
     sourceRepository: createGitSettingsSourceRepository(),
     shouldCommitSourceChanges: process.env.AI_REGISTRY_SETTINGS_AUTO_COMMIT !== "0",
+    overlayLayers,
   };
   await validateStagedSettingsFiles(settingsSyncOptions);
   for (const [sourcePath, checksum] of sourceChecksums) {
@@ -437,7 +458,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     sourcePathByOutputPath,
     GENERATED_OUTPUT_STAGING_DIR,
     sourceChecksums,
-    syncedFilePaths,
+    linkedSyncedFilePaths,
   );
   await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
 

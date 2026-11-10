@@ -8,7 +8,22 @@ import { applySettingsChanges } from "./applySettingsChanges";
 import { listSettingsChanges } from "./listSettingsChanges";
 import { mergeSettingsValues } from "./mergeSettingsValues";
 import { parseSettingsText } from "./parseSettingsText";
-import type { ISettingsConflict, ISettingsSourceRepository, ISyncedSettingsFile, JsonValue } from "./types";
+import {
+  listManagedEntryNames,
+  mergeSettingsLayers,
+  routeSettingsChanges,
+  selectManagedEntries,
+} from "./settingsLayerUtils";
+import type {
+  IJsonObject,
+  ISettingsChange,
+  ISettingsConflict,
+  ISettingsSourceLayer,
+  ISettingsSourceRepository,
+  ISyncedSettingsFile,
+  JsonValue,
+  SettingsSourceState,
+} from "./types";
 
 export interface ISyncSettingsFilesOptions {
   syncedSettingsFiles: ISyncedSettingsFile[];
@@ -23,6 +38,9 @@ export interface ISyncSettingsFilesOptions {
   sourceRepository: ISettingsSourceRepository;
   // Scheduled updates sync edits without creating commits. Defaults to true.
   shouldCommitSourceChanges?: boolean;
+  // Private overlay layers merged over each file's registry source, keyed by the
+  // file's relative path.
+  overlayLayers?: ReadonlyMap<string, ISettingsSourceLayer[]>;
 }
 
 function formatValue(value: JsonValue | undefined): string {
@@ -59,26 +77,76 @@ async function replaceSymlinkWithFile(livePath: string): Promise<void> {
   }
 }
 
-// Returns the registry source path when the sync wrote harness changes into it.
-async function syncSettingsFile(file: ISyncedSettingsFile, options: ISyncSettingsFilesOptions): Promise<string | null> {
-  const sourcePath = getSourcePath(file, options);
-  const stagedPath = join(options.stagingDir, file.relativePath);
-  const livePath = join(options.outputDir, file.relativePath);
+// The registry layers of a synced file: the public source the build staged, then the
+// private overlay layers merged over it.
+async function getSourceLayers(
+  file: ISyncedSettingsFile,
+  options: ISyncSettingsFilesOptions,
+): Promise<ISettingsSourceLayer[]> {
+  const renderedText = await Bun.file(join(options.stagingDir, file.relativePath)).text();
+  return [
+    { sourcePath: getSourcePath(file, options), renderedText },
+    ...(options.overlayLayers?.get(file.relativePath) ?? []),
+  ];
+}
+
+// Writes each layer's share of the harness edits into its registry file and returns
+// the files it changed.
+async function writeSourceChanges(
+  layers: ISettingsSourceLayer[],
+  layerValues: IJsonObject[],
+  sourceChanges: ISettingsChange[],
+): Promise<string[]> {
+  const writtenSourcePaths: string[] = [];
+  const changesByLayer = routeSettingsChanges(layerValues, sourceChanges);
+  for (const [index, layer] of layers.entries()) {
+    const layerChanges = changesByLayer[index] ?? [];
+    if (layerChanges.length === 0) continue;
+    const sourceText = await Bun.file(layer.sourcePath).text();
+    await Bun.write(layer.sourcePath, applySettingsChanges(sourceText, layerChanges, layer.sourcePath));
+    const changeLabel = layerChanges.length === 1 ? "change" : "changes";
+    console.log(`  - ↩️ Synced ${layerChanges.length} harness settings ${changeLabel} into ${layer.sourcePath}`);
+    writtenSourcePaths.push(layer.sourcePath);
+  }
+  return writtenSourcePaths;
+}
+
+// Returns the registry source files the sync wrote harness changes into.
+async function syncSettingsFile(
+  file: ISyncedSettingsFile,
+  layers: ISettingsSourceLayer[],
+  options: ISyncSettingsFilesOptions,
+): Promise<string[]> {
+  const livePath = file.livePath ?? join(options.outputDir, file.relativePath);
   // Recorded as JSON whatever the settings format, so the extension says how to read it.
   const basePath = join(options.stateDir, `${file.relativePath}.json`);
-  const renderedSourceText = await Bun.file(stagedPath).text();
-  const source = parseSettingsText(renderedSourceText, sourcePath);
+  const layerValues = layers.map((layer) => parseSettingsText(layer.renderedText, layer.sourcePath));
+  const mergedSource = mergeSettingsLayers(layerValues);
 
   await mkdir(dirname(basePath), { recursive: true });
-  await replaceSymlinkWithFile(livePath);
+  if (file.livePath === undefined) {
+    await replaceSymlinkWithFile(livePath);
+  }
 
   // A first build installs the rendered source, still merged so that source entries
-  // conditioned on harness-written tables are left out.
+  // conditioned on harness-written tables are left out. A file the harness owns
+  // starts empty, so only the entries the registry declares are added to it.
   const hasLiveFile = existsSync(livePath);
-  const liveText = hasLiveFile ? await Bun.file(livePath).text() : renderedSourceText;
-  const live = hasLiveFile ? parseSettingsText(liveText, livePath) : source;
+  const publicLayer = layers[0];
+  const publicValue = layerValues[0];
+  const initialLiveText =
+    file.managedEntryTables !== undefined || publicLayer === undefined || publicValue === undefined
+      ? "{}\n"
+      : applySettingsChanges(publicLayer.renderedText, listSettingsChanges(publicValue, mergedSource), livePath);
+  const liveText = hasLiveFile ? await Bun.file(livePath).text() : initialLiveText;
+  const liveDocument = parseSettingsText(liveText, livePath);
   const base =
     hasLiveFile && existsSync(basePath) ? parseSettingsText(await Bun.file(basePath).text(), basePath) : undefined;
+
+  const tables = file.managedEntryTables;
+  const entryNames = tables ? listManagedEntryNames(tables, [mergedSource, ...(base ? [base] : [])]) : undefined;
+  const source = tables && entryNames ? selectManagedEntries(mergedSource, tables, entryNames) : mergedSource;
+  const live = tables && entryNames ? selectManagedEntries(liveDocument, tables, entryNames) : liveDocument;
   const result = mergeSettingsValues({
     base,
     live,
@@ -87,8 +155,10 @@ async function syncSettingsFile(file: ISyncedSettingsFile, options: ISyncSetting
     sourceJsonObjects: file.sourceJsonObjects,
   });
 
-  const nextLiveText = applySettingsChanges(liveText, listSettingsChanges(live, result.liveValue), livePath);
-  if (!hasLiveFile || nextLiveText !== liveText) {
+  const liveChanges = listSettingsChanges(live, result.liveValue);
+  const nextLiveText = applySettingsChanges(liveText, liveChanges, livePath);
+  const shouldInstallLiveFile = !hasLiveFile && (tables === undefined || liveChanges.length > 0);
+  if (shouldInstallLiveFile || (hasLiveFile && nextLiveText !== liveText)) {
     await mkdir(dirname(livePath), { recursive: true });
     await Bun.write(livePath, nextLiveText);
   }
@@ -101,49 +171,52 @@ async function syncSettingsFile(file: ISyncedSettingsFile, options: ISyncSetting
     keyPath: change.keyPath,
     value: change.value === undefined ? undefined : reverseTemplateObject(change.value, options.templateContext),
   }));
-  let writtenSourcePath: string | null = null;
-  if (sourceChanges.length > 0) {
-    const sourceText = await Bun.file(sourcePath).text();
-    await Bun.write(sourcePath, applySettingsChanges(sourceText, sourceChanges, sourcePath));
-    const changeLabel = sourceChanges.length === 1 ? "change" : "changes";
-    console.log(`  - ↩️ Synced ${sourceChanges.length} harness settings ${changeLabel} into ${sourcePath}`);
-    writtenSourcePath = sourcePath;
-  }
+  const writtenSourcePaths = await writeSourceChanges(layers, layerValues, sourceChanges);
 
   await Bun.write(basePath, `${JSON.stringify(result.liveValue, null, 2)}\n`);
-  return writtenSourcePath;
+  return writtenSourcePaths;
 }
 
 // Parses every staged settings file so a broken registry source stops the build
 // before any generated output is replaced.
 export async function validateStagedSettingsFiles(options: ISyncSettingsFilesOptions): Promise<void> {
   for (const file of options.syncedSettingsFiles) {
-    const sourcePath = getSourcePath(file, options);
-    parseSettingsText(await Bun.file(join(options.stagingDir, file.relativePath)).text(), sourcePath);
+    for (const layer of await getSourceLayers(file, options)) {
+      parseSettingsText(layer.renderedText, layer.sourcePath);
+    }
   }
 }
 
 // Reconciles every synced settings file after the managed outputs are in place:
-// harness-made edits are written back to the registry source, registry edits are
-// applied to the live file, and the merged result becomes the next build's base.
-// Source files that had no uncommitted edits beforehand are committed, so harness
-// changes are recorded without sweeping in work in progress.
+// harness-made edits are written back to the registry layer that owns each key,
+// registry edits are applied to the live file, and the merged result becomes the
+// next build's base. Source files that had no uncommitted edits beforehand are
+// committed, so harness changes are recorded without sweeping in work in progress.
 export async function syncSettingsFiles(options: ISyncSettingsFilesOptions): Promise<void> {
   const committablePaths: string[] = [];
 
   for (const file of options.syncedSettingsFiles) {
-    const sourceState = await options.sourceRepository.getSourceState(getSourcePath(file, options));
-    const writtenSourcePath = await syncSettingsFile(file, options);
-    if (writtenSourcePath === null || options.shouldCommitSourceChanges === false) continue;
+    const layers = await getSourceLayers(file, options);
+    const sourceStates = new Map<string, SettingsSourceState>();
+    for (const layer of layers) {
+      sourceStates.set(layer.sourcePath, await options.sourceRepository.getSourceState(layer.sourcePath));
+    }
+    const writtenSourcePaths = await syncSettingsFile(file, layers, options);
+    if (options.shouldCommitSourceChanges === false) continue;
 
-    if (sourceState === "clean" && (await options.sourceRepository.hasSecrets(writtenSourcePath))) {
-      console.warn(`  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: gitleaks found possible secrets.`);
-    } else if (sourceState === "clean") {
-      committablePaths.push(writtenSourcePath);
-    } else if (sourceState === "dirty") {
-      console.warn(
-        `  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: it already had uncommitted edits.`,
-      );
+    for (const writtenSourcePath of writtenSourcePaths) {
+      const sourceState = sourceStates.get(writtenSourcePath);
+      if (sourceState === "clean" && (await options.sourceRepository.hasSecrets(writtenSourcePath))) {
+        console.warn(
+          `  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: gitleaks found possible secrets.`,
+        );
+      } else if (sourceState === "clean") {
+        committablePaths.push(writtenSourcePath);
+      } else if (sourceState === "dirty") {
+        console.warn(
+          `  - ⚠️ Left synced settings uncommitted in ${writtenSourcePath}: it already had uncommitted edits.`,
+        );
+      }
     }
   }
 

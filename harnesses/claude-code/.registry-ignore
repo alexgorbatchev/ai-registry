@@ -4,3 +4,7 @@
 # The build merges harness-local skills separately into the generated skills directory
 # as copies with template tags resolved, so exclude them from the raw harness copy.
 ./skills/
+
+# The build syncs this file's MCP servers into Claude Code's `.claude.json` instead of
+# copying it into the harness home.
+./claude.json

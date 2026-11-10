@@ -12,6 +12,16 @@ const MEMORY_FILE_NAME = "CLAUDE.md";
 // `settings.json`; `/keybindings` and installers write `keybindings.json`.
 const SYNCED_SETTINGS_FILE_NAMES = ["settings.json", "keybindings.json"];
 const SKILLS_DIR_NAME = "skills";
+// Claude Code reads user-scope MCP servers only from its global config file, which
+// also holds its runtime state. The registry declares servers in `claude.json` and
+// syncs just those `mcpServers` entries into the live file.
+const MCP_SERVERS_FILE_NAME = "claude.json";
+const GLOBAL_CONFIG_FILE_NAME = ".claude.json";
+// MCP server fields that can hold credentials.
+const MCP_SERVERS_LIVE_ONLY_KEY_PATHS = [
+  ["mcpServers", "*", "headers"],
+  ["mcpServers", "*", "env"],
+];
 
 async function stageHarnessFiles(context: IHarnessBuildContext, claudeCodeOutputDir: string): Promise<void> {
   if (!existsSync(context.harnessDir)) {
@@ -26,6 +36,27 @@ async function stageHarnessFiles(context: IHarnessBuildContext, claudeCodeOutput
       context.buildSupport.syncSettingsFile(settingsPath);
     }
   }
+}
+
+// `CLAUDE_CONFIG_DIR` moves the global config file into that directory.
+function getGlobalConfigPath(): string {
+  const configDir = process.env.CLAUDE_CONFIG_DIR?.trim();
+  return join(configDir || homedir(), GLOBAL_CONFIG_FILE_NAME);
+}
+
+async function stageMcpServers(context: IHarnessBuildContext, claudeCodeOutputDir: string): Promise<void> {
+  const sourcePath = join(context.harnessDir, MCP_SERVERS_FILE_NAME);
+  if (!existsSync(sourcePath)) {
+    return;
+  }
+
+  const stagedPath = join(claudeCodeOutputDir, MCP_SERVERS_FILE_NAME);
+  await context.buildSupport.stageSourcePath(sourcePath, stagedPath);
+  context.buildSupport.syncSettingsFile(stagedPath, {
+    livePath: getGlobalConfigPath(),
+    managedEntryTables: [["mcpServers"]],
+    liveOnlyKeyPaths: MCP_SERVERS_LIVE_ONLY_KEY_PATHS,
+  });
 }
 
 function createLiteLLMHelper(): string {
@@ -126,6 +157,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
 
   await context.buildSupport.stageHarnessSkills(context, skillsDir);
   await stageHarnessFiles(context, claudeCodeOutputDir);
+  await stageMcpServers(context, claudeCodeOutputDir);
   await mkdir(commandsDir, { recursive: true });
   await context.buildSupport.stageRegistryAssets(context, { commandsDir, skillsDir });
 

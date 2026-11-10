@@ -25,6 +25,8 @@ export function createSettingsSyncRegistry(rootDir: string): ISettingsSyncRegist
         relativePath,
         liveOnlyKeyPaths: options.liveOnlyKeyPaths ?? [],
         ...(options.sourceJsonObjects ? { sourceJsonObjects: options.sourceJsonObjects } : {}),
+        ...(options.livePath ? { livePath: options.livePath } : {}),
+        ...(options.managedEntryTables ? { managedEntryTables: options.managedEntryTables } : {}),
       });
     },
     getSyncedSettingsFiles(): ISyncedSettingsFile[] {

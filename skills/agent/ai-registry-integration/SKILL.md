@@ -4,7 +4,7 @@ description: Add or update content in the AI registry. Use when a user needs to 
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-04 14:10
+  last_modified: 2026-11-10 07:10
   status: current
 ---
 
@@ -62,7 +62,9 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 - Work-specific, proprietary skills and commands that cannot be committed to this public repository live in a separate private repository.
 - Configure `AI_REGISTRY_OVERLAY` in shell configuration or git-ignored `.env` as a PATH-style list of overlay roots (`:` on Linux/macOS, `;` on Windows). Paths support home expansion and registry-relative resolution. Empty entries are ignored; missing paths warn and are skipped. Repeated normalized paths keep their last occurrence.
-- The overlay repository should mirror standard registry folders: `skills/` and `commands/`.
+- The overlay repository should mirror standard registry folders: `skills/`, `commands/`, and `harnesses/`.
+- Put private harness settings, such as MCP servers with private URLs, in an overlay file at the same path as the public synced settings file it extends, for example `harnesses/codex/config.toml`. The build deep-merges overlay files over the public source in overlay order: objects merge per key, and other values, lists included, replace earlier ones. Settings sync writes each harness edit back to the layer defining the longest part of its key path, with later overlays winning ties, and removes a deleted key from every layer that defines it. An overlay file under `harnesses/` that matches no synced settings file fails the build.
+- Declare Claude Code MCP servers in `harnesses/claude-code/claude.json` (`mcpServers` only); keep private servers in the overlay's copy. The build syncs only the entries the registry declares into Claude Code's global `.claude.json` and leaves servers added in Claude Code and every other key alone.
 - Build and bootstrap merge overlays left to right; the last matching skill or command wins. Replace complete bundles. Inspect skill conflict notes for the selected and replaced sources. Preserve harness-specific override precedence. The overlay_dir template variable identifies the last active overlay; use file_dir for resources relative to assets in other overlays.
 - Apply the same safe recovery checks to overlay-backed generated files. Recover supported edits to the mapped overlay source; preserve both versions and suspend application on conflicts or unsupported recovery.
 

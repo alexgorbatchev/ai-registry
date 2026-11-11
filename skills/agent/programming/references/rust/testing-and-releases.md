@@ -2,7 +2,7 @@
 
 ## Verification ladder
 
-Run the repository's existing checks first. For a conventional workspace with a committed lockfile, the following are useful baseline commands; adjust package selection and features to the supported configuration:
+Select affected packages, consumers, and features under [testing and coverage](../testing-and-coverage.md), including measured test durations. These commands illustrate whole-workspace checks when that full scope applies; use the repository's scoped recipes for narrower changes:
 
 ```sh
 cargo fmt --all -- --check
@@ -13,7 +13,7 @@ cargo doc --workspace --no-deps --locked
 
 Ensure rustfmt and Clippy are installed for the selected toolchain. Use the repository's warning policy; do not silently rewrite unrelated code or blanket-allow warnings to make a check pass. `--locked` prevents dependency resolution from silently changing the lockfile; an intentional dependency update must update and review it separately.
 
-Use focused tests during implementation, then run required workspace checks. Test observable behavior, error propagation, boundary inputs, and regressions. Use real local integration boundaries when practical; isolate filesystem, clock, network, and process dependencies so tests remain reproducible. Do not introduce sleeps as synchronization.
+Use focused tests during implementation; expand to workspace checks only when impact or an applicable gate requires them. Test observable behavior, error propagation, boundary inputs, and regressions. Use real local integration boundaries when practical; isolate filesystem, clock, network, and process dependencies so tests remain reproducible. Do not introduce sleeps as synchronization.
 
 `cargo test` includes documentation tests for library targets under its normal selection. Explicit `--all-targets` is useful for extra targets but is not a substitute for documentation-test coverage; run `cargo test --doc --workspace --locked` separately when target selection or another test runner omits them. See [cargo test](https://doc.rust-lang.org/cargo/commands/cargo-test.html).
 

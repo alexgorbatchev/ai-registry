@@ -199,4 +199,4 @@ For Bun projects, use the commands and recipes below, defined as in the [Bun jus
 - Update snapshots: `bun test --update-snapshots`
 - Apply lint fixes and formatting: `just fix`
 
-**Task completion requires** `just check` to pass: formatting check, linting, type checking, unused-code analysis, and all tests.
+Select checks and report measured test durations under [testing and coverage](../testing-and-coverage.md). Use focused recipes for affected behavior; run aggregate `just check` only when its full scope applies.

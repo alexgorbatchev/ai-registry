@@ -4,7 +4,7 @@ description: Use when designing, implementing, debugging, refactoring, testing, 
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-10 21:06
+  last_modified: 2026-11-11 09:14
   status: current
 ---
 
@@ -110,8 +110,8 @@ If the CLI is missing or authentication fails, report the exact error and the re
 
 ## Verify and report
 
-1. Run the project's required checks for the affected languages and tooling, including `just check` under the [task automation contract](references/cli/best-practices.md#task-automation-justfile). While POC is on, run the non-test recipes `check` depends on instead of `check` itself.
+1. Select the smallest sufficient checks under [testing and coverage](references/testing-and-coverage.md), using the project's scoped recipes under the [task automation contract](references/cli/best-practices.md#task-automation-justfile). Run aggregate `just check` only when its full scope applies. While POC is on, select applicable non-test recipes instead.
 2. If a required reference, toolchain, dependency contract, or configuration is unavailable, attempt recovery using available project sources or official documentation. Record what is missing, the affected work, attempted recovery, and the exact input needed to resume. Suspend only dependent work and continue independent authorized work. Do not invent contracts or substitute another language's rules.
 3. Inspect the final diff for task scope and applicable reference requirements. Finish authorized integration under the applicable Git and release policies; an unmerged branch is not completed delivery when integration is required. Record the verified revision and integration result in the task record immediately.
 4. Complete task-owned cleanup: stop temporary processes after their last consumer, remove disposable artifacts under **Development artifacts**, and retire owned branches/worktrees under [Git integration](references/git-integration.md). Preserve unpublished work, retained evidence, durable state, and resources still needed by other workers. Record any outstanding cleanup, its ownership and prerequisites; resume from actual repository/process state after interruption. Reconcile the ticket under **Work tracking** only against verified results. Continue with the next task only when queue execution is authorized.
-5. Report the resulting behavior or artifact, executed checks and results, checks left unrun, and material limitations or blockers. Include any remaining test artifacts or processes and follow-up work. Distinguish reference walkthroughs from executed checks, and do not claim completion while required work remains blocked. Apply the POC reporting rule when its marker is present.
+5. Report the resulting behavior or artifact, executed checks and results, measured test-command durations, checks left unrun, and material limitations or blockers. Include any remaining test artifacts or processes and follow-up work. Distinguish reference walkthroughs from executed checks, and do not claim completion while required work remains blocked. Apply the POC reporting rule when its marker is present.

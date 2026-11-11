@@ -165,7 +165,7 @@ Run the tools under Bun to load the TypeScript config entrypoints. The formattin
 
 ## 4. Development Tasks (`just check`)
 
-Use the quality recipes from the [Bun justfile](justfile.md) with the policy-backed replacements above. Run `just check` to validate shared-policy formatting and lint, types, unused code, and tests.
+Use the quality recipes from the [Bun justfile](justfile.md) with the policy-backed replacements above. Select affected formatting, lint, type, unused-code, and test recipes under [testing and coverage](../testing-and-coverage.md); run aggregate `just check` when its full scope applies.
 
 Add build and development recipes that run the project's actual entrypoints directly. For a project using `src/build/buildClient.ts` and `src/server/startServer.ts`:
 

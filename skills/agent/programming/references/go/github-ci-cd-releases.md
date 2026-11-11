@@ -31,7 +31,7 @@ Before copying or updating a workflow, query each action's upstream latest stabl
 
 Use a CI workflow on `push` and `pull_request` for the main development branch. Start from [github-actions-ci.yml](./github-actions-ci.yml).
 
-Run `go build ./...`, then validate with `just check` from the [Go justfile](justfile.md), so CI and local development run the same recipes. `check` covers formatting (`golangci-lint fmt --diff`), module hygiene (`go mod tidy -diff`), `go vet`, `golangci-lint run`, and `go test -race ./...`. Install `just` with `extractions/setup-just` and `golangci-lint` with `golangci-lint-action` in `install-only` mode before running it.
+Apply [impact-based selection and timing](../testing-and-coverage.md) to local and CI recipes. The templates show whole-module validation; adapt their selection to actual inputs and dependent packages before adoption, with a conservative unknown-impact fallback. For whole-module impact, build and validate with the [Go justfile](justfile.md); avoid a separate duplicate build when the selected checks already establish the same compilation result. `check` covers formatting (`golangci-lint fmt --diff`), module hygiene (`go mod tidy -diff`), `go vet`, `golangci-lint run`, and `go test -race ./...`. Install `just` with `extractions/setup-just` and `golangci-lint` with `golangci-lint-action` in `install-only` mode before running it.
 
 Why this shape:
 - fail fast on compile errors before the slower checks
@@ -211,7 +211,7 @@ See [github-actions-release.yml](./github-actions-release.yml).
 Use:
 - `actions/checkout` with `fetch-depth: 0`
 - `actions/setup-go`
-- a `check` job running `go build ./...` and `just check` across all branches, pull requests, and tags
+- a `check` job selecting affected recipes on development changes and the required release validation on tags, with measured test durations
 - `release` gated with `if: startsWith(github.ref, 'refs/tags/v')` and `needs: [check]`
 - `goreleaser/goreleaser-action`
 

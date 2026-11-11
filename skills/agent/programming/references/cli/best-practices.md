@@ -212,7 +212,7 @@ Every project uses `just` with a `justfile` for its development tasks: running, 
 | `run *args` | Runnable projects | Runs the primary entrypoint, forwarding arguments. |
 | `run-ai *args` | CLI applications | Runs the CLI with `AGENT=1`, forwarding arguments. |
 
-Name aggregate validation `check` and invoke it as `just check` or `just <module> check`. Do not create `verify` or any other alias for it. Task completion requires `just check` to pass.
+Name aggregate validation `check` and invoke it as `just check` or `just <module> check`. Do not create `verify` or any other alias for it. Use [impact-based selection and timing](../testing-and-coverage.md) to choose scoped recipes; task completion requires the applicable checks, not every aggregate dependency. Expose test selection through recipes so focused runs preserve required setup, cleanup, and exit status.
 
 Keep `check` and its dependencies read-only; files change only through write recipes such as `fmt` (apply formatting) and `fix` (apply lint fixes and formatting). Split read-only counterparts into their own recipes, such as `fmt-check`, so `check` can depend on them. A language reference may require more recipes; for example, Go requires `fmt`.
 
@@ -294,7 +294,7 @@ Before publishing or finalizing any CLI tool, verify:
 - [ ] In agent mode: NO divider lines, NO box tables, trees render as bullets, minimal whitespace, token-conservative formatting.
 - [ ] Argument parsing uses the framework named in the language's CLI reference. No custom argv slicing.
 - [ ] `justfile` exists at the project root with working `run`, `run-ai`, `test`, and `check` recipes, or `run` (application), `cli`, `cli-ai`, `test`, and `check` for an application with a companion CLI, plus any recipes the language reference requires, and links nested `justfile`s with `mod` in a multi-package workspace.
-- [ ] `just check` passes and modifies no files.
+- [ ] Applicable scoped checks pass and modify no files; aggregate `just check` remains available when its full scope applies.
 - [ ] When compiled to binary, output goes to `bin/` and is excluded by `.gitignore`.
 - [ ] `README.md` was written against the `docs-writer` skill's `references/readme.md` and `references/readme-cli.md`, and passes the checklist there.
 - [ ] Prebuilt binaries are published to GitHub Releases with versioned archive names (e.g. `mytool_X.X.X_darwin_arm64.tar.gz`).

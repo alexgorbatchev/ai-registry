@@ -1,63 +1,9 @@
-# Tickets Writer
+# Ticket content
 
-Write and maintain structured, implementation-ready project tickets. Ensure every ticket is grounded in real repository context, defines a clear and compelling problem space, and includes highly precise, testable acceptance criteria.
+Load `issue-tracker` before ticket operations. Use its existing records and lifecycle rather than creating repository-local ticket files or duplicating state in frontmatter. Preserve repository-specific content requirements, including request attribution when required.
 
-## Default output path
-
-- Write active tickets to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/<date>-wave-<number>-<description>.md`.
-- Use `YYYY-MM-DD` for the date prefix, followed by descriptive `kebab-case` naming (e.g., `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/2026-06-04-wave-1-implement-handwritten-js-dom-host-and-event-gateway.md`).
-- Ensure the `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/` folder exists before writing.
-
-## Ticket Document Schema
-
-Every ticket must start with standard internal-doc metadata YAML frontmatter, extended with the ticket's active status:
-
-```yaml
----
-created_on: YYYY-MM-DD HH:MM
-last_modified: YYYY-MM-DD HH:MM
-status: current
-ticket_status: open
----
-```
-
-*   Use `ticket_status: open` for active tickets ready for implementation.
-*   Use `ticket_status: closed` for completed or fully resolved tickets.
-
-## Workflow
-
-1.  **Review Existing Tickets First:** Search `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/` (both active and `closed/`) before writing a new ticket.
-    -   **Already covered:** If an existing ticket already covers this problem, do not create a duplicate; reference the existing ticket.
-    -   **Partially covered:** If an existing ticket partially covers the problem or scope, **update the existing ticket** with the new requirements, observed context, and acceptance criteria rather than creating a fragmented new ticket.
-2.  **Discover the Need:** Map user requests, roadmap plans, or design specs (`<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/eng-designs/`) to a discrete unit of actionable development work.
-3.  **Define the Problem:** Write a clear explanation of the current system gap, codebase limitation, or user friction in the `## Problem` section. Avoid vague generalities.
-4.  **Establish Value:** Explain *why* resolving this problem is critical, detailing performance gains, stability enhancements, or future capability enablement in `## Why this matters`.
-5.  **Map Observed Context & Dependencies:** Search the repository to identify exactly which files, designs, ADRs, or configurations are relevant. List them explicitly under `## Observed context`.
-    -   **Document prerequisites:** If this ticket depends on another ticket, specify the prerequisite ticket path under `## Dependencies`.
-    -   **Update existing tickets:** If this new ticket introduces a dependency into an existing ticket (i.e., an existing ticket now depends on or is blocked by this ticket), immediately update that existing ticket's `## Dependencies` section to document the dependency.
-6.  **Formulate Acceptance Criteria:** Write a precise, exhaustive markdown checklist (using `- [ ]` checkboxes) under `## Acceptance criteria` detailing:
-    - [ ] Specific interfaces, modules, properties, or functions to implement or refactor.
-    - [ ] Preservation of key system properties (e.g., memory limits, reference equality).
-    - [ ] Strict test suites, coverage baselines, or golden snapshot verifications that must pass.
-    - [ ] **Mandatory Review Pass:** Include a required item to run a separate review pass on the ticket using an independent review workflow or review subagent, resolving all identified feedback/issues until a completely clean review is returned.
-7.  **Validate against template:** Ensure the formatting matches `assets/tickets-template.md`.
-
-## Lifecycle and Archiving Rules
-
--   **Closing a Ticket:**
-    -   Ensure all checklist items under `## Acceptance criteria` have been fully checked off (transitioned to `- [x]`).
-    -   Update the ticket's frontmatter: set `ticket_status: closed` and update the `last_modified` timestamp.
-    -   Relocate the closed ticket file into the `closed/` subdirectory (e.g., `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/closed/<date>-wave-<number>-<description>.md`) to keep the active tickets directory uncluttered.
-    -   **Git Commit Reference:** The final Git commit that completes and closes the ticket must explicitly reference the ticket's final closed file path in its commit message.
--   **Archiving a Stale Ticket:**
-    -   If a ticket is superseded, canceled, or no longer relevant, update its frontmatter to `status: archived` and move it to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/archived/` folder.
-
-## Final Checklist
-
--   Existing tickets were reviewed, and any partially covered tickets were updated rather than duplicated.
--   Dependencies are clearly declared, and any existing tickets that depend on this ticket were updated.
--   File is written to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/` (or `closed/` / `archived/` depending on lifecycle state).
--   Frontmatter contains standard `created_on`, `last_modified`, `status`, and `ticket_status` keys.
--   Timestamps follow `YYYY-MM-DD HH:MM` format.
--   The file structure strictly adheres to `assets/tickets-template.md`.
--   Acceptance criteria are exhaustive, testable, and completely unambiguous.
+1. State the requested outcome and current problem, with its realistic trigger and consequence. Do not inflate urgency to justify the work.
+2. Include enough observed context to act without the conversation: relevant source paths, reproduction steps or errors, decisions, scope, and exclusions. Expand conversational IDs and references. Distinguish verified evidence from assumptions.
+3. Identify prerequisites and affected work through the tracker's dependency mechanism. Link technical designs or evidence where useful; do not maintain a second dependency graph in Markdown files.
+4. Define acceptance criteria for the resulting behavior, preserved contracts, and applicable validation. Include required platform or UI evidence and existing review gates when relevant; do not invent an independent-review requirement for every ticket.
+5. Check that the content is actionable, evidence-backed, and consistent with the requested scope. Use [the content template](../assets/tickets-template.md) only for sections the ticket needs; native tracker fields own status and lifecycle.

@@ -4,7 +4,7 @@ description: Use when reading, writing, reviewing, reorganizing, or archiving pr
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-04 11:44
-  last_modified: 2026-11-10 18:24
+  last_modified: 2026-11-11 07:07
   status: current
 ---
 
@@ -12,12 +12,12 @@ metadata:
 
 1. Establish the artifact, audience, requested change, and existing documentation conventions. Inspect the source evidence needed for the affected claims.
 2. Load the matching reference under **Artifact routing** before drafting. For agent instructions, load `prompt-writer` first; it owns composition and acceptance checks. If unavailable, locate it through the catalog or repository sources; suspend dependent writing if it cannot be loaded and continue independent evidence gathering.
-3. Apply the metadata, location, and lifecycle rules below to internal documents. Keep native artifact formats for README.md and AGENTS.md; do not add internal-document frontmatter to them.
+3. Apply the metadata, location, and lifecycle rules below to internal documents. Keep native artifact formats for README.md, AGENTS.md, and tracker ticket bodies; do not add internal-document frontmatter to them.
 4. Write maintained documentation in present tense; remove stale transitional or changelog narration. Verify affected claims, commands, and links against source evidence, and report unresolved claims without presenting them as verified.
 
 ## Baseline Standards
 
-Every internal documentation file (procedures, runbooks, designs, tickets) must start with a standard YAML frontmatter contract:
+Every internal documentation file (procedures, runbooks, designs) must start with a standard YAML frontmatter contract:
 
 ```yaml
 ---
@@ -38,7 +38,6 @@ status: current
 
 *   **General Internal Docs & Reference Guides:** Write to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/`.
 *   **Engineering Design Documents:** Write to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/eng-designs/`.
-*   **Active Project/Wave Tickets:** Write to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/`.
 
 ---
 
@@ -46,7 +45,6 @@ status: current
 
 -   **General Documents:** Move archived content to the nearest `archived/` subdirectory (e.g., `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/archived/` or `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/auth/archived/`) to keep active directories clean.
 -   **Completed Engineering Designs:** When a design is fully implemented, promote/move the document to `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/references/` as a long-term reference.
--   **Closed Wave/Project Tickets:** Follow the specific ticket-archiving rules (transitioning frontmatter to `ticket_status: closed` and moving the file under `<%- env("DOCS_INTERNAL_DIR", "docs/internal") %>/tickets/closed/`).
 
 ---
 
@@ -60,7 +58,9 @@ For drafting technical specs, request/response API contracts, TypeScript types, 
 -   **Template:** Use `assets/eng-designs-template.md`
 
 ### 2. Project & Issue Tickets
-For writing wave-based roadmap tickets with detailed problems, value justifications, and precise acceptance criteria:
+Load `issue-tracker` before selecting, creating, or updating tickets; it owns storage, dependencies, task state, claims, completion, and handoffs. If unavailable, consult its authoritative CLI help and suspend only operations whose required contract remains unavailable. This skill owns ticket content, not a parallel Markdown task system.
+
+For writing a concrete problem, supporting evidence, scope, and testable acceptance criteria:
 -   **Guidelines:** Read `references/tickets.md`
 -   **Template:** Use `assets/tickets-template.md`
 

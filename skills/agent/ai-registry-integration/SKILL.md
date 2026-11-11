@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-10 21:02
+  last_modified: 2026-11-11 07:07
   status: current
 ---
 
@@ -36,7 +36,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Preserve other actors' changes, index state, locks, and refs. Suspend only conflicting operations; continue independent authorized work in an owned, isolated worktree when safe. Staged-file age does not authorize takeover or a whole-worker halt.
 - Permit routine branch and path-scoped index operations needed for authorized tasks in owned worktrees after ownership and state checks. Keep destructive Git operations subject to explicit authorization and executable guards. Command permissions do not establish ownership; do not bypass restrictions through equivalent syntax.
 - Keep new content anonymized and reusable. Do not introduce private company names, internal URLs, secrets, or personal details.
-- Use `prompt-writer` whenever generating, writing, or revising AI agent instructions in any artifact. `skill-writer` adds skill-bundle conventions and validation; `docs-writer` owns project documentation structure and maintenance. Keep shared execution policy in `system/system.md`, engineering delivery and cleanup in `programming`, and task lifecycle in the externally maintained `issue-tracker` skill. Active queue mandates and checkpoints belong in durable task records.
+- Use `prompt-writer` whenever generating, writing, or revising AI agent instructions in any artifact. `skill-writer` adds skill-bundle conventions and validation; `docs-writer` owns project documentation structure, maintenance, and ticket content; it does not own ticket storage or lifecycle. Keep shared execution policy in `system/system.md`, engineering delivery and cleanup in `programming`, and task lifecycle in the externally maintained `issue-tracker` skill. Active queue mandates and checkpoints belong in durable task records.
 - When checked-in guidance or generated text refers to repository paths, use template tokens instead of machine-specific absolute paths.
 - Put reusable assets under the directories referenced by the repo_root token: `skills/`, `commands/`, or `harnesses/`.
 - Write only disposable development artifacts to `.tmp/` beneath the repo_root token. Put files that must outlive a session, such as logs, locks, merge bases, and recovery markers, in the git-ignored `.state/` beneath the repo_root token, and rebuildable caches in `.cache/`. Document each new `.state/` file in `AGENTS.md` beneath the repo_root token.

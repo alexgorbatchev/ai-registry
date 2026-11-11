@@ -14,6 +14,8 @@ Start every addressable item with a bold ID so the user can reply by ID instead 
 - `**f1**`, `**f2**`, … for findings
 - `**a1**`, `**a2**`, … for proposed actions or options
 - `**d1**`, `**d2**`, … for due diligence items
+- `**l1**`, `**l2**`, … for lists
+- `**i1**`, `**i2**`, … for list items
 
 Nest items by joining them together as `q1a1`, `q1a2`. In tables, put the ID in the first column.
 

@@ -52,7 +52,7 @@ export function buildT3RecapInstruction(session: T3Session): string {
     ? `\`threadId\` set to \`${session.toolThreadId}\``
     : "`threadId` left out so it renames this thread";
   return [
-    `This session runs in ${where}. As the last tool call of this turn, after all other work and before the final reply, call T3's \`t3_thread_update\` tool once (load its schema first if it is deferred) with \`action\` set to \`rename\`, ${target}, and \`title\` set to a plain-text recap of what this session is working on, at most 60 characters.`,
+    `This session runs in ${where}. As the last tool call of this turn, after all other work and before the final reply, call T3's \`t3_thread_update\` tool once (load its schema first if it is deferred) with \`action\` set to \`rename\`, ${target}, and \`title\` set to a plain-text recap of what this session is working on, at most 60 characters. T3 already lists the thread under its project, so do not start the title with the project, repository, or folder name.`,
     "",
     "Skip the call when the title you set earlier in this thread still describes the session, or when the user has said not to use tools this turn; otherwise make it even when the turn needs no other tool calls. Do not mention the title update in the reply. If the call fails, state the error in one line and do not retry.",
   ].join("\n");

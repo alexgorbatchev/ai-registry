@@ -83,6 +83,7 @@ test("tells the agent to rename the T3 thread with T3's tool, without the projec
   expect(instruction).toContain("`action` set to `rename`");
   expect(instruction).toContain("`threadId` left out so it renames this thread");
   expect(instruction).toContain("at most 60 characters");
+  expect(instruction).toContain("do not start the title with the project, repository, or folder name");
   expect(instruction).not.toContain("herdr");
 });
 

@@ -1,11 +1,16 @@
 ---
 name: pi-config
-description: Configure Pi Coding Agent (`pi`) settings, prompts, skills, models, and repo-local `.pi` directories. Use when working with Pi config files such as `settings.json`, `models.json`, `SYSTEM.md`, `APPEND_SYSTEM.md`, `prompts/`, `skills/`, or `extensions/`, and when mapping another tool's prompts or skills into Pi's native configuration surface.
+description: Configure Pi Coding Agent (`pi`) settings, prompts, skills, models, and repo-local `.pi` directories. Use when working with Pi config files such as `settings.json`, `models.json`, `SYSTEM.md`, `APPEND_SYSTEM.md`, `prompts/`, `skills/`, or `extensions/`, when deciding which Pi artifacts to ignore in Git, and when mapping another tool's prompts or skills into Pi's native configuration surface.
 author: alexgorbatchev
+metadata:
+  created_on: 2026-09-28 13:58
+  last_modified: 2026-11-10 16:04
+  status: current
 ---
 
 # Pi Config
 
+- Add `.pi-subagents/` to the project’s `.gitignore` when present.
 - Prefer Pi's native configuration surface over wrapper layers.
 - Use `~/.pi/agent/` for user-global defaults such as `settings.json`, `models.json`, and auth.
 - Use project-local `.pi/` for repository-specific settings, prompts, skills, extensions, and appended system instructions.

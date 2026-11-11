@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-14 09:33
-last_modified: 2026-11-10 14:46
+last_modified: 2026-11-10 16:04
 status: current
 ---
 
@@ -145,7 +145,7 @@ These skill workflows intentionally involve a person. Preserve their intended in
 | A42 | [disk-cleanup/SKILL.md:20–25,94,146,158,164](../../../skills/user/disk-cleanup/SKILL.md) | Inspect/preview, respect existing deletion authorization, reject unsafe paths/dirty worktrees, stop a destructive batch on failure. | Preserve these action-specific stops and partial logs. Schedule a revalidated batch only within authorization. Never reinterpret an agent's unattended status as permission to delete unknown data or unlock another task. This skill already provides a good model for honoring existing authorization. |
 | A43 | [chrome-cdp/SKILL.md](../../../skills/agent/chrome-cdp/SKILL.md), [agent-browser/references/authentication.md:320](../../../skills/agent/agent-browser/references/authentication.md) | Personal-browser inspection requires explicit approval; user completes manual 2FA. | Use separately owned automation accounts/browser sessions for factory tests. Missing access suspends that test/action. Never circumvent these personal-session boundaries. |
 | A44 | [history-repair.md:9–30](../../../skills/agent/github-fix-issues/references/history-repair.md) | Preserve unrelated history/unowned work; stop an unprovable rewrite; explicit publication authority; lease failures require rebuilding from the new tip. | Keep rewrite authority separate from ordinary integration. Limit suspension to repair/publication. Reuse its existing recognition of prior explicit authorization; do not use force or guess conflict resolutions. |
-| A45 | [reviewer.md](../../../skills/agent/github-fix-issues/references/reviewer.md), [merge-to-main-baseline/SKILL.md](../../../skills/agent/merge-to-main-baseline/SKILL.md) | Independent native approval, exact reviewed revision, current checks, approved publication range, preservation of unrelated local commits. | Retain these safeguards. The merge skill already offers an owned temporary integration worktree instead of stopping merely because the local target has unrelated commits. Apply the same affected-resource principle elsewhere. |
+| A45 | [reviewer.md](../../../skills/agent/github-fix-issues/references/reviewer.md), [merge-to-main-baseline/SKILL.md](https://github.com/alexgorbatchev/ai-registry/blob/d41d816d9eb4e2543289a6b9dadc2f1e9ebbd0fc/skills/agent/merge-to-main-baseline/SKILL.md) | Independent native approval, exact reviewed revision, current checks, approved publication range, preservation of unrelated local commits. | Retain these safeguards. The merge skill already offers an owned temporary integration worktree instead of stopping merely because the local target has unrelated commits. Apply the same affected-resource principle elsewhere. |
 
 ## Original contradictions and proposed resolutions
 

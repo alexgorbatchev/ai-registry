@@ -1,10 +1,10 @@
 ---
 name: programming
-description: Use when designing, implementing, debugging, refactoring, testing, documenting, reviewing software, or managing software releases, including application code, scripts, development tooling, and command-line interfaces.
+description: Use when designing, implementing, debugging, refactoring, testing, documenting, reviewing software, managing software releases, integrating Git branches, or maintaining ignore rules, including application code, scripts, development tooling, and command-line interfaces.
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-10 14:46
+  last_modified: 2026-11-10 16:04
   status: current
 ---
 
@@ -46,6 +46,7 @@ Integrate libraries through their intended APIs and capabilities. When a library
 
 Read each reference when its topic applies. Use these additional routing conditions:
 
+- [Git integration](references/git-integration.md): merging or landing branches into `main` or `master`.
 - [Release policy](references/releases.md): creating, editing, publishing, or verifying releases, release notes, tags, or assets.
 - [Go setup](references/go/setup.md): project creation, restructuring, builds, or releases.
 - [Go CI and releases](references/go/github-ci-cd-releases.md): include tagged releases and binary version metadata. Templates: [CI](references/go/github-actions-ci.yml), [release](references/go/github-actions-release.yml), [GoReleaser](references/go/goreleaser.yml).
@@ -70,7 +71,7 @@ Read each reference when its topic applies. Use these additional routing conditi
 
 ## Development artifacts
 
-1. Choose storage before creating an artifact. Put disposable scratch files, build and test intermediates, drafts, captured output, and toolchain temporary directories in the project's git-ignored `.tmp/`. Put files that must outlive the session in git-ignored root directories: `.cache/` for regenerable caches and mirrors; `.state/` for state, locks, queues, and retained logs or reports. Never rely on `.tmp/` surviving a session.
+1. Choose storage before creating an artifact. Put disposable scratch files, build and test intermediates, drafts, captured output, and toolchain temporary directories in the project's git-ignored `.tmp/`. Put files that must outlive the session in git-ignored root directories: `.cache/` for regenerable caches and mirrors; `.state/` for state, locks, queues, and retained logs or reports. Never rely on `.tmp/` surviving a session. Ignore `.dist/` and `dist/` when they contain generated build output; preserve intentionally tracked distributions. Ignore SQLite sidecars with `*.sqlite-wal` and `*.sqlite-shm`.
 2. Give each build command a unique owned `.tmp/` child. Scope build-tool temporary variables to that command (`GOTMPDIR` for Go, `TMPDIR` for a Bun build). Remove that child after its last consumer finishes, including on failure or cancellation. Remove only paths you created; never wipe `.tmp/` by name.
 3. Keep test suites on the system temporary directory. Do not globally export project-local overrides into tests through `TMPDIR`, `TMP`, `TEMP`, or `GOTMPDIR`: long paths can exceed Unix socket limits, home paths can change path rendering, and Git discovery can reach the enclosing project. If compilation and test execution share an environment, retain system-temp defaults unless build-only overrides can be removed before tests start. Make tests own and remove their temporary files under **Test cleanup**.
 4. Create Unix domain sockets in a short, unique per-run directory such as `/tmp/<project>-XXXXXX`. Stop its consumers before removing that exact directory on exit, failure, or cancellation. Never reuse a predictable shared socket directory.

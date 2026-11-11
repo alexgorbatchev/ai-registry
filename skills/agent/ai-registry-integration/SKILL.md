@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-10 18:27
+  last_modified: 2026-11-10 21:02
   status: current
 ---
 
@@ -53,12 +53,12 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 ## Workflow
 
-1. Identify what kind of thing is being added.
-2. Create or edit the source-of-truth file in the matching section below.
-3. Update any dependent manifest or lock file.
-4. Run the narrowest relevant validation.
+1. Identify the requested behavior and its source owner using the routing below. For instruction changes, trace affected rules, callers, loading conditions, examples, and templates before editing. Inspect applicable shared and repository instructions, skills and commands, overlay replacements, harness overrides, and externally maintained skill sources. Follow dependencies relevant to the change rather than auditing unrelated guidance.
+2. Apply `prompt-writer`'s policy ownership rules across that affected set: update the owner, reconcile superseded or conflicting copies, and repair references and triggers. Preserve local exceptions and existing authorization. Edit external owners at their maintained source within task authorization; if unavailable, record the exact unresolved dependency and continue independent work without introducing a fallback copy.
+3. Create or edit source files in the matching section below and update dependent manifests or lock files. Apply the required writer skills; keep the impact inventory and task progress outside standing instructions.
+4. Apply `prompt-writer`'s acceptance checks to the instructions that load together, including applicable overrides, rather than reviewing each changed file alone. Verify relocated requirements remain reachable before the affected decision. Run the narrowest relevant artifact validation, including `skill-writer` validation for changed bundles.
 5. Run `just build` from the repo_root token.
-6. Inspect the generated output under the output_dir token if the change affects shipped harness content.
+6. Inspect affected generated outputs under the output_dir token and confirm source selection and loading routes deliver the intended rules. Report changed owners, reconciled overlaps, checks run, and unresolved dependencies; distinguish textual walkthroughs from verified runtime behavior.
 
 ## Private Overlay Registries
 
@@ -184,7 +184,6 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 - Update `README.md` beneath the repo_root token when public usage, repository structure, build behavior, or setup flow changes.
 - Update `AGENTS.md` beneath the repo_root token when repository operating rules or architecture change.
-- If a new skill or command overlaps existing instructions, resolve the duplication instead of leaving conflicting guidance in multiple places.
 
 ## Quick Routing
 

@@ -6,6 +6,8 @@ This repository serves as a canonical registry for my AI tooling. It keeps reusa
 
 [AGENTS.md](AGENTS.md) routes maintenance tasks to source-layout, generation, state/bootstrap, and harness-mapping contracts in [docs/internal/references](docs/internal/references).
 
+The [ai-registry-integration skill](skills/agent/ai-registry-integration/SKILL.md) coordinates instruction changes across affected policy owners, consumers, and overrides; writer skills own composition and artifact validation.
+
 ### 1. Reusable Assets
 The reusable source-of-truth layer.
 - **`skills/`**: Domain-specific AI skills. Skills are grouped into `skills/agent/` for agent-runnable skills and `skills/user/` for user-invokable skills. Each skill lives in its own folder with a `SKILL.md`. User skills in `skills/user/` do not contain `disable-model-invocation: true` in their source `SKILL.md`; the build/bootstrap process automatically injects it into generated harness outputs. In generated outputs, skills from `agent/` and `user/` are merged flat into `skills/`. This directory is also the repo's install surface for `npx skills`.

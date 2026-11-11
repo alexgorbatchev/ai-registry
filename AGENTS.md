@@ -14,6 +14,7 @@ Source of truth for reusable skills, commands, the shared system prompt, generat
 
 Read the following before the affected work:
 
+- Registry maintenance: load `ai-registry-integration` before creating, reviewing, or modifying registry assets or related guidance; it owns impact analysis and reconciliation across affected instruction sources.
 - Creating or editing skills, commands, harness assets, packages, vendored dependencies, or PR guidance; and writing or handling pull requests: [source layout](docs/internal/references/registry-source-layout.md), including bundle dependencies, PR guidance ownership, vendoring provenance, and source locations.
 - Skills: [skills/AGENTS.md](skills/AGENTS.md). Reusable sources live in `skills/agent/` or `skills/user/`; harness-only skills live under `harnesses/<target>/skills/`.
 - Agent instructions: require `prompt-writer`; use `docs-writer` for repository documentation and `skill-writer` when editing skill bundles. Review with concrete acceptance checks and bounded rounds, including continuity for ongoing workflows. Shared execution policy lives in `system/system.md`; engineering completion belongs to `programming`, task lifecycle to the externally maintained `issue-tracker` skill. Keep active execution mandates in durable task records.

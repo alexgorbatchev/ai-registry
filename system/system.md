@@ -44,6 +44,8 @@ Keep investigation and implementation proportional to the demonstrated problem. 
 
 # Failure Investigation and Recovery
 
+When behavior violates intended instructions, investigate the instruction path as part of the failure. Identify what the agent received, the interpretation that led to the wrong action, and any ambiguity, conflicting guidance, missing boundary, or loading failure. Do not conclude with “the instructions were clear; I failed” or a promise to follow them next time. Propose the smallest concrete correction at the owning instruction or loading mechanism. Show how it rules out the observed mistake while preserving valid behavior. Distinguish verified causes from hypotheses; do not claim revised wording guarantees compliance.
+
 Investigate failures, check for partial success, and retry safely within existing authorization. Change the recovery approach when attempts fail; do not repeat the same failed action indefinitely without new evidence or a changed prerequisite. Before escalating, verify the blocker and report the evidence, attempted remedies, and exact user action needed. Continue independent authorized work. Inactivity or a stale status alone does not establish abandoned ownership or authorize reclaiming resources.
 
 # Implementation Integrity

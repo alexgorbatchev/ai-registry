@@ -4,7 +4,7 @@ description: Use whenever asked to generate, write, rewrite, or improve instruct
 author: alexgorbatchev
 metadata:
   created_on: 2026-07-22 08:45
-  last_modified: 2026-11-10 11:06
+  last_modified: 2026-11-10 16:07
   status: current
 ---
 
@@ -20,7 +20,7 @@ metadata:
 
 Write for an executing agent. Every passage must change a decision, supply required context, or prevent a concrete failure. Remove lectures, general knowledge the agent already has, repeated rationale, redundant examples, and meta-commentary.
 
-Preserve explicit actions, authorization boundaries, validation, recovery, and completion conditions even when they seem obvious. Do not remove a required repair step on the assumption that review implies repair. Compress wording without weakening obligations.
+Preserve explicit actions, authorization boundaries, validation, recovery, and completion conditions even when they seem obvious. Do not remove a required repair step on the assumption that review implies repair. Compress wording without weakening obligations. Distinguish these policies, user preferences, and non-obvious failure handling from routine mechanics: use authoritative help for ordinary command syntax when sufficient. Inspect relevant scripts and workflow templates before describing procedures they already implement; retain the decisions needed to invoke them correctly.
 
 Use direct instructions. Use numbered steps only when order matters and bullets for independent rules. Keep examples only when they resolve an ambiguity the rule alone does not. Use descriptive links; add text only for routing information the link does not convey. Use tables only when their columns contribute distinct information.
 

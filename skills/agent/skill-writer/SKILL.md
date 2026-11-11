@@ -4,7 +4,7 @@ description: Use when creating or revising skills, including SKILL.md instructio
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-11-10 11:06
+  last_modified: 2026-11-10 16:07
   status: current
 ---
 
@@ -16,7 +16,7 @@ If `prompt-writer` is unavailable, locate it through the available skill catalog
 
 ## Execute the task
 
-1. Inspect the request, repository instructions, and existing bundle. Establish triggers, inputs, authorized actions, and expected results from available context; ask only for consequential missing information.
+1. Inspect the request, repository instructions, and existing bundle. Establish triggers, inputs, authorized actions, and expected results from available context; ask only for consequential missing information. Before creating or retaining a standalone skill, identify its value beyond ordinary agent competence, authoritative help, and existing automation. Place a small set of preferences in the owning skill; command documentation alone does not justify a separate skill.
 2. For a new skill, select its source under **Source location** before creating files. For revisions, inspect affected references, scripts, assets, and callers as well as `SKILL.md`.
 3. Before creating or changing metadata, load [frontmatter rules](references/frontmatter.md). When creating or revising a project-local companion skill, load [addendum rules](references/addenda.md) before choosing its name and trigger.
 4. Implement necessary resources under **Bundle contents**, then write the common execution path and resource loading conditions. Apply the required `prompt-writer` workflow to preserve existing requirements and authorized changes.
@@ -30,7 +30,7 @@ Treat deployed `skills/<skill-name>/` directories separately from authoring loca
 
 ## Bundle contents
 
-Keep `SKILL.md` focused on the common execution path, local constraints, and resource routing. Start with actionable instructions rather than a repeated skill title or overview. Keep its body under 500 lines; extract conditional details before reaching that limit.
+Keep `SKILL.md` focused on the common execution path, local constraints, and resource routing. Start with actionable instructions rather than a repeated skill title or overview. Keep its body under 500 lines; extract conditional details before reaching that limit. Optimize the instructions loaded for representative tasks, including required dependencies and references, rather than directory count or total word count alone. Extraction reduces context only when tasks can skip inapplicable content.
 
 Create only resources the workflow uses:
 
@@ -53,4 +53,4 @@ Use bundle-relative links for bundled files and runtime parameters or environmen
    ```
 
    Fix every error; assess warnings against the task. The validator checks metadata, naming, body length, and bundled links, not instruction semantics.
-4. Run the repository's required build or generation checks and inspect affected outputs. Complete only when required checks pass; report executed checks and any remaining blockers without treating text review as runtime proof.
+4. Run the repository's required build or generation checks and inspect affected outputs. When splitting, consolidating, or retiring skills, verify replacement triggers and callers, installed bundles, generated outputs, and documentation tests. Confirm retired skills disappear and retained rules remain reachable; preserve contract coverage when tests must follow extracted references. Complete only when required checks pass; report executed checks and any remaining blockers without treating text review as runtime proof.

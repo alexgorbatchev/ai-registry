@@ -14,7 +14,7 @@ Load `prompt-writer` before composing or reviewing instructions. It owns wording
 
 ## Placement
 
-- Root: commands and checks selected by task, repository-wide constraints, cross-component contracts, and routes to specialized guidance.
+- Root: commands and checks selected by task, repository-wide constraints, cross-component contracts, and routes to specialized guidance. Inherit shared execution policy; record only local queue, integration, cleanup, and handoff requirements or exceptions. Verify that the shared owner is available in the target environment; use explicit routing where needed.
 - Nested `AGENTS.md`: local commands, exceptions, and contracts that apply to that subtree. Add one when the local rules differ; avoid repeating inherited rules.
 - References: detailed contracts or workflows needed only for particular tasks. Link each from the applicable instruction file with a condition that loads it before the affected decision. A link without a loading condition does not preserve an obligation.
 - Domain skills: reusable workflows. Require their owner before dependent work; keep only project-specific requirements locally. `skill-writer` applies when editing skill bundles, not merely because `AGENTS.md` contains agent instructions.
@@ -25,7 +25,9 @@ Use only sections that carry real requirements or context. Keep exact technical 
 
 Automatically persist explicit standing user instructions in the narrowest applicable `AGENTS.md` or existing policy file. Update the existing rule in place when it changes; ask only when future scope or a material conflict remains unclear. Never infer permanent policy from a one-task request.
 
-Write present-tense rules without task IDs, dated amendments, assignments, handoffs, progress, or test-run results. Preserve technical substance embedded in narrative. Keep task state in the conversation or existing task records, decisions in existing decision records, and dependency provenance in maintained technical documentation; do not create documents just to relocate discarded narration.
+Write present-tense rules without task IDs, dated amendments, assignments, handoffs, progress, or test-run results. Preserve technical substance embedded in narrative. Keep resumable task state, active queue scope, temporary stop/closeout mandates, and handoffs in durable task records, decisions in existing decision records, and dependency provenance in maintained technical documentation; do not create documents just to relocate discarded narration.
+
+When moving task state out of standing guidance, preserve active restrictions and the next action in the owning task record before removing them. Keep a durable loading route when agents need a restriction before selecting or publishing work. Do not interpret relocation as completion or cancellation of that task. Apply `prompt-writer`'s continuity checks to new project guides as well as revisions.
 
 ## Instruction maintenance and enforcement
 

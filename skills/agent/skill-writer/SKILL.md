@@ -4,7 +4,7 @@ description: Use when creating or revising skills, including SKILL.md instructio
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-14 12:00
-  last_modified: 2026-11-10 16:07
+  last_modified: 2026-11-10 18:24
   status: current
 ---
 
@@ -37,6 +37,8 @@ Create only resources the workflow uses:
 - `scripts/`: executable operations that need deterministic behavior or would otherwise be rewritten repeatedly. Inspect them when changing behavior or adapting execution to the environment.
 - `references/`: conditional workflows, modes, schemas, configuration, or domain details. Extract by applicability, even when short. Put service installation and setup in `references/setup.md`.
 - `assets/`: templates, media, and other files consumed or copied into the result.
+
+For ongoing workflows, identify or route completion, cleanup ownership, and handoff requirements before the affected action; apply `prompt-writer`'s continuity checks. Keep runtime supervision and task-system mechanics with their owners.
 
 Keep each rule in one place. In `SKILL.md`, link every reference directly and state its loading condition before the first affected decision or action. Keep variant selection in the body and variant-specific procedures in references. For references over 100 lines, add a table of contents; for files over 10,000 words, provide useful search terms without prescribing a search tool.
 

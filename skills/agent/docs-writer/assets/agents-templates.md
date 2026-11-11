@@ -22,4 +22,6 @@ Select sections from verified repository needs; omit empty sections and replace 
 - <non-obvious behavior or cross-component invariant needed for this scope>.
 ```
 
+For ongoing work, route agents to the existing task system for current scope, ownership, checkpoints, and handoffs; include only established local exceptions to shared execution policy. Keep active task lists and temporary stop rules out of this template.
+
 For a root file, include shared commands and constraints and route specialized work to nested instructions or references. For a nested file, include only local differences and requirements. Add technical sections when exact contracts or provenance need them; do not force all content into this skeleton. Include a real example only when it resolves an ambiguity.

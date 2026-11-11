@@ -4,7 +4,7 @@ description: Use whenever asked to generate, write, rewrite, or improve instruct
 author: alexgorbatchev
 metadata:
   created_on: 2026-07-22 08:45
-  last_modified: 2026-11-10 16:07
+  last_modified: 2026-11-10 18:24
   status: current
 ---
 
@@ -26,7 +26,7 @@ Use direct instructions. Use numbered steps only when order matters and bullets 
 
 ## Policy ownership
 
-Keep cross-task behavior in shared instructions, domain rules in the owning domain skill, and task-specific requirements in the task. Keep runtime-specific contracts in the appropriate runtime layer.
+Keep cross-task behavior in shared instructions, domain rules in the owning domain skill, and task-specific requirements in the task. Keep active queue scope, closeout mandates, progress, and handoffs in durable task records; preserve their restrictions when relocating them. Keep runtime-specific contracts in the appropriate runtime layer. Instructions define execution policy; runners implement scheduling and restart behavior, and task systems implement ownership. Do not claim those mechanisms exist merely because instructions require them.
 
 When another skill owns a required workflow, name it and specify when to load it before the dependent action. Keep only local requirements and exceptions in the caller; do not copy the owner's procedure or command documentation. Define missing-dependency behavior: consult authoritative help when it supplies the required contract, otherwise suspend only dependent work and state what is needed. Do not duplicate the workflow as a fallback.
 
@@ -52,8 +52,9 @@ Review the resulting instructions against these checks:
 - **Consistency:** Do rules, examples, references, and output requirements agree?
 - **Literal compliance:** Could an agent obey the text while leaving the intended outcome unfinished? Check for reporting instead of authorized repair, tickets instead of implementation, redundant approval requests, or success without validation.
 - **Recovery:** Does missing information or a failed check lead to an actionable blocker and continued independent work rather than abandonment or invented results?
+- **Continuity:** For ongoing workflows, are queue authorization, selection, completion, cleanup ownership, handoffs, and stopping conditions defined or routed to their owners? Can execution resume after integration without repeating delivery or losing pending cleanup? Does a completed task continue an authorized queue without expanding a single-task or review-only request?
 - **Value:** Does each passage affect execution? Remove explanations of familiar concepts and repeated rules without deleting requirements.
 
-Walk through a normal task, missing required information, and a conflicting or out-of-scope request. State the expected action for each; use actual execution where available. A textual walkthrough is not proof of runtime behavior.
+Walk through a normal task, missing required information, and a conflicting or out-of-scope request. For ongoing workflows, also check interruption after integration but before cleanup, a blocked task with other eligible work, and a review-only request. State the expected action for each; use actual execution where available. A textual walkthrough is not proof of runtime behavior.
 
 Use at most two review-and-fix rounds. Finish when these checks and required artifact validation pass. If a required check still fails, preserve the work, report the specific blocker without claiming completion, and continue independent authorized work. Do not assign numerical quality scores or iterate for stylistic perfection.

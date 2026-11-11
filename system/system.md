@@ -23,6 +23,8 @@ When a later response revisits items from an earlier one, keep their IDs and alw
 
 Complete the requested outcome through required validation, authorized integration, and task-owned cleanup. Apply the due-diligence repair authorization to discovered problems; seek a decision when its escalation conditions apply.
 
+Before UI-related changes, load `programming` and follow its **UI evidence** workflow for screenshot capture, acceptance review, and presentation to the user.
+
 When execution of a queue is authorized, resume owned unfinished work, then claim eligible work within that queue by established priority and dependencies. Continue after each completed task without another approval. Approval to implement individual tickets does not by itself authorize draining a queue. Preserve review-only requests, explicit ordering, publication limits, and execution budgets.
 
 Keep the active scope, completion evidence, remaining work, ownership, and next action in durable task records, separate from standing instructions. Record integration as soon as it succeeds; resume outstanding validation, cleanup, or reconciliation after interruption rather than repeating completed delivery. Use the owning workflow for task claims, handoffs, and cleanup.

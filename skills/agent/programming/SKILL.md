@@ -4,13 +4,13 @@ description: Use when designing, implementing, debugging, refactoring, testing, 
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-10 18:24
+  last_modified: 2026-11-10 21:06
   status: current
 ---
 
 ## Execute the task
 
-1. Establish the requested outcome and affected files from the user request and repository instructions. Inspect manifests, lockfiles, toolchain configuration, development recipes, and relevant implementation before choosing commands or changing files.
+1. Establish the requested outcome and affected files from the user request and repository instructions. Inspect manifests, lockfiles, toolchain configuration, development recipes, and relevant implementation before choosing commands or changing files. For UI-related work, apply **UI evidence** before making changes so the baseline is captured.
 2. Select and read every applicable baseline in **Language and tooling references**. Read matching **Topic references** before working in those domains. Apply each language's rules to its own files; combine runtime, UI, CLI, and automation rules where their scopes overlap.
 3. Apply **Work tracking** before editing code or configuration. If the root `AGENTS.md` mentions POC mode or the user requests a POC toggle, read [POC projects](references/poc-projects.md) before choosing an integration or testing workflow.
 4. Before selecting checks, changing executable behavior, or defining testing and coverage policy, read [testing and coverage](references/testing-and-coverage.md). Apply **Implementation rules** and perform the authorized work using the selected references and project conventions. Select commands from the actual project's tooling; apply Bun commands to Bun projects. Keep language-specific naming, types, error handling, ownership, and abstraction rules within their language. Verify unfamiliar APIs against the installed version's source or official documentation rather than inventing contracts.
@@ -68,6 +68,16 @@ Read each reference when its topic applies. Use these additional routing conditi
 - [Bun Redis/Valkey](references/bun/redis.md).
 - [Bun tar/gzip archives](references/bun/archive.md).
 - [Bun utilities and cryptography](references/bun/utilities.md).
+
+## UI evidence
+
+For every UI-related change, including CLI output, TUIs, desktop GUIs, web, and mobile apps, capture and show the user before-and-after screenshots. This includes appearance, content, and interaction changes, even when the expected appearance is unchanged.
+
+1. Capture the actual interface before editing and again from the final implementation, covering the affected states and acceptance criteria. Use comparable inputs, viewport or terminal dimensions, device configuration, and theme; label intentional differences. For new UI, capture the existing entry point or empty state. Never fabricate a before image when no prior interface exists; explicitly identify that absence and show the actual new UI.
+2. Use real rendered captures from the browser, terminal, desktop, or mobile device/emulator. Load applicable capture skills for tool mechanics. Text dumps, mockups, generated images, and test results do not substitute for screenshots. For behavior that stills cannot demonstrate, add a recording or interaction check alongside the screenshots.
+3. Open and inspect the captured images before presenting them for acceptance or declaring completion. Compare the before/after pair against the requested outcome and applicable layout, content, readability, and interaction criteria. Repair discovered defects, rerun affected checks, and recapture until the evidence represents the accepted final implementation. File creation or automated checks alone do not establish visual acceptance.
+4. Present clearly labeled **Before** and **After** images to the user, inline when supported or through accessible image attachments/links, with the acceptance result and any limitations. Saving files or mentioning their paths without making the images viewable does not fulfill delivery. Retain evidence under **Development artifacts** so cleanup does not break delivered links; use `github-pr` attachment guidance when publishing it on a PR.
+5. If capture or inspection fails, attempt recovery under **Verify and report**; recover a missed baseline from the pre-change revision in an isolated environment without disturbing current work. Report the exact remaining blocker and missing evidence, continue independent work, and do not claim UI acceptance while required evidence is unavailable or unreviewed.
 
 ## Development artifacts
 

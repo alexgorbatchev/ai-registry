@@ -39,6 +39,12 @@
       "skillPath": "packages/hunk/skills/hunk-review/SKILL.md",
       "computedHash": "ebad9a743f1835959a61d61b49c7e783419833d01f6c29de225932605f2765c5"
     },
+    "issue-tracker": {
+      "source": "alexgorbatchev/issue-tracker-cli",
+      "sourceType": "github",
+      "skillPath": "skills/issue-tracker/SKILL.md",
+      "computedHash": "51d48a54bdb1edaea6182f223d53bceac549733b0edf6d25cab966a13a7f2cc7"
+    },
     "megacave": {
       "source": "JuliusBrussee/caveman",
       "sourceType": "github",

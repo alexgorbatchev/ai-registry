@@ -1,56 +1,82 @@
 # ai-registry
 
-Source of truth for reusable skills, commands, the shared system prompt, generated harness outputs, and setup. Registry maintenance is interactive; reusable workflows may support unattended execution elsewhere.
+Source of truth for reusable agent skills, commands, the shared system prompt, harness configuration, and generated outputs. Registry maintenance is interactive; the workflows it distributes may support unattended execution elsewhere.
 
-## Commands and checks
+## Requirements for the instruction system
 
-- Install dependencies and Git hooks: `just setup`.
-- After changing skills, commands, the shared system prompt, harness files, or `skills-lock.json`: `just build`. It typechecks and regenerates outputs; use it to verify linked worktrees.
-- After skill changes, first run `bun skills/agent/skill-writer/scripts/quick-validate.ts <changed-skill-dir> [...more]`.
-- Select validation by affected inputs under `programming`’s testing and coverage reference; use scoped package recipes, and run root `just check` only for repository-wide impact. Record measured test-command durations. For executable behavior changes, apply the testing policy under **Development Workflow**; `just coverage` runs the registry-cli and Claude Code hooks gates.
-- For bootstrap changes: `just bootstrap-smoke` validates setup in an isolated fake home. `just bootstrap` applies machine-wide configuration and refuses linked worktrees.
+These are acceptance requirements for guidance maintained here. The system prompt, skills, and repository guides implement them; their current wording is not evidence that a requirement has been satisfied.
 
-## File Conventions
+### Audience and economy
 
-Read the following before the affected work:
+- Write prompts and skills for executing agents. Every passage must change a decision, supply necessary context, or prevent a concrete failure. Remove lectures, familiar CLI tutorials, redundant examples, and table columns that add no information.
+- Prefer fewer, cohesive skills. Existing tool help, scripts, and workflow templates should supply mechanics they already cover; retain the decisions and exceptions an agent needs to use them correctly.
+- Preserve explicit permissions, exceptions, completion conditions, and technical contracts when compressing. Brevity must not become permission to omit required work.
 
-- Registry maintenance: load `ai-registry-integration` before creating, reviewing, or modifying registry assets or related guidance; it owns impact analysis and reconciliation across affected instruction sources.
-- Creating or editing skills, commands, harness assets, packages, vendored dependencies, or PR guidance; and writing or handling pull requests: [source layout](docs/internal/references/registry-source-layout.md), including bundle dependencies, PR guidance ownership, vendoring provenance, and source locations.
-- Skills: [skills/AGENTS.md](skills/AGENTS.md). Reusable sources live in `skills/agent/` or `skills/user/`; harness-only skills live under `harnesses/<target>/skills/`.
-- Agent instructions: require `prompt-writer`; use `docs-writer` for repository documentation and `skill-writer` when editing skill bundles. Review with concrete acceptance checks and bounded rounds, including continuity for ongoing workflows. Shared execution policy lives in `system/system.md`; engineering completion and UI evidence belong to `programming`, task lifecycle to the externally maintained `issue-tracker` skill. Keep active execution mandates in durable task records.
-- Harness configuration or behavior: [harnesses/AGENTS.md](harnesses/AGENTS.md). Consult `harnesses/<harness>/.tmp/<harness>-source/` first; run its `fetch-source.sh` if absent. Edit checked-in configuration, including OpenCode, rather than installed machine-local copies.
-- Package changes: the affected `packages/<package-name>/AGENTS.md`; standalone packages belong in root Bun workspaces and expose a modular `justfile`.
-- Shared system instructions: [system/AGENTS.md](system/AGENTS.md). `system/system.md` ships to every harness; distribution details are in the mapping reference below.
+### Ownership and composition
 
-## Architecture & Build Process
+- Give each reusable policy one maintained owner: cross-task behavior in the shared system prompt, domain workflows in skills, repository facts and exceptions in `AGENTS.md`, and task scope and progress in durable task records. Harness-specific guidance belongs in the harness layer; private environment details belong in overlays.
+- Repository guides must not repeat inherited policy or generic skill-selection instructions already supplied by the system and skill descriptions. In particular, do not add boilerplate telling every project to load `programming`, `docs-writer`, or `prompt-writer`.
+- Skill dependencies are a separate contract: a skill must identify required skills and when they are needed. `skill-writer` requires `prompt-writer`; that does not justify copying their loading instructions into project guides.
+- Engineering delivery, validation, UI evidence, and engineering cleanup belong to `programming`. The externally maintained `issue-tracker` owns task state, claims, lifecycle reconciliation, and handoffs. Do not recreate ticket workflows in this registry or consuming repositories.
+- Review changes against the instructions that actually load together, including local skills, references, private overlays, and harness overrides. Reconcile affected duplicates, conflicts, triggers, and callers at their maintained sources. A file passing its own validator does not establish coherent behavior.
+- Preserve user requirements independently of their implementation. Distinguish explicit requests, approvals, corrections, and rejected proposals in task evidence; do not turn an agent's proposed interpretation into standing policy without authorization.
 
-`just build` invokes `packages/registry-cli/src/commands/buildCommand.ts` to compile checked-in sources into `.output/`. Harness-specific generation belongs in `packages/registry-cli/src/harnesses/<target>/build.ts`, not top-level build or bootstrap code. Build changes stay within the registry and overlays; bootstrap owns application to harness homes.
+### Required behavior of distributed guidance
 
-Load these contracts before changing or diagnosing the corresponding behavior:
+- Support autonomous completion of authorized work through validation, integration, and cleanup with minimal supervision. Preserve the distinction between individual-task authorization and queue execution, resumable progress, ownership, and stopping conditions.
+- Make due diligence produce verified repairs when authorized. Reporting, ticket creation, pre-existing status, or unrelatedness must not become escape hatches for fixable defects. Preserve escalation for product or architectural decisions, destructive changes, altered intended behavior, or substantially larger work.
+- Require before-and-after screenshots for UI changes across CLI, TUI, desktop, web, and mobile. Require the agent to review that evidence for acceptance before presenting it to the user.
+- Minimize test latency through selection by affected inputs and consumers, not filename extensions. Instruction-only edits need no application tests; a documentation file used as a fixture may. Avoid unrelated suites, preserve applicable gates, and measure and report test-command durations, including failures and retries. Prefer native test results plus command timing before introducing additional tracking infrastructure.
+- Preserve native-environment acceptance requirements. Use suitable available environments directly; do not invent a PR or CI wait as a prerequisite to checking platform-specific behavior.
+- Treat repositories collected in a workspace as independent projects with their own CI and contracts. Cross-repository maintenance does not authorize workspace dependencies or a shared execution platform.
+- Preserve the requested conversational personality and concise, conclusion-first responses without reducing them to sterile status reports. Keep conversational personality out of authored artifacts unless requested.
+- Investigate instruction failures through the received instructions, loading path, and observed interpretation. Distinguish verified causes from hypotheses; neither self-blame nor another unexamined rule is a repair, and wording changes do not guarantee compliance.
 
-- Source selection, hostname variants, overlays, EJS, output assembly, ignore rules, entrypoints, or public wrappers: [generation contracts](docs/internal/references/registry-generation.md).
-- Generated edits, settings synchronization, manifest recovery, storage/cleanup, harness homes, bootstrap, scheduled updates, secret scanning, or Git publication: [state and bootstrap contracts](docs/internal/references/registry-state-and-bootstrap.md). Preserve harness runtime data outside `.output/`; never clear `.state/` as cleanup.
-- Harness output files, command invocation, wrapper availability, system prompt distribution, or Codex project trust: [harness mappings](docs/internal/references/registry-harness-mapping.md).
+## Repository contracts
 
-## Development Workflow
-- Automatically record explicit standing user instructions, such as “always do X” or “never do Y,” in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save them. Update an existing rule in place when the user clearly changes it. Keep one-task directions, progress, handoffs, and session data out of policy files. Ask only when the intended policy scope or resolution of a material conflict is unclear.
-- **Tickets:** Load `issue-tracker` for task management in the `ai-registry` project. Registry tickets are approved for execution without another approval. Start each body with `## Request`, quoting every user message that shaped the task verbatim as `> **<whoami>:** <request>` using the local account name. Follow with `## Context`: the problem, evidence, decisions, scope, and exclusions sufficient to act without the conversation; expand referenced finding IDs. Keep credentials and private hostnames out of ticket content.
-- Let models choose search and code-navigation tools according to the task and available capabilities; do not add mandatory tool ordering or tool-specific stop rules.
-- Keep dependency investigation and library integration within the authorized task's required capabilities. Follow the library guidance in `skills/agent/programming/SKILL.md`.
-- **Instruction maintenance scope:** Auditing or editing instructions, including committing and merging that work, does not make newly specified but unimplemented enforcement a prerequisite to completing the maintenance task. Record enforcement gaps as follow-up issues and run existing checks applicable to the actual changes. Do not silently expand the task into implementing enforcement infrastructure or remediating repository-wide noncompliance. This does not waive existing failing checks or the testing and coverage requirements for behavior-changing implementation work. A user-deferred generation or application step suspends only that step; continue independent validation and authorized integration, and report the unrun verification without claiming compliance.
-- Preserve other actors' changes, index state, locks, and refs. Suspend only conflicting operations and continue independent authorized work in an owned, isolated worktree when safe. Staged-file age does not authorize takeover or a whole-worker halt.
-- Routine branch and path-scoped index operations needed for an authorized task may proceed in owned worktrees after state and ownership checks. Destructive Git operations require explicit authorization and remain subject to executable guards; command permissions do not establish ownership.
-- **CRITICAL ANONYMIZATION RULE:** This registry is designed to be public and reusable. When creating or editing *any* file in this repository (especially skills, commands, prompts, and harness configuration), you MUST strictly anonymize and generalize all potentially Personal Identifiable Information (PII) and proprietary data. This includes, but is not limited to: company names, specific project names, employee names, locations, desk numbers, internal URLs, specific server hostnames, proprietary nomenclature, private API keys, or hardcoded passwords. Exception: the repository's already-public ownership and attribution identifiers may remain when they are required for the published package/repository identity or canonical author metadata (for example the GitHub owner, package scope, or `author` field used by this registry). Do not introduce any other personal details beyond that narrow public-attribution scope. Ensure all other content added to this repository is globally applicable and scrubbed of private context.
-- When asked to create a new reusable skill, create a new directory under `skills/agent/` (for agent-runnable skills) or `skills/user/` (for user-invokable skills). For user skills, do not add `disable-model-invocation: true` in the source `SKILL.md`. Keep concerns separated. If a skill should ship only with one harness, place it under that harness's source tree instead.
-- When vendoring an external skill, use `just skills-add 'npx skills add <source> --skill <name>'`. That wrapper applies `-a openclaw --copy -y` behind the scenes so the skill is copied into the canonical `skills/` directory and tracked in `skills-lock.json`, while maintaining the upstream author in `SKILL.md`.
-- When updating vendored external skills, use `just skills-update` instead of plain `npx skills update`, because the upstream update command does not preserve the canonical `skills/` target in this repo; the wrapper also preserves and updates upstream authors across refreshes.
-- Preserve third-party-authored skill content. Keep local policies in registry-owned guidance and record unresolved upstream findings instead of rewriting those bundles.
-- When creating a new command, add it under `commands/`.
-- When creating a publishable standalone package, place it under `packages/<package-name>/` and add it to the root Bun workspaces.
-- When vendoring a third-party code package for a harness integration, place it under `vendor/` and wire it through the root Bun workspaces instead of placing installable package source inside a generated harness directory.
-- After modifying any skill, command, `system/system.md`, harness file, or `skills-lock.json`, ALWAYS run `just build` to regenerate the configurations.
-- **CRITICAL:** This `AGENTS.md` and the `README.md` must be kept strictly up to date whenever structural or architectural changes are made to this repository. Do not leave documentation stale.
-- **Development Tasks:** Define development tasks as `justfile` recipes; `package.json` files have no `scripts`. Each first-party package, the disk-cleanup skill, and the Claude Code hooks keep their own `justfile`, linked from the root `justfile` with `mod`; root recipes reach them only through `just <module> <recipe>`. Each package's `check` runs Oxfmt and Oxlint checks, its own type check, ts-unused, and its tests; `just fmt` and `just fix` apply formatting and lint fixes. Use affected package/check recipes under the shared impact-based testing policy; root `just check` is for repository-wide impact. Third-party bundles (`skills/agent/archify`, `vendor/`) keep their upstream package files.
-- **Test Fixture Ownership:** First-party package tests, disk-cleanup tests, and Claude Code hook tests use unique owned scratch roots and the registry-cli process supervisor. Import the shared fixture factories through each test area's `./fixtures` entrypoint and register cleanup when creating a fixture. Keep repository-only preloads and tests out of generated skill and hook bundles. Test commands remove consumed coverage reports before returning.
-- **Testing & Code Coverage:** For code changes that alter executable behavior, add or update meaningful behavioral tests. `just coverage` gates `packages/registry-cli` and `harnesses/claude-code/hooks`; the scope and counting rules are in `packages/registry-cli/AGENTS.md`. Require at least 90% line coverage and 90% function coverage across the non-test source of each affected first-party package; include unexecuted source files and exclude `scripts/` directories. Document and configure the coverage command, source scope, metrics, and exclusions. Reproduce a blocking baseline failure on the untouched base and handle the smallest necessary prerequisite repair. Do not weaken coverage gates or make token test edits to satisfy this rule.
-- When structural, workflow, or location changes affect how agents should add things to this registry, update `skills/agent/ai-registry-integration/SKILL.md` in the same change so the registry-integration guidance stays accurate.
+### Source locations and references
+
+Before changing the corresponding area, read:
+
+- Asset placement, bundle dependencies, vendoring provenance, or PR guidance: [source layout](docs/internal/references/registry-source-layout.md).
+- Skill bundles: [skills/AGENTS.md](skills/AGENTS.md). This registry's authoring locations are `skills/agent/`, `skills/user/`, and `harnesses/<target>/skills/`; installed or generated directories are not authoring locations. This is the registry-specific exception to creating new project skills in `<project>/.agents/skills`.
+- Shared system instructions: [system/AGENTS.md](system/AGENTS.md). `system/system.md` ships to every harness.
+- Harness behavior or configuration: [harnesses/AGENTS.md](harnesses/AGENTS.md). Consult `harnesses/<target>/.tmp/<target>-source/` first, running that harness's `fetch-source.sh` if absent. Edit checked-in configuration rather than installed machine-local copies.
+- Package implementation: the affected `packages/<package-name>/AGENTS.md`, where present.
+- Source selection, hostname variants, overlays, EJS, output assembly, ignores, entrypoints, or public wrappers: [generation contracts](docs/internal/references/registry-generation.md).
+- Generated edits, settings sync, recovery, storage, harness homes, bootstrap, scheduled updates, secret scanning, or publication: [state and bootstrap contracts](docs/internal/references/registry-state-and-bootstrap.md). Keep runtime data outside `.output/`; never clear `.state/` as cleanup.
+- Harness output files, command invocation, wrappers, system distribution, or Codex trust: [harness mappings](docs/internal/references/registry-harness-mapping.md).
+
+`just build` invokes `packages/registry-cli/src/commands/buildCommand.ts` to compile checked-in sources into `.output/`. Harness-specific generation belongs in `packages/registry-cli/src/harnesses/<target>/build.ts`, not top-level build or bootstrap code. Build operates on registry sources and overlays; bootstrap applies outputs to harness homes.
+
+### Commands and validation
+
+- `just setup` installs dependencies and Git hooks.
+- After changing skills, commands, the shared system prompt, harness files, or `skills-lock.json`, run `just build` to typecheck and regenerate outputs. It is safe to use for linked-worktree verification. For changed skills, first run `bun skills/agent/skill-writer/scripts/quick-validate.ts <changed-skill-dir> [...more]`.
+- For bootstrap changes, run `just bootstrap-smoke` against its isolated fake home. `just bootstrap` applies machine-wide configuration and refuses linked worktrees.
+- Select affected package recipes by input impact; root `just check` is for repository-wide impact. Root `AGENTS.md` prose changes require instruction and reference checks, not application tests or output regeneration.
+- Define development tasks in `justfile` recipes, not `package.json` scripts. First-party packages, disk-cleanup, and Claude Code hooks each have a modular `justfile`; root recipes reach them through `just <module> <recipe>`. Each package's `check` includes Oxfmt, Oxlint, typechecking, ts-unused, and tests; `just fmt` and `just fix` apply formatting and lint fixes. Third-party bundles under `skills/agent/archify` and `vendor/` retain upstream package files.
+- For executable behavior changes, add or update meaningful behavioral tests. Require at least 90% line and function coverage across each affected first-party package's non-test source, including unexecuted files and excluding `scripts/`. Document and configure the command, source scope, metrics, and exclusions. `just coverage` gates registry-cli and Claude Code hooks; detailed counting rules are in [packages/registry-cli/AGENTS.md](packages/registry-cli/AGENTS.md). Reproduce blocking baseline failures on the untouched base and repair the smallest necessary prerequisite; do not weaken gates or add token tests.
+- First-party package tests, disk-cleanup tests, and Claude Code hook tests use unique owned scratch roots and the registry-cli process supervisor. Import fixture factories through each test area's `./fixtures` entrypoint and register cleanup at creation. Keep repository-only preloads and tests out of generated bundles. Test commands remove consumed coverage reports before returning.
+
+### External assets
+
+Add external skills with `just skills-add 'npx skills add <source> --skill <name>'`; the wrapper supplies `-a openclaw --copy -y` for the canonical destination. Update them with `just skills-update`, not plain upstream commands. Preserve upstream content and author metadata, and commit the affected bundles with `skills-lock.json`. Keep local policy outside third-party bundles and record unresolved upstream findings separately.
+
+### Privacy and task records
+
+This registry is public and reusable. Generalize private or proprietary identifiers, personal details, internal URLs, hostnames, and examples; never introduce credentials. Existing public ownership, package identity, and canonical author attribution are permitted where required.
+
+Registry work belongs to the `ai-registry` tracker project. Registry tickets are approved for execution without another approval. Keep private ticket text, attachments, numbers, and tracker identity out of public commits, pull requests, and branch names; this repository's branch privacy restriction takes precedence over generic ticket-number naming.
+
+Ticket bodies start with `## Request`, quoting each user message that shaped the task verbatim as `> **<whoami>:** <request>` using the local account name. Follow with `## Context` containing the problem, evidence, decisions, scope, and exclusions needed to act without the conversation. Expand referenced finding IDs; omit credentials and private hostnames.
+
+### Maintenance boundaries
+
+Persist explicit standing user instructions in their narrowest existing owner; update superseded rules in place. Keep task directions, progress, and handoffs in task records. Let agents choose search and navigation tools; do not add mandatory tool ordering or tool-specific stop rules.
+
+Instruction maintenance does not authorize implementing every newly documented enforcement mechanism or remediating every consuming repository. Record enforcement gaps as follow-up work, preserve existing checks, and report unverified enforcement accurately. A deferred generation or application step suspends only itself and actual dependents.
+
+Preserve other actors' changes, index state, locks, and refs. Continue independent work in an owned worktree when safe; staged-file age does not establish ownership. Routine task-owned branch and index operations are authorized; destructive Git operations require explicit authorization and remain subject to executable guards.
+
+Keep this guide and `README.md` current when repository structure or architecture changes. When structure, workflows, or locations change how assets are added, update `skills/agent/ai-registry-integration/SKILL.md` in the same change. Requirements recorded here describe intended behavior; they do not certify that every existing instruction or consuming project already conforms.

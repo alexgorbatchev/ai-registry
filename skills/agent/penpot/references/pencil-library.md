@@ -91,4 +91,4 @@ About 724 components, named by path with the last segment as the variant or stat
 
 ## Tokens
 
-The captured file defines no design token sets or themes; the organization relies on library colors and typographies.
+The captured file defines no design token sets or themes; its organization relies on library colors and typographies, and its mode-prefixed color names predate Penpot design tokens. When the system has tokens, mirror Pencil's pages, documentation boards, and component naming, but keep values in token sets and themes as described in [reusable library structure](reusable-library.md#source-of-truth).

@@ -4,7 +4,7 @@ description: Use when reading, creating, organizing, or reviewing Penpot designs
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-12 16:45
-  last_modified: 2026-11-12 16:45
+  last_modified: 2026-11-12 17:18
   status: current
 ---
 
@@ -31,7 +31,7 @@ metadata:
 
 - Take values from the authoritative source, such as theme CSS, token files, or component code. Do not sample colors from screenshots or invent missing values.
 - Convert CSS colors with [the color conversion script](scripts/css-color-to-penpot.ts): `bun scripts/css-color-to-penpot.ts '<css color>' [...]`, run from this skill's directory. Penpot library colors take an uppercase `#RRGGBB` value plus a separate opacity. It accepts hex, `rgb()`/`rgba()`, and `oklch()`; it rejects `var()`, `calc()`, and `color-mix()`. Resolve references from the source's own rules first. When a value depends on runtime context, such as `color-mix()` against `transparent`, compute it only when the result is exact (for example a percentage of one color mixed with `transparent` is that color at that opacity); otherwise list it as skipped with the reason.
-- Check font availability with `penpot.fonts.findByName()` before creating typographies. When the source font stack resolves only to system fonts that Penpot cannot store, ask which stand-in to use, or skip those typographies and report them.
+- Use only fonts the source names. Check each with `penpot.fonts.findByName()` before creating typographies, and confirm the returned name and `fontId` match, because lookup can return a near match (for example a Tight or Condensed family). When the source names only system font stacks, such as `system-ui`, skip those typographies and report the gap; do not suggest stand-in fonts from other projects or upstream defaults.
 - Follow the organization the user names. When it is Penpot's Pencil design system, read [the Pencil library organization](references/pencil-library.md) before naming groups, assets, pages, or boards. Copy the structure, not its defects, such as duplicated or malformed names.
 - Encode variant axes that the source switches at runtime, such as light and dark mode, presets, or density, in group paths or token themes consistently across every asset type. Propose design tokens when the source defines one value per theme context and tokens would replace duplicated flat assets; create them only when the user agrees, since they change how designers consume the library.
 - For components, build boards with flex or grid layouts and semantic layer names, then create the component; create variant groups with `penpotUtils.createVariantContainer()`.

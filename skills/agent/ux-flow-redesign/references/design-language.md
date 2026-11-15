@@ -234,7 +234,7 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
 ```
 
 - The first row is the target header: what the menu acts on (a count and kind, or the item's name).
-- Then groups. A `.lbl` heading labels two or more items; a lone item joins its closest related group instead of getting a heading. The linter counts the menu's direct children between a `.lbl` and the next `.lbl` or `.sep` (`menu-heading`), so keep items as direct children of `.menu`.
+- Then groups. A `.lbl` heading labels two or more items; a lone item joins its closest related group instead of getting a heading. Draw headings with `.lbl`: the linter (`menu-heading`) also recognizes headings drawn in other markup inside any menu or popover with group structure (heading tags, heading roles or class names anywhere; muted or wholly bold rows where a group starts, at the top or after a separator), but it cannot tell a muted heading in the middle of a menu from a dimmed item, so such a heading needs `.lbl` or a separator above it.
 - Only the destructive last item stands alone, after a `.sep` and without a heading, in `color: var(--bad)`.
 - When a context hides items and leaves a group with one item, that item drops its heading and stays in place after a separator.
 - Disabled items stay visible as `.row.muted`, with the reason after a `.sp`.
@@ -315,7 +315,7 @@ It prints `file:line: severity rule: message` and exits 1 on any error. `--site-
 | `callout` | a mockup number has no explanation in its caption, a caption explains a number the mockup does not show, or a caption explains a number twice |
 | `legend` | a page with steps has no `.legend` inside `.key`, or has a `.legend` outside it |
 | `legend-entry` | the mockups use a built-in convention or numbered callouts that the legend does not explain |
-| `menu-heading` | a `.lbl` in a `.menu` labels fewer than two items |
+| `menu-heading` | a group heading in a menu, or in a popover with separators, headings or command rows, labels fewer than two items. A heading is a `.lbl` or other heading tag, role or class anywhere, or a muted or wholly bold row with no command affordance where a group starts. A first row followed by a heading or separator is the target header, and a label-like row with no item under it is a note |
 | `popover-trigger` | a mockup popover or menu with a caret has no `.open` element in its window |
 | `toast-action` | a `.toast` contains a `.btn`, `button`, `input` or `select` |
 | `nav` | a page with steps, other than `index.html` and `patterns.html`, lacks `nav.top` or its links to `index.html`, `<key>-current.html`, `<key>-proposed.html` and `proposals/<key>.md` |

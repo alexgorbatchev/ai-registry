@@ -124,6 +124,60 @@ describe("surfaces", () => {
   });
 });
 
+describe("menu headings in any markup", () => {
+  /** One mockup step whose window holds the opener (outlined as .open) and `menu`, on a page without flow nav. */
+  const lintMenu = (menu: string) =>
+    lintPage(
+      `${KEY}<section class="step"><div class="win"><span class="btn open">Actions ▾</span>${menu}</div><div class="cap"><h2>1. S</h2></div></section>`,
+      { name: "patterns.html" },
+    );
+  const headings = (findings: Finding[]) =>
+    findings.filter((finding) => finding.rule === "menu-heading").map((finding) => finding.message.split(";")[0]);
+
+  test("flags a muted row heading a single item in a menu drawn with page-local classes", () => {
+    const findings = lintMenu(
+      '<div class="box menu"><i class="caret-dn" style="right:38px"></i>\n<div class="mi muted">Share · 12 reports</div>\n<div class="mi"><b>Export to archive (12)</b><span class="sp"></span><kbd>E</kbd></div>\n<div class="mi muted">The folder menu offers the same item</div>\n</div>',
+    );
+    expect(rules(findings)).toEqual(["error menu-heading"]);
+    expect(headings(findings)).toEqual(['menu heading "Share · 12 reports" labels 1 item(s)']);
+    expect(findings[0].line).toBe(3);
+  });
+
+  test("flags group headings drawn as ARIA lists, heading elements, emphasized rows and nested sections", () => {
+    const aria = lintMenu(
+      '<ul class="dropdown" role="menu"><li role="presentation" class="group-title">Arrange</li><li role="menuitem">Sort by name</li><li role="separator"></li><li role="menuitem" class="danger">Delete folder…</li></ul>',
+    );
+    expect(headings(aria)).toEqual(['menu heading "Arrange" labels 1 item(s)']);
+    const sections = lintMenu(
+      "<menu><section><h4>History</h4><button>Show history…</button></section><section><h4>Open</h4><button>Open</button><button>Open in new window</button></section></menu>",
+    );
+    expect(headings(sections)).toEqual(['menu heading "History" labels 1 item(s)']);
+    const emphasized = lintMenu(
+      '<div class="popover"><span class="caret-up"></span><div class="from">From ⋯</div><div><b>3 reports</b></div><hr><div><strong>Share</strong></div><div>Email a link…</div><hr><div style="color:var(--bad)">Delete 3 reports…</div></div>',
+    );
+    expect(headings(emphasized)).toEqual(['menu heading "Share" labels 1 item(s)']);
+    const wrapped = lintMenu(
+      '<div class="menu"><div class="list"><div class="muted">Recent</div><div>Show history…</div></div></div>',
+    );
+    expect(headings(wrapped)).toEqual(['menu heading "Recent" labels 1 item(s)']);
+  });
+
+  test("leaves target headers, dimmed items, notes, disabled items, pickers and bars outside menus alone", () => {
+    const clean = [
+      '<div class="menu"><b>Quarterly ⋯</b><div class="muted">Rename</div><div class="hl">Export report…</div><div class="muted">Remove</div></div>',
+      '<div class="menu"><b>Folder ⋯</b> <span class="chip">shared</span><div class="muted">New subfolder</div><div class="hl">Import into this folder…</div></div>',
+      '<div class="menu"><div class="muted">Running</div><div class="row small">Export · 12 reports<span class="sp"></span><span class="btn">Cancel</span></div><div class="row small">Import · 3 files<span class="sp"></span><span class="btn">Cancel</span></div><div class="row small">Checked folder health · 2 issues</div></div>',
+      '<div class="menu"><div class="row"><b>Report 7</b></div><div class="sep"></div><div class="row" style="color:var(--bad)">Delete…</div></div>',
+      '<div class="menu"><div class="row"><b>3 reports</b></div><div class="row">Open</div><div class="row">Export…</div></div>',
+      '<div class="menu"><div class="lbl">Open</div><ul><li>Open</li><li class="muted">Open in new tab<span class="sp"></span>Blocked by policy</li></ul><div class="muted">Right-click opens the same menu</div></div>',
+      '<div class="popover"><span class="caret-dn"></span><div class="muted small">New name</div><div class="row"><span class="in">Q3 summary</span></div></div>',
+      '<div class="popover"><span class="caret-dn"></span><div class="muted">Destination</div><div>◉ Finance</div><div>○ Archive</div></div>',
+      '<div class="selbar"><span class="muted">Filter</span><span class="btn">Apply</span></div>',
+    ];
+    for (const menu of clean) expect(headings(lintMenu(menu))).toEqual([]);
+  });
+});
+
 describe("navigation and links", () => {
   test("requires the flow nav links and reports a missing ticket as a warning", () => {
     const findings = lintPage(

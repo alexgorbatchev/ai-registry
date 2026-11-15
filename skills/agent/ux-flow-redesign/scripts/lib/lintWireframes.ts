@@ -10,6 +10,7 @@ import {
   parseHtml,
   textContent,
   type HtmlElement,
+  type HtmlNode,
 } from "./html";
 
 export type Severity = "error" | "warning";
@@ -195,29 +196,216 @@ function checkLegend(page: Page, findings: Finding[]): void {
   }
 }
 
-function checkMenus(page: Page, findings: Finding[]): void {
-  for (const menu of findAll(page.root, (element) => hasClass(element, "menu"))) {
-    const entries = childElements(menu).filter(
-      (child) => !hasClass(child, "caret-up") && !hasClass(child, "caret-dn") && !hasClass(child, "from"),
-    );
-    entries.forEach((entry, index) => {
-      if (!hasClass(entry, "lbl")) return;
+/** How a row inside a menu reads: a group boundary, an explicit heading, a label-like row, or a command. */
+type MenuEntryKind = "separator" | "heading" | "label" | "item";
+
+interface MenuEntry {
+  kind: MenuEntryKind;
+  element: HtmlElement;
+  /** The row opens a group: the menu's first row, the first row after a separator, or the first row of a wrapper. */
+  groupStart: boolean;
+}
+
+const MENU_CLASSES = new Set([
+  "menu",
+  "dropdown",
+  "dropdown-menu",
+  "context-menu",
+  "contextmenu",
+  "submenu",
+  "menu-list",
+]);
+const POPOVER_CLASSES = new Set(["popover", "popup"]);
+/** Block elements; with links and buttons placed directly in a menu they draw rows, while inline content shares one. */
+const BLOCK_TAGS = new Set([
+  "div",
+  "li",
+  "ul",
+  "ol",
+  "menu",
+  "p",
+  "section",
+  "header",
+  "footer",
+  "nav",
+  "dl",
+  "dt",
+  "dd",
+  "hr",
+  "form",
+  "fieldset",
+  "legend",
+  "table",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+]);
+const SEPARATOR_CLASS = /^(sep|separator|divider|rule)$/;
+const HEADING_CLASS =
+  /^(lbl|label|heading|header|hdr|title|subheader|subheading|category)$|-(lbl|label|heading|header|title)$/;
+const MUTED_CLASS = /^(muted|mute|dim|dimmed|subtle|secondary|hint|faint|quiet|caption|meta|overline|eyebrow)$/;
+const MUTED_STYLE = /var\(--mute\)|text-transform\s*:\s*uppercase|opacity\s*:/i;
+const EMPHASIS_TAGS = new Set(["b", "strong", "em", "small"]);
+const CONTROL_TAGS = new Set(["a", "button", "input", "select", "textarea"]);
+const ITEM_ROLES = new Set(["menuitem", "menuitemcheckbox", "menuitemradio", "option"]);
+const CHOICE_GLYPH = /^[☑☐☒◉○●◯⦿✓✔]/;
+
+const classList = (element: HtmlElement) => (element.attrs.get("class") ?? "").split(/\s+/).filter(Boolean);
+const isCallout = (element: HtmlElement) => hasClass(element, "n");
+
+/** Text a reader sees in a row, without numbered callout markers. */
+function rowText(element: HtmlElement): string {
+  return element.children
+    .map((child) => (child.kind === "text" ? child.text : isCallout(child) ? "" : rowText(child)))
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isMenuContainer(element: HtmlElement): boolean {
+  const role = element.attrs.get("role") ?? "";
+  return (
+    element.tag === "menu" ||
+    role === "menu" ||
+    role === "menubar" ||
+    classList(element).some((name) => MENU_CLASSES.has(name))
+  );
+}
+
+function isPopover(element: HtmlElement): boolean {
+  return classList(element).some((name) => POPOVER_CLASSES.has(name));
+}
+
+/** Carets, opener notes and callout markers are drawing aids, not menu rows. */
+function isDrawingAid(element: HtmlElement): boolean {
+  if (["script", "style", "template"].includes(element.tag)) return true;
+  return isCallout(element) || classList(element).some((name) => name === "from" || name.startsWith("caret"));
+}
+
+const hasOwnText = (element: HtmlElement) =>
+  element.children.some((child) => child.kind === "text" && child.text.trim());
+
+/** A wrapper holds rows (block children) and no text of its own, such as a group, a list or a section. */
+function isWrapper(element: HtmlElement): boolean {
+  if (CONTROL_TAGS.has(element.tag)) return false;
+  return !hasOwnText(element) && childElements(element).some((child) => BLOCK_TAGS.has(child.tag));
+}
+
+function classifyMenuEntry(element: HtmlElement): MenuEntryKind | null {
+  const role = element.attrs.get("role") ?? "";
+  const classes = classList(element);
+  if (element.tag === "hr" || role === "separator" || classes.some((name) => SEPARATOR_CLASS.test(name)))
+    return "separator";
+  const text = rowText(element);
+  if (!text && !childElements(element).length) return null;
+  if (/^h[1-6]$/.test(element.tag) || ["dt", "legend"].includes(element.tag) || role === "heading") return "heading";
+  if (classes.some((name) => HEADING_CLASS.test(name))) return "heading";
+  const style = element.attrs.get("style") ?? "";
+  const command =
+    ITEM_ROLES.has(role) ||
+    CONTROL_TAGS.has(element.tag) ||
+    findAll(
+      element,
+      (child) =>
+        child.tag === "kbd" || CONTROL_TAGS.has(child.tag) || ["sp", "btn", "in"].some((name) => hasClass(child, name)),
+    ).length > 0 ||
+    /…|\.\.\./.test(text) ||
+    CHOICE_GLYPH.test(text) ||
+    classes.some((name) => ["danger", "bad", "destructive"].includes(name)) ||
+    /var\(--bad\)/.test(style);
+  if (command) return "item";
+  const shown = childElements(element).filter((child) => !isCallout(child));
+  const emphasized =
+    EMPHASIS_TAGS.has(element.tag) || (!hasOwnText(element) && shown.length === 1 && EMPHASIS_TAGS.has(shown[0].tag));
+  const muted = classes.some((name) => MUTED_CLASS.test(name)) || MUTED_STYLE.test(style);
+  return emphasized || muted ? "label" : "item";
+}
+
+/**
+ * Flattens a menu's rows in reading order. Inline content between rows forms one line, as a browser lays it out; a
+ * wrapper's first row starts a group and its end closes one; nested menus and popovers are checked on their own.
+ */
+function menuEntries(container: HtmlElement): MenuEntry[] {
+  const entries: MenuEntry[] = [];
+  let startNext = true;
+  const add = (element: HtmlElement) => {
+    const kind = classifyMenuEntry(element);
+    if (!kind) return;
+    entries.push({ kind, element, groupStart: startNext });
+    startNext = kind === "separator";
+  };
+  const visit = (parent: HtmlElement) => {
+    let line: HtmlNode[] = [];
+    const flush = () => {
+      const first = line.find((node) => node.kind === "element" || node.text.trim());
+      if (first) add({ kind: "element", tag: "#line", attrs: new Map(), line: first.line, parent, children: line });
+      line = [];
+    };
+    for (const child of parent.children) {
+      if (child.kind === "element" && (isDrawingAid(child) || isMenuContainer(child) || isPopover(child))) continue;
+      if (child.kind === "text" || !(BLOCK_TAGS.has(child.tag) || CONTROL_TAGS.has(child.tag))) {
+        line.push(child);
+        continue;
+      }
+      flush();
+      if (isWrapper(child)) {
+        startNext = true;
+        visit(child);
+        entries.push({ kind: "separator", element: child, groupStart: false });
+        startNext = true;
+      } else add(child);
+    }
+    flush();
+  };
+  visit(container);
+  return entries;
+}
+
+/**
+ * Finds group headings that label fewer than two items, whatever markup draws them. A heading is explicit (a heading
+ * tag, role or class name) anywhere in the menu, or inferred where a group starts: a muted or wholly emphasized row
+ * with no command affordance. Inferring only at group starts keeps dimmed items between highlighted ones from reading
+ * as headings. A first row followed by a heading or separator is the menu's target header, and a label-like row with
+ * no item under it is a note; neither is a group heading. A popover counts as a menu only when it has group structure
+ * or command affordances, so value pickers and forms are left alone.
+ */
+function checkMenuHeadings(page: Page, findings: Finding[]): void {
+  for (const container of findAll(page.root, (element) => isMenuContainer(element) || isPopover(element))) {
+    const entries = menuEntries(container);
+    const menuLike =
+      isMenuContainer(container) ||
+      entries.some(({ kind }) => kind === "separator" || kind === "heading") ||
+      entries.some(
+        ({ kind, element }) =>
+          kind === "item" &&
+          (findAll(element, (child) => child.tag === "kbd").length > 0 ||
+            /…|\.\.\./.test(rowText(element)) ||
+            ITEM_ROLES.has(element.attrs.get("role") ?? "") ||
+            /var\(--bad\)/.test(element.attrs.get("style") ?? "")),
+      );
+    if (!menuLike) continue;
+    entries.forEach(({ kind, element, groupStart }, index) => {
+      if (kind !== "heading" && !(kind === "label" && groupStart)) return;
       let items = 0;
-      for (const next of entries.slice(index + 1)) {
-        if (hasClass(next, "lbl") || hasClass(next, "sep")) break;
-        items++;
-      }
-      if (items < 2) {
-        findings.push({
-          file: page.path,
-          line: entry.line,
-          severity: "error",
-          rule: "menu-heading",
-          message: `menu heading "${textContent(entry).trim()}" labels ${items} item(s); a heading labels two or more, so fold a lone item into its closest group`,
-        });
-      }
+      while (entries[index + 1 + items]?.kind === "item") items++;
+      if (items === 0 && (kind === "label" || (index === 0 && entries[index + 1]))) return;
+      if (items >= 2) return;
+      findings.push({
+        file: page.path,
+        line: element.line,
+        severity: "error",
+        rule: "menu-heading",
+        message: `menu heading "${rowText(element)}" labels ${items} item(s); a heading labels two or more, so fold a lone item into its closest group or drop the heading`,
+      });
     });
   }
+}
+
+function checkMenus(page: Page, findings: Finding[]): void {
+  checkMenuHeadings(page, findings);
   for (const surface of findAll(page.root, (element) => hasClass(element, "popover") || hasClass(element, "menu"))) {
     const hasCaret = findAll(
       surface,

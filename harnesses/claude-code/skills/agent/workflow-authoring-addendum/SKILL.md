@@ -4,7 +4,7 @@ description: If workflow-authoring skill is used, this skill must be used as wel
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-14 08:44
-  last_modified: 2026-11-15 08:27
+  last_modified: 2026-11-15 08:52
   status: current
 ---
 
@@ -15,7 +15,7 @@ Workflow agents end mid-run. A model request that gets no response for about 10 
 ## Units and checkpoints
 
 - Scope each agent to about 30 minutes of work or less. Split by flow, entity, or file set rather than by open-ended exploration of a whole area.
-- Before fanning out agents that design or write artifacts that must stay consistent with each other, such as flows, pages, wireframes, API surfaces, or docs, build one shared reference: conventions with IDs and the decisions they need. Give every agent that reference as its authority, verify each output against it, and reconcile existing outputs whenever it changes. Parallel agents without one produce divergent designs that need rework.
+- Before fanning out agents that design or write artifacts that must stay consistent with each other, such as flows, pages, wireframes, API surfaces, or docs, build one versioned shared reference file: conventions with IDs and the decisions they depend on. Pass its path to every agent as its authority, have outputs cite the IDs they apply, verify each output against it, and record in each checkpoint the reference version the output was verified against. When the reference changes, outputs verified against an older version are not valid for skipping; give them a reconciliation unit.
 - Give each agent a durable checkpoint file in an ignored scratch or state directory. Its prompt must require it to load that file at start and continue without redoing recorded work, and to rewrite the complete file, valid on every write, after each result.
 - Have agents validate their checkpoint or handoff file with a script before returning.
 
@@ -27,12 +27,14 @@ Workflow agents end mid-run. A model request that gets no response for about 10 
 
 ## Claimed tickets
 
-issue-tracker claims record no worker identity, and every session claims as the same account, so a claim cannot show which session or run holds a ticket. The run comment is that record.
+Claims carry no worker identity, and every session claims as the same account. For claimed work done in a workflow, ownership comments are the durable execution record issue-tracker requires. A claimant that posts no ownership comment cannot be detected.
 
-- When a session hands claimed work to a background workflow, pass a launch key through `args`, such as the session ID, workflow name, and launch time, and keep it unchanged on resume. Give the ticket number and launch key to every agent that commits, pushes, publishes a release, or releases the claim.
-- After each launch or resume, comment on the ticket with the run ID, workflow name, launch key, the paths of the run's journal, agent transcripts, and checkpoints, and how to tell whether the run is alive. The script path in the Workflow result lies under the session directory's `workflows/scripts/`. When the run ends, `workflows/<run>.json` appears in that session directory with a `status` saying how; until then, recent writes to `subagents/workflows/<run>/` show it running.
-- Before treating a claimed ticket as abandoned, read its newest run comment and apply its liveness check. A running workflow keeps the claim.
-- Immediately before each commit, push, release publication, or claim release, an agent working a claimed ticket confirms that the ticket is still open in Doing and that its newest claim or run comment carries the agent's launch key. Otherwise it stops before that action, leaves its work in its worktree and checkpoint for review, and reports the mismatch.
+- An ownership comment's first line is `Ownership: <launch key>`; ownership checks read only the newest comment starting with `Ownership:`. Choose the launch key before launching, for example from the session ID, workflow name, and launch time, pass it through `args`, and keep it unchanged on resume.
+- Before each launch, post an ownership comment on every claimed ticket the run will work, naming the session ID and workflow name. After each launch or resume, post another on each of them naming the run ID, the machine it runs on, the live journal `subagents/workflows/<run>/journal.jsonl`, agent transcripts, checkpoints, the final record `workflows/<run>.json`, and the liveness check below with its quiet threshold. These paths are relative to the session directory, which contains the `workflows/scripts/` directory holding the script path in the Workflow result. State in the comment that the run holds the claim while alive and that nobody releases or reclaims the ticket until the check shows it ended or the session or user resolves ownership.
+- Prefer claiming tickets in the session before launch and passing their numbers through `args`. An agent that claims a ticket during a run posts an ownership comment immediately after the claim, with the launch key and `CLAUDE_CODE_SESSION_ID`. Agents cannot see their run ID, so the session posts the run comment once it learns of the claim, from the agent's result or by searching tickets for the launch key.
+- A newer ownership comment with a different key transfers the claim and stops the earlier run's agents at their next check. Post one only after the previous run has ended or been stopped; read-only runs, such as reviews, post none.
+- Liveness: if `workflows/<run>.json` exists, the run ended with its `status`. If it is absent and `subagents/workflows/<run>/` was written within the quiet threshold, the run is alive; choose a threshold longer than the 10-minute stalled-request abort and the longest tool timeout its agents use. If it is absent and quiet for longer, or the check runs on another machine, liveness is unverified, not ended: resolve ownership with the recorded session or the user under issue-tracker's uncertain-ownership rule.
+- Give every agent that commits, pushes, publishes a versioned release or tag, or runs `issue-tracker issue release` or `issue-tracker issue close` the ticket number and launch key. Its prompt must require it to run `AGENT=1 issue-tracker issue inspect <number>` immediately before each such action and confirm that the ticket is open in Doing and that the newest ownership comment carries its launch key. If the read fails or the check does not match, the agent stops before the action, leaves its work in its worktree and checkpoint, and returns an ownership result that makes the script skip that ticket's remaining delivery stages.
 
 ## Delivery
 

@@ -8,6 +8,7 @@ export async function selectRustArtifacts(
   root: string,
   project: string,
   kinds: RustArtifactKind[],
+  measure = true,
 ): Promise<ArtifactSelection> {
   const repository = await owningRepository(project);
   const tracked = new Set(
@@ -58,6 +59,6 @@ export async function selectRustArtifacts(
     result.actions.push(...selected.actions);
     result.preserved.push(...selected.preserved);
   }
-  for (const action of result.actions) action.bytes = await diskBytes(action.path);
+  if (measure) for (const action of result.actions) action.bytes = await diskBytes(action.path);
   return result;
 }

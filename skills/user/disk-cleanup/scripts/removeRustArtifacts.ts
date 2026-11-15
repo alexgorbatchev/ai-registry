@@ -40,22 +40,31 @@ export async function removeRustArtifacts(
   const result = await removeTargets(
     options,
     actions,
-    async (action) => {
-      const project = owners.get(action.path);
-      if (!project) throw new Error(`Missing project owner: ${action.path}`);
-      const report = await inspectProject(options.root, project, cutoffMs, ownDirectoryChanges);
-      if (!report.eligible)
-        throw new Error(`Project is no longer eligible: ${project}: ${report.error ?? report.reason}`);
-      const selection = await selectRustArtifacts(options.root, project, options.artifacts);
-      if (!selection.actions.some((candidate) => candidate.path === action.path)) {
-        throw new Error(`Artifact contents changed; preview again: ${action.path}`);
+    async (batch) => {
+      const selections = new Map<string, Map<string, Action>>();
+      for (const action of batch) {
+        const project = owners.get(action.path);
+        if (!project) throw new Error(`Missing project owner: ${action.path}`);
+        let candidates = selections.get(project);
+        if (!candidates) {
+          const report = await inspectProject(options.root, project, cutoffMs, ownDirectoryChanges);
+          if (!report.eligible)
+            throw new Error(`Project is no longer eligible: ${project}: ${report.error ?? report.reason}`);
+          const selection = await selectRustArtifacts(options.root, project, options.artifacts, false);
+          candidates = new Map(selection.actions.map((candidate) => [candidate.path, candidate]));
+          selections.set(project, candidates);
+        }
+        if (candidates.get(action.path)?.repository !== action.repository) {
+          throw new Error(`Artifact contents or owner changed; preview again: ${action.path}`);
+        }
+        await validateCache(options.root, action.path);
       }
-      await validateCache(options.root, action.path);
     },
     async (action) => {
       const parent = dirname(action.path);
       ownDirectoryChanges.set(parent, directoryStamp(await lstat(parent)));
     },
+    32,
   );
   return { projects: reports, preserved, result };
 }

@@ -3,6 +3,7 @@ mod template-resolver 'packages/template-resolver/justfile'
 mod session-analysis 'packages/opencode-session-analysis/justfile'
 mod disk-cleanup 'skills/user/disk-cleanup/justfile'
 mod claude-code-hooks 'harnesses/claude-code/hooks/justfile'
+mod ux-flow-redesign 'skills/agent/ux-flow-redesign/justfile'
 
 # List available commands
 default:
@@ -65,6 +66,7 @@ test:
     just session-analysis test
     just disk-cleanup test
     just claude-code-hooks test
+    just ux-flow-redesign test
 
 # Apply formatting in every package
 fmt:
@@ -73,6 +75,7 @@ fmt:
     just session-analysis fmt
     just disk-cleanup fmt
     just claude-code-hooks fmt
+    just ux-flow-redesign fmt
 
 # Apply lint fixes and formatting in every package
 fix:
@@ -81,6 +84,7 @@ fix:
     just session-analysis fix
     just disk-cleanup fix
     just claude-code-hooks fix
+    just ux-flow-redesign fix
 
 # Validate without modifying source files
 check: typecheck
@@ -89,6 +93,7 @@ check: typecheck
     just session-analysis check
     just disk-cleanup check
     just claude-code-hooks check
+    just ux-flow-redesign check
 
 # Validate this repository's .cronrc
 cron-check:

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposed UX flow wireframes</title>
+<link rel="stylesheet" href="wireframe.css">
+<style>
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.card h3{margin:0 0 4px;font-size:15px}.card p{margin:0 0 6px}
+.card .links{font-size:12px}.card .links a{margin-right:10px}
+.card.warn{background:var(--warnbg);border-color:#f0c98a}
+main h2{font-size:17px;margin:26px 0 8px}
+</style>
+</head>
+<body>
+<header class="page">
+<nav class="top"><a href="/">← Documentation index</a></nav>
+<h1>Proposed UX flow wireframes</h1>
+<p>One low-fidelity page per proposed flow. Each page walks the proposal step by step, with numbered callouts and the tickets each step resolves. The redesign tickets and their acceptance criteria are authoritative; layout, names and numbers here are illustrative.</p>
+</header>
+<main>
+
+<h2>Shared patterns</h2>
+<p><b><a href="patterns.html">Shared UX pattern reference</a></b> (<a href="../patterns.md">full text</a>): the rules, keyboard map, decision log and contract changes every flow follows. A flow that behaves differently names its exception there.</p>
+
+<h2 id="conflicts">Conflicts to settle before building</h2>
+<!-- List every cross-flow disagreement found while drawing, with links to the pages that disagree. Each entry leaves
+     this list when the pattern reference decides it; keep the heading with "None open." when the list is empty. -->
+<div class="card warn">
+<ul>
+<li><b>{{CONFLICT_TOPIC}}.</b> {{FLOW_A_POSITION}}; {{FLOW_B_POSITION}}.</li>
+</ul>
+</div>
+
+<h2>{{FLOW_GROUP}}</h2>
+<div class="grid">
+<!-- flow cards: scaffold-flow.ts inserts new cards above this line -->
+</div>
+</main>
+</body>
+</html>

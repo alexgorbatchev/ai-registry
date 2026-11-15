@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shared UX patterns</title>
+<link rel="stylesheet" href="wireframe.css">
+<style>
+.step.pat{grid-template-columns:minmax(0,1fr) clamp(18rem,54%,56rem)}.step.pat>:first-child{position:sticky;top:calc(var(--key-h,3.5rem) + 12px)}
+.cap ol.rules{font-size:13px}.cap ol.rules li{margin:3px 0}.step.pat{margin:20px 0}.cap ol.rules li>b:first-child{font:600 11px var(--font);color:var(--acc);margin-right:3px}
+.decide{background:var(--warnbg);border:1px solid #f0c98a;border-radius:8px;padding:8px 14px;margin:12px 0 4px;max-width:72rem}.decide h2{margin:0 0 4px;font-size:15px;color:var(--warn)}.decide ul{margin:4px 0;padding-left:18px}.decide li{margin:4px 0}
+.toc{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;margin-top:8px}
+h2.sec{font-size:18px;margin:36px 0 4px}.full{margin:22px 0}.full>p{max-width:72rem;margin:4px 0 10px}
+table.t.ref{background:var(--card);border:1px solid var(--line)}.t.ref th{background:#eceef2}.t.ref td{white-space:normal;overflow:visible;vertical-align:top;overflow-wrap:anywhere;padding:2px 6px}.t.ref tr.grp td{background:#f1f5ff;font:600 12px/1.45 var(--font)}.t.ref td:first-child{font:12px/1.45 var(--font)}
+/* The key band here also holds the contents nav, so it is taller than on flow pages. Re-measure after font or legend changes. */
+:root{--key-h:6.1rem}@media(max-width:1400px){:root{--key-h:7.5rem}}@media(max-width:900px){:root{--key-h:3.4rem}}
+@media(max-width:900px){.step.pat{grid-template-columns:1fr}.step.pat>:first-child{position:static}}
+</style>
+</head>
+<body>
+<header class="page">
+<nav class="top"><a href="index.html">← All flows</a><a href="../patterns.md">Full text of the reference</a></nav>
+<h1>Shared UX patterns</h1>
+<p>This is the one design reference every {{PRODUCT}} flow proposal and wireframe follows. Each rule has an ID such as <b>{{RULE_ID_EXAMPLE}}</b> that proposals, tickets and tests cite, and a flow that needs to behave differently names its exception here.</p>
+<div class="decide" id="product-decisions">
+<h2>Product decisions</h2>
+<p class="small">{{DECISIONS_STATUS_SENTENCE}}</p>
+<ul class="small">
+<li><b>O1 {{DECISION_QUESTION}}. {{DECIDED_OR_RECOMMENDED}}:</b> {{DECISION_SUMMARY}}</li>
+</ul>
+</div>
+<p class="muted small">Low-fidelity reference, condensed from revision {{PATTERN_REVISION}} of the pattern reference. Rule and decision IDs match it; the full text, per-flow conformance lists and critique notes stay there. Layout, names and numbers in the mockups are illustrative.</p>
+</header>
+<div class="key"><div>
+<div class="legend"><b style="color:var(--ink)">How to read:</b>
+<span><i class="k" style="background:#1f2328;border-color:#1f2328"></i>Toast: passing status message in a corner, links only, no decisions</span>
+<span><i class="k" style="background:#fff;border-color:#9aa3af;box-shadow:0 2px 6px #0003"></i>Popover or menu: opens from the outlined control its arrow points at</span>
+<span><i class="k" style="background:#fafbfc;box-shadow:inset 3px 0 var(--line)"></i>Panel: docked beside the table, stays open</span>
+<span><i class="k" style="background:#2b30381f"></i>Dimmed backdrop: dialog that blocks the page</span>
+<span><i class="k" style="background:var(--accbg)"></i>Selected rows</span>
+<span><i class="k" style="background:var(--okbg)"></i>Just changed</span>
+<span><i class="k" style="background:#fff;box-shadow:inset 3px 0 var(--acc)"></i>Row cursor</span>
+<span><span class="n">1</span>Callout, explained on the right</span></div>
+<nav class="toc"><b>Patterns:</b><a href="#selection">1 Selection</a><a href="#menus">2 Menus</a><a href="#surfaces">3 Surfaces</a><b>Tables:</b><a href="#keyboard-map">Keyboard map</a><a href="#decision-log">Decision log</a><a href="#contracts">Contract changes</a></nav>
+</div></div>
+<main>
+
+<!-- One section.step.pat per canonical pattern in section 2 of patterns.md, in the same order, with the same rule IDs
+     (the IDs below are the examples patterns.md starts with; replace them with the reference's own).
+     The mockup on the left shows the pattern; the caption on the right lists its rules, with callouts where a rule
+     points at part of the mockup. Keep every mockup in sync with the rule text: an item a rule lists must appear. -->
+<section class="step pat" id="selection">
+<div class="win">
+<div class="bar"><b>{{PRODUCT}} › {{LOCATION}}</b></div>
+<div class="app full"><div class="work">
+<table class="t"><thead><tr><th style="width:52%">{{COLUMN}}</th><th>{{COLUMN}}</th></tr></thead><tbody>
+<tr class="sel"><td>{{ROW}}</td><td>{{VALUE}}</td></tr>
+<tr class="sel focus"><td>{{ROW}}</td><td>{{VALUE}}</td><!-- the row cursor --></tr>
+<tr><td>{{ROW}}</td><td>{{VALUE}}</td></tr>
+</tbody></table>
+<div class="row small" style="margin-top:6px"><b>{{SELECTION_SUMMARY}}</b><span class="n">1</span></div>
+</div></div>
+</div>
+<div class="cap"><h2>1. Selection</h2>
+<p>{{WHEN_TO_USE}}</p>
+<ol class="rules">
+<li><b>SEL-1</b> <span class="n">1</span> {{RULE_TEXT}}</li>
+</ol>
+<p class="fixes">{{BACKEND_ACCESSIBILITY_AND_CONTRACT_NOTES}}</p></div>
+</section>
+
+<section class="step pat" id="menus">
+<div class="win">
+<div class="bar"><b>{{PRODUCT}} › {{LOCATION}}</b></div>
+<div class="app full"><div class="work">
+<table class="t"><thead><tr><th>{{COLUMN}}</th><th style="width:4rem"></th></tr></thead><tbody>
+<tr class="sel focus"><td>{{ROW}}</td><td style="text-align:right"><span class="btn open">⋯</span></td></tr>
+</tbody></table>
+<!-- Menu shape: a target header, then groups. A heading (.lbl) labels two or more items; a lone item joins its
+     closest group. Only the destructive last item stands alone, after a separator (.sep) and without a heading. -->
+<div class="popover menu" style="max-width:300px;margin:10px 0 0 auto"><span class="caret-up" style="right:17px"></span>
+<div class="from">Right-click, ⋯ or the context-menu key on a selected row</div>
+<div class="row"><b>{{TARGET_HEADER}}</b><span class="n">1</span></div>
+<div class="lbl">{{GROUP_A}}</div>
+<div class="row">{{ITEM}}<span class="sp"></span><kbd>{{KEY}}</kbd></div>
+<div class="row">{{ITEM}}…</div>
+<div class="lbl">{{GROUP_B}}</div>
+<div class="row">{{ITEM}}</div>
+<div class="row muted">{{ITEM}}<span class="sp"></span>{{DISABLED_REASON}}</div>
+<div class="sep"></div>
+<div class="row" style="color:var(--bad)">{{DESTRUCTIVE_ITEM}}… <span class="n">2</span></div>
+</div>
+</div></div>
+</div>
+<div class="cap"><h2>2. Menus and entry points</h2>
+<p>{{WHEN_TO_USE}}</p>
+<ol class="rules">
+<li><b>MENU-1</b> <span class="n">1</span> {{RULE_TEXT}}</li>
+<li><b>MENU-2</b> <span class="n">2</span> A heading labels two or more items. A lone item joins its closest group; only the destructive last item stands alone, after a separator and without a heading.</li>
+</ol>
+<p class="fixes">{{BACKEND_ACCESSIBILITY_AND_CONTRACT_NOTES}}</p></div>
+</section>
+
+<section class="step pat" id="surfaces">
+<div class="win">
+<div class="bar"><b>{{PRODUCT}} › {{LOCATION}}</b></div>
+<div class="scrim">
+<div class="dlg"><div class="hd"><h3>{{DIALOG_QUESTION}}</h3></div>
+<div class="body">{{WHAT_IS_KEPT_AND_WHAT_UNDO_RESTORES}}<span class="n">1</span></div>
+<div class="ft"><span class="btn">Cancel</span><span class="btn danger">{{VERB_FROM_TITLE}}</span></div></div>
+</div>
+</div>
+<div class="cap"><h2>3. Surfaces</h2>
+<p>Decision rule: ask in order and use the first surface that fits.</p>
+<ol class="rules">
+<li><b>SURF-1</b> <span class="n">1</span> {{RULE_TEXT}}</li>
+</ol>
+<p class="fixes">{{BACKEND_ACCESSIBILITY_AND_CONTRACT_NOTES}}</p></div>
+</section>
+
+<section class="full" id="keyboard-map">
+<h2 class="sec">Keyboard map</h2>
+<p class="small muted">Every key, the scope it fires in, and the flow that owns it. Collisions are resolved in the reference's keyboard section.</p>
+<table class="t ref">
+<colgroup><col style="width:14%"><col style="width:18%"><col style="width:48%"><col style="width:20%"></colgroup>
+<thead><tr><th>Key</th><th>Scope</th><th>Action</th><th>Owning flow</th></tr></thead>
+<tbody>
+<tr><td><kbd>{{KEY}}</kbd></td><td>{{SCOPE}}</td><td>{{ACTION}}</td><td>{{FLOW}}</td></tr>
+</tbody></table>
+</section>
+
+<section class="full" id="decision-log">
+<h2 class="sec">Decision log</h2>
+<p class="small muted">How each cross-flow disagreement the audits found was settled. IDs match the audit decision IDs; the full reference lists the options with the flows that held them, the reason, and the flows that must change.</p>
+<table class="t ref">
+<colgroup><col style="width:13%"><col style="width:20%"><col style="width:52%"><col style="width:15%"></colgroup>
+<thead><tr><th>ID</th><th>Topic</th><th>Decision</th><th>Rules</th></tr></thead>
+<tbody>
+<tr class="grp"><td colspan="4">{{AUDIT_DIMENSION}} · {{N}} decisions</td></tr>
+<tr><td>{{DIMENSION}}-01</td><td>{{TOPIC}}</td><td>{{DECISION}}</td><td>{{RULE_IDS}}</td></tr>
+</tbody></table>
+</section>
+
+<section class="full" id="contracts">
+<h2 class="sec">Contract changes</h2>
+<p class="small muted">Every project-instruction and feature-roster change the patterns require. Each lands in the same change as the code that implements it.</p>
+<table class="t ref">
+<colgroup><col style="width:9%"><col style="width:19%"><col style="width:72%"></colgroup>
+<thead><tr><th>ID</th><th>From</th><th>Change</th></tr></thead>
+<tbody>
+<tr><td>CC-1</td><td>{{RULE_IDS}}</td><td>{{QUOTED_OLD_CONTRACT}} becomes {{NEW_CONTRACT}}</td></tr>
+</tbody></table>
+</section>
+</main>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{FLOW_TITLE}} · proposed flow wireframe</title>
+<link rel="stylesheet" href="wireframe.css">
+</head>
+<body>
+<header class="page">
+<nav class="top"><a href="index.html">← All flows</a><a href="../{{FLOW_KEY}}-current.html">Today's flow diagram</a><a href="../{{FLOW_KEY}}-proposed.html">Proposed flow diagram</a><a href="../proposals/{{FLOW_KEY}}.md">Written proposal</a><a href="{{TICKET_URL}}">Redesign ticket {{TICKET_LABEL}}</a></nav>
+<h1>{{FLOW_TITLE}}</h1>
+<p><b>TLDR:</b> {{TLDR_ONE_SENTENCE}}</p>
+<p class="muted small">Low-fidelity wireframe. Layout, names and numbers are illustrative; the redesign ticket's acceptance criteria are authoritative.</p>
+</header>
+<div class="key"><div>
+<div class="legend"><b style="color:var(--ink)">How to read:</b>
+<span><i class="k" style="background:#1f2328;border-color:#1f2328"></i>Toast: passing status message in a corner, links only, no decisions</span>
+<span><i class="k" style="background:#fff;border-color:#9aa3af;box-shadow:0 2px 6px #0003"></i>Popover or menu: opens from the outlined control its arrow points at</span>
+<span><i class="k" style="background:#fafbfc;box-shadow:inset 3px 0 var(--line)"></i>Panel: docked beside the table, stays open</span>
+<span><i class="k" style="background:#2b30381f"></i>Dimmed backdrop: dialog that blocks the page</span>
+<span><i class="k" style="background:var(--accbg)"></i>Selected rows</span>
+<span><i class="k" style="background:var(--okbg)"></i>Just changed</span>
+<span><i class="k" style="background:#fff;box-shadow:inset 3px 0 var(--acc)"></i>Row cursor</span>
+<span><span class="n">1</span>Callout, explained on the right</span></div>
+</div></div>
+<main>
+
+<!-- One section.step per target step of the proposal, in its order (usually 4 to 8). Each step makes sense on its own:
+     its caption says what stays the same as well as what changes. Draw the selection summary, command bar, menus and
+     surfaces exactly as the shared pattern reference's rules say; the bars below are placeholders for those rules. -->
+<section class="step" id="{{STEP_1_ID}}">
+<div class="win">
+<div class="bar"><b>{{PRODUCT}} › {{LOCATION}}</b></div>
+<div class="app">
+<div class="side"><div>{{NAV_ITEM}}</div><div class="on">{{CURRENT_NAV_ITEM}}</div><div>{{NAV_ITEM}}</div></div>
+<div class="work">
+<div class="tb"><span class="in">{{SEARCH_TEXT}}</span><span class="btn">{{TOOLBAR_ACTION}}</span><span class="n">1</span></div>
+<table class="t"><thead><tr><th style="width:6%"></th><th>{{COLUMN}}</th><th style="width:24%">{{COLUMN}}</th></tr></thead><tbody>
+<tr class="sel"><td>☑</td><td>{{ROW}}</td><td>{{VALUE}}</td></tr>
+<tr class="sel focus"><td>☑</td><td>{{ROW}}</td><td>{{VALUE}}</td></tr>
+<tr><td>☐</td><td>{{ROW}}</td><td>{{VALUE}}</td></tr>
+<tr class="dim"><td></td><td colspan="2">… {{N}} more rows</td></tr>
+</tbody></table>
+<div class="selbar"><b>{{SELECTION_SUMMARY}}</b><span class="n">2</span><span class="sp"></span><span class="btn">{{SECONDARY_ACTION}}</span><span class="btn pri">{{COUNTED_PRIMARY_ACTION}}</span></div>
+</div>
+</div>
+</div>
+<div class="cap"><h2>1. {{STEP_1_NAME}}</h2>
+<p>{{STEP_1_SUMMARY}}</p>
+<ol><li><span class="n">1</span> {{CALLOUT_1}}</li>
+<li><span class="n">2</span> {{CALLOUT_2}}</li></ol>
+<p class="fixes">Fixes {{FINDING_TICKETS}}</p></div>
+</section>
+
+<section class="step" id="{{STEP_2_ID}}">
+<div class="win">
+<div class="bar"><b>{{PRODUCT}} › {{LOCATION}}</b></div>
+<div class="app full"><div class="work">
+<div class="popover" style="max-width:20rem;margin:0 0 9px 0"><i class="caret-dn" style="left:24px"></i>
+<div class="from">Opened from {{TRIGGER_LABEL}} in the footer</div>
+<div class="row" style="margin-bottom:4px"><span class="in" style="flex:1">{{FILTER_TEXT}}</span><span class="n">2</span></div>
+<div>◉ {{DEFAULT_CHOICE}}</div><div>○ {{OTHER_CHOICE}}</div><div>○ {{OTHER_CHOICE}}</div>
+</div>
+<div class="selbar"><span class="chip acc open">{{TRIGGER_LABEL}}</span><span class="n">1</span><span class="sp"></span><span class="btn pri">{{COUNTED_PRIMARY_ACTION}}</span></div>
+</div></div>
+<div class="toastrow"><div class="toast">{{OUTCOME_SENTENCE}} <a>Undo</a><a>Show</a></div><span class="n">3</span></div>
+</div>
+<div class="cap"><h2>2. {{STEP_2_NAME}}</h2>
+<ol><li><span class="n">1</span> {{CALLOUT_1}}</li>
+<li><span class="n">2</span> {{CALLOUT_2}}</li>
+<li><span class="n">3</span> {{CALLOUT_3}}</li></ol>
+<p class="fixes">Fixes {{FINDING_TICKETS}}</p></div>
+</section>
+
+<section class="step" id="{{STEP_3_ID}}">
+<div class="win">
+<div class="bar"><b>{{PRODUCT}} › {{LOCATION}}</b></div>
+<div class="app dock3">
+<div class="side"><div>{{NAV_ITEM}}</div><div class="on">{{CURRENT_NAV_ITEM}}</div></div>
+<div class="work">
+<table class="t"><thead><tr><th>{{COLUMN}}</th><th style="width:30%">{{COLUMN}}</th></tr></thead><tbody>
+<tr class="sel"><td>{{ROW}}</td><td><del>{{OLD_VALUE}}</del> <ins>{{NEW_VALUE}}</ins></td></tr>
+<tr class="sel"><td>{{ROW}}</td><td><del>{{OLD_VALUE}}</del> <ins>{{NEW_VALUE}}</ins></td></tr>
+</tbody></table>
+</div>
+<div class="dock"><h3>{{PANEL_TITLE}}</h3>
+<div class="fld"><span>{{FIELD}}</span><span class="in changed">{{EDITED_VALUE}}</span></div>
+<div class="fld"><span>{{FIELD}}</span><span class="in mixed">Mixed · {{N}} values</span></div>
+<div class="banner info">{{REVIEW_SUMMARY}}<span class="n">1</span></div>
+<div class="ft"><span class="n">2</span><span class="btn">Cancel</span><span class="btn pri">{{EFFECT_NAMED_ACTION}}</span></div>
+</div>
+</div>
+</div>
+<div class="cap"><h2>3. {{STEP_3_NAME}}</h2>
+<ol><li><span class="n">1</span> {{CALLOUT_1}}</li>
+<li><span class="n">2</span> {{CALLOUT_2}}</li></ol>
+<p class="fixes">Fixes {{FINDING_TICKETS}}</p></div>
+</section>
+
+<section class="changes">
+<div><h3>Removed</h3><ul><li>{{REMOVED_BEHAVIOR}}</li></ul></div>
+<div><h3>New</h3><ul><li>{{NEW_CAPABILITY}}</li></ul></div>
+<div><h3>Kept</h3><ul><li>{{KEPT_SAFEGUARD}}</li></ul></div>
+<div><h3>Backend work</h3><ul><li>{{BACKEND_CHANGE}}</li></ul></div>
+</section>
+</main>
+</body>
+</html>

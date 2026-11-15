@@ -1,0 +1,110 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "{{FLOW_TITLE}} today",
+    "locale": "en",
+    "output": "{{DOCS_DIR}}/{{FLOW_KEY}}-current.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "{{REPOSITORY_URL}}",
+      "link_mode": "local-only",
+      "revision": "{{REVISION}}"
+    },
+    "legend": {
+      "entries": {
+        "external": { "label": "Entry point" },
+        "frontend": { "label": "UI step" },
+        "backend": { "label": "Backend job" },
+        "security": { "label": "Step with a ticketed pain point" }
+      }
+    }
+  },
+  "lanes": [
+    { "id": "entry", "label": "Entry points" },
+    { "id": "page", "label": "{{MAIN_VIEW}}" },
+    { "id": "dialog", "label": "Dialogs" },
+    { "id": "backend", "label": "Backend job" },
+    { "id": "recovery", "label": "Failures and retry", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "start", "label": "Open + set up", "fromCol": 0, "toCol": 1 },
+    { "id": "write", "label": "Confirm + run", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "outcome", "label": "Result + undo", "fromCol": 4, "toCol": 4 }
+  ],
+  "mainPath": ["open", "form", "confirm", "job", "result"],
+  "nodes": [
+    {
+      "id": "open",
+      "lane": "entry",
+      "col": 0,
+      "type": "external",
+      "label": "{{ENTRY_POINT}}",
+      "sublabel": "{{WHERE_PEOPLE_START}}",
+      "sources": [{ "path": "{{SOURCE_PATH}}", "line": 1, "end_line": 1, "label": "{{WHAT_THIS_CODE_DOES}}" }]
+    },
+    {
+      "id": "form",
+      "lane": "page",
+      "col": 1,
+      "type": "security",
+      "label": "{{STEP}}",
+      "sublabel": "{{WHAT_THE_PERSON_SEES}}",
+      "tag": "{{FINDING_TICKET}}",
+      "explanation": "{{THE_PAIN_POINT_ON_THIS_STEP_AND_ITS_TICKET}}",
+      "sources": [{ "path": "{{SOURCE_PATH}}", "line": 1, "end_line": 1, "label": "{{WHAT_THIS_CODE_DOES}}" }]
+    },
+    {
+      "id": "confirm",
+      "lane": "dialog",
+      "col": 2,
+      "type": "frontend",
+      "label": "{{CONFIRMATION_OR_REVIEW}}",
+      "sublabel": "{{WHAT_IT_ASKS}}",
+      "sources": [{ "path": "{{SOURCE_PATH}}", "line": 1, "end_line": 1, "label": "{{WHAT_THIS_CODE_DOES}}" }]
+    },
+    {
+      "id": "job",
+      "lane": "backend",
+      "col": 3,
+      "type": "backend",
+      "label": "{{OPERATION}}",
+      "sublabel": "{{READ_OR_WRITE}}",
+      "sources": [{ "path": "{{SOURCE_PATH}}", "line": 1, "end_line": 1, "label": "{{WHAT_THIS_CODE_DOES}}" }]
+    },
+    {
+      "id": "result",
+      "lane": "page",
+      "col": 4,
+      "type": "security",
+      "label": "{{RESULT}}",
+      "sublabel": "{{WHERE_THE_OUTCOME_APPEARS}}",
+      "tag": "{{FINDING_TICKET}}",
+      "explanation": "{{THE_PAIN_POINT_ON_THIS_STEP_AND_ITS_TICKET}}",
+      "sources": [{ "path": "{{SOURCE_PATH}}", "line": 1, "end_line": 1, "label": "{{WHAT_THIS_CODE_DOES}}" }]
+    },
+    {
+      "id": "failed",
+      "lane": "recovery",
+      "col": 4,
+      "type": "security",
+      "label": "{{FAILURE_STATE}}",
+      "sublabel": "{{WHAT_RECOVERY_REQUIRES}}",
+      "tag": "{{FINDING_TICKET}}",
+      "explanation": "{{THE_PAIN_POINT_ON_THIS_STEP_AND_ITS_TICKET}}"
+    }
+  ],
+  "edges": [
+    { "id": "open-form", "from": "open", "to": "form", "label": "open", "role": "main" },
+    { "id": "form-confirm", "from": "form", "to": "confirm", "label": "{{ACTION}}", "role": "main" },
+    { "id": "confirm-job", "from": "confirm", "to": "job", "label": "confirm", "role": "main" },
+    { "id": "job-result", "from": "job", "to": "result", "label": "done", "role": "main" },
+    { "id": "job-failed", "from": "job", "to": "failed", "label": "fails", "role": "error" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "What already works", "items": ["{{BEHAVIOR_TO_KEEP}}"] },
+    { "dot": "rose", "title": "Tickets on this journey", "items": ["{{FINDING_TICKET}} {{ONE_LINE_PROBLEM}}"] },
+    { "dot": "amber", "title": "Not yet ticketed (seen in code)", "items": ["{{DEFECT_SEEN_WHILE_TRACING}}"] },
+    { "dot": "slate", "title": "Evidence", "items": ["Traced from {{REPOSITORY}} at {{REVISION}}; {{WHAT_WAS_EXERCISED_LIVE}}"] }
+  ]
+}

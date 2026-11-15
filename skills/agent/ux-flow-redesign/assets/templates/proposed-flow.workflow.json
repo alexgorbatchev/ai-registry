@@ -1,0 +1,111 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "{{FLOW_TITLE}}: proposed",
+    "locale": "en",
+    "output": "{{DOCS_DIR}}/{{FLOW_KEY}}-proposed.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "{{REPOSITORY_URL}}",
+      "link_mode": "local-only",
+      "revision": "{{REVISION}}"
+    },
+    "legend": {
+      "entries": {
+        "external": { "label": "Entry point" },
+        "frontend": { "label": "UI step where the work started" },
+        "backend": { "label": "Backend operation" },
+        "security": { "label": "Recovery step, handled in place" }
+      }
+    }
+  },
+  "lanes": [
+    { "id": "ask", "label": "{{MAIN_VIEW}}: ask" },
+    { "id": "review", "label": "{{MAIN_VIEW}}: review" },
+    { "id": "backend", "label": "Backend operation" },
+    { "id": "outcome", "label": "Outcome in place" },
+    { "id": "recovery", "label": "Recovery in place", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "ask_phase", "label": "Ask", "fromCol": 0, "toCol": 1 },
+    { "id": "write_phase", "label": "Review + write", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "outcome_phase", "label": "Outcome + undo", "fromCol": 4, "toCol": 4 }
+  ],
+  "mainPath": ["entry", "ask", "plan", "write", "receipt"],
+  "nodes": [
+    {
+      "id": "entry",
+      "lane": "ask",
+      "col": 0,
+      "type": "external",
+      "label": "{{ENTRY_POINT}}",
+      "sublabel": "{{OTHER_ENTRY_POINTS}}",
+      "tag": "{{FINDING_TICKET}}",
+      "explanation": "{{WHAT_THIS_STEP_DOES_AND_WHICH_PROBLEMS_IT_REMOVES}}"
+    },
+    {
+      "id": "ask",
+      "lane": "ask",
+      "col": 1,
+      "type": "frontend",
+      "label": "{{STEP}}",
+      "sublabel": "{{WHAT_THE_PERSON_SEES}}",
+      "tag": "{{FINDING_TICKET}}",
+      "explanation": "{{WHAT_THIS_STEP_DOES_AND_WHICH_PROBLEMS_IT_REMOVES}}",
+      "sources": [{ "path": "{{SOURCE_PATH}}", "line": 1, "end_line": 1, "label": "Reuses: {{EXISTING_CODE}}" }]
+    },
+    {
+      "id": "plan",
+      "lane": "review",
+      "col": 2,
+      "type": "backend",
+      "label": "{{DRY_RUN_OPERATION}}",
+      "sublabel": "read only",
+      "explanation": "{{WHAT_THE_PLAN_SHOWS_AND_WHAT_THE_PERSON_CAN_EXCLUDE}}"
+    },
+    {
+      "id": "write",
+      "lane": "backend",
+      "col": 3,
+      "type": "backend",
+      "label": "{{WRITE_OPERATION}}",
+      "sublabel": "one protected write",
+      "explanation": "{{EXACTLY_WHAT_IS_WRITTEN_AND_HOW_IT_IS_UNDONE}}"
+    },
+    {
+      "id": "receipt",
+      "lane": "outcome",
+      "col": 4,
+      "type": "frontend",
+      "label": "{{SHORT_OUTCOME_LABEL}}",
+      "sublabel": "Undo · Show",
+      "tag": "{{FINDING_TICKET}}",
+      "explanation": "{{EXACT_OUTCOME_SENTENCE_WHERE_IT_APPEARS_AND_HOW_UNDO_WORKS}}"
+    },
+    {
+      "id": "retry",
+      "lane": "recovery",
+      "col": 4,
+      "type": "security",
+      "label": "Retry {{N}} failed",
+      "sublabel": "{{PER_ITEM_REASONS}}",
+      "explanation": "{{HOW_FAILURES_ARE_SHOWN_AND_RETRIED_WITHOUT_REPLAYING_SUCCESSES}}"
+    }
+  ],
+  "edges": [
+    { "id": "entry-ask", "from": "entry", "to": "ask", "label": "open", "role": "main" },
+    { "id": "ask-plan", "from": "ask", "to": "plan", "label": "{{PRIMARY_KEY_OR_BUTTON}}", "role": "main" },
+    { "id": "plan-write", "from": "plan", "to": "write", "label": "{{COUNTED_EFFECT_NAMED_BUTTON}}", "role": "main", "variant": "emphasis" },
+    { "id": "write-receipt", "from": "write", "to": "receipt", "label": "done", "role": "main" },
+    { "id": "write-retry", "from": "write", "to": "retry", "label": "partial failure", "role": "error" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "What changes versus today", "items": ["Removed: {{REMOVED}}", "Merged: {{MERGED}}", "New: {{NEW}}", "Kept: {{KEPT}}"] },
+    { "dot": "rose", "title": "Tickets this journey resolves", "items": ["{{STEP_GROUP}}: {{FINDING_TICKETS}}"] },
+    { "dot": "violet", "title": "Backend work", "items": ["{{BACKEND_CHANGE}}"] },
+    { "dot": "cyan", "title": "Contract changes", "items": ["{{CONTRACT_CHANGE_OR_NONE}}"] },
+    { "dot": "amber", "title": "Seen in code, not yet ticketed", "items": ["{{DEFECT}}"] },
+    { "dot": "slate", "title": "Evidence", "items": ["Designed against {{REPOSITORY}} at {{REVISION}} and the shared UX pattern reference revision {{PATTERN_REVISION}}"] }
+  ]
+}

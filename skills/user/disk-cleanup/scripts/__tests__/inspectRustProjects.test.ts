@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
 import assert from 'node:assert';
-import { chmod, mkdir, readdir, symlink, utimes } from 'node:fs/promises';
+import { chmod, lstat, mkdir, readdir, symlink, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { inspectRustProject, inspectRustProjects } from '../inspectRustProjects';
 import { parseIdleDuration, parseRustArtifacts } from '../parseIdleDuration';
 import { removeRustArtifacts } from '../removeRustArtifacts';
+import { removeTargets, validateCache } from '../removeTargets';
 import { cli, createRoot, disposeRoot, git } from './helpers';
 
 let root: string;
@@ -227,35 +228,102 @@ test('recent projects are reported as preserved during execution', async () => {
   expect(await Bun.file(join(project, 'target/debug/incremental/state')).exists()).toBe(true);
 });
 
-test('activity between removals stops the batch and logs the partial result', async () => {
+async function fragmentTemporaryArtifacts(count: number): Promise<string[]> {
+  await symlink(join(project, 'src'), join(project, '.tmp/retained-link'));
+  const paths: string[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const path = join(project, '.tmp', `item-${String(index).padStart(3, '0')}`);
+    await Bun.write(path, 'discard');
+    paths.push(path);
+  }
+  return [...paths, join(project, '.tmp/scratch')];
+}
+
+test.each([false, true])('fragmented cleanup bounds project inspections (execute=%s)', async (execute) => {
+  const paths = await fragmentTemporaryArtifacts(64);
   let inspections = 0;
-  const changes = new Map([
-    [
-      5,
-      async () => {
-        await utimes(join(project, 'src/lib.rs'), now / 1000, now / 1000);
-      },
-    ],
-  ]);
   const inspectProject: typeof inspectRustProject = async (...args) => {
     inspections += 1;
-    await changes.get(inspections)?.();
+    return inspectRustProject(...args);
+  };
+  const result = await removeRustArtifacts(
+    { root, projects: ['sample'], artifacts: ['tmp'], idleMs, execute },
+    now,
+    inspectProject,
+  );
+  expect(inspections).toBe(execute ? 5 : 2);
+  expect((await lstat(join(project, '.tmp/retained-link'))).isSymbolicLink()).toBe(true);
+  for (const path of paths) expect(await Bun.file(path).exists()).toBe(!execute);
+  if (execute) expect(result).toMatchObject({ result: { removed: paths } });
+  else expect(await Bun.file(join(root, '.state')).exists()).toBe(false);
+});
+
+test('activity between batches stops deletion and logs the partial result', async () => {
+  const paths = await fragmentTemporaryArtifacts(32);
+  let inspections = 0;
+  const inspectProject: typeof inspectRustProject = async (...args) => {
+    inspections += 1;
+    if (inspections === 4) await utimes(join(project, 'src/lib.rs'), now / 1000, now / 1000);
     return inspectRustProject(...args);
   };
   await expect(
-    removeRustArtifacts(
-      { root, projects: ['sample'], artifacts: ['tmp', 'target'], idleMs, execute: true },
-      now,
-      inspectProject,
-    ),
+    removeRustArtifacts({ root, projects: ['sample'], artifacts: ['tmp'], idleMs, execute: true }, now, inspectProject),
   ).rejects.toThrow('Cleanup stopped; inspect');
-  expect(await Bun.file(join(project, '.tmp/scratch')).exists()).toBe(false);
-  expect(await Bun.file(join(project, 'target/debug/incremental/state')).exists()).toBe(true);
+  for (const path of paths.slice(0, 32)) expect(await Bun.file(path).exists()).toBe(false);
+  expect(await Bun.file(join(project, '.tmp/scratch')).exists()).toBe(true);
   const [logDirectory] = await readdir(join(root, '.state'));
   assert(logDirectory);
   const log = await Bun.file(join(root, '.state', logDirectory, 'execution.json')).json();
-  expect(log.removed).toEqual([join(project, '.tmp')]);
+  expect(log.removed).toEqual(paths.slice(0, 32));
   expect(log.failure).toBe(`Error: Project is no longer eligible: ${project}: recent filesystem or Git activity`);
+});
+
+test.each(['tracked', 'symlink', 'repository'])('new %s content invalidates a removal batch', async (kind) => {
+  let inspections = 0;
+  const inspectProject: typeof inspectRustProject = async (...args) => {
+    inspections += 1;
+    if (inspections === 3) {
+      if (kind === 'tracked') git(project, ['add', '.tmp/scratch']);
+      else if (kind === 'symlink') await symlink(join(project, 'src'), join(project, '.tmp/new-link'));
+      else git(join(project, '.tmp'), ['init', '--initial-branch=main']);
+    }
+    return inspectRustProject(...args);
+  };
+  await expect(
+    removeRustArtifacts({ root, projects: ['sample'], artifacts: ['tmp'], idleMs, execute: true }, now, inspectProject),
+  ).rejects.toThrow('Artifact contents or owner changed');
+  expect(await Bun.file(join(project, '.tmp/scratch')).text()).toBe('scratch');
+});
+
+test('a failed native batch records its completed removals', async () => {
+  const blockedParent = join(project, '.tmp/locked');
+  const blockedPath = join(blockedParent, 'retained');
+  const removedPath = join(project, '.tmp/scratch');
+  await Bun.write(blockedPath, 'retained');
+  const actions = await Promise.all([removedPath, blockedPath].map((path) => validateCache(root, path)));
+  await chmod(blockedParent, 0o500);
+  try {
+    await expect(
+      removeTargets(
+        { root, execute: true },
+        actions,
+        async (batch) => {
+          for (const action of batch) await validateCache(root, action.path);
+        },
+        undefined,
+        32,
+      ),
+    ).rejects.toThrow('Cleanup stopped; inspect');
+    expect(await Bun.file(removedPath).exists()).toBe(false);
+    expect(await Bun.file(blockedPath).text()).toBe('retained');
+    const [logDirectory] = await readdir(join(root, '.state'));
+    assert(logDirectory);
+    const log = await Bun.file(join(root, '.state', logDirectory, 'execution.json')).json();
+    expect(log.removed).toEqual([removedPath]);
+    expect(log.failure).toContain('rm failed');
+  } finally {
+    await chmod(blockedParent, 0o700);
+  }
 });
 
 test('invalid selected project prevents any batch deletion', async () => {

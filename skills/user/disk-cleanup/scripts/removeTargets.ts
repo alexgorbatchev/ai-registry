@@ -8,6 +8,7 @@ import {
   ensureUntracked,
   git,
   isRecordPath,
+  isVanished,
   owningRepository,
   run,
   validatePath,
@@ -42,9 +43,13 @@ export async function validateDependency(root: string, action: Action, days: num
 export async function removeTargets(
   options: RunOptions,
   actions: Action[],
-  validate: (action: Action) => Promise<void>,
+  validate: (actions: Action[]) => Promise<void>,
   afterRemove?: (action: Action) => Promise<void>,
+  maxBatchSize = 1,
 ): Promise<unknown> {
+  if (!Number.isInteger(maxBatchSize) || maxBatchSize < 1 || maxBatchSize > 32) {
+    throw new Error('Removal batches must contain 1 to 32 paths');
+  }
   assertDisjoint(
     options.root,
     actions.map((action) => action.path),
@@ -52,7 +57,7 @@ export async function removeTargets(
   if (actions.some((action) => isRecordPath(options.root, action.path))) {
     throw new Error('Preserve the root .state cleanup records');
   }
-  for (const action of actions) await validate(action);
+  await validate(actions);
   if (!options.execute || actions.length === 0) return { execute: false, actions, logPath: null };
   const logPath = join(await createRecordDirectory(options.root, 'cleanup-'), 'execution.json');
   const before = await run(['df', '-B1', '--', options.root]);
@@ -78,22 +83,36 @@ export async function removeTargets(
   }
   await persist();
   try {
-    for (const action of actions) {
-      await validate(action);
-      const identity = await lstat(action.path);
-      await validatePath(options.root, action.path);
-      const current = await lstat(action.path);
-      if (identity.ino !== current.ino || identity.dev !== current.dev)
-        throw new Error(`Target changed: ${action.path}`);
-      if (action.kind === 'worktree') {
-        if (!action.repository) throw new Error('Worktree has no Git owner');
-        await git(action.repository, ['worktree', 'remove', '--', action.path]);
-      } else {
-        await run(['rm', '-r', '--', action.path]);
+    for (const batch of removalBatches(actions, maxBatchSize)) {
+      const identities = await Promise.all(batch.map((action) => lstat(action.path)));
+      await validate(batch);
+      for (const [index, action] of batch.entries()) {
+        await validatePath(options.root, action.path);
+        const current = await lstat(action.path);
+        const identity = identities[index];
+        if (!identity || identity.ino !== current.ino || identity.dev !== current.dev)
+          throw new Error(`Target changed: ${action.path}`);
       }
-      await ensureAbsent(action.path);
-      removed.push(action.path);
-      await afterRemove?.(action);
+      try {
+        const worktree = batch.find((action) => action.kind === 'worktree');
+        if (worktree) {
+          if (!worktree.repository) throw new Error('Worktree has no Git owner');
+          await git(worktree.repository, ['worktree', 'remove', '--', worktree.path]);
+        } else {
+          await run(['rm', '-r', '--', ...batch.map((action) => action.path)]);
+        }
+        for (const action of batch) await ensureAbsent(action.path);
+      } finally {
+        // Native rm can remove only part of a batch before reporting failure.
+        const completed: Action[] = [];
+        for (const action of batch) {
+          if (await isVanished(action.path)) {
+            removed.push(action.path);
+            completed.push(action);
+          }
+        }
+        for (const action of completed) await afterRemove?.(action);
+      }
       await persist();
     }
   } catch (error) {
@@ -102,6 +121,26 @@ export async function removeTargets(
     throw new Error(`Cleanup stopped; inspect ${logPath}: ${failure}`);
   }
   return { execute: true, removed, logPath, before, after: await run(['df', '-B1', '--', options.root]) };
+}
+
+function* removalBatches(actions: Action[], maxPaths: number): Generator<Action[]> {
+  let batch: Action[] = [];
+  let bytes = 0;
+  for (const action of actions) {
+    const size = Buffer.byteLength(action.path) + 1;
+    if (batch.length && (batch.length >= maxPaths || bytes + size > 16_384 || action.kind === 'worktree')) {
+      yield batch;
+      batch = [];
+      bytes = 0;
+    }
+    if (action.kind === 'worktree') {
+      yield [action];
+    } else {
+      batch.push(action);
+      bytes += size;
+    }
+  }
+  if (batch.length) yield batch;
 }
 
 export async function worktreeAction(root: string, input: string): Promise<Action> {

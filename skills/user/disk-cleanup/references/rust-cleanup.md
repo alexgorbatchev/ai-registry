@@ -45,10 +45,13 @@ affecting the project or its ancestors. Return recognized inaccessible-mount war
 `processWarnings`; they do not block this project's inspection. Other users' processes and external symlink
 destinations are outside this check. Coordinate with workers using shared directories or other user identities.
 
-Revalidate the whole batch before its first deletion, then recheck project activity, storage layout, tracked
-content, and artifact boundaries before each target. Account for directory timestamp changes caused by this
-batch's own removals; a subsequent differing timestamp still blocks cleanup. Stop and keep the partial log on
-the first failure. These checks are snapshots, not a lock against a process starting during deletion.
+Validate the full selection before its first deletion, inspecting each project once per validation pass.
+Remove artifacts in native batches of at most 32 paths and 16 KiB of path arguments. Before each batch,
+recheck project activity, storage layout, ownership, tracked content, artifact boundaries, and path identities;
+never reuse project eligibility between batches. Account for directory timestamp changes caused by this
+command's own removals; a subsequent differing timestamp still blocks cleanup. Stop on the first failure and
+retain a log of verified removals, including a partially successful native command. These checks are snapshots,
+not a lock against a process starting during deletion.
 
 Preserve tracked content, symlinks, special files, mounted filesystems, and embedded Git repositories. Split a
 temporary tree around embedded repositories, deleting only reviewed unprotected siblings. Detect `.git` files

@@ -165,9 +165,9 @@ for (const verb of ['list', 'remove']) {
           if (item.bytes === null) throw new Error(`Unknown allocation: ${item.path}`);
           return { path: item.path, repository: item.repository, bytes: item.bytes, kind: 'dependency' };
         });
-      const result = await removeTargets({ root, execute: options.execute }, actions, (action) =>
-        validateDependency(root, action, options.days),
-      );
+      const result = await removeTargets({ root, execute: options.execute }, actions, async (batch) => {
+        for (const action of batch) await validateDependency(root, action, options.days);
+      });
       output({ result, preserved: report.filter((item) => !item.eligible) });
     });
 }
@@ -223,8 +223,8 @@ scoped(
   const actions: Action[] = [];
   for (const input of inputs) actions.push(await validateCache(root, input));
   output(
-    await removeTargets({ root, execute: options.execute }, actions, async (action) => {
-      await validateCache(root, action.path);
+    await removeTargets({ root, execute: options.execute }, actions, async (batch) => {
+      for (const action of batch) await validateCache(root, action.path);
     }),
   );
 });
@@ -304,9 +304,11 @@ scoped(
   const actions: Action[] = [];
   for (const input of inputs) actions.push(await worktreeAction(root, input));
   output(
-    await removeTargets({ root, execute: options.execute }, actions, async (action) => {
-      if (!action.repository) throw new Error('Worktree has no Git owner');
-      await validateWorktree(root, action.path, action.repository);
+    await removeTargets({ root, execute: options.execute }, actions, async (batch) => {
+      for (const action of batch) {
+        if (!action.repository) throw new Error('Worktree has no Git owner');
+        await validateWorktree(root, action.path, action.repository);
+      }
     }),
   );
 });

@@ -527,12 +527,8 @@ function checkNavigation(page: Page, findings: Finding[]): void {
   for (const [label, matches] of required) {
     if (!hrefs.some(matches)) add("error", "nav", `nav.top lacks a link to ${label}`);
   }
-  if (!hrefs.some((href) => /^https?:\/\//.test(href) || /(^|\/)tickets\//.test(href))) {
-    add(
-      "warning",
-      "nav-ticket",
-      "nav.top lacks a link to the redesign ticket (a tracker URL or a tickets/<id>.md page)",
-    );
+  if (!hrefs.some((href) => /^https?:\/\//.test(href))) {
+    add("warning", "nav-ticket", "nav.top lacks a link to the redesign ticket (its URL)");
   }
 }
 

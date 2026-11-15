@@ -106,7 +106,7 @@ test("the CLI prints created, todo and errors", () => {
   expect(Bun.spawnSync(["bun", join(SCRIPTS, "scaffold-flow.ts")], { stdout: "pipe" }).exitCode).toBe(2);
 });
 
-test("without a ticket the nav says so, and a Markdown ticket path is rebased for every file that links it", () => {
+test("without a ticket the nav says so, a ticket URL fills every link, and a non-URL ticket is refused", () => {
   const repo = gitRepository();
   const docs = join(repo, "docs/ux-flows");
   const index = factory_file(join(repo, "docs/index.md"), "# Docs\n");
@@ -122,25 +122,26 @@ test("without a ticket the nav says so, and a Markdown ticket path is rebased fo
   expect(rules).toContain("nav-ticket");
   expect(rules.filter((rule) => rule === "placeholder").length).toBeGreaterThan(0);
 
+  expect(() =>
+    scaffold({ docsDir: docs, key: "share-files", title: "Share files", ticketUrl: "tickets/redesign-share-files.md" }),
+  ).toThrow("--ticket-url must be the ticket's http(s) URL");
+  expect(() => readFileSync(join(docs, "wireframes/share-files.html"), "utf8")).toThrow();
+
+  const url = "https://tracker.example/issues/42";
   const filed = scaffold({
     docsDir: docs,
     key: "export-reports",
     title: "Export reports",
-    ticketUrl: "tickets/redesign-export-reports.md",
-    ticketLabel: "redesign-export-reports",
+    ticketUrl: url,
+    ticketLabel: "#42",
     docsIndex: index,
   });
   expect(filed.todo[join(docs, "wireframes/export-reports.html")]).not.toContain("PRODUCT");
   expect(readFileSync(join(docs, "wireframes/export-reports.html"), "utf8")).toContain(
-    '<a href="../tickets/redesign-export-reports.md">Redesign ticket redesign-export-reports</a>',
+    `<a href="${url}">Redesign ticket #42</a>`,
   );
-  expect(readFileSync(join(docs, "wireframes/index.html"), "utf8")).toContain(
-    '<a href="../tickets/redesign-export-reports.md">redesign-export-reports</a>',
-  );
-  expect(readFileSync(index, "utf8")).toContain(
-    "[redesign-export-reports](ux-flows/tickets/redesign-export-reports.md)",
-  );
-  factory_file(join(docs, "tickets/redesign-export-reports.md"), "# redesign-export-reports\n");
+  expect(readFileSync(join(docs, "wireframes/index.html"), "utf8")).toContain(`<a href="${url}">#42</a>`);
+  expect(readFileSync(index, "utf8")).toContain(`[#42](${url})`);
   const linked = lintWireframes([join(docs, "wireframes/export-reports.html")]);
   expect(linked.map((finding) => finding.rule)).not.toContain("nav-ticket");
 });

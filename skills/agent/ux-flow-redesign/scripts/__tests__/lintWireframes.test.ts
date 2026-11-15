@@ -184,6 +184,12 @@ describe("navigation and links", () => {
       `${KEY}<nav class="top"><a href="page.html">self</a></nav><section class="step"><div class="win"></div><div class="cap"><h2>1. S</h2></div></section>`,
     );
     expect(rules(findings)).toEqual(["error nav", "error nav", "error nav", "error nav", "warning nav-ticket"]);
+    const relative = lintPage(
+      `${KEY}<nav class="top"><a href="../tickets/redesign.md">ticket</a></nav><section class="step"><div class="win"></div><div class="cap"><h2>1. S</h2></div></section>`,
+    );
+    expect(relative.filter((finding) => finding.rule === "nav-ticket").map((finding) => finding.message)).toEqual([
+      "nav.top lacks a link to the redesign ticket (its URL)",
+    ]);
   });
 
   test("resolves files, directories, fragments and root links", () => {

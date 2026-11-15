@@ -10,6 +10,7 @@ export interface ScaffoldOptions {
   key?: string;
   title?: string;
   product?: string;
+  /** The filed redesign ticket's http(s) URL; without it the links read "not filed yet". */
   ticketUrl?: string;
   ticketLabel?: string;
   /** Repository root for diagram evidence; defaults to the Git top level of docsDir. */
@@ -86,6 +87,8 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   if (!options.init && !options.key) throw new Error("pass --init, --key, or both");
   if (options.key && !KEY_PATTERN.test(options.key)) throw new Error(`flow key "${options.key}" must be kebab-case`);
   if (options.key && !options.title) throw new Error("--key needs --title");
+  if (options.ticketUrl && !/^https?:\/\//.test(options.ticketUrl))
+    throw new Error("--ticket-url must be the ticket's http(s) URL");
 
   const skillRoot = resolve(import.meta.dir, "../..");
   if (docsDir === skillRoot || docsDir.startsWith(`${skillRoot}/`)) {
@@ -100,12 +103,6 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
   const savedProduct = existsSync(patternsPath)
     ? /^# (.+) shared UX pattern reference$/m.exec(readFileSync(patternsPath, "utf8"))?.[1]
     : undefined;
-  /** A tracker URL stays as given; a path relative to the ux-flows directory is rebased for each file that links it. */
-  const ticketHref = (fromDirectory: string): string | undefined => {
-    const url = options.ticketUrl;
-    if (!url || /^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith("/")) return url;
-    return relative(fromDirectory, resolve(docsDir, url)).split("\\").join("/");
-  };
   const values: Record<string, string | undefined> = {
     FLOW_KEY: options.key,
     FLOW_TITLE: options.title,
@@ -129,7 +126,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     let source = readFileSync(join(templates, template), "utf8");
     if (!options.ticketUrl)
       source = source.replace(NAV_TICKET, '<span class="muted">Redesign ticket: not filed yet</span>');
-    const text = fill(source, { ...values, TICKET_URL: ticketHref(dirname(path)) });
+    const text = fill(source, { ...values, TICKET_URL: options.ticketUrl });
     writeFileSync(path, text);
     result.created.push(path);
     const remaining = placeholders(text);
@@ -182,8 +179,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     write(`proposals/${key}.md`, "proposal.md");
     write(`${key}-current.json`, "current-flow.workflow.json");
     write(`${key}-proposed.json`, "proposed-flow.workflow.json");
-    const cardTicket = ticketHref(join(docsDir, "wireframes"));
-    const ticket = cardTicket ? `<a href="${cardTicket}">${values.TICKET_LABEL}</a>` : "";
+    const ticket = options.ticketUrl ? `<a href="${options.ticketUrl}">${values.TICKET_LABEL}</a>` : "";
     insertBefore(
       join(docsDir, "wireframes/index.html"),
       CARD_MARKER,
@@ -193,8 +189,7 @@ export function scaffold(options: ScaffoldOptions): ScaffoldResult {
     if (options.docsIndex) {
       const index = resolve(options.docsIndex);
       const base = relative(dirname(index), docsDir).split("\\").join("/") || ".";
-      const rowTicket = ticketHref(dirname(index));
-      const redesign = rowTicket ? `[${values.TICKET_LABEL}](${rowTicket})` : "not filed yet";
+      const redesign = options.ticketUrl ? `[${values.TICKET_LABEL}](${options.ticketUrl})` : "not filed yet";
       insertBefore(
         index,
         ROW_MARKER,

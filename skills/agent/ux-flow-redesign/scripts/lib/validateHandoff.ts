@@ -26,9 +26,8 @@ export const CATEGORIES = [
 type Data = Record<string, unknown>;
 
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
-/** A tracker ticket number, or a Markdown ticket ID such as export-03 or redesign-export-reports. */
-const ticketId = (value: unknown): boolean =>
-  Number.isInteger(value) || (text(value) && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(value));
+/** A ticket number as the tracker assigns it. */
+const ticketId = (value: unknown): boolean => Number.isInteger(value) && (value as number) > 0;
 const list = (value: unknown): value is unknown[] => Array.isArray(value);
 const record = (value: unknown): Data =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as Data) : {};
@@ -109,7 +108,7 @@ export function validateHandoff(kind: HandoffKind, data: unknown, options: Valid
       );
       need(
         finding.existingTicket == null || ticketId(finding.existingTicket),
-        `${at}: existingTicket must be null, a ticket number or a Markdown ticket ID`,
+        `${at}: existingTicket must be null or a ticket number`,
       );
       need(finding.mergeInto == null || text(finding.mergeInto), `${at}: mergeInto must name the surviving finding id`);
     });

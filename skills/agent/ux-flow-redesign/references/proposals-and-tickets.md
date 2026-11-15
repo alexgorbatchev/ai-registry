@@ -6,11 +6,11 @@
 - [Priority](#priority)
 - [Research notes for a risky flow](#research-notes-for-a-risky-flow)
 - [The redesign ticket](#the-redesign-ticket)
-- [Filing](#filing)
-- [Markdown tickets](#markdown-tickets)
+- [Tracker restructure](#tracker-restructure)
+- [Linking the ticket](#linking-the-ticket)
 - [Stopgaps](#stopgaps)
 
-Use this in Phase 3 (assigning findings to redesigns), Phase 6 (designing each flow) and Phase 8 (re-syncing tickets). Examples use an invented reporting app with reports, exports, documents and folders; they are illustrative only.
+Use this in Phase 3 (assigning findings to redesigns), Phase 6 (designing each flow) and Phase 8 (re-syncing tickets). Every ticket read or write goes through the `issue-tracker` skill, as SKILL.md "Setup" requires; this file says only what the workflow's tickets must carry and how the tracker changes. Examples use an invented reporting app with reports, exports, documents and folders; they are illustrative only.
 
 ## Design heuristics for the proposed flow
 
@@ -24,8 +24,8 @@ Apply these to every proposed flow, starting from its current-flow diagram, its 
 - **Sensible defaults.** State every default (what starts selected, what is preselected, which destination is used). A default that is a threshold or otherwise contested goes to Phase 7 as a product decision with a recommended value.
 - **Clear empty, partial and failure states.** Say what an empty result shows, how partial results report counts and per-item reasons, how failed items retry, and how a lost response recovers through the product's own mechanism without replaying the write.
 - **Beat the incumbent rather than copy it.** Follow the project's product direction. Benchmark named best-in-class products and say what each contributes. Competitor behavior is evidence, never a requirement.
-- **Warn about hazards of intended behavior; do not gate them.** When the owner's rule makes an action intended, put the warning at the point of choice and in the result, and keep the action available. Check the owning component's stated intent before treating behavior as a defect.
-- **Respect binding contracts.** Keep the project's protections (external write locks, confirmations before destructive actions, snapshot and undo guarantees, data-ownership boundaries). Every change the design needs to a contract or the backend is called out under **Backend and contract changes**, never implied.
+- **Warn about hazards of intended behavior; do not gate them.** When the owner's rule makes an action intended, put the warning at the point of choice and in the result, naming the concrete effect and the choices, and keep the action available. Check the owning component's stated intent before treating behavior as a defect.
+- **Respect binding contracts.** Keep the project's protections (whatever blocks writes, confirmations before destructive actions, snapshot and undo guarantees, data-ownership boundaries). Every change the design needs to a contract or the backend is called out under **Backend and contract changes**, never implied.
 - **Cite the pattern reference.** Use its rule IDs in steps and criteria. When the flow must differ from a rule, propose the exception for the reference and add the disagreement to the wireframe index's conflicts list; do not invent a divergent pattern. When the reference lacks a pattern the flow needs, propose a new rule for it.
 
 ## The proposal
@@ -38,7 +38,7 @@ Front matter and opening lines:
 - **Title.** `# <Flow title>: proposed experience`, or `# <Flow title>: proposed <target in a phrase>` when that names the target better.
 - **Links line.** Current and proposed diagram renders and the wireframe. When a visual does not exist yet, say so ("Diagrams and wireframe: not generated yet.") and link the research notes if they exist.
 - **Status line.** Keep it verbatim: `Status: design proposal, not implemented behavior. The [shared UX pattern reference](../patterns.md) wins where this proposal disagrees with it.`
-- **Source revision, features, ticket.** The revision you actually read (the scaffold records `HEAD` at scaffold time; correct it if you read a different one), the roster IDs the flow owns, and the redesign ticket. The ticket is filed after the proposal; replace the label with a link once it exists (step 6 of [Filing](#filing)).
+- **Source revision, features, ticket.** The revision you actually read (the scaffold records `HEAD` at scaffold time; correct it if you read a different one), the roster IDs the flow owns, and the redesign ticket. The ticket is filed after the proposal; replace the label with a link once it exists ([Linking the ticket](#linking-the-ticket)).
 - **Product rule (optional).** When a binding contract governs the flow, quote it and say where it lives, then name the behaviors it makes intended and end with the reframed gap: "The ordering rule below is intended, not a defect; the gap is the missing warning and the missing review around it."
 
 Sections, in template order:
@@ -48,10 +48,10 @@ Sections, in template order:
   - Put example copy in quotes for every label, header and outcome sentence ("12 reports · 9 ready · 2 missing data · 1 failed").
   - State defaults ("Ready reports start selected; failed ones start cleared.").
   - List keys inline ("Keys: ↑/↓ move, X toggles, Shift-click selects a range, Mod+A selects all ready, Enter focuses the footer button.").
-  - State external-lock behavior per surface, following the reference's lock rules: what stays usable, what waits, and that drafts and plans survive.
+  - When something can block writes in this product, state per surface what stays usable, what waits, and that drafts and plans survive, following the reference's rules for it.
   - Write recovery as in-place actions ("Retry 1 failed", "Undo this export"), never as "go to page X".
-- **Branches and edge states.** One bold-labeled bullet per alternate gesture or keyboard path, per external lock or unavailable backend, per partial or lost result (counts, per-item reasons, recovery without replaying the write), and per undo that needs review.
-- **What changes versus today.** `Removed`, `Merged` ("Preview and Export become one plan → export flow."), `New`, `Changed` (behavior that flips relative to today) and `Kept`. `Kept` is the safety inventory that stops a redesign from silently dropping protections: walk the current-flow diagram and list every confirmation, lock, refusal, snapshot and undo record that survives. A protection that does not survive is listed under `Removed` with what replaces it.
+- **Branches and edge states.** One bold-labeled bullet per alternate gesture or keyboard path, per write-blocking state or unavailable backend, per partial or lost result (counts, per-item reasons, recovery without replaying the write), and per undo that needs review.
+- **What changes versus today.** `Removed`, `Merged` ("Preview and Export become one plan → export flow."), `New`, `Changed` (behavior that flips relative to today) and `Kept`. `Kept` is the safety inventory that stops a redesign from silently dropping protections: walk the current-flow diagram and list every confirmation, block on writes, refusal, snapshot and undo record that survives. A protection that does not survive is listed under `Removed` with what replaces it.
 - **Tickets resolved.** Findings grouped by priority ("P0: #n. P1: #n (export part only)."), then `Not resolved here:` with the ticket that owns each, and when relevant `Removed from this journey:` (findings that leave the journey, and why) and `Moves out of other flows:` (criteria taken over from a neighboring redesign ticket).
 - **Acceptance criteria.** A `- [ ]` list written under [Acceptance criteria](#acceptance-criteria).
 - **Backend and contract changes.** Under `**Backend**` (naming the backend and the protection, snapshot and undo contracts it preserves), a numbered list of bold-named changes with field names, parameters and stable error codes, the finding each serves, and a grade: required, recommended or optional later. Under `**Project contracts**`, quote each current contract and its replacement with its `CC-n` from the reference: `"<quoted current text>" becomes: <new text> (CC-3).` Tag unresolved design `**[discuss]:**` and name who must confirm it ("the backend owners must confirm this against the protection contract").
@@ -60,7 +60,7 @@ Sections, in template order:
 
 ## Acceptance criteria
 
-The same rules apply to the proposal and the ticket. Each criterion is one `- [ ]` item an implementer can test without asking:
+Write them in the proposal; the redesign ticket carries the same list. Each criterion is one `- [ ]` item an implementer can test without asking:
 
 - Write observable, present-tense behavior with concrete inputs and outputs: "With 12 reports of which 9 are selected, Export writes exactly 9 files and the folder lists them in report order."
 - Use exact viewports and counts: "At 1280×800, the query field, the summary strip and the first plan row are visible together without scrolling." Take the viewports from the pattern reference's per-flow conformance section.
@@ -68,13 +68,13 @@ The same rules apply to the proposal and the ticket. Each criterion is one `- [ 
 - Name the test layer that asserts it: state machine, component, browser or end-to-end, in the project's own terms.
 - State red/green intent where a step is easy to drop silently: "A state-machine test fails when the folder re-read after the write is skipped."
 - Quote exact copy when the copy is the requirement: the button reads "Export 9 to Archive"; the footer reads "↑↓ Choose · Enter Export · Esc Cancel".
-- Make guards and recovery criteria too. Keep a never-replay criterion for every write, phrased for the product's own recovery mechanism (a job resumed by ID, a request retried with its idempotency key, state re-read after a sync): "A lost response resumes the export job by ID and never resubmits the write." Add a blocking-state criterion only when the product has a state that blocks writes: "While the external lock is held, the footer button is disabled with the reason visible without hover, and every plan choice survives until the lock clears."
-- End each criterion with the rule IDs it depends on and the finding tickets it closes: "(REV-2, FB-4, #412)".
+- Make guards and recovery criteria too. Keep a never-replay criterion for every write, phrased for the product's own recovery mechanism (a job resumed by ID, a request retried with its idempotency key, state re-read after a sync): "A lost response resumes the export job by ID and never resubmits the write." Add a blocking-state criterion only when the product has a state that blocks writes: "While writes are blocked, the footer button is disabled with the reason visible without hover, and every plan choice survives until writing is possible again."
+- End each criterion with the rule IDs it depends on and the finding tickets it closes: "(REV-1, FB-2, #412)".
 - Close the list with the tests that cover the journey: which machine tests cover which states, which component tests cover which surfaces, and which end-to-end test runs the main path through to undo.
 
 ## Priority
 
-Use P0–P3. Write the proposal's **Recommended priority** and the ticket's **Priority** paragraph in this order:
+Use P0–P3. Write the proposal's **Recommended priority** in this order:
 
 1. Bold priority first ("**P1.**"; with a stopgap, "**P1, with #418 shipped first as a P0 fix.**").
 2. The realistic trigger and its consequence: what ordinary use hits it and what it costs ("Enter starts a 30-item export that overwrites files already in the folder").
@@ -82,7 +82,7 @@ Use P0–P3. Write the proposal's **Recommended priority** and the ticket's **Pr
 4. Frequency relative to sibling flows ("less frequent than single-report export, which is P0").
 5. The delivery order: the smallest independent high-value slice first (often a UI-only slice with no backend dependency, or the in-place write → re-read → result → undo loop), then the rest. Order slices so no intermediate release breaks an owner rule: when a backend fix would change outcomes before the rule that governs them exists, the rule ships first.
 
-The level itself is not a free choice: it is the highest verified priority among the covered findings, never lowered automatically (see [The redesign ticket](#the-redesign-ticket)). Keep the proposal's and the ticket's paragraphs at that level, and use the reasoning above to explain it and to order the slices.
+The level is the redesign's priority under [Tracker restructure](#tracker-restructure); use the reasoning above to explain it and to order the slices.
 
 ## Research notes for a risky flow
 
@@ -99,73 +99,39 @@ Write `<docs>/ux-flows/proposals/<key>-research.md` before the proposal when a f
 
 ## The redesign ticket
 
-After the proposal and both diagrams exist, draft the body from [redesign-ticket.md](../assets/templates/redesign-ticket.md) at `<state>/ux-flows/units/flow-<key>/ticket.md` and delete its leading comment. File it only when tickets are in scope ([Filing](#filing)); until it is filed, the wireframe nav and docs index row read "not filed yet", and the report lists the draft. The filer embeds the marker `<!-- ux-flow: <unit-key>:<item-id> -->` in every body it files and searches for it before creating ([orchestration](orchestration.md#delivery)); keep the marker through every later edit of the body.
+One per flow, filed when tickets are in scope, after the proposal and both diagrams exist and the flow's docs are published (SKILL.md "Scope boundaries"). Until it is filed, the wireframe nav and docs index row read "not filed yet", and the report lists the flow.
 
-- **Title.** Roster IDs first, then `Redesign <journey> as <target experience>`, under about 100 characters. It states the target, not the defect: "F21 F22 F23 Redesign report export as a preview-first plan with inline undo".
-- **Labels and epic.** `ux`, `ux-flow` and `priority:<P0–P3>`, in the findings epic of the flow's area (the epic or bucket from Phase 1).
-- **Priority.** The highest verified priority among the covered findings. When a verification re-grade raises that highest priority, raise the tracker field (or a Markdown ticket's `Labels:` line) and edit the **Priority** paragraph in the same pass so the ticket does not contradict itself. When a re-grade lowers it, keep the redesign's priority and propose the lower one to the owner as an ID'd action; on approval, change the field and the paragraph together.
-- **Attachments.** Both diagram renders, captured, checked and embedded as in [Rendering for tickets](diagrams.md#rendering-for-tickets). A Markdown ticket links the diagram pages instead (see [Markdown tickets](#markdown-tickets)).
+- It references the proposal, both diagram pages and the wireframe at their published repository locations, never a local preview URL.
+- It carries the proposal's acceptance criteria, each citing the rule IDs it relies on.
+- It lists the findings it covers: those it resolves (for a partial cover, the slice it resolves here and which ticket owns the rest) and those it touches that another redesign owns, naming that redesign. The list matches `<state>/ux-flows/assignments.md`; a mismatch fails the Phase 6 gate.
 
-Sections:
+When Phase 7 decisions, owner reversals or Phase 8 conformance change the proposal, update the ticket's criteria and covers in the same pass, drop withdrawn `CC-n` items and resolved `**[discuss]:**` items, and search the ticket for wording of the superseded framing.
 
-- **Problem.** A "Today, …" paragraph that walks the current journey in the person's terms, including the workarounds people use. Then `Main pain points:` with one bullet per verified finding, in behavior terms, ending with its ticket and flagging P0s inline ("(#401, P0)"). Name the mechanism when it explains the defect ("the post-write refresh re-reads the folder list only, so the open folder shows stale rows").
-- **Current flow.** The current render and one sentence starting "Today:".
-- **Proposed flow.** The proposed render, one sentence starting "Proposed:", the target steps and branches as in the proposal, and the line naming the wireframe, the proposal and the conformance sentence: `Conformance: the shared UX pattern reference (<path>, section 4, <flow-key>) wins where this ticket disagrees with it.` Use published repository paths or URLs (see [Filing](#filing)), never a local development URL; a Markdown ticket links them relatively.
-- **What changes.** Bold sub-headings `Removed`, `Merged`, `New`, `Changed` (each with "today it is …") and `Kept`, matching the proposal.
-- **Acceptance criteria.** As in the proposal. Fill the template's lost-response line (`{{RECOVERS_HOW}}`) whenever the flow writes, and delete its lock line when the product has no state that blocks writes, per the guard and recovery rule in [Acceptance criteria](#acceptance-criteria).
-- **Covers.** Two groups:
-  - `Resolved by this redesign (epic <epic>):` one bullet per finding, restated as the problem. A finding this ticket resolves only in part says which slice it resolves here and which ticket owns the rest: "#405 Blind writes on Enter (resolved for report export only; scheduled export remains with #431)."
-  - "Addressed where they meet this journey (owned elsewhere):" findings this journey touches, each naming its owning redesign ticket.
-  - Every finding is covered by exactly one redesign or partitioned between redesigns with each slice's owner named. The list matches the Phase 3 assignment; a mismatch fails the Phase 6 gate.
-- **Notes.** Bold run-in paragraphs: **Features** (roster IDs touched; roster entries to add or rename when implemented), **Diagrams** (source paths, the reviewed revision, and what was exercised live versus traced from source), **Related** (neighboring redesigns and findings that leave this journey, with why), **Backend changes** (graded as in the proposal), **Project contract changes** (quoted current text and its replacement), **Seen in code, not yet ticketed**, and **Priority**.
+## Tracker restructure
 
-Re-sync after the reference changes. Phase 7 decisions, owner reversals and Phase 8 conformance edits change what implementers must build. Edit the ticket body in the same pass as the proposal: steps, What changes, criteria, contract changes (drop withdrawn `CC-n` items) and resolved `**[discuss]:**` items. Then search the ticket for wording of the superseded framing. Rerunning the filer does not update a filed ticket; edit it in the tracker or edit its Markdown file, and edit an unfiled draft in place.
+Once redesign tickets exist they become the work. This changes the owner's queue: apply it when the request or the project's instructions authorize it; otherwise propose it as an ID'd action (the links are reversible) and apply it on approval. Make each change through `issue-tracker`.
 
-## Filing
+- Each open finding a redesign covers is blocked by that redesign, so it stops being claimable as patch work and becomes the redesign's acceptance evidence. A partially covered finding is blocked by every redesign that owns a slice of it.
+- Each non-foundation redesign is blocked by the foundation redesigns: the cross-cutting flows the others build on, typically selection, background work and activity, and undo and history.
+- Each redesign carries the highest verified priority among the open findings it covers, raised when a covered finding's priority rises; keep the proposal's priority paragraph at the same level in the same pass. Never lower any priority or change a finding's priority automatically; propose a lower one to the owner as an ID'd action.
+- Findings no redesign covers keep their priority and stay claimable; bugs that damage data now get [stopgaps](#stopgaps) ahead of their redesign.
 
-This section owns two authorization rules and, in step 1, the commit-before-filing rule; other references link to them:
+## Linking the ticket
 
-- **Where tickets go.** Tickets are in scope only as [SKILL.md](../SKILL.md#execute-the-task) "Scope boundaries" allows. File into a tracker only when the request or the project's instructions designate it; otherwise write [Markdown tickets](#markdown-tickets).
-- **Changing the owner's queue.** Blocking existing tickets and moving their priorities changes the owner's queue. Do it only when the request or the project's instructions authorize it; otherwise propose it to the owner as an ID'd action (the links are reversible) and apply it on approval.
+Once the redesign ticket exists, link it from the four places below and record each link in the flow's checkpoint; the flow is done only when all four are recorded.
 
-Steps:
+| Link | File |
+| --- | --- |
+| Wireframe nav | `<docs>/ux-flows/wireframes/<key>.html` |
+| Wireframe index card | `<docs>/ux-flows/wireframes/index.html` |
+| Proposal metadata line | `<docs>/ux-flows/proposals/<key>.md` |
+| Docs index row | `<docs>/index.md` |
 
-1. **Commit before filing.** The orchestrator publishes the flow's docs serially through the project's Git workflow, pushing where that workflow authorizes it, before a ticket that links them is filed; in Phase 8 the flow's delivery stage commits them instead ([SKILL.md](../SKILL.md#execute-the-task) "Scope boundaries"). When publishing is not authorized, the ticket says "not published yet" in place of each repository link, and the report lists the tickets to edit once their files are published.
-2. File each redesign ticket through the idempotent filer in [orchestration](orchestration.md#delivery), canary first, never by hand-running the tracker's create command. The filer's receipt is the only proof of filing.
-3. Open the canary and check its title, labels, epic, images or links, headings and marker; fix the template or filer, then file the rest.
-4. The body carries no scratch or loopback URLs, private hostnames, credentials, personal data or raw JSON. In a tracker ticket, image paths are the only local paths, and the filer replaces them with uploaded attachments.
-5. Under the queue rule above, restructure the tracker so the redesign tickets become the work:
-   - Every open finding a redesign covers gets that redesign as its blocker (or the tracker's equivalent link), so it stops being claimable as patch work and becomes the redesign's acceptance evidence. A partially covered finding is blocked by every redesign that owns a slice of it.
-   - Every redesign other than the foundations is blocked by the foundation redesigns: the cross-cutting flows the others build on, typically selection, background work and activity, and undo and history.
-   - Raise each redesign to the highest priority among the open findings it covers when that is higher. The restructure never lowers any priority and never changes a finding's priority; a later re-grade follows the **Priority** bullet in [The redesign ticket](#the-redesign-ticket).
-   - Findings no redesign covers keep their priority and stay claimable.
-   - Bugs that damage data now get small [stopgaps](#stopgaps) ahead of their redesign.
-6. Link the ticket from the four places below, and record each link in the flow's checkpoint. A receipt means filed, not done: the flow is done only when its checkpoint records all four links.
-
-| Link | File | Relative path to a Markdown ticket |
-| --- | --- | --- |
-| Wireframe nav | `<docs>/ux-flows/wireframes/<key>.html` | `../tickets/<id>.md` |
-| Wireframe index card | `<docs>/ux-flows/wireframes/index.html` | `../tickets/<id>.md` |
-| Proposal metadata line | `<docs>/ux-flows/proposals/<key>.md` | `../tickets/<id>.md` |
-| Docs index row | `<docs>/index.md` | `ux-flows/tickets/<id>.md` |
-
-A tracker URL is the same in all four. When `--ticket-url` was passed to the scaffold, it filled the nav, the card and the row, rebasing a relative path for each file; it writes only the label into the proposal, so make that a link by hand. For a ticket filed after scaffolding, edit all four by hand: the nav's "Redesign ticket: not filed yet" span becomes a link, the card gains a link in its `.links`, and the row's "not filed yet" becomes `[<label>](<path>)`.
-
-## Markdown tickets
-
-The format for tickets when no tracker is designated (see [Filing](#filing)).
-
-- **Location and IDs.** One file per ticket at `<docs>/ux-flows/tickets/<id>.md`. A finding ticket's ID is its finding ID (`<area>-NN`); a redesign ticket's ID is `redesign-<key>`. Never renumber or reuse one.
-- **File shape.** Front matter with exactly `created_on`, `last_modified` and `status: current`, in local time `YYYY-MM-DD HH:MM`. Then `# <ID> <title>`, using the title from the template's comment. Then one line: `Labels: … · Priority: … · Epic: <area>`. Then the template body, with its leading comment deleted and the filer's `<!-- ux-flow: … -->` marker kept.
-- **No embedded images.** Screenshots stay in `<state>/ux-flows/shots/<unit-key>/`, uncommitted ([publishing](publishing.md#where-artifacts-live)), and are listed as plain-text paths relative to the project root with their captions (`Screenshot: .state/ux-flows/shots/<unit-key>/01-plan.png, not committed. <caption>`). A redesign ticket replaces its two diagram embeds with relative links to `../<key>-current.html` and `../<key>-proposed.html`.
-- **Index.** `<docs>/ux-flows/tickets/index.md` has the same front matter and an H1, lists every ticket grouped by area (the epic equivalent), marks the foundation redesigns, and is linked from the docs index.
-- **Blocking.** Under the queue rule in [Filing](#filing), a covered finding file carries `Blocked by: [redesign-<key>](redesign-<key>.md)`, and a non-foundation redesign file carries `Blocked by:` links to each foundation redesign file.
-- **Scaffolding.** Pass `--ticket-url tickets/redesign-<key>.md --ticket-label redesign-<key>` to `scaffold-flow.ts` only when that ticket file already exists, because the linter and the crawl report the link as broken until it does; the path is taken relative to `<docs>/ux-flows` and rebased for each file, and the linter's `nav-ticket` rule accepts `tickets/` links. Otherwise scaffold without them and link the ticket after filing (step 6 of [Filing](#filing)).
-- **Checks.** Receipts, the canary and the privacy rules from [Filing](#filing) still apply; the canary is the first file opened on the served docs site. After writing the first ticket file, run the docs-site tests and the crawl (see [publishing](publishing.md)).
+A scaffold run with `--ticket-url` filled the nav, the card and the row; it writes only the label into the proposal, so make that a link by hand. For a ticket filed after scaffolding, edit all four by hand: the nav's "Redesign ticket: not filed yet" span becomes a link, the card gains a link in its `.links`, and the row's "not filed yet" becomes `[<label>](<ticket URL>)`.
 
 ## Stopgaps
 
 - File a standalone stopgap only for a bug that damages data now and cannot wait for the redesign. Everything else is covered by the redesign.
 - Confirm under the product rule that the behavior is a defect first. A stopgap that refuses an intended action is wrong; a hazard of intended behavior gets a warning in the redesign instead.
 - The stopgap's fix matches what the redesign specifies, so the redesign builds on it instead of undoing it.
-- File and prioritize it separately from the redesign, list it in the redesign's **Tickets resolved** and **Covers**, and name it in the priority line ("P1, with #418 shipped first as a P0 fix").
+- It is its own ticket; list it in the redesign's **Tickets resolved** and covers, and name it in the priority line ("P1, with #418 shipped first as a P0 fix").

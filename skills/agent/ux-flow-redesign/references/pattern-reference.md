@@ -18,7 +18,7 @@ Phase 5 builds `patterns.md` and `wireframes/patterns.html`. Phase 7 settles the
 Build the reference:
 
 - Before any agents design flows in parallel, the normal order. Its inputs are then the current app, the Phase 2 findings, the Phase 4 current-flow diagrams and any proposals that already exist. In the normal order, Phase 6 starts when the Phase 5 gate passes; Phase 8 conforms flows to the owner's verdicts.
-- As a reconciliation pass when flows were already designed independently. The audits then read every proposal and wireframe, seeded by the wireframe index's conflicts list. In this case only, freeze the existing per-flow artifacts (proposals, wireframes, redesign tickets) from the start of the build until Phase 7 is done; Phase 8 then conforms them in one pass, and earlier edits would be redone.
+- As a reconciliation pass when flows were already designed independently. The audits then read every proposal and wireframe, seeded by the wireframe index's conflicts list. In this case only, freeze the existing per-flow artifacts (proposals, wireframes, redesign tickets) from the start of the build until Phase 7 is done; Phase 8 then conforms them in one pass, and earlier edits would be redone. A flow found missing while the reference is being built gets a research note and a written proposal first; draw its diagrams and wireframe only after the reference exists (unless the owner chose provisional mode for it), then conform it like the others.
 
 Audits, critiques and fact-checks run as parallel units; synthesis and revision belong to one author. [Orchestration](orchestration.md) owns the run shape, unit sizing, checkpoints and resume.
 
@@ -33,7 +33,7 @@ Prepend the run's shared context block, shaped as in [the unit prompt](orchestra
 
 ## Audits
 
-Run one unit per dimension. Name each dimension with one lowercase word; the validator requires decision IDs of the form `<dimension>-NN`. Each scope below lists the sub-questions the audit must answer; add the known collisions for the product as seeds.
+Run one unit per dimension. Name each dimension with one lowercase word; the validator requires decision IDs of the form `<dimension>-NN`. The six below are defaults for a data-management tool: drop one the product lacks (a product without lists has no selection to audit) and name the dropped dimension and why in the status line's inputs. Each scope lists the sub-questions the audit must answer; add the known collisions for the product as seeds.
 
 - **`selection`: selection, targeting and entry points.** What click, double-click, Enter and the rename key do; the row cursor and focus; range and toggle selection; whether rows hidden by search or filters stay selected and get acted on; whether selection survives view changes and reloads; where the selection summary lives; every entry point to actions (right-click, a row's ⋯ button, toolbar, footer, Shift+F10 or the context-menu key, selection-bar buttons); menu structure and headings; drag targets and what a drag does (move or copy, and which modifier switches).
 - **`review`: review before write, consent and staleness.** Dry runs and plan tokens; where the review lives (a step in a dialog, a side sheet, a docked panel, a full page); per-item and per-field opt-out; the apply button's name; consent and destructive confirmation, and what counts as destructive; what can block writes and how people recheck it; stale plans; lost responses and never replaying a write; drafts kept on failure.
@@ -42,7 +42,7 @@ Run one unit per dimension. Name each dimension with one lowercase word; the val
 - **`keyboard`: the complete keyboard map.** Every letter, digit, function-key and modifier shortcut in every flow; its scope (global, table, panel, sheet, dialog, editor or mode); every collision; the app's existing shortcuts; any contract that drives shortcut hints and handlers from one command definition; suspension in text entry, menus and dialogs.
 - **`language`: language, naming and states.** Names for the same operation across flows ("Export report" versus "Download report"); count formats in buttons and notifications; destination defaults; nouns (folder versus collection); status chips and verdict wording; empty, loading and error states; how messages follow the project's error-message rules.
 
-Add a project-specific dimension when two or more flows depend on a concern none of these covers, such as an external application that can lock writes, or a persistent context people keep across views (in an illustrative reporting app, a live preview pane).
+Add a project-specific dimension when two or more flows depend on a concern none of these covers, such as something that can block writes (another application holding the data, read-only permission, offline), or a persistent context people keep across views (in an illustrative reporting app, a live preview pane).
 
 Each audit:
 
@@ -87,7 +87,7 @@ The template's structure:
 
 - **Status line**, the first paragraph after the title: `Status: draft for review, revision <n>.`, then a revision log, newest first, one sentence per revision naming the section that records it, then `Inputs:` naming every source with its version (audits, proposals, wireframes, the project-instruction sections, the code directory, the backend API's documentation and implementation, the component library and version). Say which working files were not kept and where their content survives: "six pattern audits (working files, not kept; section 3 records every decision they raised)". Update `last_modified` in the front matter with each revision.
 - **1. Purpose:** precedence (every proposal and wireframe conforms; a deviation without a named exception in section 2 or 3 is a defect, not a design choice), what each section is for, the ground rules below, and terms. Define every word the rules depend on, including Write and Read (a read is anything else, including dry runs) and Mod.
-- **2. Canonical patterns:** 2.1 Selection, 2.2 Selection summary and command hints, 2.3 Menus and entry points, 2.4 Surfaces, 2.5 Review before write, 2.6 whatever can block writes in this product (another application holding the data, read-only permission, offline), 2.7 Progress and outcome feedback, 2.8 Partial results and failures, 2.9 Undo and history, 2.10 Background work and activity, 2.11 Keyboard map, 2.12 Wording and naming, 2.13 Empty, loading and error states, 2.14 Contract changes collected. Keep this numbering, because other files cite sections by number; put a project-specific pattern inside its closest section, such as a persistent context inside 2.4.
+- **2. Canonical patterns:** 2.1 Selection, 2.2 Selection summary and command hints, 2.3 Menus and entry points, 2.4 Surfaces, 2.5 Review before write, 2.6 whatever can block writes in this product (another application holding the data, read-only permission, offline), 2.7 Progress and outcome feedback, 2.8 Partial results and failures, 2.9 Undo and history, 2.10 Background work and activity, 2.11 Keyboard map, 2.12 Wording and naming, 2.13 Empty, loading and error states, 2.14 Contract changes collected. Keep this numbering, because other files cite sections by number: a section the product does not need keeps its heading with "Not applicable:" and the reason, and a project-specific pattern goes inside its closest section, such as a persistent context inside 2.4.
 - **3. Decision log**, **4. Per-flow conformance**, **5. Product decisions** (with owner reviews as 5.1, 5.2, …) and **6. Review notes**, described below.
 
 Every section 2 subsection uses these labelled paragraphs, in this order. Omit a label only when it has nothing to say for that pattern (empty states rarely have keys).
@@ -131,7 +131,7 @@ Ground rules. Write them into section 1 and apply them to every decision:
 **Contract changes (2.14).** One numbered entry per change:
 
 ```markdown
-3. **CC-3** (`REV-7`, `REV-8`): "<quoted current contract text>" becomes "<new text>". Roster <IDs>.
+3. **CC-3** (`REV-1`, `REV-2`): "<quoted current contract text>" becomes "<new text>". Roster <IDs>.
 ```
 
 Variants: "is kept and extended with …", "is clarified: …", "gains …", and roster-only changes. A withdrawn change keeps its number, says "withdrawn in revision <n>" and states what stays. Each lands in the project instructions together with the code that implements it, because the instructions describe current behavior.
@@ -150,10 +150,10 @@ A decision derived from another uses a compact form:
 
 A later revision marks its decision, `Decision (revision 2): …` or `Decision (revision 4, product owner): …`, and keeps the superseded reasoning in `Reason:`. Never drop "Silent, must adopt": a flow that never stated a behavior is not conformant by default.
 
-**Per-flow conformance (4).** The intro states the items common to every flow once: cite rule IDs in acceptance criteria, use Mod notation, show the write-blocking states, use the acceptance viewports (list them), and any other universal check. Then one `### <flow-key>` per flow, annotated when its inputs are partial ("(no wireframe yet)", "(ticket only)"):
+**Per-flow conformance (4).** The intro states the items common to every flow once: cite rule IDs in acceptance criteria, use Mod notation, show the write-blocking states when anything blocks writes, use the acceptance viewports (list them), and any other universal check. Then one `### <flow-key>` per flow, annotated when its inputs are partial ("(no wireframe yet)", "(ticket only)"):
 
 ```markdown
-- P: <change to the proposal> (`REV-8`, `review-01`).
+- P: <change to the proposal> (`REV-1`, `review-01`).
 - W: <change to the wireframe>.
 - Conforms: <what already matches>.
 ```
@@ -217,7 +217,7 @@ Use this when a claim will drive a P0 ticket, a stopgap or a rule that blocks an
 
 ## Product decisions
 
-Phase 7 settles what evidence can settle and leaves the owner only the product calls. Before calling a behavior a defect or putting it to the owner, read the owning component's stated intent. Measure any default that is a threshold or quantity instead of guessing it (below). Record each remaining call as `O<n>` in section 5 and never renumber; a settled entry stays with its outcome, and the section intro says which entries rules settled ("O1 is settled by `SURF-4`").
+Phase 7 settles what evidence can settle and leaves the owner only the product calls. Before calling a behavior a defect or putting it to the owner, read the owning component's stated intent. Answer a question about what a feature does with a decision table citing code; when the implemented rule conflicts with a rule the owner stated, ask an ID'd question with a recommendation instead of choosing. Measure any default that is a threshold or quantity instead of guessing it (below). Record each remaining call as `O<n>` in section 5 and never renumber; a settled entry stays with its outcome, and the section intro says which entries rules settled ("O1 is settled by `SURF-4`").
 
 ```markdown
 - **O2 <Question as a noun phrase>. Recommended default: <default>; flows assume it until the product owner decides.** <Evidence for and against.>
@@ -235,7 +235,7 @@ When a decision rests on a number, or the owner delegates a default:
 2. Pick a value with margins on both sides: it fails every step below the acceptable one and passes every step at or above it. State both margins.
 3. Show from the table why the nearest alternative fails.
 4. Note pitfalls, such as derived inputs keeping their source's properties.
-5. Check the instrument. When the measuring tool cannot produce real values (it reports the same reading for every step), no threshold works: name the blocker in the decision, file a ticket carrying the ladder table under [Filing](proposals-and-tickets.md#filing), and explicitly correct earlier claims that relied on the tool.
+5. Check the instrument. When the measuring tool cannot produce real values (it reports the same reading for every step), no threshold works: name the blocker in the decision, file a ticket carrying the ladder table through `issue-tracker`, and explicitly correct earlier claims that relied on the tool.
 6. Couple releases so no intermediate release breaks an owner rule: first ship the rule change that behaves like today under the current readings, then the instrument fix, then the version requirement that depends on both.
 
 Illustrative example, with an invented domain and numbers:
@@ -256,13 +256,13 @@ Put to the owner only the decisions that change how the product feels day to day
 | --- | --- | --- | --- |
 | i1 | Clicking a report opens it | Click selects; Enter or double-click opens | `SEL-1`, `CC-1` |
 
-When you deliver the list, add the next review section (5.1 for the first), "Product owner review of revision <n>", with one bullet per listed rule or decision ID and a plain-language restatement. Each item reads "awaiting owner" until its answer arrives; then record the verdict:
+When you deliver the list, add the next review section (5.1 for the first), "Product owner review of revision <n>", with one bullet per listed rule or decision ID and a plain-language restatement. Each item reads "awaiting owner" until its answer arrives; then record the verdict, and state your reading of a terse answer back to the owner ("i3: recorded as approved, with Enter opening") so a misreading is caught:
 
 ```markdown
 - `SEL-1` (click selects; Enter or double-click opens): approved.
 - `selection-26` (drag): reversed. <What replaces it>; `CC-2` is withdrawn.
-- `SURF-10` (<meaning>): needs clarification; reconciliation waits for it.
-- `MENU-9` (added in revision <n+1>): <the owner's request as a rule>.
+- `SURF-2` (<meaning>): needs clarification; reconciliation waits for it.
+- `MENU-3` (added in revision <n+1>): <the owner's request as a rule>.
 ```
 
 Phase 7 ends when every reviewed decision is settled: approved, reversed, or clarified and then decided, each recorded here with the revision bumped. Reconciliation (Phase 8) starts only then, because conforming flows to a decision that may still change wastes the work and leaves artifacts disagreeing. While items are pending, report their IDs as the blocker with the unblock condition (the owner's answer), and continue work that does not depend on them, such as measurements, research notes and publishing pages that already exist.

@@ -52,12 +52,18 @@ describe("findings", () => {
         "findings[0] (other-01): bad feature id X",
         "findings[0] (other-01): screenshot path must be absolute and exist: relative.png",
         "findings[0] (other-01): needsBackend must be true or false",
-        "findings[0] (other-01): existingTicket must be null, a ticket number or a Markdown ticket ID",
+        "findings[0] (other-01): existingTicket must be null or a ticket number",
       ]),
     );
-    const markdownTicket = findings(shot);
-    Object.assign(markdownTicket.findings[0], { existingTicket: "export-03" });
-    expect(validateHandoff("findings", markdownTicket)).toEqual([]);
+    const filed = findings(shot);
+    Object.assign(filed.findings[0], { existingTicket: 412 });
+    expect(validateHandoff("findings", filed)).toEqual([]);
+    for (const existingTicket of ["export-03", 0, 4.5]) {
+      Object.assign(filed.findings[0], { existingTicket });
+      expect(validateHandoff("findings", filed)).toEqual([
+        "findings[0] (export-01): existingTicket must be null or a ticket number",
+      ]);
+    }
     expect(validateHandoff("findings", {})).toEqual([
       "area must be a non-empty string",
       "coverage must be an array of {flow, exercised, notes}",

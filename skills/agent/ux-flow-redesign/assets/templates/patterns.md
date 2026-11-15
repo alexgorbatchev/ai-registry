@@ -14,7 +14,7 @@ This document is the one design reference for every {{PRODUCT}} flow. Every flow
 
 How to use it:
 
-- Section 2 states the canonical patterns. Each rule has an ID (for example `SEL-3`) so proposals, wireframes, tickets and tests can cite it.
+- Section 2 states the canonical patterns. Each rule has an ID (for example `SEL-1`) so proposals, wireframes, tickets and tests can cite it. A section this product does not need keeps its heading with "Not applicable:" and the reason, so section numbers stay stable.
 - Section 3 records how each cross-flow disagreement found by the audits was settled. Entry IDs match the audit decision IDs (`selection-01`, `review-12`, ...).
 - Section 4 lists, for each flow, what its proposal and wireframe must change.
 - Section 5 lists the product calls that evidence could not settle, each with a recommended default that flows assume until the product owner decides, and records the product owner's reviews.
@@ -90,7 +90,10 @@ Rules:
 
 - **REV-1 {{SHORT_NAME}}.** {{RULE_TEXT}}
 
-### 2.6 {{EXTERNAL_WRITE_LOCK_OR_UNAVAILABLE_WRITER}}
+### 2.6 {{WHAT_CAN_BLOCK_WRITES_IN_THIS_PRODUCT}}
+
+<!-- Whatever can block writes: another application holding the data, read-only permission, offline. When nothing
+     can, write "Not applicable: nothing blocks writes in this product." under the heading and drop the rules. -->
 
 Rules:
 
@@ -164,7 +167,7 @@ One entry per audit decision that had a conflict or silent flows. Format: the op
 
 ## 4. Per-flow conformance
 
-Each flow lists what its proposal (P) and its wireframe (W) must change. Rule IDs point to section 2; entry IDs to section 3. Items common to every flow are not repeated below: cite rule IDs in acceptance criteria; use "Mod" notation; {{EXTERNAL_LOCK_STATES}}; use the acceptance viewports {{VIEWPORTS}}; {{OTHER_UNIVERSAL_CHECKS}}.
+Each flow lists what its proposal (P) and its wireframe (W) must change. Rule IDs point to section 2; entry IDs to section 3. Items common to every flow are not repeated below: cite rule IDs in acceptance criteria; use "Mod" notation; {{WRITE_BLOCKING_STATES_OR_DELETE}}; use the acceptance viewports {{VIEWPORTS}}; {{OTHER_UNIVERSAL_CHECKS}}.
 
 ### {{FLOW_KEY}}
 

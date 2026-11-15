@@ -7,7 +7,7 @@ Phase 4 draws each flow's current diagram and Phase 6 its proposed diagram, as s
 - [Spec conventions](#spec-conventions)
 - [Repository evidence](#repository-evidence)
 - [Running Archify](#running-archify)
-- [Rendering for tickets](#rendering-for-tickets)
+- [Rendering for inspection](#rendering-for-inspection)
 - [Regeneration recipe](#regeneration-recipe)
 - [Without Archify](#without-archify)
 - [Honest verification](#honest-verification)
@@ -16,14 +16,14 @@ Phase 4 draws each flow's current diagram and Phase 6 its proposed diagram, as s
 
 - The current diagram shows what the code does today, at a pinned revision, with every evidenced pain point marked on its step by its finding ticket. The proposed diagram shows the target journey and, on each step, which of those tickets it removes.
 - Start the proposed diagram from the current one and its tickets, so a reader can compare them step by step.
-- The pair is the redesign ticket's evidence: both renders are attached to it, and the proposal, the wireframe page's nav and the docs index row link both HTML files.
-- When drafting the redesign ticket, check the pair against Phase 3: every ticket marked on the current diagram is resolved on a proposed step, or accounted for in the redesign ticket's Covers (owned by another flow) or in `<state>/ux-flows/assignments.md` (stopgap or patch). A ticket that silently disappears is an orphaned finding.
+- The pair is the redesign's evidence: the proposal, the redesign ticket, the wireframe page's nav and the docs index row link both HTML files.
+- Before filing the redesign ticket, check the pair against Phase 3: every ticket marked on the current diagram is resolved on a proposed step, or accounted for in the redesign ticket's Covers (owned by another flow) or in `<state>/ux-flows/assignments.md` (stopgap or patch). A ticket that silently disappears is an orphaned finding.
 
 ## Tracing the current flow
 
 1. **Pin the revision.** Trace in a clean checkout or worktree at the commit you will cite: the synced, pushed default branch, so the commit stays reachable for later regeneration. Never trace or cite the live checkout; uncommitted edits there are not evidence, and Archify verifies citations against committed bytes at the pinned revision. Trace every flow at the same revision when possible, because the docs index states one revision for all current flows.
 2. **Scaffold there.** From that checkout's root, run `bun <skill>/scripts/scaffold-flow.ts --docs <docs>/ux-flows --key <key> …` (flags under [Scripts](../SKILL.md#scripts)), so the revision it writes is the one you trace (see [Repository evidence](#repository-evidence)). The scaffold edits the shared wireframe and docs indexes, so scaffold every flow before parallel agents start. One shared worktree then serves all diagram agents under the [ownership rules](orchestration.md#ownership).
-3. **Read the flow's evidence:** its findings files (`<state>/ux-flows/findings/<area>.json`: problems with annotated screenshots and code references), the filed finding tickets, and the filing receipts (`<state>/ux-flows/receipts/review-<area>.json`) that give each pain point its ticket.
+3. **Read the flow's evidence:** its findings files (`<state>/ux-flows/findings/<area>.json`: problems with annotated screenshots and code references), the filed finding tickets, and the finding-to-ticket numbers in each review unit's checkpoint (`<state>/ux-flows/units/review-<area>.json`) that give each pain point its ticket.
 4. **Trace the journey** from every entry point (menus, buttons, routes, shortcuts, links from other flows) along the path the code takes: screens and dialogs, decisions, confirmations, waits and background jobs, results, recovery, undo, dead ends, and every context switch (navigating away, a forced trip to another page, a manual refresh). Follow call sites until each step reaches its actual write or display, and record repository-relative paths with inclusive line ranges as you read.
 5. **Keep it readable.** Draw one complete journey from entry to end states rather than every branch. The workflow type has six columns (`col` 0 to 5): fold minor variations into a sublabel or explanation, and give a branch its own node only when it changes the outcome or carries a pain point. Budget about 30 minutes per diagram.
 6. **Mark the pain points** on the steps where they happen (see [Spec conventions](#spec-conventions)). A defect seen while tracing that has no ticket goes in the "Not yet ticketed (seen in code)" card and the proposal's section of that name, never on a marked step. The Evidence card says what was exercised in the running app and what was traced from source only.
@@ -50,8 +50,8 @@ Both templates use `diagram_type: "workflow"`, and so does every spec: the regen
 - **`mainPath`** lists the happy path's node IDs in order; edges between consecutive IDs take `role: "main"`.
 - **Node types** follow the legend meanings in the table. In the current diagram a step with a ticketed pain point is `security` whatever its lane, and no other step is; in the proposed diagram only recovery steps are. A step that needs another type (for example `database`) gets a plain-language `meta.legend.entries` label.
 - **Labels** fit about 28 characters at the template widths; a wider one fails Archify's `layout/constraint` gate. Put exact copy, such as an outcome message, in the sublabel or explanation instead of shortening the product's wording. The proposed template's outcome node takes `{{SHORT_OUTCOME_LABEL}}` and quotes the full outcome sentence in its explanation.
-- **`tag`** holds the ticket label as the tracker writes it (`#123`), or the Markdown ticket ID when there is no tracker. When several tickets land on one step, tag the most severe and name all of them in the explanation.
-- **`explanation`** is plain text of at most 1,200 characters, shown in the viewer's Explain panel and absent from screenshots and image exports. Labels, sublabels and tags must carry what a ticket reader needs, and the ticket text names the pain points itself. In proposed explanations, cite the pattern rule IDs the step follows (`REV-8`, `SEL-3`) so Phase 8 can find the steps a rule change affects.
+- **`tag`** holds the ticket label as the tracker writes it (`#123`). When several tickets land on one step, tag the most severe and name all of them in the explanation.
+- **`explanation`** is plain text of at most 1,200 characters, shown in the viewer's Explain panel and absent from screenshots and image exports. Labels, sublabels and tags must carry what a ticket reader needs, and the ticket text names the pain points itself. In proposed explanations, cite the pattern rule IDs the step follows (`REV-1`, `SEL-2`) so Phase 8 can find the steps a rule change affects.
 - **`sources`:** at most three per node, each `{path, line, end_line, label}` with a repository-relative path, inclusive lines copied from the file at the pinned revision, and a label of at most 48 characters. The templates' `line: 1, end_line: 1` are placeholders that validation cannot catch; replace them. Edges carry no sources: cite the call or write site on the node that owns it. Cite every primary step in the current diagram. In the proposed diagram, cite only existing code a step keeps, labelled `Reuses: <what>` or `Replaces: <what>`; a step with no code yet has none. Never cite unrelated code to satisfy validation.
 - **Placeholders:** search each spec for `{{` before finalizing. Archify accepts placeholder text in labels, explanations and cards, and the wireframe linter reads only HTML.
 
@@ -107,13 +107,12 @@ Cards keep their titles and dot colours in every diagram, so all diagrams read a
 5. Archify serializes deliveries into one output directory, so all diagrams in `<docs>/ux-flows/` deliver one at a time. `delivery/concurrent-attempt` means another delivery holds the lock: wait and rerun finalize without editing the spec; it does not count as a repair. Never delete a lock file. For `delivery/lock-stale` or `delivery/lock-invalid`, follow the Archify skill's recovery.
 6. Never install, upgrade or update Archify. When a receipt carries an update notice, pass it to the owner.
 
-## Rendering for tickets
+## Rendering for inspection
 
 1. Open each render (its served docs URL, or its file URL with local file access allowed) in a browser automation session of your own, at a 1600×1000 viewport, and wait until the diagram has drawn.
 2. Hide floating viewer controls that cover labels, such as the viewer's navigation toolbar, then take a full-page screenshot to `<state>/ux-flows/shots/<key>/<key>-current.png` (or `-proposed.png`).
 3. Open the image and confirm that every label is legible and the whole diagram is in the frame. Retake with a larger viewport if anything is cut off. Close the session.
-4. Never commit the images. Embed the current image in the ticket draft's Current flow section and the proposed one in Proposed flow ([the redesign ticket](proposals-and-tickets.md#the-redesign-ticket)); the filer uploads them when the ticket is filed ([delivery](orchestration.md#delivery)). A Markdown ticket links the diagram pages instead ([Markdown tickets](proposals-and-tickets.md#markdown-tickets)).
-5. When a diagram changes after filing, the Phase 8 `integrate` unit re-renders it, captures it again and replaces the ticket's image, so the ticket and the docs show the same flow.
+4. Never commit the images.
 
 ## Regeneration recipe
 
@@ -148,10 +147,10 @@ Keep the pair, the file names, the code citations and the ticket marks. Write `<
 
 In provisional mode ([SKILL.md](../SKILL.md#execute-the-task) step 2), the current flow may be this step table rendered into `<key>-current.html` even when Archify is available, with the ticket column citing evidence (a screenshot or `path:start-end`) instead of tickets.
 
-Put the card content under the chart or table as short lists. Capture both pages for the ticket as in [Rendering for tickets](#rendering-for-tickets).
+Put the card content under the chart or table as short lists. Capture and inspect both pages as in [Rendering for inspection](#rendering-for-inspection).
 
 ## Honest verification
 
 - A passing finalize proves Archify's automated gates (validation, delivery, strict check and browser check) and reports `visualReview: "not-requested"`. It is not visual inspection; only opening a screenshot and reading it is.
-- Ticket renders count as inspected only when step 3 of [Rendering for tickets](#rendering-for-tickets) ran on the current bytes; a regenerated diagram without a new capture is automated-only again.
+- Renders count as inspected only when step 3 of [Rendering for inspection](#rendering-for-inspection) ran on the current bytes; a regenerated diagram without a new capture is automated-only again.
 - Report per batch which renders were inspected and which passed automated checks only, as [visual evidence](publishing.md#visual-evidence) requires, and whether every served diagram URL returned HTTP 200.

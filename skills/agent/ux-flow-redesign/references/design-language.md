@@ -96,7 +96,7 @@ A flow page, from [flow-wireframe.html](../assets/templates/flow-wireframe.html)
 
 1. `<title>` "*Flow title* · proposed flow wireframe", then the stylesheet link.
 2. `header.page` containing:
-   - `nav.top` with these links in this order: `← All flows` (`index.html`), `Today's flow diagram` (`../<key>-current.html`), `Proposed flow diagram` (`../<key>-proposed.html`), `Written proposal` (`../proposals/<key>.md`), then the ticket. Before filing it is `<span class="muted">Redesign ticket: not filed yet</span>`, which the scaffolder writes and which leaves only the `nav-ticket` warning. After filing (see [proposals and tickets](proposals-and-tickets.md#filing)), replace it with `<a href="<ticket>">Redesign ticket <label></a>`, where `<ticket>` is the tracker URL or the Markdown ticket's path `../tickets/<id>.md`;
+   - `nav.top` with these links in this order: `← All flows` (`index.html`), `Today's flow diagram` (`../<key>-current.html`), `Proposed flow diagram` (`../<key>-proposed.html`), `Written proposal` (`../proposals/<key>.md`), then the ticket. Before filing it is `<span class="muted">Redesign ticket: not filed yet</span>`, which the scaffolder writes and which leaves only the `nav-ticket` warning. After filing (see [Linking the ticket](proposals-and-tickets.md#linking-the-ticket)), replace it with `<a href="<ticket URL>">Redesign ticket <label></a>`;
    - one `h1`, the flow title;
    - `<p><b>TLDR:</b> …</p>`, one sentence on what the new flow does differently;
    - the disclaimer line.
@@ -246,8 +246,7 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
 
 - Draw the selection summary and the command or shortcut bar exactly as the pattern reference decides (its section 2.2, the `BAR-n` rules): position, content and order of items, identically on every page.
 - The `.selbar` in the flow template is a placeholder for those rules, not a decision. When the reference moves the summary into a footer or removes the in-table bar, draw that instead.
-- Parallel designers copy the exemplar page, so an exemplar that contradicts the reference spreads its contradiction to every page copied from it. Check the exemplar's bars, menus and surfaces rule by rule against the reference before handing it out.
-- When anyone reports an inconsistency, count how many pages draw each variant (search the folder for the classes and labels) before answering, and record it as a conflict on the index.
+- When anyone reports an inconsistency, count how many pages draw each variant (search the folder for the classes and labels) before answering, report that spread, and record it as a conflict on the index with a recommendation; settle it in the reference, not in one page.
 
 ## The index page
 
@@ -319,7 +318,7 @@ It prints `file:line: severity rule: message` and exits 1 on any error. `--site-
 | `popover-trigger` | a mockup popover or menu with a caret has no `.open` element in its window |
 | `toast-action` | a `.toast` contains a `.btn`, `button`, `input` or `select` |
 | `nav` | a page with steps, other than `index.html` and `patterns.html`, lacks `nav.top` or its links to `index.html`, `<key>-current.html`, `<key>-proposed.html` and `proposals/<key>.md` |
-| `nav-ticket` (warning) | `nav.top` has no link that starts with `http://` or `https://` or contains `tickets/` |
+| `nav-ticket` (warning) | `nav.top` has no link that starts with `http://` or `https://` |
 | `link` | a relative `href` or `src` on `a`, `link`, `img` or `script` points at a missing file, at a directory without `index.html` or `index.md`, or at a `#fragment` with no matching id on the page or in the target HTML page |
 | `h1` | a page has other than exactly one `h1` |
 | `duplicate-id` | an id appears twice on a page |

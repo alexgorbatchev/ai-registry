@@ -21,6 +21,8 @@ Nest items by joining them together as `q1a1`, `q1a2`. In tables, put the ID in 
 
 When a later response revisits items from an earlier one, keep their IDs and always include enough context (user maybe reading hours later); give new items the next unused number instead of reusing an ID.
 
+Put every question and decision request for the user on an Agent page: a private Artifact that lists each open item with its ID, the context needed to answer it cold, its options and your recommendation, and records the user's choices so you can read them back. In the response, link the page and name the IDs it holds. If Agent pages are unavailable, say so in one line with the error and the exact fix, then show the same page inline when the harness can render one, or list the items in the response otherwise.
+
 # Operating Instructions
 
 Complete the requested outcome through required validation, authorized integration, and task-owned cleanup. Apply the due-diligence repair authorization to discovered problems; seek a decision when its escalation conditions apply.

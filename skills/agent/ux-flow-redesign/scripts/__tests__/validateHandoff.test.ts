@@ -12,7 +12,7 @@ function findings(shot: string) {
       {
         id: "export-01",
         title: "Export starts without a preview",
-        featureIds: ["F101"],
+        featureIds: ["FEAT-101"],
         category: "workflow",
         severity: "P1",
         observed: "Enter starts the export",
@@ -33,7 +33,7 @@ function findings(shot: string) {
 describe("findings", () => {
   test("accepts a complete file and names every missing field", () => {
     const shot = factory_file(join(factory_testDirectory("handoff"), "01.png"), "png");
-    expect(validateHandoff("findings", findings(shot), { featurePattern: /^F\d{3}$/ })).toEqual([]);
+    expect(validateHandoff("findings", findings(shot), { featurePattern: /^FEAT-\d+$/ })).toEqual([]);
     const broken = findings("relative.png");
     Object.assign(broken.findings[0], {
       id: "other-01",
@@ -42,26 +42,29 @@ describe("findings", () => {
       featureIds: ["X"],
       needsBackend: "no",
       confidence: "sure",
-      existingTicket: "12",
+      existingTicket: "ticket 12",
     });
     broken.findings.push({ ...broken.findings[0] });
-    expect(validateHandoff("findings", broken, { featurePattern: /^F\d{3}$/ })).toEqual(
+    expect(validateHandoff("findings", broken, { featurePattern: /^FEAT-\d+$/ })).toEqual(
       expect.arrayContaining([
         'findings[0] (other-01): id must start with "export-"',
         "findings[1] (other-01): duplicate id",
         "findings[0] (other-01): bad feature id X",
         "findings[0] (other-01): screenshot path must be absolute and exist: relative.png",
         "findings[0] (other-01): needsBackend must be true or false",
-        "findings[0] (other-01): existingTicket must be null or a ticket number",
+        "findings[0] (other-01): existingTicket must be null or a ticket ID as issue-tracker reports it, not a finding ID",
       ]),
     );
     const filed = findings(shot);
-    Object.assign(filed.findings[0], { existingTicket: 412 });
-    expect(validateHandoff("findings", filed)).toEqual([]);
-    for (const existingTicket of ["export-03", 0, 4.5]) {
+    for (const existingTicket of [412, "SHW-12", "repo#42"]) {
+      Object.assign(filed.findings[0], { existingTicket });
+      expect(validateHandoff("findings", filed)).toEqual([]);
+    }
+    // A slash would split the verify-<ticket> unit key into a nested checkpoint path.
+    for (const existingTicket of ["export-03", "", " 12", "ops/42", 0, 4.5]) {
       Object.assign(filed.findings[0], { existingTicket });
       expect(validateHandoff("findings", filed)).toEqual([
-        "findings[0] (export-01): existingTicket must be null or a ticket number",
+        "findings[0] (export-01): existingTicket must be null or a ticket ID as issue-tracker reports it, not a finding ID",
       ]);
     }
     expect(validateHandoff("findings", {})).toEqual([
@@ -77,6 +80,20 @@ test("verdicts, audits and critiques", () => {
     validateHandoff("verdicts", {
       area: "a",
       verdicts: [{ id: "a-01", verdict: "duplicate", severity: "P2", notes: "same as a-02" }],
+    }),
+  ).toEqual(["verdicts[0] (a-01): a duplicate needs duplicateOf or existingTicket"]);
+  for (const existingTicket of [7, "SHW-12"]) {
+    expect(
+      validateHandoff("verdicts", {
+        area: "a",
+        verdicts: [{ id: "a-01", verdict: "duplicate", severity: "P2", notes: "filed before", existingTicket }],
+      }),
+    ).toEqual([]);
+  }
+  expect(
+    validateHandoff("verdicts", {
+      area: "a",
+      verdicts: [{ id: "a-01", verdict: "duplicate", severity: "P2", notes: "same", existingTicket: "a-02" }],
     }),
   ).toEqual(["verdicts[0] (a-01): a duplicate needs duplicateOf or existingTicket"]);
   const audit = {
@@ -127,7 +144,7 @@ test("the CLI prints OK or every error", () => {
   );
   writeFileSync(bad, "{}");
   const invalid = Bun.spawnSync(
-    ["bun", join(SCRIPTS, "validate-handoff.ts"), "findings", bad, "--feature-pattern", "^F"],
+    ["bun", join(SCRIPTS, "validate-handoff.ts"), "findings", bad, "--feature-pattern", "^FEAT-"],
     { stderr: "pipe" },
   );
   expect(invalid.exitCode).toBe(1);

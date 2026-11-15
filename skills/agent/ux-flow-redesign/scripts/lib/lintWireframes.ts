@@ -196,8 +196,11 @@ function checkLegend(page: Page, findings: Finding[]): void {
   }
 }
 
-/** How a row inside a menu reads: a group boundary, an explicit heading, a label-like row, or a command. */
-type MenuEntryKind = "separator" | "heading" | "label" | "item";
+/**
+ * How a row inside a menu reads: a group boundary, an explicit heading, a muted or wholly bold row that looks like a
+ * label, or an item.
+ */
+type MenuEntryKind = "separator" | "heading" | "muted" | "bold" | "item";
 
 interface MenuEntry {
   kind: MenuEntryKind;
@@ -246,15 +249,27 @@ const BLOCK_TAGS = new Set([
 const SEPARATOR_CLASS = /^(sep|separator|divider|rule)$/;
 const HEADING_CLASS =
   /^(lbl|label|heading|header|hdr|title|subheader|subheading|category)$|-(lbl|label|heading|header|title)$/;
+/** Heading markup that names a whole popover (its title) rather than a group inside a menu. */
+const TITLE_CLASS = /^(title|header|hdr)$|-(title|header)$/;
 const MUTED_CLASS = /^(muted|mute|dim|dimmed|subtle|secondary|hint|faint|quiet|caption|meta|overline|eyebrow)$/;
 const MUTED_STYLE = /var\(--mute\)|text-transform\s*:\s*uppercase|opacity\s*:/i;
-const EMPHASIS_TAGS = new Set(["b", "strong", "em", "small"]);
+const BOLD_TAGS = new Set(["b", "strong"]);
+const SOFT_TAGS = new Set(["em", "small"]);
 const CONTROL_TAGS = new Set(["a", "button", "input", "select", "textarea"]);
+const FORM_TAGS = new Set(["input", "select", "textarea"]);
 const ITEM_ROLES = new Set(["menuitem", "menuitemcheckbox", "menuitemradio", "option"]);
+const DESTRUCTIVE_CLASSES = new Set(["danger", "bad", "destructive"]);
 const CHOICE_GLYPH = /^[☑☐☒◉○●◯⦿✓✔]/;
+const ELLIPSIS = /…|\.\.\./;
 
 const classList = (element: HtmlElement) => (element.attrs.get("class") ?? "").split(/\s+/).filter(Boolean);
 const isCallout = (element: HtmlElement) => hasClass(element, "n");
+const isDestructive = (element: HtmlElement) =>
+  classList(element).some((name) => DESTRUCTIVE_CLASSES.has(name)) ||
+  /var\(--bad\)/.test(element.attrs.get("style") ?? "");
+/** Form fields: a popover holding them is a form, not a menu, unless the design language marks it as one. */
+const isFormControl = (element: HtmlElement) =>
+  FORM_TAGS.has(element.tag) || hasClass(element, "fld") || hasClass(element, "in");
 
 /** Text a reader sees in a row, without numbered callout markers. */
 function rowText(element: HtmlElement): string {
@@ -275,14 +290,18 @@ function isMenuContainer(element: HtmlElement): boolean {
   );
 }
 
+const isOpenerAid = (element: HtmlElement) =>
+  classList(element).some((name) => name === "from" || name.startsWith("caret"));
+
+/** A popover class, or any element drawn with a caret or an opener line as a direct child, whatever its class. */
 function isPopover(element: HtmlElement): boolean {
-  return classList(element).some((name) => POPOVER_CLASSES.has(name));
+  return classList(element).some((name) => POPOVER_CLASSES.has(name)) || childElements(element).some(isOpenerAid);
 }
 
 /** Carets, opener notes and callout markers are drawing aids, not menu rows. */
 function isDrawingAid(element: HtmlElement): boolean {
   if (["script", "style", "template"].includes(element.tag)) return true;
-  return isCallout(element) || classList(element).some((name) => name === "from" || name.startsWith("caret"));
+  return isCallout(element) || isOpenerAid(element);
 }
 
 const hasOwnText = (element: HtmlElement) =>
@@ -303,7 +322,6 @@ function classifyMenuEntry(element: HtmlElement): MenuEntryKind | null {
   if (!text && !childElements(element).length) return null;
   if (/^h[1-6]$/.test(element.tag) || ["dt", "legend"].includes(element.tag) || role === "heading") return "heading";
   if (classes.some((name) => HEADING_CLASS.test(name))) return "heading";
-  const style = element.attrs.get("style") ?? "";
   const command =
     ITEM_ROLES.has(role) ||
     CONTROL_TAGS.has(element.tag) ||
@@ -312,16 +330,50 @@ function classifyMenuEntry(element: HtmlElement): MenuEntryKind | null {
       (child) =>
         child.tag === "kbd" || CONTROL_TAGS.has(child.tag) || ["sp", "btn", "in"].some((name) => hasClass(child, name)),
     ).length > 0 ||
-    /…|\.\.\./.test(text) ||
+    ELLIPSIS.test(text) ||
     CHOICE_GLYPH.test(text) ||
-    classes.some((name) => ["danger", "bad", "destructive"].includes(name)) ||
-    /var\(--bad\)/.test(style);
+    isDestructive(element);
   if (command) return "item";
   const shown = childElements(element).filter((child) => !isCallout(child));
-  const emphasized =
-    EMPHASIS_TAGS.has(element.tag) || (!hasOwnText(element) && shown.length === 1 && EMPHASIS_TAGS.has(shown[0].tag));
-  const muted = classes.some((name) => MUTED_CLASS.test(name)) || MUTED_STYLE.test(style);
-  return emphasized || muted ? "label" : "item";
+  const sole = !hasOwnText(element) && shown.length === 1 ? shown[0].tag : null;
+  const style = element.attrs.get("style") ?? "";
+  const muted =
+    classes.some((name) => MUTED_CLASS.test(name)) ||
+    MUTED_STYLE.test(style) ||
+    SOFT_TAGS.has(element.tag) ||
+    (sole !== null && SOFT_TAGS.has(sole));
+  if (muted) return "muted";
+  return BOLD_TAGS.has(element.tag) || (sole !== null && BOLD_TAGS.has(sole)) ? "bold" : "item";
+}
+
+/** A command row: an accelerator, a trailing ellipsis, an item role, or a destructive row. */
+function isCommandRow(element: HtmlElement): boolean {
+  return (
+    findAll(element, (child) => child.tag === "kbd").length > 0 ||
+    ELLIPSIS.test(rowText(element)) ||
+    ITEM_ROLES.has(element.attrs.get("role") ?? "") ||
+    isDestructive(element)
+  );
+}
+
+/** Heading markup that titles a whole popover: a heading tag, the heading role, or a title or header class. */
+function isTitleMarkup(element: HtmlElement): boolean {
+  return (
+    /^h[1-6]$/.test(element.tag) ||
+    element.attrs.get("role") === "heading" ||
+    classList(element).some((name) => TITLE_CLASS.test(name))
+  );
+}
+
+/**
+ * A popover without menu markup reads as a menu when it uses the design language's `.lbl` group heading, or when it
+ * has a command row and holds no form fields. Headings and separators alone do not make one: titled forms,
+ * confirmations and pickers use them too.
+ */
+function popoverIsMenu(container: HtmlElement, entries: MenuEntry[]): boolean {
+  if (entries.some(({ element }) => hasClass(element, "lbl"))) return true;
+  if (findAll(container, isFormControl).length) return false;
+  return entries.some(({ kind, element }) => kind === "item" && isCommandRow(element));
 }
 
 /**
@@ -366,39 +418,32 @@ function menuEntries(container: HtmlElement): MenuEntry[] {
 
 /**
  * Finds group headings that label fewer than two items, whatever markup draws them. A heading is explicit (a heading
- * tag, role or class name) anywhere in the menu, or inferred where a group starts: a muted or wholly emphasized row
- * with no command affordance. Inferring only at group starts keeps dimmed items between highlighted ones from reading
- * as headings. A first row followed by a heading or separator is the menu's target header, and a label-like row with
- * no item under it is a note; neither is a group heading. A popover counts as a menu only when it has group structure
- * or command affordances, so value pickers and forms are left alone.
+ * tag, role or class name) anywhere in the menu, or inferred where a group starts: a muted or wholly bold row with no
+ * command affordance. Inferring only at group starts keeps dimmed items between highlighted ones from reading as
+ * headings. Neither of these is a group heading: a wholly bold first row (the menu's target header), the title of a
+ * popover without menu markup, an explicit first-row heading followed by a heading or separator, and a label-like row
+ * with no item under it (a note).
  */
 function checkMenuHeadings(page: Page, findings: Finding[]): void {
   for (const container of findAll(page.root, (element) => isMenuContainer(element) || isPopover(element))) {
+    const menu = isMenuContainer(container);
     const entries = menuEntries(container);
-    const menuLike =
-      isMenuContainer(container) ||
-      entries.some(({ kind }) => kind === "separator" || kind === "heading") ||
-      entries.some(
-        ({ kind, element }) =>
-          kind === "item" &&
-          (findAll(element, (child) => child.tag === "kbd").length > 0 ||
-            /…|\.\.\./.test(rowText(element)) ||
-            ITEM_ROLES.has(element.attrs.get("role") ?? "") ||
-            /var\(--bad\)/.test(element.attrs.get("style") ?? "")),
-      );
-    if (!menuLike) continue;
+    if (!menu && !popoverIsMenu(container, entries)) continue;
     entries.forEach(({ kind, element, groupStart }, index) => {
-      if (kind !== "heading" && !(kind === "label" && groupStart)) return;
+      const inferred = (kind === "muted" || kind === "bold") && groupStart;
+      if (kind !== "heading" && !inferred) return;
+      if (index === 0 && (kind === "bold" || (!menu && kind === "heading" && isTitleMarkup(element)))) return;
       let items = 0;
       while (entries[index + 1 + items]?.kind === "item") items++;
-      if (items === 0 && (kind === "label" || (index === 0 && entries[index + 1]))) return;
+      if (items === 0 && (kind !== "heading" || (index === 0 && entries[index + 1]))) return;
       if (items >= 2) return;
+      const disabled = kind === "muted" ? "; if this row is a disabled item, add its reason after .sp" : "";
       findings.push({
         file: page.path,
         line: element.line,
         severity: "error",
         rule: "menu-heading",
-        message: `menu heading "${rowText(element)}" labels ${items} item(s); a heading labels two or more, so fold a lone item into its closest group or drop the heading`,
+        message: `menu heading "${rowText(element)}" labels ${items} item(s); a heading labels two or more, so fold a lone item into its closest group or drop the heading${disabled}`,
       });
     });
   }

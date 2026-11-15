@@ -4,7 +4,7 @@ import { isAbsolute } from "node:path";
 export type HandoffKind = "findings" | "verdicts" | "audit" | "critique";
 
 export interface ValidateOptions {
-  /** Pattern every feature-roster ID must match, for example ^F\d{3}$. Any non-empty string passes without it. */
+  /** Pattern every feature-roster ID must match, for example ^FEAT-\d+$. Any non-empty string passes without it. */
   featurePattern?: RegExp;
 }
 
@@ -26,8 +26,18 @@ export const CATEGORIES = [
 type Data = Record<string, unknown>;
 
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
-/** A ticket number as the tracker assigns it. */
-const ticketId = (value: unknown): boolean => Number.isInteger(value) && (value as number) > 0;
+/** No slash or whitespace, so the ID also names a `verify-<ticket>` checkpoint file. */
+const TICKET_KEY = /^[A-Za-z0-9][A-Za-z0-9._#-]*$/;
+/**
+ * A ticket ID as issue-tracker reports it: a positive number or a tracker key such as `OPS-12`. A finding ID of this
+ * area (`<area>-NN`) is rejected, because it names a finding, not a ticket.
+ */
+function ticketId(value: unknown, area: unknown): boolean {
+  if (typeof value === "number") return Number.isInteger(value) && value > 0;
+  if (typeof value !== "string" || !TICKET_KEY.test(value)) return false;
+  const prefix = `${String(area)}-`;
+  return !(value.startsWith(prefix) && /^\d+$/.test(value.slice(prefix.length)));
+}
 const list = (value: unknown): value is unknown[] => Array.isArray(value);
 const record = (value: unknown): Data =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as Data) : {};
@@ -107,8 +117,8 @@ export function validateHandoff(kind: HandoffKind, data: unknown, options: Valid
         `${at}: confidence must be high, medium or low`,
       );
       need(
-        finding.existingTicket == null || ticketId(finding.existingTicket),
-        `${at}: existingTicket must be null or a ticket number`,
+        finding.existingTicket == null || ticketId(finding.existingTicket, area),
+        `${at}: existingTicket must be null or a ticket ID as issue-tracker reports it, not a finding ID`,
       );
       need(finding.mergeInto == null || text(finding.mergeInto), `${at}: mergeInto must name the surviving finding id`);
     });
@@ -127,7 +137,7 @@ export function validateHandoff(kind: HandoffKind, data: unknown, options: Valid
       need(text(verdict.notes), `${at}: notes must give the evidence for the verdict`);
       if (verdict.verdict === "duplicate") {
         need(
-          text(verdict.duplicateOf) || ticketId(verdict.existingTicket),
+          text(verdict.duplicateOf) || ticketId(verdict.existingTicket, root.area),
           `${at}: a duplicate needs duplicateOf or existingTicket`,
         );
       }

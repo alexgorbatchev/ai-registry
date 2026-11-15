@@ -4,16 +4,16 @@ description: Use when reviewing an application's user experience across many fea
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-15 07:14
-  last_modified: 2026-11-15 12:01
+  last_modified: 2026-11-15 14:30
   status: current
 ---
 
 ## Execute the task
 
 1. Identify the phases and flows the request covers. A full effort runs every phase below in order for every flow in scope. A narrower request ("review the UX and file tickets", "draw wireframes for these flows", "write a pattern reference") runs only the requested phases for the named flows, plus the earlier phases those flows lack. Inspect existing artifacts first and reuse valid ones; never redo a delivered unit.
-2. When a missing prerequisite would expand the work substantially (for example a full live review before drawing five wireframes), offer the owner ID'd options: run the prerequisites for the named flows only, work in provisional mode, or run the full effort. Meanwhile do the work that needs no decision. **Provisional mode:** the proposal and wireframe are drawn from existing evidence (code, open tickets, the owner's notes) without a live review or a pattern reference; each carries the status line "Provisional: drawn from existing evidence, without a live review or the pattern reference"; the current flow may be a step table rendered into `<key>-current.html` ([diagrams](references/diagrams.md) "Without Archify") citing evidence instead of tickets; nothing is filed; the Phase 4 ticket rule does not apply; Phase 8 conforms these flows once a reference exists.
+2. When a missing prerequisite would expand the work substantially (for example a full live review before drawing five wireframes), offer the owner ID'd options: run the prerequisites for the named flows only, work in provisional mode, or run the full effort. Meanwhile do the work that needs no decision. **Provisional mode:** the proposal and wireframe are drawn from existing evidence (code, open tickets, the owner's notes) without a live review or a pattern reference; each carries the status line "Provisional: drawn from existing evidence, without a live review or the pattern reference"; the current flow may be a step table rendered into `<key>-current.html` ([diagrams](references/diagrams.md) "Without Archify") citing evidence instead of findings; nothing is filed; the Phase 4 citation rule does not apply; Phase 8 conforms these flows once a reference exists.
 3. Establish the inputs under **Setup**.
-4. Read [orchestration](references/orchestration.md) before the first unit of any phase, parallel or not; it owns unit keys, checkpoints, per-unit delivery and resume.
+4. Read [orchestration](references/orchestration.md) before the first unit of any phase, parallel or not; it owns unit keys, checkpoints, per-unit delivery and resume. Read [publishing](references/publishing.md) before the first docs write, commit or publication in any phase; it owns where artifacts live, formatting and commit mechanics, serving, the docs-site tests and the privacy scan.
 5. Run the phases. Gates apply per unit (one flow, area, dimension or lens): a failed or blocked unit blocks only the units that depend on it. Record its blocker and unblock condition in its checkpoint, continue the others, and report it; the effort is not complete while any unit is blocked.
 6. Deliver under **Report to the owner**.
 
@@ -30,7 +30,13 @@ Write these into `<state>/ux-flows/setup.md` before Phase 1. When one is missing
 
 - **Product direction and owner rules.** Read the project instructions for product direction, binding contracts and stated intent ("exports include archived items by design; that is not a defect"). Every review and design agent receives them. Owner corrections made during the effort become rules in the project's instructions where design agents work and in every later agent's shared context; a misunderstanding agents repeat marks a missing rule, recorded the same way.
 - **Feature roster.** The project's list of features with stable IDs. Without one, Phase 1 builds an inventory and assigns IDs.
-- **Tickets.** Before any ticket read or write, load and follow the `issue-tracker` skill; it owns every tracker operation (where tickets go, their fields and bodies, epics, attachments, blockers, priorities, claims, duplicate checks and privacy). If it is unavailable, suspend only ticket work, keep findings and proposals, and report what is needed.
+- **Tickets.** Before any ticket read or write, load and follow the `issue-tracker` skill; it owns every tracker operation (where tickets go, their fields and bodies, epics, attachments, blockers, priorities, claims, receipts, duplicate checks and privacy). If it is unavailable, suspend only ticket work, keep findings and proposals (they cite finding IDs, see **ID conventions**), and report what is needed. The workflow files only these tickets:
+  - one finding ticket per surviving Phase 2 finding, referencing its annotated screenshots and reproduction steps ([filing](references/review.md#filing));
+  - a stopgap ticket in Phase 3, only for a bug that damages data now ([stopgaps](references/proposals-and-tickets.md#stopgaps));
+  - one redesign ticket per flow in Phase 6, referencing the rule IDs its acceptance criteria rely on and the findings it covers ([the redesign ticket](references/proposals-and-tickets.md#the-redesign-ticket));
+  - an instrument ticket in Phase 7 when a measurement shows the measuring tool cannot produce real values, carrying the calibration ladder ([product decisions](references/pattern-reference.md#product-decisions)).
+
+  Once redesign tickets exist, the [tracker restructure](references/proposals-and-tickets.md#tracker-restructure) changes blockers and priorities. Committed artifacts cite tickets as **ID conventions** says, which differs in a public project.
 - **Docs site.** The directory the project serves locally and how it is served (see [publishing](references/publishing.md)).
 - **Diagram tool.** Archify, through the Archify skill, by default; see [diagrams](references/diagrams.md) for alternatives.
 - **Evidence environment.** A current build of the app from a clean checkout, disposable test data shaped like real use, a screenshot tool for the platform (a browser automation tool for web apps), and one isolated app instance per concurrent reviewer.
@@ -54,7 +60,8 @@ Pick one flow key per flow: kebab-case, stable, used in every file name. `<docs>
 | Pattern reference (visual) | `<docs>/ux-flows/wireframes/patterns.html` |
 | Built inventory, when there is no roster | `<docs>/ux-flows/inventory.md` |
 | Docs index section | "UX flows" section of `<docs>/index.md` |
-| Setup notes, flow table, finding assignments | `<state>/ux-flows/setup.md`, `flows.md`, `assignments.md` |
+| Setup notes, flow table and vocabulary, finding assignments | `<state>/ux-flows/setup.md`, `flows.md`, `assignments.md` |
+| Phase 9 verification record | `<state>/ux-flows/verification.md` |
 | Unit checkpoints and drafts | `<state>/ux-flows/units/<unit-key>.json`, `<state>/ux-flows/units/<unit-key>/` |
 | Findings, verdicts, audits, critiques | `<state>/ux-flows/findings/`, `<state>/ux-flows/patterns/` |
 | Screenshots | `<state>/ux-flows/shots/<unit-key>/` (never committed) |
@@ -66,7 +73,7 @@ Add the diagram tool's delivery receipts (`<docs>/ux-flows/*.delivery.json`) to 
 | ID | Form | Assigned in |
 | --- | --- | --- |
 | Feature | the roster's own IDs | project roster or Phase 1 inventory |
-| Finding | `<area>-NN` | Phase 2; its ticket number is recorded in the unit checkpoint once filed |
+| Finding | `<area>-NN` | Phase 2; its ticket ID, as issue-tracker reports it, is recorded in the unit checkpoint's `tickets` map once filed |
 | Flow key | kebab-case | Phase 1 |
 | Unit key | `review-<area>` (Phase 2 review, verify, deliver), `verify-<ticket>` (re-verifying a filed ticket), `flow-<key>` (Phases 4 and 6), `audit-<dimension>`, `critique-<lens>`, `reference` (Phase 5), `reconcile-<key>` (Phase 8), `integrate`, `critic` | when a unit starts; a skip list holds unit keys whose last stage is done |
 | Pattern rule | `<PREFIX>-n`, for example `SEL-1`, `MENU-2`, `REV-1`; an inserted rule takes a letter suffix (`REV-1a`); a withdrawn rule keeps its number | pattern reference section 2 |
@@ -79,13 +86,15 @@ Add the diagram tool's delivery receipts (`<docs>/ux-flows/*.delivery.json`) to 
 
 Proposals, wireframes, tickets and tests cite rule IDs. Never renumber or reuse an ID.
 
+**Citing a finding.** Wherever an artifact cites a finding (diagram tags and cards, `Fixes` lines, **Tickets resolved**, acceptance criteria, covers lists), cite its ticket label from the unit checkpoint's `tickets` map once the ticket is filed, and its finding ID while none is (design-only runs, issue-tracker unavailable). In a public project (issue-tracker keeps tracker identity out of its commits), committed artifacts always cite finding IDs and name a redesign by its flow key; the finding-to-ticket map stays in the checkpoints, and no ticket number or tracker URL is committed.
+
 ## Phases
 
 ### Phase 1: Inventory flows and check coverage
 
 - **Inputs:** the roster, the app's routes, menus and commands, the owner's vocabulary.
-- **Do:** List every user journey in scope: one flow per tool or task, cross-cutting flows (selection, progress and jobs, undo and history), and one or more end-to-end journeys that cross tools ("from new material to a finished deliverable"). Map every roster feature in scope to exactly one owning flow. Find each term the owner uses by searching source and UI labels for it and its synonyms, and record the mapping. Rank flows by the risk they pose to the owner's data and work.
-- **Output:** `<state>/ux-flows/flows.md`: one row per flow `{key, title, roster IDs, scope sentence (entry, steps, end states), evidence areas, group, risk}`. The group becomes the flow's heading in the docs index.
+- **Do:** List every user journey in scope: one flow per tool or task, cross-cutting flows (selection, progress and jobs, undo and history), and one or more end-to-end journeys that cross tools ("from new material to a finished deliverable"). Map every roster feature in scope to exactly one owning flow. Find each term the owner uses by searching source and UI labels for it and its synonyms. Rank flows by the risk they pose to the owner's data and work.
+- **Output:** `<state>/ux-flows/flows.md`: one row per flow `{key, title, roster IDs, scope sentence (entry, steps, end states), evidence areas, group, risk}`, where the group becomes the flow's heading in the docs index; then a **Vocabulary** section, a table `| Owner term | UI labels | Code identifiers |`, which the Phase 5 `language` audit reads.
 - **Gate:** every in-scope roster feature maps to one flow or is listed as out of scope with a reason; a capability reached from several flows has one owner that holds its whole journey, and the others hand off to it.
 
 ### Phase 2: Review the real app and file findings
@@ -94,8 +103,8 @@ Read [review](references/review.md) before starting.
 
 - **Inputs:** the flow table, the evidence environment, a digest of open tickets.
 - **Do:** Split the review into units of one area (a slice of roster features) or one end-to-end journey. Each unit exercises every flow in its brief in the running app against disposable data, captures annotated screenshots with `assets/annotate.js`, grounds each problem in code, and writes a findings file checked by `scripts/validate-handoff.ts findings`. An independent verifier tries to refute each unit's findings and reproduces every P0 and P1. When tickets are in scope, each unit files its findings as soon as they are verified. A completeness pass then looks for uncovered surfaces and runs them as new units.
-- **Output:** finding tickets carrying annotated screenshots and reproduction steps; a coverage list per unit.
-- **Gate (per unit):** a validated findings file, a verdicts file and, when tickets are in scope, each filed finding's ticket number in the unit checkpoint. **Phase gate:** the completeness pass found nothing new, or its gap units passed.
+- **Output:** validated findings and verdicts; when tickets are in scope, finding tickets carrying annotated screenshots and reproduction steps; a coverage list per unit.
+- **Gate (per unit):** a validated findings file, a verdicts file and, when tickets are in scope, each filed finding's ticket ID in the unit checkpoint. **Phase gate:** the completeness pass found nothing new, or its gap units passed.
 
 ### Phase 3: Decide what to redesign
 
@@ -111,9 +120,9 @@ Read [proposals and tickets](references/proposals-and-tickets.md) (Priority, Sto
 Read [diagrams](references/diagrams.md) and load the Archify skill before writing a spec.
 
 - **Inputs:** the flow table, findings and their tickets, the code at a pinned revision.
-- **Do:** For each flow, trace the journey as the code implements it (entry points, screens, dialogs, decisions, confirmations, waits and jobs, results, recovery, undo, dead ends) and draw a current-flow diagram from `assets/templates/current-flow.workflow.json`. Mark each evidenced pain point on its step with its finding ticket; cite source ranges for primary steps.
+- **Do:** For each flow, trace the journey as the code implements it (entry points, screens, dialogs, decisions, confirmations, waits and jobs, results, recovery, undo, dead ends) and draw a current-flow diagram from `assets/templates/current-flow.workflow.json`. Mark each evidenced pain point on its step with its finding, cited as **ID conventions** says; cite source ranges for primary steps.
 - **Output:** `<key>-current.json` and its render.
-- **Gate (per flow):** no `{{` left in the spec; the diagram tool's validation and render pass with repository evidence; every pain point names a ticket.
+- **Gate (per flow):** no `{{` left in the spec; the diagram tool's validation and render pass with repository evidence; every pain point cites its finding.
 
 ### Phase 5: Build the shared pattern reference before parallel design
 
@@ -131,7 +140,7 @@ Read [proposals and tickets](references/proposals-and-tickets.md) and [design la
 - **Inputs:** the flow's current diagram, its findings and assignments, the pattern reference.
 - **Do:** For each flow: draw the proposed-flow diagram, write the proposal, draw the wireframe page and, when tickets are in scope, file the [redesign ticket](references/proposals-and-tickets.md#the-redesign-ticket). Cite rule IDs; when the flow needs to differ from a rule, propose the exception in the reference instead of inventing a divergent pattern. Draw one exemplar flow first, check it rule by rule against the reference, and only then give it to parallel designers. While drawing, record every cross-flow disagreement in the wireframe index's conflicts list. Before filing a ticket that links the flow's docs, the orchestrator publishes them (see **Scope boundaries**); after filing, [link the ticket](references/proposals-and-tickets.md#linking-the-ticket).
 - **Output:** per flow: `<key>-proposed.json` and render, `proposals/<key>.md`, `wireframes/<key>.html`, the filed redesign ticket when tickets are in scope, and the links back to it.
-- **Gate (per flow):** no `{{` left in any of the flow's files; the proposed diagram validates and renders, or its exception is recorded; `scripts/lint-wireframes.ts` reports no errors for the page; the proposal and ticket cite the rule IDs their criteria rely on; the ticket's covers list matches `assignments.md`; when tickets are in scope, the ticket number and the four links are recorded in the flow's checkpoint; otherwise the nav reads "not filed yet" and the report lists the flow.
+- **Gate (per flow):** no `{{` left in any of the flow's files; the proposed diagram validates and renders, or its exception is recorded; the folder lint (`scripts/lint-wireframes.ts --site-root <docs> <docs>/ux-flows/wireframes`) reports no errors for the page; the proposal cites the rule IDs its criteria rely on, and its **Tickets resolved** matches `assignments.md` when that file exists. When tickets are in scope, the ticket cites the same rule IDs, its covers list matches `assignments.md`, and the ticket ID and the four links ([linking the ticket](references/proposals-and-tickets.md#linking-the-ticket)) are recorded in the flow's checkpoint; otherwise the nav reads "not filed yet" and the report lists the flow.
 
 ### Phase 7: Settle product decisions with evidence and the owner
 
@@ -147,17 +156,17 @@ Read [pattern reference](references/pattern-reference.md) (Fact-checking, Produc
 Read [orchestration](references/orchestration.md) (shape D), [pattern reference](references/pattern-reference.md) (Owner review), [design language](references/design-language.md), [diagrams](references/diagrams.md) and [proposals and tickets](references/proposals-and-tickets.md) (The redesign ticket, Tracker restructure, Linking the ticket) before conforming a flow.
 
 - **Inputs:** the current reference revision and its per-flow conformance lists, every flow artifact, the owner's answers.
-- **Do:** Per flow: reconcile the proposal, wireframe and proposed diagram spec with the reference (with before and after screenshots); two independent reviewers check it, one for reference conformance and consistency across the flow's artifacts, one for the design language and rendering; fix, re-checking only blockers and majors, for at most two rounds; then deliver it with any unresolved issues listed: commit only its files on a run branch in a dedicated worktree, push the branch, update the ticket's criteria and covers, record the evidence on it, and apply the tracker restructure for the flow. After all flows, one integration step regenerates the changed diagrams, updates the shared index files and the reference's conformance section, runs the checks, rebases and lands; a completeness critic then checks every flow. Carry every reversal to every artifact that stated it, and search all artifacts for wording of the superseded framing.
+- **Do:** Per flow: reconcile the proposal, wireframe and proposed diagram spec with the reference (with before and after screenshots); two independent reviewers check it, one for reference conformance and consistency across the flow's artifacts, one for the design language and rendering; fix, re-checking only blockers and majors, for at most two rounds; then deliver it with any unresolved issues listed: commit only its files on a run branch in a dedicated worktree, push the branch, bring the ticket's criteria and covers in line with the proposal, list the unresolved issues on it, and apply the tracker restructure for the flow. After all flows, one integration step regenerates the changed diagrams, updates the shared index files and the reference's conformance section, runs the checks, rebases and lands; a completeness critic then checks every flow. Carry every reversal to every artifact that stated it, and search all artifacts for wording of the superseded framing.
 - **Output:** conformed artifacts; an empty or decided conflicts list on the wireframe index.
 - **Gate:** the critic reports every flow complete; every conformance item is done or recorded as an exception in the reference; unresolved review issues are listed on their tickets and in the report.
 
 ### Phase 9: Publish and verify
 
-Read [publishing](references/publishing.md) before the first publication.
+[Publishing](references/publishing.md) owns the commands and checks below.
 
 - **Inputs:** every artifact, the served docs site.
-- **Do:** Link everything from the docs index (diagrams, wireframes, proposals, reference). Serve the docs locally, run the docs-site tests, `scripts/lint-wireframes.ts` over the wireframes and `scripts/crawl-site.ts` over the served site, and capture before and after screenshots for every visual change to existing pages. Check that no index row says "not filed yet" for a flow whose ticket number is recorded.
-- **Output:** a served site where every page is linked and reachable, plus verification evidence.
+- **Do:** Link everything from the docs index (diagrams, wireframes, proposals, reference). Serve the docs locally, run the docs-site tests, `scripts/lint-wireframes.ts` over the wireframes and `scripts/crawl-site.ts` over the served site, and capture before and after screenshots for every visual change to existing pages. Check that no index row says "not filed yet" for a flow whose ticket ID is recorded.
+- **Output:** a served site where every page is linked and reachable, plus the verification record `<state>/ux-flows/verification.md` (check summary lines, privacy-scan review, inspected screenshots).
 - **Gate:** the linter reports no errors; the crawl reports no broken links, missing fragments or unlinked files; the docs-site tests (or the direct checks that replace them) pass, including a 200 `text/css` response for `wireframe.css`; the privacy scan has no unreviewed hits; no delivery receipt is tracked; the screenshots were inspected. Any run that wrote docs pages, review-only runs included, runs the crawl before reporting.
 
 ## Scripts
@@ -167,14 +176,14 @@ Run them with Bun from the project root as `bun <skill>/scripts/<name>.ts`, wher
 | Script | Use |
 | --- | --- |
 | `scaffold-flow.ts --docs <docs>/ux-flows --init --product "<Product>" [--docs-index <docs>/index.md]` | Create the stylesheet, wireframe index, visual and written pattern reference, and the docs index section; never overwrites |
-| `scaffold-flow.ts --docs <docs>/ux-flows --key <flow-key> --title "<Flow title>" --product "<Product>" [--ticket-url <url> --ticket-label "<label>"] [--docs-index <docs>/index.md] [--repo-root <dir>]` | Create a flow's wireframe, proposal and diagram specs, and link it into the wireframe index and docs index. Fills keys, titles, timestamps, the repository URL and revision; `--ticket-url` must be the ticket's http(s) URL, and without it the nav reads "not filed yet". Prints every placeholder left to fill: fill them all |
+| `scaffold-flow.ts --docs <docs>/ux-flows --key <flow-key> --title "<Flow title>" --product "<Product>" [--ticket-url <url> --ticket-label "<label>"] [--docs-index <docs>/index.md] [--repo-root <dir>]` | Create a flow's wireframe, proposal and diagram specs, and link it into the wireframe index and docs index. Fills keys, titles, timestamps, the repository URL and revision; `--ticket-url` must be the ticket's http(s) URL, and without it the nav reads "not filed yet"; in a public project pass neither ticket flag. Prints every placeholder left to fill: fill them all |
 | `lint-wireframes.ts [--stylesheet wireframe.css] [--site-root <docs>] [--json] <docs>/ux-flows/wireframes` | Check pages against the design language (rules in [design language](references/design-language.md)); exits 1 on errors |
 | `crawl-site.ts <url> [--root-dir <docs>] [--ignore <regex>] [--insecure] [--external] [--json]` | Report broken links, missing fragments and files no page links; run as `bun --use-system-ca …` when the local site uses a locally trusted certificate |
 | `validate-handoff.ts <findings\|verdicts\|audit\|critique> <file> [--feature-pattern <regex>]` | Validate a unit's handoff file. Fix and rerun at most three times; if it still fails because of the environment (for example screenshots cannot be captured), return the validator output as an environment issue and mark the unit failed for re-queue |
 
 ## Adapting
 
-- **No Archify:** follow the alternatives in [diagrams](references/diagrams.md); the current and proposed pair, code citations and ticket marks still apply.
+- **No Archify:** follow the alternatives in [diagrams](references/diagrams.md); the current and proposed pair, code citations and finding marks still apply.
 - **No parallel agents:** see [orchestration](references/orchestration.md) "Without parallel agents".
 - **No docs site:** serve with the template server (see [publishing](references/publishing.md)). Opening the HTML files directly is only a preview and does not satisfy Phase 9.
 - **No feature roster:** Phase 1 writes `<docs>/ux-flows/inventory.md` with IDs, linked from the docs index, so later phases can cite it.
@@ -186,5 +195,6 @@ Run them with Bun from the project root as `bun <skill>/scripts/<name>.ts`, wher
 - Coverage: units reviewed, areas with no findings, coverage you capped or dropped and why, environment issues.
 - What is not done: failed or blocked units with their unblock condition and next action, owner decisions still awaited, and work held behind them.
 - Open questions and decisions as short ID-addressable items with a recommendation. When an item comes back later, re-read the state first, then restate its background, what changed since it was asked and its options as nested IDs, so the owner can answer it cold.
+- When the owner flags a wireframe problem or asks whether pages are consistent, read [design language](references/design-language.md#drawing-errors-and-proposal-errors) "Drawing errors and proposal errors" before answering.
 - Verification coverage stated honestly: which pages had visual inspection and which passed automated checks only, and whether each claim about runtime behavior rests on reading code or on running it. Before confirming behavior that depends on a measurement (a detector, scorer or classifier), run it on inputs with known answers. Correct earlier claims explicitly, by their IDs, when evidence changes them.
 - Keep private hostnames, credentials and personal data out of tracked files; derive local URLs from the running service.

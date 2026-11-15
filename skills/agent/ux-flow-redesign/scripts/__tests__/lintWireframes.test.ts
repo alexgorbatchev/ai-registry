@@ -162,6 +162,36 @@ describe("menu headings in any markup", () => {
     expect(headings(wrapped)).toEqual(['menu heading "Recent" labels 1 item(s)']);
   });
 
+  test("checks surfaces drawn with a caret or opener line, whatever their class", () => {
+    const flyout = lintMenu(
+      '<div class="flyout"><i class="caret-dn"></i><div class="lbl">History</div><div class="row">Show history</div><div class="sep"></div><div class="row">Rename</div><div class="row">Move</div></div>',
+    );
+    expect(headings(flyout)).toEqual(['menu heading "History" labels 1 item(s)']);
+  });
+
+  test("suggests a missing reason when a muted row heads a group", () => {
+    const findings = lintMenu(
+      '<div class="menu"><div class="row"><b>3 reports</b></div><div class="sep"></div><div class="row muted">Archive</div><div class="row">Export…</div></div>',
+    );
+    expect(findings.map((finding) => finding.message)).toEqual([
+      'menu heading "Archive" labels 1 item(s); a heading labels two or more, so fold a lone item into its closest group or drop the heading; if this row is a disabled item, add its reason after .sp',
+    ]);
+  });
+
+  test("leaves bold target headers and titled form, confirmation and picker popovers alone", () => {
+    const clean = [
+      '<div class="popover menu"><span class="caret-up"></span><div class="from">From ⋯</div><div class="row"><b>Report Q3</b></div><div class="row">Open<span class="sp"></span><kbd>Enter</kbd></div><div class="sep"></div><div class="row" style="color:var(--bad)">Delete…</div></div>',
+      '<div class="menu"><div class="row"><b>budget.xlsx</b></div><div class="row">Open</div><div class="sep"></div><div class="row" style="color:var(--bad)">Delete…</div></div>',
+      '<div class="popover"><span class="caret-dn"></span><div class="row"><b>Filter items</b></div><div class="fld"><span>Bin</span><span class="in">A-03</span></div><div class="sep"></div><div class="row"><span class="sp"></span><span class="btn">Clear</span><span class="btn pri">Apply</span></div></div>',
+      '<div class="popover"><span class="caret-dn"></span><h3>Rename report</h3><div class="row"><span class="in">Q3 summary</span></div></div>',
+      '<div class="popover"><span class="caret-dn"></span><div class="title">Delete 3 reports?</div><div class="row"><span class="sp"></span><span class="btn">Cancel</span><span class="btn danger">Delete</span></div></div>',
+      '<div class="popover"><span class="caret-dn"></span><div class="header">Share link</div><div class="row">reports.example/q3<span class="sp"></span><span class="btn">Copy link</span></div></div>',
+      '<div class="popover"><span class="caret-dn"></span><h4>Owner</h4><div>◉ Me</div><div class="sep"></div><div class="row"><span class="sp"></span><span class="btn pri">Apply</span></div></div>',
+      '<div class="popover"><span class="caret-dn"></span><h3>Share report</h3><div class="row">Copy link…</div></div>',
+    ];
+    for (const menu of clean) expect(headings(lintMenu(menu))).toEqual([]);
+  });
+
   test("leaves target headers, dimmed items, notes, disabled items, pickers and bars outside menus alone", () => {
     const clean = [
       '<div class="menu"><b>Quarterly ⋯</b><div class="muted">Rename</div><div class="hl">Export report…</div><div class="muted">Remove</div></div>',
@@ -232,7 +262,10 @@ test("the CLI prints findings, writes JSON and exits non-zero on errors", async 
   const clean = Bun.spawnSync(["bun", join(SCRIPTS, "lint-wireframes.ts"), wireframes], { stdout: "pipe" });
   expect(clean.exitCode).toBe(0);
   expect(clean.stdout.toString()).toContain("3 page(s), 0 error(s), 0 warning(s)");
-  writeFileSync(flowPage, readFileSync(flowPage, "utf8").replace('<span class="n">3</span></div>', "</div>"));
+  writeFileSync(
+    flowPage,
+    readFileSync(flowPage, "utf8").replace('<a>Show</a></div><span class="n">2</span>', "<a>Show</a></div>"),
+  );
   const failed = Bun.spawnSync(["bun", join(SCRIPTS, "lint-wireframes.ts"), "--json", flowPage], { stdout: "pipe" });
   expect(failed.exitCode).toBe(1);
   expect(JSON.parse(failed.stdout.toString()).findings[0]).toMatchObject({ rule: "callout", severity: "error" });

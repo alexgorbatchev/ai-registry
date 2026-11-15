@@ -20,7 +20,7 @@ Source revision: {{REPOSITORY}} `{{REVISION}}`. Features: {{FEATURE_IDS}}. Redes
 
 ## Target steps
 
-1. **{{STEP_NAME}}.** {{WHAT_THE_PERSON_DOES_SEES_AND_GETS}} (`{{OPERATION}}`, {{READ_ONLY_OR_ONE_PROTECTED_WRITE}}).
+1. **{{STEP_NAME}}.** {{WHAT_THE_PERSON_DOES_SEES_AND_GETS}} (`{{OPERATION}}`, {{READ_ONLY_OR_ONE_WRITE}}).
    - {{DEFAULTS_KEYS_AND_VARIANTS}}
 2. **{{STEP_NAME}}.** {{STEP_TEXT}}
 
@@ -40,20 +40,20 @@ Branches and edge states:
 
 ## Tickets resolved
 
-- {{PRIORITY}}: {{FINDING_TICKETS_WITH_SCOPE_WHEN_PARTIAL}}
-- Not resolved here: {{FINDING_TICKETS_AND_THE_TICKET_THAT_OWNS_THEM}}
+- {{PRIORITY}}: {{FINDING_CITATIONS_WITH_SCOPE_WHEN_PARTIAL}}
+- Not resolved here: {{FINDING_CITATIONS_AND_THE_REDESIGN_THAT_OWNS_EACH}}
 
 ## Acceptance criteria
 
-- [ ] {{OBSERVABLE_BEHAVIOR_WITH_CONCRETE_INPUTS_AND_OUTPUTS}} ({{RULE_IDS}}, {{FINDING_TICKET}}).
+- [ ] {{OBSERVABLE_BEHAVIOR_WITH_CONCRETE_INPUTS_AND_OUTPUTS}} ({{RULE_IDS}}, {{FINDING_CITATION}}).
 - [ ] At {{VIEWPORT}}, {{ELEMENTS}} are visible together without scrolling.
 - [ ] {{NEVER_CLAUSE_FOR_THE_FORBIDDEN_PATH}}; {{TEST_LAYER}} asserts it.
 
 ## Backend and contract changes
 
-**Backend** (`{{BACKEND}}`, preserving {{PROTECTION_SNAPSHOT_AND_UNDO_CONTRACTS}}):
+**Backend** (`{{BACKEND}}`, preserving {{CONTRACTS_IT_PRESERVES}}):
 
-1. **{{CHANGE_NAME}}.** {{FIELDS_PARAMETERS_AND_STABLE_ERROR_CODES}} ({{FINDING_TICKET}}). {{REQUIRED_RECOMMENDED_OR_LATER}}.
+1. **{{CHANGE_NAME}}.** {{FIELDS_PARAMETERS_AND_STABLE_ERROR_CODES}} ({{FINDING_CITATION}}). {{REQUIRED_RECOMMENDED_OR_LATER}}.
 
 **Project contracts** (update the project instructions in the same change as the implementation):
 

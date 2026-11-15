@@ -96,7 +96,7 @@ A flow page, from [flow-wireframe.html](../assets/templates/flow-wireframe.html)
 
 1. `<title>` "*Flow title* · proposed flow wireframe", then the stylesheet link.
 2. `header.page` containing:
-   - `nav.top` with these links in this order: `← All flows` (`index.html`), `Today's flow diagram` (`../<key>-current.html`), `Proposed flow diagram` (`../<key>-proposed.html`), `Written proposal` (`../proposals/<key>.md`), then the ticket. Before filing it is `<span class="muted">Redesign ticket: not filed yet</span>`, which the scaffolder writes and which leaves only the `nav-ticket` warning. After filing (see [Linking the ticket](proposals-and-tickets.md#linking-the-ticket)), replace it with `<a href="<ticket URL>">Redesign ticket <label></a>`;
+   - `nav.top` with these links in this order: `← All flows` (`index.html`), `Today's flow diagram` (`../<key>-current.html`), `Proposed flow diagram` (`../<key>-proposed.html`), `Written proposal` (`../proposals/<key>.md`), then the ticket. Before filing it is `<span class="muted">Redesign ticket: not filed yet</span>`, which the scaffolder writes and which leaves only the `nav-ticket` warning. After filing, replace it as [Linking the ticket](proposals-and-tickets.md#linking-the-ticket) says: `<a href="<ticket URL>">Redesign ticket <label></a>`, or "tracked privately" in a public project;
    - one `h1`, the flow title;
    - `<p><b>TLDR:</b> …</p>`, one sentence on what the new flow does differently;
    - the disclaimer line.
@@ -173,7 +173,7 @@ The caption (`.cap`):
 - `h2` reads "N. Step name", where N is the step's position on the page.
 - An optional `<p>` summary follows.
 - An `ol` follows, one `<li>` per callout, each starting with `<span class="n">k</span>`. Numbering restarts at 1 in each step. Place the same marker in the mockup next to the thing it explains. Every number in the mockup has exactly one explanation in the caption, and every explanation has a marker in the mockup (`callout`).
-- `p.fixes` ends the caption: "Fixes" with the finding tickets this step resolves, then the backend work it needs.
+- `p.fixes` ends the caption: "Fixes" with the findings this step resolves, cited as SKILL.md "ID conventions" says, then the backend work it needs.
 
 Each step must make sense alone, because owners screenshot and question single steps:
 
@@ -233,8 +233,8 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
 </div>
 ```
 
-- The first row is the target header: what the menu acts on (a count and kind, or the item's name).
-- Then groups. A `.lbl` heading labels two or more items; a lone item joins its closest related group instead of getting a heading. Draw headings with `.lbl`: the linter (`menu-heading`) also recognizes headings drawn in other markup inside any menu or popover with group structure (heading tags, heading roles or class names anywhere; muted or wholly bold rows where a group starts, at the top or after a separator), but it cannot tell a muted heading in the middle of a menu from a dimmed item, so such a heading needs `.lbl` or a separator above it.
+- The first row is the target header: what the menu acts on (a count and kind, or the item's name), drawn wholly bold as above; no separator is needed after it.
+- Then groups. A `.lbl` heading labels two or more items; a lone item joins its closest related group instead of getting a heading. Draw headings with `.lbl`. The linter (`menu-heading`, in the table under [Checking a page](#checking-a-page)) also recognizes headings drawn in other markup, but it cannot tell a muted heading in the middle of a menu from a dimmed item, so such a heading needs `.lbl` or a separator above it.
 - Only the destructive last item stands alone, after a `.sep` and without a heading, in `color: var(--bad)`.
 - When a context hides items and leaves a group with one item, that item drops its heading and stays in place after a separator.
 - Disabled items stay visible as `.row.muted`, with the reason after a `.sp`.
@@ -246,7 +246,6 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
 
 - Draw the selection summary and the command or shortcut bar exactly as the pattern reference decides (its section 2.2, the `BAR-n` rules): position, content and order of items, identically on every page.
 - The `.selbar` in the flow template is a placeholder for those rules, not a decision. When the reference moves the summary into a footer or removes the in-table bar, draw that instead.
-- When anyone reports an inconsistency, count how many pages draw each variant (search the folder for the classes and labels) before answering, report that spread, and record it as a conflict on the index with a recommendation; settle it in the reference, not in one page.
 
 ## The index page
 
@@ -261,7 +260,7 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
   <div class="card"><h3><a href="<key>.html">Flow title</a></h3><p>One-sentence TLDR</p><div class="links"><a href="../<key>-proposed.html">Diagram</a><a href="../proposals/<key>.md">Proposal</a><a href="<ticket URL>">Ticket label</a></div></div>
   ```
 
-  The scaffolder inserts each card with a `{{TLDR_ONE_SENTENCE}}` placeholder; replace it with the flow page's TLDR. Without a filed ticket it omits the ticket link; add it after filing, with the same target as the page's nav.
+  The scaffolder inserts each card with a `{{TLDR_ONE_SENTENCE}}` placeholder; replace it with the flow page's TLDR. Without a filed ticket it omits the ticket link; add it after filing, with the same target as the page's nav, except in a public project ([Linking the ticket](proposals-and-tickets.md#linking-the-ticket)). Until the proposed diagram is rendered, its Diagram link reads `<span class="muted">Diagram: not generated yet</span>`, as [publishing](publishing.md#the-docs-index) requires of every link to a missing file; restore the link in Phase 6.
 - Keep the marker comment `<!-- flow cards: scaffold-flow.ts inserts new cards above this line -->` exactly as written. The scaffolder inserts every new card above it and fails when it is missing. There is one marker, so move a card into another group's grid by hand.
 
 ## The pattern page
@@ -269,9 +268,8 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
 `wireframes/patterns.html`, from [patterns.html](../assets/templates/patterns.html), is the visual condensation of `patterns.md`; [pattern reference](pattern-reference.md) owns its content.
 
 - Header: `nav.top` (`← All flows`, `Full text of the reference`), `h1` "Shared UX patterns", a short introduction, the `.decide` box (`id="product-decisions"`) with an `h2` "Product decisions", a status sentence and one item per decision (`<li><b>O1 Question. Decided:</b> summary</li>`, or `Recommended:` until the owner decides), then a disclaimer naming the reference revision it condenses.
-- Key band: the legend plus `nav.toc`, with `<b>Patterns:</b>` and `<b>Tables:</b>` groups of links to section ids. The linter checks that each fragment exists (`link`).
-- One `section.step.pat` per canonical pattern in section 2 of `patterns.md`, in the same order and with the same rule IDs. The mockup is on the left; the `.cap` on the right has an `h2` "N. Pattern name", a `<p>` saying when to use the pattern, `ol.rules` whose items start with the bold rule ID (`<li><b>MENU-2</b> <span class="n">2</span> rule text</li>`, with the callout only when the rule points at the mockup), and a `.fixes` line with backend, accessibility and contract notes.
-- Keep each mockup in sync with its rule text: every item a rule lists appears in the mockup, and the mockup shows nothing the rules contradict.
+- Key band: the legend plus `nav.toc`, with `<b>Patterns:</b>` and `<b>Tables:</b>` groups of links to section ids, each labelled with its `patterns.md` section number ("2.3 Menus"). The linter checks that each fragment exists (`link`).
+- One `section.step.pat`, with a stable `id`, per canonical pattern in section 2 of `patterns.md`, in the same order and with the same rule IDs; the template ships three, so add one per remaining 2.x pattern that applies. The mockup is on the left; the `.cap` on the right has an `h2` with the `patterns.md` section number and name ("2.3 Menus and entry points"), a `<p>` saying when to use the pattern, `ol.rules` whose items start with the bold rule ID (`<li><b>MENU-2</b> <span class="n">2</span> rule text</li>`, with the callout only when the rule points at the mockup), and a `.fixes` line with backend, accessibility and contract notes.
 - Tables go in `section.full` blocks, each with an `h2.sec`, a `p.small.muted` introduction and a `table.t.ref` with a `colgroup` for widths. Unlike mockup tables, `.t.ref` cells wrap. The keyboard map (`id="keyboard-map"`) has columns Key, Scope, Action and Owning flow. The decision log (`id="decision-log"`) has ID, Topic, Decision and Rules, with `tr.grp` rows reading "*dimension* · N decisions". Contract changes (`id="contracts"`) has ID, From and Change.
 - Its key band also holds the contents nav, so the page sets larger `--key-h` values in its own `<style>`. Re-measure after changing the legend, the contents nav or the font.
 
@@ -292,6 +290,8 @@ Classify every problem before fixing it:
 
 After finding one instance of any mistake, search every page for the same mistake and fix or classify each instance before linting again.
 
+When anyone reports an inconsistency between pages, count how many pages draw each variant (search the folder for the classes and labels) before answering, report that spread, and record it as a conflict on the index with a recommendation; settle it in the reference, not in one page.
+
 ## Checking a page
 
 Run the linter over the whole folder, not one page: the check for several stylesheet copies and cross-page fragment links need every page. From the project root, where `<skill>` is this skill's directory:
@@ -300,7 +300,7 @@ Run the linter over the whole folder, not one page: the check for several styles
 bun <skill>/scripts/lint-wireframes.ts --site-root <docs> <docs>/ux-flows/wireframes
 ```
 
-It prints `file:line: severity rule: message` and exits 1 on any error. `--site-root` is the directory the server maps `/` to; without it, root-relative links such as the index's `/` go unchecked. `--json` gives machine-readable output; `--stylesheet <name>` is needed only when the shared stylesheet has another name. Fix every error. The `nav-ticket` warning is expected only while the flow's ticket is not filed; once it is, the nav links the ticket (see [Page anatomy](#page-anatomy)) and the warning must be gone.
+It prints `file:line: severity rule: message` and exits 1 on any error. `--site-root` is the directory the server maps `/` to; without it, root-relative links such as the index's `/` go unchecked. `--json` gives machine-readable output; `--stylesheet <name>` is needed only when the shared stylesheet has another name. Fix every error. The `nav-ticket` warning is expected while the flow's ticket is not filed and, in a public project, always; otherwise the nav links the filed ticket (see [Page anatomy](#page-anatomy)) and the warning must be gone.
 
 | Rule | Fails when |
 | --- | --- |
@@ -314,7 +314,7 @@ It prints `file:line: severity rule: message` and exits 1 on any error. `--site-
 | `callout` | a mockup number has no explanation in its caption, a caption explains a number the mockup does not show, or a caption explains a number twice |
 | `legend` | a page with steps has no `.legend` inside `.key`, or has a `.legend` outside it |
 | `legend-entry` | the mockups use a built-in convention or numbered callouts that the legend does not explain |
-| `menu-heading` | a group heading in a menu, or in a popover with separators, headings or command rows, labels fewer than two items. A heading is a `.lbl` or other heading tag, role or class anywhere, or a muted or wholly bold row with no command affordance where a group starts. A first row followed by a heading or separator is the target header, and a label-like row with no item under it is a note |
+| `menu-heading` | a group heading labels fewer than two items in a menu or a popover that reads as one. Menus are `.menu` and other menu class names (`dropdown`, `context-menu`, `submenu` …), `<menu>`, `role="menu"` and `role="menubar"`. Popovers are `.popover` or `.popup`, or any element with a `caret-*` or `.from` child; one reads as a menu when it has a `.lbl` heading, or a command row (a `kbd`, a trailing "…", an item role or a destructive row) and no form fields (`.fld`, `.in`, `input`, `select`, `textarea`). A heading is a `.lbl` or other heading tag, role or class anywhere, or a muted or wholly bold row with no command affordance where a group starts (the top, after a separator, or a wrapper's first row). Not headings: a wholly bold first row (the target header), a first-row heading tag, `role="heading"` or title or header class in a popover without menu markup (its title), an explicit first-row heading followed by a heading or separator, and a label-like row with no item under it (a note). For a muted row the message also suggests the disabled-item fix |
 | `popover-trigger` | a mockup popover or menu with a caret has no `.open` element in its window |
 | `toast-action` | a `.toast` contains a `.btn`, `button`, `input` or `select` |
 | `nav` | a page with steps, other than `index.html` and `patterns.html`, lacks `nav.top` or its links to `index.html`, `<key>-current.html`, `<key>-proposed.html` and `proposals/<key>.md` |

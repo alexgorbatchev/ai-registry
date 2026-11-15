@@ -25,7 +25,7 @@ Apply these to every proposed flow, starting from its current-flow diagram, its 
 - **Clear empty, partial and failure states.** Say what an empty result shows, how partial results report counts and per-item reasons, how failed items retry, and how a lost response recovers through the product's own mechanism without replaying the write.
 - **Beat the incumbent rather than copy it.** Follow the project's product direction. Benchmark named best-in-class products and say what each contributes. Competitor behavior is evidence, never a requirement.
 - **Warn about hazards of intended behavior; do not gate them.** When the owner's rule makes an action intended, put the warning at the point of choice and in the result, naming the concrete effect and the choices, and keep the action available. Check the owning component's stated intent before treating behavior as a defect.
-- **Respect binding contracts.** Keep the project's protections (whatever blocks writes, confirmations before destructive actions, snapshot and undo guarantees, data-ownership boundaries). Every change the design needs to a contract or the backend is called out under **Backend and contract changes**, never implied.
+- **Respect binding contracts.** Keep the project's guarantees (confirmations before destructive actions, undo, data-ownership boundaries, and whatever blocks writes when something does). Every change the design needs to a contract or the backend is called out under **Backend and contract changes**, never implied.
 - **Cite the pattern reference.** Use its rule IDs in steps and criteria. When the flow must differ from a rule, propose the exception for the reference and add the disagreement to the wireframe index's conflicts list; do not invent a divergent pattern. When the reference lacks a pattern the flow needs, propose a new rule for it.
 
 ## The proposal
@@ -44,17 +44,17 @@ Front matter and opening lines:
 Sections, in template order:
 
 - **Target experience.** One paragraph telling the journey end to end from the person's side: where it starts, what stays in place, what the primary button says, how progress, the outcome and undo appear. End with `Benchmarks:` naming each product and what it contributes.
-- **Target steps.** Numbered steps, each opening with a bold step name ending in a period. Each step says what the person does, sees and gets, then the backend operation in backticks with its effect class, exactly `read only` or `one protected write`: "3. **Preview the export (`export.plan`, read only).**"
+- **Target steps.** Numbered steps, each opening with a bold step name ending in a period. Each step says what the person does, sees and gets, then the backend operation in backticks with its effect class, `read only` or `one write`, naming the project's guarantee where it has one (`one undoable write`): "3. **Preview the export (`export.plan`, read only).**"
   - Put example copy in quotes for every label, header and outcome sentence ("12 reports · 9 ready · 2 missing data · 1 failed").
   - State defaults ("Ready reports start selected; failed ones start cleared.").
   - List keys inline ("Keys: ↑/↓ move, X toggles, Shift-click selects a range, Mod+A selects all ready, Enter focuses the footer button.").
   - When something can block writes in this product, state per surface what stays usable, what waits, and that drafts and plans survive, following the reference's rules for it.
   - Write recovery as in-place actions ("Retry 1 failed", "Undo this export"), never as "go to page X".
 - **Branches and edge states.** One bold-labeled bullet per alternate gesture or keyboard path, per write-blocking state or unavailable backend, per partial or lost result (counts, per-item reasons, recovery without replaying the write), and per undo that needs review.
-- **What changes versus today.** `Removed`, `Merged` ("Preview and Export become one plan → export flow."), `New`, `Changed` (behavior that flips relative to today) and `Kept`. `Kept` is the safety inventory that stops a redesign from silently dropping protections: walk the current-flow diagram and list every confirmation, block on writes, refusal, snapshot and undo record that survives. A protection that does not survive is listed under `Removed` with what replaces it.
-- **Tickets resolved.** Findings grouped by priority ("P0: #n. P1: #n (export part only)."), then `Not resolved here:` with the ticket that owns each, and when relevant `Removed from this journey:` (findings that leave the journey, and why) and `Moves out of other flows:` (criteria taken over from a neighboring redesign ticket).
+- **What changes versus today.** `Removed`, `Merged` ("Preview and Export become one plan → export flow."), `New`, `Changed` (behavior that flips relative to today) and `Kept`. `Kept` is the safety inventory that stops a redesign from silently dropping safeguards: walk the current-flow diagram and list every confirmation, refusal, undo path and other project guarantee that survives, and every block on writes when something blocks them. A safeguard that does not survive is listed under `Removed` with what replaces it.
+- **Tickets resolved.** Findings grouped by priority and cited as SKILL.md "ID conventions" says ("P0: #n. P1: #n (export part only)."), then `Not resolved here:` with the redesign or ticket that owns each, and when relevant `Removed from this journey:` (findings that leave the journey, and why) and `Moves out of other flows:` (criteria taken over from a neighboring redesign ticket).
 - **Acceptance criteria.** A `- [ ]` list written under [Acceptance criteria](#acceptance-criteria).
-- **Backend and contract changes.** Under `**Backend**` (naming the backend and the protection, snapshot and undo contracts it preserves), a numbered list of bold-named changes with field names, parameters and stable error codes, the finding each serves, and a grade: required, recommended or optional later. Under `**Project contracts**`, quote each current contract and its replacement with its `CC-n` from the reference: `"<quoted current text>" becomes: <new text> (CC-3).` Tag unresolved design `**[discuss]:**` and name who must confirm it ("the backend owners must confirm this against the protection contract").
+- **Backend and contract changes.** Under `**Backend**` (naming the backend and the contracts it preserves: confirmations, undo, whatever the project guarantees), a numbered list of bold-named changes with field names, parameters and stable error codes, the finding each serves, and a grade: required, recommended or optional later. Under `**Project contracts**`, quote each current contract and its replacement with its `CC-n` from the reference: `"<quoted current text>" becomes: <new text> (CC-3).` Prefix a change whose design is still open with `**[discuss]:**`, which marks it undecided for implementers, and name who must settle it ("the backend owners must confirm this against the affected contract").
 - **Not yet ticketed (seen in code).** Defects found while tracing source, each marked fixed by this redesign or out of scope.
 - **Recommended priority.** Written under [Priority](#priority).
 
@@ -69,7 +69,7 @@ Write them in the proposal; the redesign ticket carries the same list. Each crit
 - State red/green intent where a step is easy to drop silently: "A state-machine test fails when the folder re-read after the write is skipped."
 - Quote exact copy when the copy is the requirement: the button reads "Export 9 to Archive"; the footer reads "↑↓ Choose · Enter Export · Esc Cancel".
 - Make guards and recovery criteria too. Keep a never-replay criterion for every write, phrased for the product's own recovery mechanism (a job resumed by ID, a request retried with its idempotency key, state re-read after a sync): "A lost response resumes the export job by ID and never resubmits the write." Add a blocking-state criterion only when the product has a state that blocks writes: "While writes are blocked, the footer button is disabled with the reason visible without hover, and every plan choice survives until writing is possible again."
-- End each criterion with the rule IDs it depends on and the finding tickets it closes: "(REV-1, FB-2, #412)".
+- End each criterion with the rule IDs it depends on and the findings it closes, cited as SKILL.md "ID conventions" says: "(REV-1, FB-2, #412)", or "(REV-1, FB-2, export-03)" without a ticket.
 - Close the list with the tests that cover the journey: which machine tests cover which states, which component tests cover which surfaces, and which end-to-end test runs the main path through to undo.
 
 ## Priority
@@ -78,7 +78,7 @@ Use P0–P3. Write the proposal's **Recommended priority** in this order:
 
 1. Bold priority first ("**P1.**"; with a stopgap, "**P1, with #418 shipped first as a P0 fix.**").
 2. The realistic trigger and its consequence: what ordinary use hits it and what it costs ("Enter starts a 30-item export that overwrites files already in the folder").
-3. Recoverability: an intended, snapshotted, undoable write ranks lower than silent loss.
+3. Recoverability: an intended, undoable write ranks lower than silent loss.
 4. Frequency relative to sibling flows ("less frequent than single-report export, which is P0").
 5. The delivery order: the smallest independent high-value slice first (often a UI-only slice with no backend dependency, or the in-place write → re-read → result → undo loop), then the rest. Order slices so no intermediate release breaks an owner rule: when a backend fix would change outcomes before the rule that governs them exists, the rule ships first.
 
@@ -94,7 +94,7 @@ Write `<docs>/ux-flows/proposals/<key>-research.md` before the proposal when a f
 - **Today's flow, step by step:** entry points, the surface, the backend's internal sequence as numbered steps, results, failures and undo, with a `path:line` citation for every step, backend internals included.
 - **The contested behavior:** a bold headline claim with its tag, supporting evidence, and negative searches recorded as evidence ("No retry logic exists in `internal/export/` (searched for retry, backoff, resume)."). List what the behavior means in practice as numbered, tagged consequences. Note reusable capabilities with their quantitative limits. Put other products' behavior in its own subsection, cite their documentation, and mark anything unverified as general knowledge.
 - **What else changes:** a table with columns `Data | Today | Evidence`, one row for every data item the operation changes, each with code citations. It exposes side effects the UI must surface, such as a changed file mode, dropped metadata or a cleared status flag.
-- **Related tickets:** a table with columns `Ticket | Source | One line`, where Source is the originating finding ID and the one-liner classifies the ticket as core, feeds this flow, dependency or adjacent; then name the other redesign tickets that hold pieces of this journey.
+- **Related tickets:** a table with columns `Ticket | Source | One line`, where Ticket is cited as SKILL.md "ID conventions" says, Source is the originating finding ID and the one-liner classifies the ticket as core, feeds this flow, dependency or adjacent; then name the other redesign tickets that hold pieces of this journey.
 - **Open questions:** numbered and bold-titled, each with what is unknown, why it matters, the evidence needed to close it, a proposed default, and who decides. Carry each into the pattern reference's product decisions (`O<n>`) or a rule, then update the proposal when it is decided.
 
 ## The redesign ticket
@@ -113,7 +113,7 @@ Once redesign tickets exist they become the work. This changes the owner's queue
 
 - Each open finding a redesign covers is blocked by that redesign, so it stops being claimable as patch work and becomes the redesign's acceptance evidence. A partially covered finding is blocked by every redesign that owns a slice of it.
 - Each non-foundation redesign is blocked by the foundation redesigns: the cross-cutting flows the others build on, typically selection, background work and activity, and undo and history.
-- Each redesign carries the highest verified priority among the open findings it covers, raised when a covered finding's priority rises; keep the proposal's priority paragraph at the same level in the same pass. Never lower any priority or change a finding's priority automatically; propose a lower one to the owner as an ID'd action.
+- Each redesign carries the highest verified priority among the open findings it covers, raised when a covered finding's priority rises; keep the proposal's priority paragraph at the same level in the same pass. The restructure never lowers a priority and never changes a finding's priority; raising the severity of a finding this run filed follows [review](review.md#verification) "Verification". Propose any lower priority to the owner as an ID'd action.
 - Findings no redesign covers keep their priority and stay claimable; bugs that damage data now get [stopgaps](#stopgaps) ahead of their redesign.
 
 ## Linking the ticket
@@ -129,9 +129,11 @@ Once the redesign ticket exists, link it from the four places below and record e
 
 A scaffold run with `--ticket-url` filled the nav, the card and the row; it writes only the label into the proposal, so make that a link by hand. For a ticket filed after scaffolding, edit all four by hand: the nav's "Redesign ticket: not filed yet" span becomes a link, the card gains a link in its `.links`, and the row's "not filed yet" becomes `[<label>](<ticket URL>)`.
 
+In a public project, where issue-tracker keeps tracker identity out of commits, link nothing: the nav's span and the proposal's metadata line read "Redesign ticket: tracked privately", the card keeps no ticket link, and the row reads "tracked privately". Record the four as done once they read so; the `nav-ticket` lint warning stays, as expected there.
+
 ## Stopgaps
 
 - File a standalone stopgap only for a bug that damages data now and cannot wait for the redesign. Everything else is covered by the redesign.
 - Confirm under the product rule that the behavior is a defect first. A stopgap that refuses an intended action is wrong; a hazard of intended behavior gets a warning in the redesign instead.
 - The stopgap's fix matches what the redesign specifies, so the redesign builds on it instead of undoing it.
-- It is its own ticket; list it in the redesign's **Tickets resolved** and covers, and name it in the priority line ("P1, with #418 shipped first as a P0 fix").
+- It is its own ticket; list it in the redesign's **Tickets resolved** and covers, and name it in the priority line ("P1, with #418 shipped first as a P0 fix"), cited like a finding (SKILL.md "ID conventions").

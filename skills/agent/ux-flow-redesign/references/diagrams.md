@@ -14,19 +14,19 @@ Phase 4 draws each flow's current diagram and Phase 6 its proposed diagram, as s
 
 ## Why a pair
 
-- The current diagram shows what the code does today, at a pinned revision, with every evidenced pain point marked on its step by its finding ticket. The proposed diagram shows the target journey and, on each step, which of those tickets it removes.
-- Start the proposed diagram from the current one and its tickets, so a reader can compare them step by step.
+- The current diagram shows what the code does today, at a pinned revision, with every evidenced pain point marked on its step by its finding, cited as SKILL.md "ID conventions" says. The proposed diagram shows the target journey and, on each step, which of those findings it removes.
+- Start the proposed diagram from the current one and its findings, so a reader can compare them step by step.
 - The pair is the redesign's evidence: the proposal, the redesign ticket, the wireframe page's nav and the docs index row link both HTML files.
-- Before filing the redesign ticket, check the pair against Phase 3: every ticket marked on the current diagram is resolved on a proposed step, or accounted for in the redesign ticket's Covers (owned by another flow) or in `<state>/ux-flows/assignments.md` (stopgap or patch). A ticket that silently disappears is an orphaned finding.
+- Before filing the redesign ticket, or finishing the proposal when none is filed, check the pair against Phase 3: every finding marked on the current diagram is resolved on a proposed step, or accounted for in the redesign's covers (owned by another flow) or in `<state>/ux-flows/assignments.md` (stopgap or patch). A finding that silently disappears is orphaned.
 
 ## Tracing the current flow
 
 1. **Pin the revision.** Trace in a clean checkout or worktree at the commit you will cite: the synced, pushed default branch, so the commit stays reachable for later regeneration. Never trace or cite the live checkout; uncommitted edits there are not evidence, and Archify verifies citations against committed bytes at the pinned revision. Trace every flow at the same revision when possible, because the docs index states one revision for all current flows.
 2. **Scaffold there.** From that checkout's root, run `bun <skill>/scripts/scaffold-flow.ts --docs <docs>/ux-flows --key <key> …` (flags under [Scripts](../SKILL.md#scripts)), so the revision it writes is the one you trace (see [Repository evidence](#repository-evidence)). The scaffold edits the shared wireframe and docs indexes, so scaffold every flow before parallel agents start. One shared worktree then serves all diagram agents under the [ownership rules](orchestration.md#ownership).
-3. **Read the flow's evidence:** its findings files (`<state>/ux-flows/findings/<area>.json`: problems with annotated screenshots and code references), the filed finding tickets, and the finding-to-ticket numbers in each review unit's checkpoint (`<state>/ux-flows/units/review-<area>.json`) that give each pain point its ticket.
+3. **Read the flow's evidence:** its findings files (`<state>/ux-flows/findings/<area>.json`: problems with annotated screenshots and code references), the filed finding tickets, and the `tickets` map in each review unit's checkpoint (`<state>/ux-flows/units/review-<area>.json`) that gives each pain point its citation.
 4. **Trace the journey** from every entry point (menus, buttons, routes, shortcuts, links from other flows) along the path the code takes: screens and dialogs, decisions, confirmations, waits and background jobs, results, recovery, undo, dead ends, and every context switch (navigating away, a forced trip to another page, a manual refresh). Follow call sites until each step reaches its actual write or display, and record repository-relative paths with inclusive line ranges as you read.
 5. **Keep it readable.** Draw one complete journey from entry to end states rather than every branch. The workflow type has six columns (`col` 0 to 5): fold minor variations into a sublabel or explanation, and give a branch its own node only when it changes the outcome or carries a pain point. Budget about 30 minutes per diagram.
-6. **Mark the pain points** on the steps where they happen (see [Spec conventions](#spec-conventions)). A defect seen while tracing that has no ticket goes in the "Not yet ticketed (seen in code)" card and the proposal's section of that name, never on a marked step. The Evidence card says what was exercised in the running app and what was traced from source only.
+6. **Mark the pain points** on the steps where they happen (see [Spec conventions](#spec-conventions)). A defect seen while tracing that has no finding goes in the "Not yet ticketed (seen in code)" card and the proposal's section of that name, never on a marked step. The Evidence card says what was exercised in the running app and what was traced from source only.
 
 ## Spec conventions
 
@@ -40,17 +40,17 @@ Both templates use `diagram_type: "workflow"`, and so does every spec: the regen
 | `external` (legend) | Entry point | Entry point |
 | `frontend` | UI step | UI step where the work started |
 | `backend` | Backend job | Backend operation |
-| `security` | Step with a ticketed pain point, in any lane | Recovery step, handled in place |
-| `tag` | The finding ticket on that step | The ticket this step resolves |
-| `explanation` | The pain point and its ticket | What the step does and which problems (tickets) it removes |
+| `security` | Step with an evidenced pain point, in any lane | Recovery step, handled in place |
+| `tag` | The finding on that step | The finding this step resolves |
+| `explanation` | The pain point and its finding | What the step does and which problems (findings) it removes |
 | `sources` | The code that implements the step | Existing code the step keeps: `Reuses:` or `Replaces:` |
 
 - **Lanes are surfaces:** one per place the person works (a page, a dialog, a separate page they are sent to), plus the backend lane and the recovery lane with `variant: "exception"`. A context switch then reads as a jump between lanes. Add a lane for every extra surface today's flow forces; justify in its explanation any surface the proposal adds.
 - **Phases** span the real columns through `fromCol` and `toCol`. `variant: "emphasis"` marks the phase holding the write that changes data; a read-only flow has no emphasis phase.
 - **`mainPath`** lists the happy path's node IDs in order; edges between consecutive IDs take `role: "main"`.
-- **Node types** follow the legend meanings in the table. In the current diagram a step with a ticketed pain point is `security` whatever its lane, and no other step is; in the proposed diagram only recovery steps are. A step that needs another type (for example `database`) gets a plain-language `meta.legend.entries` label.
+- **Node types** follow the legend meanings in the table. In the current diagram a step with an evidenced pain point is `security` whatever its lane, and no other step is; in the proposed diagram only recovery steps are. A step that needs another type (for example `database`) gets a plain-language `meta.legend.entries` label.
 - **Labels** fit about 28 characters at the template widths; a wider one fails Archify's `layout/constraint` gate. Put exact copy, such as an outcome message, in the sublabel or explanation instead of shortening the product's wording. The proposed template's outcome node takes `{{SHORT_OUTCOME_LABEL}}` and quotes the full outcome sentence in its explanation.
-- **`tag`** holds the ticket label as the tracker writes it (`#123`). When several tickets land on one step, tag the most severe and name all of them in the explanation.
+- **`tag`** holds the finding's citation (SKILL.md "ID conventions"): its ticket label as the tracker writes it (`#123`), or its finding ID. When several findings land on one step, tag the most severe and name all of them in the explanation. Omit `tag` on a step that shows or resolves no finding.
 - **`explanation`** is plain text of at most 1,200 characters, shown in the viewer's Explain panel and absent from screenshots and image exports. Labels, sublabels and tags must carry what a ticket reader needs, and the ticket text names the pain points itself. In proposed explanations, cite the pattern rule IDs the step follows (`REV-1`, `SEL-2`) so Phase 8 can find the steps a rule change affects.
 - **`sources`:** at most three per node, each `{path, line, end_line, label}` with a repository-relative path, inclusive lines copied from the file at the pinned revision, and a label of at most 48 characters. The templates' `line: 1, end_line: 1` are placeholders that validation cannot catch; replace them. Edges carry no sources: cite the call or write site on the node that owns it. Cite every primary step in the current diagram. In the proposed diagram, cite only existing code a step keeps, labelled `Reuses: <what>` or `Replaces: <what>`; a step with no code yet has none. Never cite unrelated code to satisfy validation.
 - **Placeholders:** search each spec for `{{` before finalizing. Archify accepts placeholder text in labels, explanations and cards, and the wireframe linter reads only HTML.
@@ -71,11 +71,11 @@ Cards keep their titles and dot colours in every diagram, so all diagrams read a
 | Diagram | Dot | Title | Items |
 | --- | --- | --- | --- |
 | Current | emerald | What already works | Behavior the redesign must keep |
-| Current | rose | Tickets on this journey | `<ticket> <one-line problem>` |
+| Current | rose | Tickets on this journey | `<finding citation> <one-line problem>` |
 | Current | amber | Not yet ticketed (seen in code) | Defects seen while tracing |
 | Current | slate | Evidence | `Traced from <repository> at <revision>; <what was exercised live>` |
 | Proposed | emerald | What changes versus today | `Removed:`, `Merged:`, `New:`, `Kept:`, plus `Changed:` when a behavior flips, matching the redesign ticket |
-| Proposed | rose | Tickets this journey resolves | `<step group>: <tickets>` |
+| Proposed | rose | Tickets this journey resolves | `<step group>: <finding citations>` |
 | Proposed | violet | Backend work | Each backend change the flow needs |
 | Proposed | cyan | Contract changes | `CC-n` and the change, or `None` |
 | Proposed | amber | Seen in code, not yet ticketed | Defects seen while designing |
@@ -140,12 +140,12 @@ Run it from the repository root, with `DOCS` the docs directory relative to that
 
 ## Without Archify
 
-Keep the pair, the file names, the code citations and the ticket marks. Write `<docs>/ux-flows/<key>-current.html` and `<key>-proposed.html` anyway: every wireframe page's nav must link both (the linter's `nav` rule), the linter's link check and the crawl fail on missing files, and the docs index rows point to them. Render one of these into each page:
+Keep the pair, the file names, the code citations and the finding marks. Write `<docs>/ux-flows/<key>-current.html` and `<key>-proposed.html` anyway: every wireframe page's nav must link both (the linter's `nav` rule), the linter's link check and the crawl fail on missing files, and the docs index rows point to them. Render one of these into each page:
 
-- **A Mermaid flowchart** per diagram, its source also kept in the proposal: one subgraph per lane, ticket labels in node text, and the pinned revision in the page. Render it with whatever the docs site already uses for Mermaid; without one, use the step table.
-- **A step table** per diagram with the columns step, surface (lane), code citation (`path:start-end` at the pinned revision), ticket, and what changes. In the current table, "what changes" says what the redesign does to the step (removed, merged, changed or kept); in the proposed table, which problems the step removes.
+- **A Mermaid flowchart** per diagram, its source also kept in the proposal: one subgraph per lane, finding citations in node text, and the pinned revision in the page. Render it with whatever the docs site already uses for Mermaid; without one, use the step table.
+- **A step table** per diagram with the columns step, surface (lane), code citation (`path:start-end` at the pinned revision), finding, and what changes. In the current table, "what changes" says what the redesign does to the step (removed, merged, changed or kept); in the proposed table, which problems the step removes.
 
-In provisional mode ([SKILL.md](../SKILL.md#execute-the-task) step 2), the current flow may be this step table rendered into `<key>-current.html` even when Archify is available, with the ticket column citing evidence (a screenshot or `path:start-end`) instead of tickets.
+In provisional mode ([SKILL.md](../SKILL.md#execute-the-task) step 2), the current flow may be this step table rendered into `<key>-current.html` even when Archify is available, with the finding column citing evidence (a screenshot or `path:start-end`) instead of findings.
 
 Put the card content under the chart or table as short lists. Capture and inspect both pages as in [Rendering for inspection](#rendering-for-inspection).
 

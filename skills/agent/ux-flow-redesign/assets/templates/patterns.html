@@ -41,12 +41,14 @@ table.t.ref{background:var(--card);border:1px solid var(--line)}.t.ref th{backgr
 <span><i class="k" style="background:var(--okbg)"></i>Just changed</span>
 <span><i class="k" style="background:#fff;box-shadow:inset 3px 0 var(--acc)"></i>Row cursor</span>
 <span><span class="n">1</span>Callout, explained on the right</span></div>
-<nav class="toc"><b>Patterns:</b><a href="#selection">1 Selection</a><a href="#menus">2 Menus</a><a href="#surfaces">3 Surfaces</a><b>Tables:</b><a href="#keyboard-map">Keyboard map</a><a href="#decision-log">Decision log</a><a href="#contracts">Contract changes</a></nav>
+<nav class="toc"><b>Patterns:</b><a href="#selection">2.1 Selection</a><a href="#menus">2.3 Menus</a><a href="#surfaces">2.4 Surfaces</a><b>Tables:</b><a href="#keyboard-map">Keyboard map</a><a href="#decision-log">Decision log</a><a href="#contracts">Contract changes</a></nav>
 </div></div>
 <main>
 
 <!-- One section.step.pat per canonical pattern in section 2 of patterns.md, in the same order, with the same rule IDs
-     (the IDs below are the examples patterns.md starts with; replace them with the reference's own).
+     (the IDs below are the examples patterns.md starts with; replace them with the reference's own). This template
+     ships three; add one section, and its contents link, per remaining 2.x heading that applies. The caption's h2 is
+     the patterns.md section number and name. 2.11 and 2.14 are the keyboard-map and contracts tables below.
      The mockup on the left shows the pattern; the caption on the right lists its rules, with callouts where a rule
      points at part of the mockup. Keep every mockup in sync with the rule text: an item a rule lists must appear. -->
 <section class="step pat" id="selection">
@@ -61,7 +63,7 @@ table.t.ref{background:var(--card);border:1px solid var(--line)}.t.ref th{backgr
 <div class="row small" style="margin-top:6px"><b>{{SELECTION_SUMMARY}}</b><span class="n">1</span></div>
 </div></div>
 </div>
-<div class="cap"><h2>1. Selection</h2>
+<div class="cap"><h2>2.1 Selection</h2>
 <p>{{WHEN_TO_USE}}</p>
 <ol class="rules">
 <li><b>SEL-1</b> <span class="n">1</span> {{RULE_TEXT}}</li>
@@ -92,7 +94,7 @@ table.t.ref{background:var(--card);border:1px solid var(--line)}.t.ref th{backgr
 </div>
 </div></div>
 </div>
-<div class="cap"><h2>2. Menus and entry points</h2>
+<div class="cap"><h2>2.3 Menus and entry points</h2>
 <p>{{WHEN_TO_USE}}</p>
 <ol class="rules">
 <li><b>MENU-1</b> <span class="n">1</span> {{RULE_TEXT}}</li>
@@ -110,7 +112,7 @@ table.t.ref{background:var(--card);border:1px solid var(--line)}.t.ref th{backgr
 <div class="ft"><span class="btn">Cancel</span><span class="btn danger">{{VERB_FROM_TITLE}}</span></div></div>
 </div>
 </div>
-<div class="cap"><h2>3. Surfaces</h2>
+<div class="cap"><h2>2.4 Surfaces</h2>
 <p>Decision rule: ask in order and use the first surface that fits.</p>
 <ol class="rules">
 <li><b>SURF-1</b> <span class="n">1</span> {{RULE_TEXT}}</li>

@@ -16,7 +16,7 @@
         "external": { "label": "Entry point" },
         "frontend": { "label": "UI step" },
         "backend": { "label": "Backend job" },
-        "security": { "label": "Step with a ticketed pain point" }
+        "security": { "label": "Step with an evidenced pain point" }
       }
     }
   },
@@ -50,8 +50,8 @@
       "type": "security",
       "label": "{{STEP}}",
       "sublabel": "{{WHAT_THE_PERSON_SEES}}",
-      "tag": "{{FINDING_TICKET}}",
-      "explanation": "{{THE_PAIN_POINT_ON_THIS_STEP_AND_ITS_TICKET}}",
+      "tag": "{{FINDING_CITATION}}",
+      "explanation": "{{THE_PAIN_POINT_ON_THIS_STEP_AND_ITS_FINDING}}",
       "sources": [{ "path": "{{SOURCE_PATH}}", "line": 1, "end_line": 1, "label": "{{WHAT_THIS_CODE_DOES}}" }]
     },
     {
@@ -79,8 +79,8 @@
       "type": "security",
       "label": "{{RESULT}}",
       "sublabel": "{{WHERE_THE_OUTCOME_APPEARS}}",
-      "tag": "{{FINDING_TICKET}}",
-      "explanation": "{{THE_PAIN_POINT_ON_THIS_STEP_AND_ITS_TICKET}}",
+      "tag": "{{FINDING_CITATION}}",
+      "explanation": "{{THE_PAIN_POINT_ON_THIS_STEP_AND_ITS_FINDING}}",
       "sources": [{ "path": "{{SOURCE_PATH}}", "line": 1, "end_line": 1, "label": "{{WHAT_THIS_CODE_DOES}}" }]
     },
     {
@@ -90,8 +90,8 @@
       "type": "security",
       "label": "{{FAILURE_STATE}}",
       "sublabel": "{{WHAT_RECOVERY_REQUIRES}}",
-      "tag": "{{FINDING_TICKET}}",
-      "explanation": "{{THE_PAIN_POINT_ON_THIS_STEP_AND_ITS_TICKET}}"
+      "tag": "{{FINDING_CITATION}}",
+      "explanation": "{{THE_PAIN_POINT_ON_THIS_STEP_AND_ITS_FINDING}}"
     }
   ],
   "edges": [
@@ -103,7 +103,7 @@
   ],
   "cards": [
     { "dot": "emerald", "title": "What already works", "items": ["{{BEHAVIOR_TO_KEEP}}"] },
-    { "dot": "rose", "title": "Tickets on this journey", "items": ["{{FINDING_TICKET}} {{ONE_LINE_PROBLEM}}"] },
+    { "dot": "rose", "title": "Tickets on this journey", "items": ["{{FINDING_CITATION}} {{ONE_LINE_PROBLEM}}"] },
     { "dot": "amber", "title": "Not yet ticketed (seen in code)", "items": ["{{DEFECT_SEEN_WHILE_TRACING}}"] },
     { "dot": "slate", "title": "Evidence", "items": ["Traced from {{REPOSITORY}} at {{REVISION}}; {{WHAT_WAS_EXERCISED_LIVE}}"] }
   ]

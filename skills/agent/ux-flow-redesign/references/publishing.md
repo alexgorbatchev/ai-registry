@@ -30,7 +30,7 @@ Phase 9 makes every design artifact reachable from one served index and proves i
 
 - Never hand-edit or reformat generated diagram HTML, and exclude it from formatters; change the spec and re-render instead.
 - Format the other artifacts (proposals, `patterns.md`, wireframes) with the project's own formatter and run its checks before committing. Project rules beat a tool's default habits: when the project forbids shell heredocs, write commit messages to a file and commit with `git commit -F <file>`.
-- Units do not commit. The orchestrator publishes their files serially, with their docs-index rows and any regeneration-recipe change, through the project's Git workflow; the only exception is Phase 8's delivery stage, which commits only its flow's files on the run branch. SKILL.md "Scope boundaries" owns the commit-before-filing rule.
+- Who commits, and publishing before filing, follow SKILL.md "Scope boundaries". A flow's publish includes its docs-index rows and any regeneration-recipe change.
 
 ## The docs index
 
@@ -42,23 +42,14 @@ Phase 9 makes every design artifact reachable from one served index and proves i
 Rows:
 
 - `scaffold-flow.ts --key … --docs-index <docs>/index.md` inserts a row directly above `<!-- ux-flows rows: scaffold-flow.ts inserts new rows above this line -->` and skips any flow whose wireframe the index already links. Keep the marker in the table that should receive new rows and move rows to other group tables by hand; a moved row is not inserted again.
-- A scaffolded row links both renders, the wireframe and the proposal. Replace each link to a file that does not exist yet with "not generated yet", because the crawl fails on it. Without `--ticket-url` the Redesign cell says "not filed yet"; replace it with the ticket link once filed.
+- A scaffolded row links both renders, the wireframe and the proposal, and the scaffolded wireframe card and flow-page nav link the diagrams. Replace each link to a file that does not exist yet with "not generated yet" (in the row, the card and the nav), because the crawl fails on it, and restore it once the file exists; until then the flow page also fails the linter's `nav` rule, which the Phase 6 gate catches. Without `--ticket-url` the Redesign cell says "not filed yet"; once filed, replace it as [Linking the ticket](proposals-and-tickets.md#linking-the-ticket) says.
 - Link every other page in the tree from the index itself, not only from some page: research notes beside their proposal link, and any page added later. The docs-site tests compare the index's links with the files on disk.
 
 ## Serving
 
 Use the first option that applies:
 
-1. **The project uses devhost.** Serve the docs with devhost's built-in static service, replacing any custom docs server that devhost runs: a manifest service with `serve = "<dir>"` serves static files and renders Markdown with GitHub-style styling.
-
-   ```toml
-   [services.docs]
-   serve = "<docs>"
-   host = "<docs hostname>"
-   alwaysStart = true
-   ```
-
-   Devhost renders Markdown in the browser: the HTML it returns carries the Markdown source as data, with no server-side links or headings, and it does not strip front matter. Its Markdown pages use its own styling, so the Maple Mono font applies to the HTML pages only, and a folder without `index.html`, `index.md` or a README returns a directory listing instead of 404. View the pages through devhost, and keep the template server (option 3) only for the link crawl and the docs-site tests, on a spare loopback port, because both need Markdown rendered on the server.
+1. **The project's dev runner has a static file service** (for example devhost's `serve` services). Serve the docs with it instead of a custom docs server. Check how it renders Markdown: a runner that renders it in the browser returns the Markdown source as data, with no server-side links or headings, and may leave front matter visible, use its own styling (the Maple Mono font then applies to the HTML pages only) or list a folder without an index instead of returning 404. In that case view the pages through the runner, and keep the template server (option 3) only for the link crawl and the docs-site tests, on a spare loopback port, because both need Markdown rendered on the server.
 2. **The project serves its docs another way.** Use that server. Confirm it renders Markdown as HTML pages, serves `.css` as `text/css` and binds to loopback; add what is missing there instead of starting a second server.
 3. **Otherwise, the template server** [serve-docs.ts](../assets/templates/serve-docs.ts). When the project's instructions or the request cover docs tooling (see [Docs-site tests](#docs-site-tests)), copy it into the project (for example `scripts/serveDocs.ts`) and run `DOCS_DIR=<docs> PORT=<port> bun scripts/serveDocs.ts`. Otherwise run it in place: `DOCS_DIR=<absolute docs path> PORT=<port> bun <skill>/assets/templates/serve-docs.ts`. `DOCS_TITLE` sets the fallback page title. It:
    - binds to `127.0.0.1` and answers GET and HEAD only (anything else gets 405 with `Allow: GET, HEAD`);
@@ -105,12 +96,12 @@ Lint the whole directory, `index.html` and `patterns.html` included, and lint it
 ## Link crawl
 
 ```bash
-bun --use-system-ca <skill>/scripts/crawl-site.ts <origin>/ --root-dir <docs> --ignore '/references/'
+bun --use-system-ca <skill>/scripts/crawl-site.ts <origin>/ --root-dir <docs>
 ```
 
 - Any run that wrote docs pages, review-only runs included, runs the crawl before reporting.
 - Start at the URL that serves the docs index. `--root-dir` names the directory that URL's folder maps to; every `.html` and `.md` file under it must then be reached from some crawled page.
-- `--ignore <regex>` (repeatable) is matched against each resolved absolute link URL. Use it for links intended for the repository host: from an index at the site root, `../references/x.md` resolves to `<origin>/references/x.md`.
+- `--ignore <regex>` (repeatable) is matched against each resolved absolute link URL. Add it only when the index links files meant for reading on the repository host, outside the served tree: from an index at the site root, `../references/x.md` resolves to `<origin>/references/x.md`, so pass `--ignore '/references/'`.
 - Run as `bun --use-system-ca` when the local site uses a locally trusted certificate (a dev proxy's local certificate authority); pass `--insecure` as a fallback. `start page unreachable` means the start URL itself failed: the server is down, the URL is wrong, or the certificate was rejected.
 - `--external` also requests links to other origins; without it the summary counts them as not checked. `--max-pages <n>` caps the crawl (default 2000); `--json` prints the full result.
 - The crawler follows only links in server-rendered HTML; crawl the template server when the site's server renders Markdown in the browser.
@@ -135,7 +126,7 @@ bun --use-system-ca <skill>/scripts/crawl-site.ts <origin>/ --root-dir <docs> --
 
 - Keep private hostnames, scratch URLs (loopback addresses with ports, dev-proxy hostnames), local absolute paths and credentials out of tracked files.
 - Link pages relative to each other inside the docs tree and never write a preview origin into a file. Derive preview URLs from the running service at report time: the template server prints `serving <dir> at <url>`, and a dev runner reports its routes.
-- Scan the docs tree before committing, generated diagrams included, for example `rg -n '127\.0\.0\.1|localhost|/Users/|/home/|/private/' <docs>/ux-flows` plus the project's private-domain list, and review each hit; run it again before the Phase 9 report, which requires every hit reviewed. `rg` skips ignored files, so a hit in a delivery receipt means its ignore rule is missing. `git ls-files '<docs>/ux-flows/*.delivery.json'` must print nothing.
+- Scan the docs tree before committing, generated diagrams included, for example `rg -n '127\.0\.0\.1|localhost|/Users/|/home/|/private/' <docs>/ux-flows` plus the project's private-domain list, and review each hit; run it again before the Phase 9 report, which requires every hit reviewed. In a public project also search for the tracker's host and ticket references (`#<number>`), since committed artifacts carry none (SKILL.md "ID conventions"). `rg` skips ignored files, so a hit in a delivery receipt means its ignore rule is missing. `git ls-files '<docs>/ux-flows/*.delivery.json'` must print nothing.
 
 ## Reporting
 

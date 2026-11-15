@@ -41,7 +41,7 @@
       "type": "external",
       "label": "{{ENTRY_POINT}}",
       "sublabel": "{{OTHER_ENTRY_POINTS}}",
-      "tag": "{{FINDING_TICKET}}",
+      "tag": "{{FINDING_CITATION}}",
       "explanation": "{{WHAT_THIS_STEP_DOES_AND_WHICH_PROBLEMS_IT_REMOVES}}"
     },
     {
@@ -51,7 +51,7 @@
       "type": "frontend",
       "label": "{{STEP}}",
       "sublabel": "{{WHAT_THE_PERSON_SEES}}",
-      "tag": "{{FINDING_TICKET}}",
+      "tag": "{{FINDING_CITATION}}",
       "explanation": "{{WHAT_THIS_STEP_DOES_AND_WHICH_PROBLEMS_IT_REMOVES}}",
       "sources": [{ "path": "{{SOURCE_PATH}}", "line": 1, "end_line": 1, "label": "Reuses: {{EXISTING_CODE}}" }]
     },
@@ -70,7 +70,7 @@
       "col": 3,
       "type": "backend",
       "label": "{{WRITE_OPERATION}}",
-      "sublabel": "one protected write",
+      "sublabel": "one write",
       "explanation": "{{EXACTLY_WHAT_IS_WRITTEN_AND_HOW_IT_IS_UNDONE}}"
     },
     {
@@ -80,7 +80,7 @@
       "type": "frontend",
       "label": "{{SHORT_OUTCOME_LABEL}}",
       "sublabel": "Undo · Show",
-      "tag": "{{FINDING_TICKET}}",
+      "tag": "{{FINDING_CITATION}}",
       "explanation": "{{EXACT_OUTCOME_SENTENCE_WHERE_IT_APPEARS_AND_HOW_UNDO_WORKS}}"
     },
     {
@@ -102,7 +102,7 @@
   ],
   "cards": [
     { "dot": "emerald", "title": "What changes versus today", "items": ["Removed: {{REMOVED}}", "Merged: {{MERGED}}", "New: {{NEW}}", "Kept: {{KEPT}}"] },
-    { "dot": "rose", "title": "Tickets this journey resolves", "items": ["{{STEP_GROUP}}: {{FINDING_TICKETS}}"] },
+    { "dot": "rose", "title": "Tickets this journey resolves", "items": ["{{STEP_GROUP}}: {{FINDING_CITATIONS}}"] },
     { "dot": "violet", "title": "Backend work", "items": ["{{BACKEND_CHANGE}}"] },
     { "dot": "cyan", "title": "Contract changes", "items": ["{{CONTRACT_CHANGE_OR_NONE}}"] },
     { "dot": "amber", "title": "Seen in code, not yet ticketed", "items": ["{{DEFECT}}"] },

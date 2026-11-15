@@ -28,6 +28,8 @@ Make each unit one of:
 | 8 | `reconcile-<key>`; `integrate`; `critic` | one flow brought into line with the reference; the integration step; the completeness critic | conformed artifacts and the flow's conformance items done; the landed revision; a verdict per flow |
 | 2 or later | `verify-<ticket>` | one delivered high-severity ticket to verify | checkpoint, and the verdict recorded on the ticket |
 
+Phases 1, 3, 7 and 9 have no units: they run inline in the orchestrating context, and their output files (`flows.md`, `assignments.md`, the reference's section 5, `verification.md`) are their durable checkpoints; a restart continues from what those files record.
+
 A restarted unit keeps its key so it resumes from its checkpoint. A deliberate rerun of a done unit, such as a completeness rerun of a zero-finding area, takes a suffixed key (`review-<area>-2`) so it does not read the earlier checkpoint as done.
 
 Size every unit, and every stage of a staged unit, to about 30 minutes. Split by flow, entity or ticket, never by open-ended exploration of an area; when a brief would take longer, split it into two units instead of raising the budget. Scale targets to the unit: about 6–12 strong findings for a 30-minute review unit, one complete readable journey per diagram stage rather than every branch.
@@ -62,7 +64,7 @@ Every unit prompt contains, in this order:
    - the write boundary: read-only except the files the task names; no commits or pushes except shape D's deliver stage, and no tracker changes except the delivery step (see **Ownership**).
 2. **Unit brief:** scope with roster IDs, every flow or journey end state to exercise, evidence locations, existing tickets it overlaps ("already covers X; add only new evidence"), and prior titles not to duplicate.
 3. **Safety and write limits:** enumerated and countable ("apply at most 4 imports", "preview only, never apply moves or deletions", "merge at most 2 groups, then undo one"). Reads and previews are allowed anywhere. Never install or upgrade tools, change server settings, edit repository files outside named outputs, run state-changing Git commands, or start, stop or restart services.
-4. **Evidence standard:** observe in the running app first, then read the code and cite `path:line`; pin the revision; mark every pain point with its ticket; open every screenshot and confirm it shows the problem legibly before citing it. Phase details are in [review](review.md) and [diagrams](diagrams.md).
+4. **Evidence standard:** observe in the running app first, then read the code and cite `path:line`; pin the revision; mark every pain point with its finding, cited as SKILL.md "ID conventions" says; open every screenshot and confirm it shows the problem legibly before citing it. Phase details are in [review](review.md) and [diagrams](diagrams.md).
 5. **Checkpoint instruction**, pasted verbatim with the unit's checkpoint and, for a unit whose work lives in a handoff file, that file:
 
    ```text
@@ -71,17 +73,17 @@ Every unit prompt contains, in this order:
 
 6. **Handoff file and validator:** the exact path and command, for example `bun <skill>/scripts/validate-handoff.ts findings <state>/ux-flows/findings/<area>.json --feature-pattern '<roster ID regex>'`, with "fix the file and rerun until it prints OK, at most three times; if it still fails, return the validator output, in `environmentIssues` when the environment caused the failure (for example, screenshots could not be captured)". The orchestrator marks such a unit failed for re-queue.
 7. **Environment-issue channel:** an `environmentIssues` field in the return for setup problems (service down, sandbox missing, isolation artifacts). They never become findings, and the agent never repairs shared services itself.
-8. **Delivery step:** in the last agent of the unit's pipeline (the verifier of a review unit, the package stage of a flow), only when tickets are in scope and after its handoff validates: file through `issue-tracker` and record each ticket number in the checkpoint (see **Delivery**).
+8. **Delivery step:** in the last agent of the unit's pipeline (the verifier of a review unit, the package stage of a flow), only when tickets are in scope and after its handoff validates: file through `issue-tracker` and record each ticket ID in the checkpoint (see **Delivery**).
 9. **Budget:** about 30 minutes, with the target count, and "prefer fewer strong results over many weak ones".
 10. **Structured return:** a small schema whose fields the orchestrator uses, such as `{unit, files, count, titles, delivered, environmentIssues}`. The durable file is the result; the return only points at it.
 
-Handoff fields are owned by each kind's reference and enforced by the validator's messages: `findings` in [review](review.md#findings-file), `verdicts` in [review](review.md#verification), `audit` in [pattern reference](pattern-reference.md#audits) and `critique` in [pattern reference](pattern-reference.md#critique). Flow stages have no handoff kind. Their gate is the diagram tool's own validation passing, `bun <skill>/scripts/lint-wireframes.ts <page>` reporting no errors, and the stage marked done in the flow checkpoint.
+Handoff fields are owned by each kind's reference and enforced by the validator's messages: `findings` in [review](review.md#findings-file), `verdicts` in [review](review.md#verification), `audit` in [pattern reference](pattern-reference.md#audits) and `critique` in [pattern reference](pattern-reference.md#critique). Flow stages have no handoff kind. Their gate is the diagram tool's own validation passing, the folder lint (`bun <skill>/scripts/lint-wireframes.ts --site-root <docs> <docs>/ux-flows/wireframes`) reporting no errors for the flow's page, and the stage marked done in the flow checkpoint.
 
 ## Checkpoints and resume
 
 Give every unit one durable checkpoint, `<state>/ux-flows/units/<unit-key>.json`, with a `status` of `pending`, `in-progress`, `done`, `blocked` or `failed`, and its drafts in `<state>/ux-flows/units/<unit-key>/`. A blocked or failed unit also records `blocker` and `unblock` (see **Failures**). A `committed` field holds the commit that published a stage's repository edits (the orchestrator's, except in shape D's deliver stage), or why they stay uncommitted when the project's Git workflow does not authorize the commit; a stage that edited repository files is done only once it is set.
 
-- A review unit (`review-<area>`) records the status of its `review`, `verify` and `deliver` stages; their work lives in the findings file, the verdicts file and the checkpoint's `tickets` map (finding ID to ticket number; a merged finding maps to its survivor's number), each rewritten after every finding, verdict or filed ticket.
+- A review unit (`review-<area>`) records the status of its `review`, `verify` and `deliver` stages; their work lives in the findings file, the verdicts file and the checkpoint's `tickets` map (finding ID to ticket ID; a merged finding maps to its survivor's ticket), each rewritten after every finding, verdict or filed ticket.
 - An audit or critique unit keeps its work in its handoff file, rewritten after each decision or issue; its checkpoint holds the status.
 - A flow (`flow-<key>`) records its stages:
 
@@ -97,12 +99,12 @@ Give every unit one durable checkpoint, `<state>/ux-flows/units/<unit-key>.json`
   ```
 
   `published` holds the orchestrator's commit of the flow's files, or `"unauthorized"` (see shape B). `blockedBy` maps each covered ticket in `assignments.md` to `linked`, or to `proposed` when the [tracker restructure](proposals-and-tickets.md#tracker-restructure) is not authorized; the owner report lists each `proposed` link as an ID'd action. When tickets are in scope, the package stage is done only when `ticket` is set, every `links` entry is true, every covered ticket is in `blockedBy` and `committed` is set; otherwise it is done when the nav still reads "not filed yet" and the report lists the flow.
-- A reconcile unit (`reconcile-<key>`) records `reconcile`, `review` (one entry per round), `fix` and `deliver` stages; the deliver stage records `committed` and keeps its steps (commit, push, ticket created or updated, evidence recorded, blockers, priority) in its checkpoint so a restart repeats none. The integration step and the completeness critic keep `units/integrate.json` and `units/critic.json`.
+- A reconcile unit (`reconcile-<key>`) records `reconcile`, `review` (one entry per round), `fix` and `deliver` stages; the deliver stage records `committed` and keeps its steps (commit, push, screenshots, ticket created or updated, blockers, priority) in its checkpoint so a restart repeats none. The integration step and the completeness critic keep `units/integrate.json` and `units/critic.json`.
 - A long Markdown document written by one author (the pattern reference, unit `reference`) is written section by section; a restarted author continues it.
 
 Resume in two layers:
 
-1. **The orchestrator** computes completed units and stages from durable outputs only: the checkpoint marks it done, its output files exist and any handoff validates. It passes them as a skip list in the run arguments, because workflow scripts may not be able to read files: a `<unit-key>` token for a unit whose last stage is done, a `<unit-key>:<stage>` token for a finished stage of an unfinished unit. A skipped stage returns a stub with its existing paths so later stages still get their inputs. A recorded ticket number means filed, not done: a rerun of that package stage runs only the missing link, `blockedBy` and commit steps and never files again.
+1. **The orchestrator** computes completed units and stages from durable outputs only: the checkpoint marks it done, its output files exist and any handoff validates. It passes them as a skip list in the run arguments, because workflow scripts may not be able to read files: a `<unit-key>` token for a unit whose last stage is done, a `<unit-key>:<stage>` token for a finished stage of an unfinished unit. A skipped stage returns a stub with its existing paths so later stages still get their inputs. A recorded ticket ID means filed, not done: a rerun of that package stage runs only the missing link, `blockedBy` and commit steps and never files again.
 2. **The unit** reads its checkpoint first, returns immediately when its work is already done, and runs its validator before every return; output that fails validation is not done.
 
 When an engine resumes a run by replaying recorded results, it can replay only calls that finished; every call that was in flight reruns from its prompt, and its progress survives only in its checkpoint. Skip a stage only when the stage that consumes it reads a durable file: skipping critique while rerunning revision hands the author no issues unless the critique files exist on disk.
@@ -111,7 +113,7 @@ When an engine resumes a run by replaying recorded results, it can replay only c
 
 When tickets are in scope, deliver each verified unit inside its own pipeline: a review unit files its findings as soon as its verifier finishes, and a flow files its redesign ticket in its package stage once the orchestrator records `published`. Nothing waits for other units' work, for barriers or for the end of the run. Stay inside the authorized scope and stop at an explicit hold such as "show me before filing".
 
-- File through `issue-tracker` and record each ticket number in the unit checkpoint as soon as it exists.
+- File through `issue-tracker` and record each ticket ID in the unit checkpoint as soon as it exists.
 - Edit shared pages (the wireframe index, the docs index) and run `scaffold-flow.ts`, which links into them, only serially from the orchestrator; parallel units otherwise overwrite each other's cards and rows.
 
 ## Barriers
@@ -119,7 +121,7 @@ When tickets are in scope, deliver each verified unit inside its own pipeline: a
 Wait for all units only when the work needs every unit's output: cross-unit dedupe, the pattern reference author's synthesis, the completeness critic and shape D's cross-flow check.
 
 - Run a barrier over the units that exist. Filter to units with valid handoffs, log the missing ones (`WARNING: audits missing for <keys>`), and tell the barrier agent to read those units' sources directly.
-- Never hold delivery behind a barrier. Give every unit the existing-ticket digest and prior titles so it dedupes before filing; the later dedupe barrier records duplicates as links or comments on delivered tickets ([review](review.md#dedupe)).
+- Never hold delivery behind a barrier. Give every unit the existing-ticket digest and prior titles so it dedupes before filing; the later dedupe barrier records each duplicate on its delivered ticket through `issue-tracker` ([review](review.md#dedupe)).
 - Run the completeness critic ([review](review.md#completeness)) after the first wave and again later; it needs no browser, and its gap units run the same pipeline with the prior titles. Also have it check that every user goal has exactly one owning unit; a capability reached from several flows that none owns end to end is a gap.
 
 ## Shapes
@@ -136,9 +138,9 @@ pool(units, n, unit =>
   review(unit)  -> <state>/ux-flows/findings/<area>.json            # checkpointed; validate findings
   if no findings: return {unit, count: 0, coverage}
   verify(unit)  -> <state>/ux-flows/findings/<area>.verdicts.json   # reproduces every P0 and P1; validate verdicts
-  deliver(unit) -> tickets through issue-tracker; numbers in units/review-<area>.json)
+  deliver(unit) -> tickets through issue-tracker; IDs in units/review-<area>.json)
 after wave 1: critic(coverage, titles, filed tickets, roster) -> gap units -> same pipeline
-dedupe(units that exist) -> links and comments on delivered tickets
+dedupe(units that exist) -> duplicates recorded on delivered tickets
 ```
 
 The findings validator rejects an empty findings list, so a unit that exercised its brief and found nothing records `"count": 0` and its coverage in its checkpoint as done, and the skip list includes it; [review](review.md#findings-file) says when the completeness pass reruns it, under a suffixed key.
@@ -153,7 +155,7 @@ pipeline(flow):                                                   # unit flow-<k
   proposed(flow) -> <key>-proposed.json + render, proposals/<key>.md, wireframes/<key>.html (lints clean)
   publish(flow)  -> orchestrator, serially: commit and push the flow's files; published: <commit>
   package(flow)  -> screenshots of both renders (opened and checked);
-                    tickets in scope: file the redesign ticket through issue-tracker, record its number, links and
+                    tickets in scope: file the redesign ticket through issue-tracker, record its ID, links and
                     blockedBy; the orchestrator commits the link edits (done only when all are recorded); otherwise stop
 current(exemplar); proposed(exemplar); check it against the reference and fix it; publish(exemplar); package(exemplar)
 pool(flows - exemplar - skip, n, pipeline)   # a failure returns {key, failed: stage} and records its blocker; other flows continue
@@ -193,8 +195,8 @@ pool(flows - skip, n, flow =>                  # units/reconcile-<key>.json
                       (b) design language and rendering
   fix(flow)        -> apply valid issues, reject others with a reason; re-check blockers and majors only;
                       at most two rounds; unresolved issues travel with the delivery
-  deliver(flow))   -> commit the flow's files on the run branch, push the branch, update the ticket's criteria and
-                      covers, record the evidence and unresolved issues on it, apply the tracker restructure for this flow
+  deliver(flow))   -> commit the flow's files on the run branch, push the branch, bring the ticket's criteria and
+                      covers in line and list unresolved issues on it, apply the tracker restructure for this flow
 integrate          -> one agent (units/integrate.json): regenerate changed diagrams, update shared files, run checks,
                       rebase, land
 critic             -> one agent (units/critic.json): each flow complete or its concrete gaps, plus process changes worth keeping
@@ -203,8 +205,8 @@ critic             -> one agent (units/critic.json): each flow complete or its c
 - **Workspace.** A dedicated worktree on a run branch; never edit or commit in the main checkout. Flow units share the worktree, so each touches only its flow's files (proposal, wireframe, `<key>-proposed.json`, and `<key>-current.json` only when factually wrong) and never stashes, resets, checks out other files or rebases. Generated diagram HTML and shared files (wireframe index, docs index, the reference's conformance section) belong to the integration step. Wireframe screenshots can use `file://` URLs from the worktree, because the stylesheet link is relative.
 - **Reconcile.** Capture before screenshots; read the reference's sections 2 to 5, the flow's conformance entry, the common items and every decision-log entry naming the flow; apply every P and W item, then make the four artifacts agree with every applicable rule, not only the listed items. Record each change with its rule or entry ID in the checkpoint. Leave the ticket untouched until delivery. Capture after screenshots and fix layout problems.
 - **Review.** Both reviewers are adversarial and edit nothing; they quote locations. Blocker: contradicts an approved decision or a rule's required behavior, or leaves the page misleading or broken. Major: a missing required item, a contradiction between the flow's artifacts, or a design-language violation. Minor: wording or an ID citation. They also list conventions the reference lacks that the flow needed, for the critic.
-- **Deliver.** The one stage in the skill where a unit commits. Every step is idempotent through its checkpoint. Commit only the flow's files (`git commit -F <message file> -- <files>`, retrying while another agent holds the index lock), push the run branch so the work survives the machine, and record `committed`. A flow without a ticket gets one through `issue-tracker` when tickets are in scope (otherwise the report lists the flow); record the number at once and [link it](proposals-and-tickets.md#linking-the-ticket) before committing. Update the ticket's criteria and covers, and record on it the commit, the before and after screenshots and any unresolved issues. Apply the [tracker restructure](proposals-and-tickets.md#tracker-restructure) for this flow.
-- **Integrate.** The orchestrator's serial publish step for the run, and the only writer once the flows finish. Regenerate the diagrams whose specs changed on the run branch, one after another in one browser session, and verify each render. Update the shared files, with one line per flow in the reference's conformance section ("Reconciled in <commit>", or its unresolved issues). Run the project's checks, the wireframe linter and the crawl; commit; fetch and rebase on the default branch, resolving conflicts by keeping both sides, and re-run the checks; land through the project's integration workflow, retrying a rejected push after another rebase. Fast-forward the main checkout only when it is clean. Record on the run's ticket the landed revision, each flow's ticket, commit and unresolved issues, and the checks with durations.
+- **Deliver.** The one stage in the skill where a unit commits. Every step is idempotent through its checkpoint. Commit only the flow's files (`git commit -F <message file> -- <files>`, retrying while another agent holds the index lock), push the run branch so the work survives the machine, and record `committed`. A flow without a ticket gets one through `issue-tracker` when tickets are in scope (otherwise the report lists the flow); record the ID at once and [link it](proposals-and-tickets.md#linking-the-ticket) before committing. Bring the ticket's criteria and covers in line with the reconciled proposal and list any unresolved issues on it; the commit and the before and after screenshots stay in the checkpoint. Apply the [tracker restructure](proposals-and-tickets.md#tracker-restructure) for this flow.
+- **Integrate.** The orchestrator's serial publish step for the run, and the only writer once the flows finish. Regenerate the diagrams whose specs changed on the run branch, one after another in one browser session, and verify each render. Update the shared files, with one line per flow in the reference's conformance section ("Reconciled in <commit>", or its unresolved issues). Run the project's checks, the wireframe linter and the crawl; commit; fetch and rebase on the default branch, resolving conflicts by keeping both sides, and re-run the checks; land through the project's integration workflow, retrying a rejected push after another rebase. Fast-forward the main checkout only when it is clean. Record the landed revision, each flow's commit and unresolved issues, and the checks with durations in `units/integrate.json`.
 - **Critic.** Checks every flow on the default branch: artifacts changed and diagrams regenerated, the wireframe passes the linter, the ticket's criteria and covers match the proposal, and covered findings, foundations and priorities follow the [tracker restructure](proposals-and-tickets.md#tracker-restructure). It reports each flow as complete or with concrete gaps, which become the next run's units.
 
 ### E. Salvage dead units
@@ -226,7 +228,7 @@ Use after filing for each delivered P0 ticket, as [review](review.md#verificatio
 ```text
 pool(verify-<ticket> for delivered P0 tickets - skip, n, ticket =>
   verify(ticket) from a clean state, own instance and session    # units/verify-<ticket>.json records each step
-  -> the verdict recorded on the ticket (confirmed, adjusted or not reproduced, with a recommended severity) -> checkpoint)
+  -> verdict in the checkpoint -> recorded on the ticket through issue-tracker)
 ```
 
 ## Sizing
@@ -255,7 +257,7 @@ pool(verify-<ticket> for delivered P0 tickets - skip, n, ticket =>
 ## Ownership
 
 - Follow `issue-tracker` for the claim and handoff of the run's own task.
-- Units do not commit or push. They write only the paths their task names, with repository artifacts in a clean worktree; the orchestrator reviews them, moves scratch artifacts into the repository and publishes them serially through the project's Git workflow (shape B's publish step and each `committed` field). The one exception is shape D's deliver stage, which commits only its flow's files on the run branch and pushes that branch; the integrate step lands it. Ticket changes through `issue-tracker` are the only other external side effects a unit performs.
+- Units write only the paths their task names, with repository artifacts in a clean worktree. The orchestrator reviews their output, moves scratch artifacts into the repository and publishes it (shape B's publish step and each `committed` field); who commits and pushes follows SKILL.md "Scope boundaries", and shape D's integrate step lands the run branch. Ticket changes through `issue-tracker` are a unit's only other external side effects.
 
 ## Without parallel agents
 

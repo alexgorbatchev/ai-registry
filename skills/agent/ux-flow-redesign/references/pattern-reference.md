@@ -104,7 +104,7 @@ Every section 2 subsection uses these labelled paragraphs, in this order. Omit a
 | `Component primitive:` … `library work:` | the component-library parts to use, and what the library itself must gain (or none) |
 | `Contract change:` | `CC-n` IDs and roster IDs, or none |
 
-Write rules as behavior a test can check, for example `- **FB-2 Exactly one outcome announcement.** The receipt appears in the originating surface when it is visible, otherwise in a toast; never both.` Use the template's prefixes (`SEL`, `BAR`, `MENU`, `SURF`, `REV`, `HOLD`, `FB`, `FAIL`, `UNDO`, `ACT`, `KEY`, `WORD`, `STATE`). The template already ships `MENU-2`, the menu-heading rule that the linter's `menu-heading` check enforces in mockups; keep it.
+Write rules as behavior a test can check, for example `- **FB-2 Exactly one outcome announcement.** The receipt appears in the originating surface when it is visible, otherwise in a toast; never both.` Give every example the inputs its numbers depend on, so it reads one way only: "12 reports selected, 3 of them hidden by a filter: the menu header reads '9 reports · 3 hidden, not included'", not just the header text. When flows or reviewers read an example two ways, settle it here: fix the example in the next revision, log the decision, and conform every flow to it; never settle it in one flow. Use the template's prefixes (`SEL`, `BAR`, `MENU`, `SURF`, `REV`, `HOLD`, `FB`, `FAIL`, `UNDO`, `ACT`, `KEY`, `WORD`, `STATE`). The template already ships `MENU-2`, the menu-heading rule that the linter's `menu-heading` check enforces in mockups; keep it.
 
 Ground rules. Write them into section 1 and apply them to every decision:
 
@@ -158,7 +158,17 @@ A later revision marks its decision, `Decision (revision 2): …` or `Decision (
 - Conforms: <what already matches>.
 ```
 
-Before any proposal exists, `P:` lines state what the proposal must specify. End with `### Work no flow owns`: cross-cutting surfaces (a command palette, the navigation structure, a dashboard several flows add cards to, dialogs no flow touches) that the reference owns until a flow claims them, with their tickets.
+Before any proposal exists, `P:` lines state what the proposal must specify.
+
+Section 4 is also the reconciliation ledger, the one place that records what each reconciliation left open. After a reconciliation run lands, its integration step ends each flow's entry with one line, replacing that run's earlier line if a rerun repeats it:
+
+```markdown
+- Reconciled in run <run> (`<landed commit>`): <the review issues still open, each with its location, or "nothing open">.
+```
+
+The section intro says once that these lines record reconciliation runs and that their open issues are the flow's next work. Keep residual issues out of other sections; the next run reads them here.
+
+End with `### Work no flow owns`: cross-cutting surfaces (a command palette, the navigation structure, a dashboard several flows add cards to, dialogs no flow touches) that the reference owns until a flow claims them, with their tickets.
 
 ## Critique
 

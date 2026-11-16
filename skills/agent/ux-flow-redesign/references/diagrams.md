@@ -17,7 +17,7 @@ Phase 4 draws each flow's current diagram and Phase 6 its proposed diagram, as s
 - The current diagram shows what the code does today, at a pinned revision, with every evidenced pain point marked on its step by its finding, cited as SKILL.md "ID conventions" says. The proposed diagram shows the target journey and, on each step, which of those findings it removes.
 - Start the proposed diagram from the current one and its findings, so a reader can compare them step by step.
 - The pair is the redesign's evidence: the proposal, the redesign ticket, the wireframe page's nav and the docs index row link both HTML files.
-- Before filing the redesign ticket, or finishing the proposal when none is filed, check the pair against Phase 3: every finding marked on the current diagram is resolved on a proposed step, or accounted for in the redesign's covers (owned by another flow) or in `<state>/ux-flows/assignments.md` (stopgap or patch). A finding that silently disappears is orphaned.
+- Before filing the redesign ticket, or finishing the proposal when none is filed, check the pair against Phase 3: every finding marked on the current diagram is resolved on a proposed step, or listed under the proposal's `Related, not covered:` with the redesign that resolves it, or accounted for in `<state>/ux-flows/assignments.md` (stopgap or patch). A finding that silently disappears is orphaned.
 
 ## Tracing the current flow
 

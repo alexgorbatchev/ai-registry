@@ -175,6 +175,10 @@ Each flow lists what its proposal (P) and its wireframe (W) must change. Rule ID
 - W: {{CHANGE_TO_THE_WIREFRAME}}.
 - Conforms: {{WHAT_ALREADY_MATCHES}}.
 
+<!-- After a reconciliation run lands, its integration step ends each flow's entry with one line, and the section
+     intro says once that these lines record reconciliation runs and that their open issues are the flow's next work:
+     - Reconciled in run <run> (`<landed commit>`): <review issues still open, with locations, or "nothing open">. -->
+
 ### Work no flow owns
 
 - {{CROSS_CUTTING_SURFACE}} is owned by this reference until {{A_PROPOSAL}} exists ({{TICKETS}}).

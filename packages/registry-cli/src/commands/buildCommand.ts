@@ -1,3 +1,4 @@
+import { existsSync } from "fs";
 import { lstat, chmod, mkdir, mkdtemp, rename, rm, writeFile } from "fs/promises";
 import { dirname, join, relative, sep } from "path";
 import { hostname } from "node:os";
@@ -31,6 +32,7 @@ import {
   type IUnmanagedOutputPaths,
   syncManagedGeneratedOutputs,
 } from "../lib/generatedOutputUtils";
+import { isOutputRenderedFor, isSettingsStateFor } from "../lib/outputCheckoutRoot";
 import { readGeneratedOutputManifest } from "../lib/readGeneratedOutputManifest";
 import { reverseTemplateContent } from "../lib/reverseTemplateContent";
 import { isUserSkillPath, removeDisableModelInvocation, updateSkillName } from "../lib/userSkillUtils";
@@ -255,8 +257,10 @@ async function writeGeneratedOutputManifest(
   stagingDir: string,
   sourceChecksums: Map<string, string>,
   syncedFilePaths: readonly string[],
+  root: string,
 ): Promise<void> {
   const manifest = createGeneratedOutputManifest(managedEntries);
+  manifest.root = root;
   manifest.syncedFilePaths = [...syncedFilePaths].sort();
   const sourcePaths: Record<string, string> = Object.fromEntries(
     [...sourcePathByOutputPath]
@@ -406,16 +410,41 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   for (const [relativePath, layers] of overlayLayers) {
     console.log(`   ↳ overlay settings for ${relativePath}: ${layers.map((layer) => layer.sourcePath).join(", ")}`);
   }
+
+  // An output or merge base rendered for another checkout root (copied into a worktree,
+  // or left behind by a moved checkout) holds that root's absolute paths. Nothing from it
+  // is written back: its generated edits are not recovered and its settings are kept
+  // aside and installed fresh.
+  const settingsStateDir = join(state, "settings-sync");
+  const currentSourcePaths = new Map(
+    [...sourcePathByOutputPath].map(([outputPath, sourcePath]) => [
+      relative(GENERATED_OUTPUT_STAGING_DIR, outputPath).replaceAll("\\", "/"),
+      sourcePath,
+    ]),
+  );
+  const isSettingsStateOwn = await isSettingsStateFor(settingsStateDir, root);
+  const hasLiveSettings = syncedFilePaths.some((path) => existsSync(join(output, path)));
+  const isForeignOutput = existingManifest
+    ? isOutputRenderedFor(existingManifest, root, currentSourcePaths) === false
+    : hasLiveSettings && isSettingsStateOwn !== true;
+  if (isForeignOutput) {
+    console.warn(
+      `⚠️ ${output} was rendered for ${existingManifest?.root ?? "another checkout"}; replacing it without recovering its edits or syncing its settings back.`,
+    );
+  }
   const settingsSyncOptions: ISyncSettingsFilesOptions = {
     syncedSettingsFiles,
     stagingDir: GENERATED_OUTPUT_STAGING_DIR,
     outputDir: output,
-    stateDir: join(state, "settings-sync"),
+    stateDir: settingsStateDir,
     sourcePathByOutputPath,
     templateContext: TEMPLATE_CONTEXT,
     sourceRepository: createGitSettingsSourceRepository(),
     shouldCommitSourceChanges: process.env.AI_REGISTRY_SETTINGS_AUTO_COMMIT !== "0",
     overlayLayers,
+    checkoutRoot: root,
+    liveFilesAreForeign: isForeignOutput,
+    ignoreBases: isForeignOutput || isSettingsStateOwn === false,
   };
   await validateStagedSettingsFiles(settingsSyncOptions);
   for (const [sourcePath, checksum] of sourceChecksums) {
@@ -427,7 +456,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   const expectedCurrentEntries = await collectGeneratedOutputEntries(output, unmanagedPaths);
 
   const hasRecoveredEdits = await assertGeneratedOutputsAreSafeToReplace(
-    existingManifest,
+    isForeignOutput ? null : existingManifest,
     output,
     GENERATED_OUTPUT_STAGING_DIR,
     sourcePathByOutputPath,
@@ -459,6 +488,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     GENERATED_OUTPUT_STAGING_DIR,
     sourceChecksums,
     linkedSyncedFilePaths,
+    root,
   );
   await rm(GENERATED_OUTPUT_STAGING_DIR, { recursive: true, force: true });
 

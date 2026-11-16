@@ -46,10 +46,12 @@ function isGeneratedOutputManifest(value: unknown): value is IGeneratedOutputMan
   const syncedFilePaths = getObjectValue(value, "syncedFilePaths");
   const sourcePaths = getObjectValue(value, "sourcePaths");
   const sourceChecksums = getObjectValue(value, "sourceChecksums");
+  const root = getObjectValue(value, "root");
   return (
     version === GENERATED_OUTPUT_MANIFEST_VERSION &&
     typeof generatedAt === "string" &&
     isGeneratedOutputManifestEntryRecord(entries) &&
+    (root === undefined || typeof root === "string") &&
     (syncedFilePaths === undefined ||
       (Array.isArray(syncedFilePaths) && syncedFilePaths.every((path) => typeof path === "string"))) &&
     (sourcePaths === undefined || isStringRecord(sourcePaths)) &&

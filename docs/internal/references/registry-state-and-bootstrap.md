@@ -1,6 +1,6 @@
 ---
 created_on: 2026-11-10 11:33
-last_modified: 2026-11-10 11:33
+last_modified: 2026-11-16 15:54
 status: current
 ---
 
@@ -12,6 +12,10 @@ For agents modifying or diagnosing these contracts. Paths are relative to the re
 
 Each successful unified build writes `.output/manifest.json` with managed files, directories, symlinks, mapped source paths, and source fingerprints. Treat harness-written changes in generated files as expected. During bootstrap, preserve session and runtime data and automatically recover supported generated-file edits into their mapped source when doing so will not overwrite source changes. Regenerate after successful recovery. If source and generated edits conflict, recovery is unsupported, or saving an edit fails, preserve both versions and suspend dependent output application with the exact conflict reported. Do not request confirmation merely because a harness changed a generated file. Recovery requires verified generated and source baselines and an exact reversal of supported transformations; includes, expressions, and control flow require source edits. Existing drift without source fingerprints must be reconciled into source before establishing a fresh baseline. Unmanaged harness-owned files are preserved. `-y` does not bypass recovery or conflict checks.
 
+## Output Rendered For Another Checkout
+
+Generated output and settings-sync merge bases hold absolute paths of the checkout root they were rendered for. The manifest records that root as `root`, and `.state/settings-sync/checkout-root.json` records the root the merge bases were taken for. A build treats the existing output as rendered for another checkout when its manifest names another root or, for a manifest written before the root was recorded, maps no registry source under this root to the file this build stages (overlay sources are the same in every checkout and are not compared), or when synced settings files exist without any manifest and the merge bases do not name this root. That happens when a worktree is seeded with another checkout's ignored files, when output is copied by hand, or when a checkout moves. Such an output is replaced without recovering its generated edits, and each synced settings file is copied to `.state/settings-sync/foreign/<time>/<path>`, with a warning naming the copy, then installed fresh from the registry as on a first build: nothing rendered for the other root is written back or committed. Merge bases recorded for another root are not used. The next build records this checkout's root, and later builds sync as usual. A build whose output and bases were rendered for its own root, including a manifest without a recorded root whose source paths match, syncs exactly as before.
+
 ## Harness Homes
 
 Harness runtime state (sessions, transcripts, history, databases, logs, installed plugins, credentials) never lives under `.output/`, so deleting `.output/` or moving the checkout cannot hide or split it. Each harness home is a real directory outside the repository: `${CLAUDE_CONFIG_DIR:-~/.claude}`, `${CODEX_HOME:-~/.codex}`, `${PI_CODING_AGENT_DIR:-~/.pi/agent}`, and the OpenCode config directory. Bootstrap symlinks into each home only the top-level entries `.output/manifest.json` records for that harness output (managed entries plus `syncedFilePaths`); everything else in the home is harness-owned and left in place. Bootstrap repoints managed links that target another checkout, backs up a real entry occupying a managed name as `<name>.backup-<timestamp>`, removes dangling links into the harness output, and refuses a home that is still a symlink. Harness plugins create no runtime directories in generated output.
@@ -22,7 +26,7 @@ Settings files a harness or a third-party installer edits at runtime (Claude Cod
 
 ## Local Storage
 
-`.tmp/` holds only disposable development artifacts: test fixtures, build staging and scratch, coverage, the bootstrap smoke home, and harness source fetches under `harnesses/<harness>/.tmp/`. Anything that must survive a session goes in git-ignored `.state/` (settings-sync merge bases, the entries bootstrap applied to harness-owned settings files, and the scheduled update's log, lock, and recovery marker) or `.cache/` (rebuildable caches). Never move or clear `.state/` as cleanup.
+`.tmp/` holds only disposable development artifacts: test fixtures, build staging and scratch, coverage, the bootstrap smoke home, and harness source fetches under `harnesses/<harness>/.tmp/`. Anything that must survive a session goes in git-ignored `.state/` (settings-sync merge bases with the checkout root they were taken for, settings files kept aside from output rendered for another checkout, the entries bootstrap applied to harness-owned settings files, and the scheduled update's log, lock, and recovery marker) or `.cache/` (rebuildable caches). Never move or clear `.state/` as cleanup.
 
 ## Bootstrap Command
 

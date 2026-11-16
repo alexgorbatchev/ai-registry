@@ -20,6 +20,8 @@ export interface IGeneratedOutputManifest {
   version: number;
   generatedAt: string;
   entries: Record<string, IGeneratedOutputManifestEntry>;
+  // The checkout root the output was rendered for; absent in manifests written before it was recorded.
+  root?: string;
   // Output-relative settings files the build reconciles instead of tracking.
   syncedFilePaths?: string[];
   sourcePaths?: Record<string, string>;

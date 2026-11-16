@@ -1,8 +1,9 @@
 import { existsSync } from "fs";
-import { chmod, lstat, mkdir, rm, stat } from "fs/promises";
+import { chmod, copyFile, lstat, mkdir, rm, stat } from "fs/promises";
 import { dirname, join } from "path";
 
 import type { ITemplateContext } from "../harnessBuild";
+import { recordSettingsStateRoot } from "../outputCheckoutRoot";
 import { reverseTemplateObject } from "../reverseTemplateContent";
 import { applySettingsChanges } from "./applySettingsChanges";
 import { listSettingsChanges } from "./listSettingsChanges";
@@ -36,6 +37,14 @@ export interface ISyncSettingsFilesOptions {
   // Private overlay layers merged over each file's registry source, keyed by the
   // file's relative path.
   overlayLayers?: ReadonlyMap<string, ISettingsSourceLayer[]>;
+  // The checkout root this build renders for, recorded with the merge bases.
+  checkoutRoot?: string;
+  // The live files were rendered for another checkout root (a copied or moved output):
+  // each is kept aside under the state directory and installed fresh from the registry,
+  // so nothing rendered for that root is written back.
+  liveFilesAreForeign?: boolean;
+  // The merge bases were taken for another checkout root and are not used.
+  ignoreBases?: boolean;
 }
 
 function formatValue(value: JsonValue | undefined): string {
@@ -111,6 +120,7 @@ async function syncSettingsFile(
   file: ISyncedSettingsFile,
   layers: ISettingsSourceLayer[],
   options: ISyncSettingsFilesOptions,
+  foreignDir: string,
 ): Promise<string[]> {
   const livePath = join(options.outputDir, file.relativePath);
   // Recorded as JSON whatever the settings format, so the extension says how to read it.
@@ -120,6 +130,16 @@ async function syncSettingsFile(
 
   await mkdir(dirname(basePath), { recursive: true });
   await replaceSymlinkWithFile(livePath);
+
+  if (options.liveFilesAreForeign && existsSync(livePath)) {
+    const keptPath = join(foreignDir, file.relativePath);
+    await mkdir(dirname(keptPath), { recursive: true });
+    await copyFile(livePath, keptPath);
+    console.warn(
+      `  - ⚠️ ${file.relativePath} was rendered for another checkout; installed it fresh from the registry and kept the previous file at ${keptPath}`,
+    );
+    await rm(livePath);
+  }
 
   // A first build installs the rendered public source with the overlays merged over it,
   // still merged so that source entries conditioned on harness-written tables are left out.
@@ -133,7 +153,9 @@ async function syncSettingsFile(
   const liveText = hasLiveFile ? await Bun.file(livePath).text() : initialLiveText;
   const live = parseSettingsText(liveText, livePath);
   const base =
-    hasLiveFile && existsSync(basePath) ? parseSettingsText(await Bun.file(basePath).text(), basePath) : undefined;
+    hasLiveFile && !options.ignoreBases && existsSync(basePath)
+      ? parseSettingsText(await Bun.file(basePath).text(), basePath)
+      : undefined;
   const result = mergeSettingsValues({
     base,
     live,
@@ -179,6 +201,7 @@ export async function validateStagedSettingsFiles(options: ISyncSettingsFilesOpt
 // committed, so harness changes are recorded without sweeping in work in progress.
 export async function syncSettingsFiles(options: ISyncSettingsFilesOptions): Promise<void> {
   const committablePaths: string[] = [];
+  const foreignDir = join(options.stateDir, "foreign", new Date().toISOString().replaceAll(":", "-"));
 
   for (const file of options.syncedSettingsFiles) {
     const layers = await getSourceLayers(file, options);
@@ -186,7 +209,7 @@ export async function syncSettingsFiles(options: ISyncSettingsFilesOptions): Pro
     for (const layer of layers) {
       sourceStates.set(layer.sourcePath, await options.sourceRepository.getSourceState(layer.sourcePath));
     }
-    const writtenSourcePaths = await syncSettingsFile(file, layers, options);
+    const writtenSourcePaths = await syncSettingsFile(file, layers, options, foreignDir);
     if (options.shouldCommitSourceChanges === false) continue;
 
     for (const writtenSourcePath of writtenSourcePaths) {
@@ -203,6 +226,11 @@ export async function syncSettingsFiles(options: ISyncSettingsFilesOptions): Pro
         );
       }
     }
+  }
+
+  if (options.checkoutRoot !== undefined) {
+    await mkdir(options.stateDir, { recursive: true });
+    await recordSettingsStateRoot(options.stateDir, options.checkoutRoot);
   }
 
   if (committablePaths.length > 0) {

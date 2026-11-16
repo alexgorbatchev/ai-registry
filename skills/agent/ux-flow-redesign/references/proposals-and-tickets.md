@@ -60,7 +60,9 @@ Sections, in template order:
 
 ## Acceptance criteria
 
-Write them in the proposal; the redesign ticket carries the same list. Each criterion is one `- [ ]` item an implementer can test without asking:
+Write them only in the proposal. The redesign ticket carries the proposal's section verbatim, never a separately written, condensed or reworded draft: drafts drift, dropping criteria, adding others and swapping rule IDs. Produce the ticket's section with `bun <skill>/scripts/ticket-criteria.ts print <docs>/ux-flows/proposals/<key>.md`, and before writing a ticket body run `bun <skill>/scripts/ticket-criteria.ts check <proposal> <ticket body file>`; it must print OK. To change a criterion, change the proposal and regenerate the ticket's section from it.
+
+Each criterion is one `- [ ]` item an implementer can test without asking:
 
 - Write observable, present-tense behavior with concrete inputs and outputs: "With 12 reports of which 9 are selected, Export writes exactly 9 files and the folder lists them in report order."
 - Use exact viewports and counts: "At 1280×800, the query field, the summary strip and the first plan row are visible together without scrolling." Take the viewports from the pattern reference's per-flow conformance section.

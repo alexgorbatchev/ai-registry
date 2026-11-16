@@ -275,6 +275,16 @@ table.t {
   border-color: var(--bad);
   background: var(--badbg);
 }
+/* Keyboard focus on a control. An edited field keeps its edited bar and shows the ring too. */
+.focusring {
+  box-shadow: 0 0 0 2px var(--acc);
+  border-radius: 4px;
+}
+.in.changed.focusring {
+  box-shadow:
+    inset 3px 0 var(--acc),
+    0 0 0 2px var(--acc);
+}
 .fld {
   display: grid;
   grid-template-columns: 6.5rem minmax(0, 1fr);
@@ -463,7 +473,9 @@ kbd {
   margin-bottom: 4px;
 }
 .caret-dn,
-.caret-up {
+.caret-up,
+.caret-lf,
+.caret-rt {
   position: absolute;
   width: 12px;
   height: 12px;
@@ -479,6 +491,17 @@ kbd {
   top: -7px;
   border-left: 1px solid #9aa3af;
   border-top: 1px solid #9aa3af;
+}
+/* Side carets for a popover beside its trigger, such as a submenu beside its parent row; set `top` inline. */
+.caret-lf {
+  left: -7px;
+  border-left: 1px solid #9aa3af;
+  border-bottom: 1px solid #9aa3af;
+}
+.caret-rt {
+  right: -7px;
+  border-top: 1px solid #9aa3af;
+  border-right: 1px solid #9aa3af;
 }
 .open {
   outline: 2px solid var(--acc);

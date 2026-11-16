@@ -67,20 +67,20 @@ Font rules:
 - Every font declaration uses `var(--font)`: the body (`font: 14px/1.45 var(--font)`), `kbd` (`font: 11px var(--font)`), and page rules such as the pattern page's rule IDs (`font: 600 11px var(--font)`) and reference-table cells (`font: 12px/1.45 var(--font)`). `code`, `pre`, `samp`, `button`, `input`, `select` and `textarea` inherit through `font-family: inherit`.
 - Keep sizes and weights as declared; change the family only through the token. The linter rejects any `font-family` other than `var(--font)` and any `font` shorthand that does not end with `var(--font)` (`font-family`); CSS-wide keywords such as `inherit` pass.
 
-Monospace text is wider than proportional text, so legend rows, menus and table cells take more room. After changing the font, the legend, or the pattern page's contents nav, re-measure the key band:
+Monospace text is wider than proportional text, so legend rows, menus and table cells take more room. The key band's height is a measured value per page: a page whose legend or contents nav wraps differently from the stylesheet's default has its own height. Measure every page's band, and measure a page again whenever its band can wrap differently: legend entries added, removed or reworded, the contents nav changed, or the font changed.
 
 1. Serve the page and open it in a browser at about 1440, 1100 and 800 px wide.
 2. At each width read `document.querySelector('.key').offsetHeight`.
 3. Convert to rem at 16 px per rem (the stylesheet leaves the root size alone) and round up to the next 0.1 rem.
-4. Set `--key-h` for that breakpoint:
+4. Where the value differs from the stylesheet's default for that breakpoint, set `--key-h` in the page's own `<style>`:
 
-| Width | Flow pages set it in the stylesheet | Pattern page sets it in its own `<style>` | Template values (flow / pattern) |
+| Width | Stylesheet default | Page override in its own `<style>` | Template values (flow / pattern) |
 | --- | --- | --- | --- |
 | above 1400 px (measure at 1440) | the fallback in `html { scroll-padding-top: calc(var(--key-h, 3.5rem) + 10px) }` | top-level `:root { --key-h }` | 3.5rem / 6.1rem |
 | 901–1400 px (measure at 1100) | `@media (max-width: 1400px) { :root { --key-h } }` | same media query | 5rem / 7.5rem |
 | 900 px and below (measure at 800) | `@media (max-width: 900px) { :root { --key-h } }` | same media query | 2.1rem / 3.4rem |
 
-The template values are starting points; measure your own pages.
+The pattern page always overrides, because its band also holds the contents nav. Change the stylesheet default only when every flow page that has no override measures the new value.
 
 ## Layout
 
@@ -138,7 +138,8 @@ Copy this block verbatim into every page with mockups (each flow page and the pa
 
 - Every convention a mockup uses needs its entry. The linter (`legend-entry`) fails a page whose mockups use one without legend text that names it: `.toast` needs "toast"; `.popover` or `.menu` needs "popover" or "menu"; `.dock` needs "panel" or "dock"; `.scrim` needs "backdrop" or "dialog"; `.sel` needs "selected"; `.flash` or `.chg` needs "changed"; `tr.focus` needs "cursor"; `.n` callouts need a `.n` marker in the legend.
 - Keep all eight entries on every flow page, even where a page uses fewer, so the band looks the same everywhere and the stylesheet's `--key-h` stays correct.
-- Before using any new visual convention (a tint, line style or glyph that carries a meaning), add a swatch entry for it to the legend of every page that uses it. When that changes a page's band height, measure it and set that page's `--key-h` in its own `<style>`. The linter knows only the built-in conventions and cannot catch a new one.
+- Before using any new visual convention (a tint, line style or glyph that carries a meaning), add a swatch entry for it to the legend of every page that uses it, then re-measure that page's band as [Tokens](#tokens) describes. The linter knows only the built-in conventions and cannot catch a new one.
+- An entry that explains a color names every meaning the page's mockups give that color, not only the one that prompted the entry. Red (`--bad`) marks destructive actions (`.btn.danger`, a row in `color: var(--bad)`), errors and failures (`.chip.bad`, `.banner.bad`, `.in.err`) and the before side of a change (`del`), so a red entry on a page that uses all three reads "Red: destructive action, error or failure, or the value before a change". The linter checks red entries (`legend-color`); check other colors' entries by hand.
 
 ## Steps and callouts
 
@@ -187,7 +188,7 @@ The legend's conventions:
 | Convention | Meaning | Markup | Rules |
 | --- | --- | --- | --- |
 | Toast | passing status after something finished | `.toastrow > .toast`: a dark inverse box in the window's bottom corner; one sentence, then `<a>` links | Links only (for example Undo, Show). Never a decision: no `.btn`, `button`, `input` or `select` (`toast-action`). Never a list someone must keep, such as failure details, because it disappears. Never covering a primary action. |
-| Popover or menu | a small surface opened from a control | `.popover` (plus `.menu` for menus), a light outlined card with `<i class="caret-dn">` when it sits above its trigger or `<i class="caret-up">` when below, and a `.from` line naming its opener, for example "Opened from Finance ▾ in the footer" | Draw the trigger in the same `.win` with the `.open` outline (`popover-trigger`). Place the popover next to its trigger without covering it. Position the caret with inline `left` or `right` so it points at the trigger's center: offset = trigger center − popover edge − 6 px (half the 12 px caret). Measure both rectangles in a browser; do not guess. |
+| Popover or menu | a small surface opened from a control | `.popover` (plus `.menu` for menus), a light outlined card whose first child is its caret: `<i class="caret-dn">` when it sits above its trigger, `caret-up` when below, `caret-lf` when it opens to the trigger's right (a submenu beside its parent row) and `caret-rt` when to its left; then a `.from` line naming its opener, for example "Opened from Finance ▾ in the footer" | Every popover, menu and submenu keeps its caret (`popover-caret`); a `.menu` inside a `.popover` card uses the card's. Draw the trigger in the same `.win` with the `.open` outline (`popover-trigger`); a submenu's trigger is its parent row. Place the popover next to its trigger without covering it. Position the caret so it points at the trigger's center: for `caret-dn` and `caret-up`, inline `left` or `right` = trigger center − popover edge − 6 px (half the 12 px caret); for side carets, inline `top` the same way. Measure both rectangles in a browser; do not guess. |
 | Docked panel | a panel beside the table that stays open while people keep working | `.app.dock3` with a `.dock` column: `h3`, `.fld` rows, `.ft` footer | Footer: Cancel, then the effect-named primary button. |
 | Dimmed backdrop | a dialog that blocks the page | `.scrim` holding `.dlg` with `.hd` (an `h3`), `.body` and `.ft` | Use only for blocking dialogs, never for panels or popovers. |
 | Selected rows | rows in the selection | `tr.sel` | |
@@ -204,6 +205,7 @@ Classes without legend entries; their look explains itself:
 | `.btn`, `.btn.pri`, `.btn.danger`, `.btn.off` | a button; the primary action; a destructive action; a disabled action, with its reason shown beside it |
 | `.chip`, `.chip.warn`, `.chip.bad`, `.chip.ok`, `.chip.acc` | a pill for a status or count, or a compact dropdown trigger (`<span class="chip acc">Finance ▾</span>`) |
 | `.in`, `.in.mixed`, `.in.changed`, `.in.err` | a text field; differing values across the selection ("Mixed · 4 values"); an edited, unsaved value; an invalid value |
+| `.focusring` | keyboard focus on a control. It combines with every state: a focused edited field is `.in.changed.focusring` and shows both the edited bar and the ring. Use the stylesheet's rule; a page-local copy loses the ring under `.in.changed` |
 | `.fld` | a label-and-control row with exactly two children: the label `span` and one control `span`. Put several controls and any callout inside that second `span`; extra children wrap onto new grid rows and stretch |
 | `.tabs > span`, `span.on` | tabs; the current tab |
 | `.banner`, `.banner.bad`, `.banner.ok`, `.banner.info` | an inline message: warning (the default), error, success, information |
@@ -233,14 +235,14 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
 </div>
 ```
 
-- The first row is the target header: what the menu acts on (a count and kind, or the item's name), drawn wholly bold as above; no separator is needed after it.
+- The first row is the target header: what the menu acts on (a count and kind, or the item's name), drawn wholly bold as above; no separator is needed after it. The count is the number of items the commands will act on, not the selection's size: when 12 reports are selected and the reference leaves the 3 hidden by a filter out of commands, the header reads "9 reports · 3 hidden, not included", and every count in the menu's items uses 9.
 - Then groups. A `.lbl` heading labels two or more items; a lone item joins its closest related group instead of getting a heading. Draw headings with `.lbl`. The linter (`menu-heading`, in the table under [Checking a page](#checking-a-page)) also recognizes headings drawn in other markup, but it cannot tell a muted heading in the middle of a menu from a dimmed item, so such a heading needs `.lbl` or a separator above it.
 - Only the destructive last item stands alone, after a `.sep` and without a heading, in `color: var(--bad)`.
 - When a context hides items and leaves a group with one item, that item drops its heading and stays in place after a separator.
 - Disabled items stay visible as `.row.muted`, with the reason after a `.sp`.
 - Accelerators sit right-aligned: `.sp`, then `kbd`. Items that ask for more input end with "…".
 - Keep the same groups in the same order at every selection size; hide or disable items instead of reordering.
-- A menu is a popover: it needs its caret, its `.from` line and its `.open` trigger in the same window.
+- A menu is a popover: it needs its caret, its `.from` line and its `.open` trigger in the same window. A submenu is too: it sits beside its parent row, which is drawn `.open`, with a side caret pointing at that row.
 
 ## Bars
 
@@ -314,7 +316,9 @@ It prints `file:line: severity rule: message` and exits 1 on any error. `--site-
 | `callout` | a mockup number has no explanation in its caption, a caption explains a number the mockup does not show, or a caption explains a number twice |
 | `legend` | a page with steps has no `.legend` inside `.key`, or has a `.legend` outside it |
 | `legend-entry` | the mockups use a built-in convention or numbered callouts that the legend does not explain |
+| `legend-color` | a legend entry with a red swatch (`--bad` or `--badbg`) does not name a meaning the mockups also draw in red: destructive ("destructive" or "delete") for `.danger` or a row in `color: var(--bad)`; errors and failures ("error", "fail" or "invalid") for `.bad` or `.err`; the before side of a change ("before", "old" or "previous") for `del` |
 | `menu-heading` | a group heading labels fewer than two items in a menu or a popover that reads as one. Menus are `.menu` and other menu class names (`dropdown`, `context-menu`, `submenu` …), `<menu>`, `role="menu"` and `role="menubar"`. Popovers are `.popover` or `.popup`, or any element with a `caret-*` or `.from` child; one reads as a menu when it has a `.lbl` heading, or a command row (a `kbd`, a trailing "…", an item role or a destructive row) and no form fields (`.fld`, `.in`, `input`, `select`, `textarea`). A heading is a `.lbl` or other heading tag, role or class anywhere, or a muted or wholly bold row with no command affordance where a group starts (the top, after a separator, or a wrapper's first row). Not headings: a wholly bold first row (the target header), a first-row heading tag, `role="heading"` or title or header class in a popover without menu markup (its title), an explicit first-row heading followed by a heading or separator, and a label-like row with no item under it (a note). For a muted row the message also suggests the disabled-item fix |
+| `popover-caret` | a mockup `.popover`, or a `.menu` outside a `.popover` card, has no `caret-*` element as a direct child |
 | `popover-trigger` | a mockup popover or menu with a caret has no `.open` element in its window |
 | `toast-action` | a `.toast` contains a `.btn`, `button`, `input` or `select` |
 | `nav` | a page with steps, other than `index.html` and `patterns.html`, lacks `nav.top` or its links to `index.html`, `<key>-current.html`, `<key>-proposed.html` and `proposals/<key>.md` |

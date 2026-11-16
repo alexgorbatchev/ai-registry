@@ -59,6 +59,24 @@ const CONVENTIONS: { name: string; used: (element: HtmlElement) => boolean; lege
   { name: "row cursor", used: (element) => element.tag === "tr" && hasClass(element, "focus"), legend: /cursor/i },
 ];
 
+/** A legend swatch drawn in the stylesheet's red (`--bad`, `--badbg`). */
+const RED_SWATCH = /var\(--bad(bg)?\)|#b91c1c|#fdecec/i;
+/** What red marks in mockups; a legend entry that explains red names each meaning the mockups use. */
+const RED_MEANINGS: { name: string; used: (element: HtmlElement) => boolean; legend: RegExp }[] = [
+  {
+    name: "destructive actions",
+    used: (element) =>
+      hasClass(element, "danger") || /(^|;)\s*color\s*:\s*var\(--bad\)/.test(element.attrs.get("style") ?? ""),
+    legend: /destructive|delet/i,
+  },
+  {
+    name: "errors and failures",
+    used: (element) => hasClass(element, "bad") || hasClass(element, "err"),
+    legend: /error|fail|invalid/i,
+  },
+  { name: "the before side of a change", used: (element) => element.tag === "del", legend: /before|\bold\b|previous/i },
+];
+
 /** Flags font families other than the token, and a capped page width (max-width on main). */
 function checkCss(rules: CssRule[], file: string, findings: Finding[]): void {
   for (const rule of rules) {
@@ -181,6 +199,25 @@ function checkLegend(page: Page, findings: Finding[]): void {
         severity: "error",
         rule: "legend-entry",
         message: `the mockups use the ${convention.name} convention but the legend does not explain it`,
+      });
+    }
+  }
+  const redEntries = inKey
+    .flatMap((legend) =>
+      findAll(legend, (element) => hasClass(element, "k") && RED_SWATCH.test(element.attrs.get("style") ?? "")),
+    )
+    .map((swatch) => swatch.parent ?? swatch);
+  if (redEntries.length) {
+    const redText = redEntries.map(textContent).join(" ");
+    for (const meaning of RED_MEANINGS) {
+      const first = mockupElements.find(meaning.used);
+      if (!first || meaning.legend.test(redText)) continue;
+      findings.push({
+        file: page.path,
+        line: redEntries[0].line,
+        severity: "error",
+        rule: "legend-color",
+        message: `the red legend entry does not name ${meaning.name}, which the mockups also draw in red (line ${first.line})`,
       });
     }
   }
@@ -449,14 +486,28 @@ function checkMenuHeadings(page: Page, findings: Finding[]): void {
   }
 }
 
+const isCaret = (element: HtmlElement) => classList(element).some((name) => name.startsWith("caret-"));
+
 function checkMenus(page: Page, findings: Finding[]): void {
   checkMenuHeadings(page, findings);
   for (const surface of findAll(page.root, (element) => hasClass(element, "popover") || hasClass(element, "menu"))) {
-    const hasCaret = findAll(
-      surface,
-      (element) => hasClass(element, "caret-up") || hasClass(element, "caret-dn"),
-    ).length;
-    if (!hasCaret || !isMockupElement(surface)) continue;
+    if (!isMockupElement(surface)) continue;
+    // A menu inside a popover card points at its trigger through the card's caret.
+    const inCard =
+      !hasClass(surface, "popover") &&
+      surface.parent !== null &&
+      closest(surface.parent, (element) => hasClass(element, "popover")) !== null;
+    if (!inCard && !childElements(surface).some(isCaret)) {
+      findings.push({
+        file: page.path,
+        line: surface.line,
+        severity: "error",
+        rule: "popover-caret",
+        message:
+          "a popover, menu or submenu needs a caret pointing at its trigger (caret-up, caret-dn, caret-lf or caret-rt as a direct child)",
+      });
+    }
+    if (!findAll(surface, isCaret).length) continue;
     const window =
       closest(surface, (element) => hasClass(element, "win")) ??
       closest(surface, (element) => hasClass(element, "step"));

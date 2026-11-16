@@ -93,7 +93,7 @@ describe("mockup steps", () => {
 
   test("requires a legend entry for every convention the mockups use", () => {
     const findings = lintPage(
-      `<div class="key"><div><div class="legend">How to read</div></div></div><section class="step"><div class="win"><div class="toast">Saved</div><div class="popover">x</div><div class="dock"></div><div class="scrim"></div><table><tr class="sel focus flash"><td>x</td></tr></table><span class="n">1</span></div><div class="cap"><h2>1. S</h2><span class="n">1</span></div></section>`,
+      `<div class="key"><div><div class="legend">How to read</div></div></div><section class="step"><div class="win"><div class="toast">Saved</div><span class="open">⋯</span><div class="popover"><i class="caret-up"></i>x</div><div class="dock"></div><div class="scrim"></div><table><tr class="sel focus flash"><td>x</td></tr></table><span class="n">1</span></div><div class="cap"><h2>1. S</h2><span class="n">1</span></div></section>`,
       { name: "patterns.html" },
     );
     expect(findings.map((finding) => finding.message.replace(/^the mockups use (the )?/, ""))).toEqual([
@@ -121,6 +121,63 @@ describe("surfaces", () => {
       "error popover-trigger",
       "error toast-action",
     ]);
+  });
+
+  test("requires a caret on every popover, menu and submenu, side carets included", () => {
+    const step = (mockup: string) =>
+      lintPage(
+        `${KEY}<section class="step"><div class="win"><span class="btn open">Actions ▾</span>${mockup}</div><div class="cap"><h2>1. S</h2></div></section>`,
+        { name: "patterns.html" },
+      );
+    const missing = step(
+      '<div class="popover menu"><div class="row"><b>3 reports</b></div><div class="row open">Move to ›</div>\n<div class="popover menu sub"><div class="row">Finance</div><div class="row">Archive</div></div></div>\n<div class="menu"><div class="row">Open</div></div>',
+    );
+    expect(missing.map((finding) => `${finding.rule}:${finding.line}`)).toEqual([
+      "popover-caret:2",
+      "popover-caret:3",
+      "popover-caret:4",
+    ]);
+    const pointed = step(
+      '<div class="popover menu"><i class="caret-up"></i><div class="row"><b>3 reports</b></div><div class="row open">Move to ›</div><div class="popover menu sub"><i class="caret-lf" style="top:10px"></i><div class="row">Finance</div><div class="row">Archive</div></div></div><div class="popover"><span class="caret-rt"></span><div class="menu"><div class="row">Open</div></div></div>',
+    );
+    expect(pointed).toEqual([]);
+    const sideOnly = lintPage(
+      `${KEY}<section class="step"><div class="win"><div class="popover"><i class="caret-lf"></i>Pick a folder</div></div><div class="cap"><h2>1. S</h2></div></section>`,
+      { name: "patterns.html" },
+    );
+    expect(rules(sideOnly)).toEqual(["error popover-trigger"]);
+  });
+});
+
+describe("legend colors", () => {
+  const RED = (text: string) =>
+    `<div class="key"><div><div class="legend">How to read: <span><i class="k" style="background:var(--bad)"></i>${text}</span> <span class="n">1</span></div></div></div>`;
+  const MOCKUP =
+    '<section class="step"><div class="win"><span class="btn danger">Delete 3 reports</span><span class="chip bad">Failed</span><span class="in err">x</span><del>Q3</del> <ins>Q4</ins><div class="row" style="color:var(--bad)">Delete…</div></div><div class="cap"><h2>1. S</h2></div></section>';
+
+  test("a red legend entry names every meaning the mockups draw in red", () => {
+    const findings = lintPage(`${RED("Red: destructive action")}${MOCKUP}`, { name: "patterns.html" });
+    expect(findings.map((finding) => `${finding.rule}: ${finding.message.split(",")[0]}`)).toEqual([
+      "legend-color: the red legend entry does not name errors and failures",
+      "legend-color: the red legend entry does not name the before side of a change",
+    ]);
+    expect(
+      lintPage(`${RED("Red: destructive action, an error or failure, or the value before a change")}${MOCKUP}`, {
+        name: "patterns.html",
+      }),
+    ).toEqual([]);
+  });
+
+  test("checks only the meanings a page uses, and pages without a red entry", () => {
+    const destructiveOnly =
+      '<section class="step"><div class="win"><span class="btn danger">Delete</span></div><div class="cap"><h2>1. S</h2></div></section>';
+    expect(lintPage(`${RED("Red: destructive action")}${destructiveOnly}`, { name: "patterns.html" })).toEqual([]);
+    expect(lintPage(`${KEY}${MOCKUP}`, { name: "patterns.html" })).toEqual([]);
+    const errorsOnly =
+      '<section class="step"><div class="win"><span class="banner bad">Export failed</span></div><div class="cap"><h2>1. S</h2></div></section>';
+    expect(rules(lintPage(`${RED("Red outline: destructive lines")}${errorsOnly}`, { name: "patterns.html" }))).toEqual(
+      ["error legend-color"],
+    );
   });
 });
 
@@ -171,7 +228,7 @@ describe("menu headings in any markup", () => {
 
   test("suggests a missing reason when a muted row heads a group", () => {
     const findings = lintMenu(
-      '<div class="menu"><div class="row"><b>3 reports</b></div><div class="sep"></div><div class="row muted">Archive</div><div class="row">Export…</div></div>',
+      '<div class="menu"><i class="caret-up"></i><div class="row"><b>3 reports</b></div><div class="sep"></div><div class="row muted">Archive</div><div class="row">Export…</div></div>',
     );
     expect(findings.map((finding) => finding.message)).toEqual([
       'menu heading "Archive" labels 1 item(s); a heading labels two or more, so fold a lone item into its closest group or drop the heading; if this row is a disabled item, add its reason after .sp',

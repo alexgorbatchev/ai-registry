@@ -41,6 +41,24 @@ test("the stylesheet uses the full window width and one font token", () => {
   ]);
 });
 
+test("the stylesheet keeps the focus ring on an edited field and draws carets on all four sides", () => {
+  const rules = readCssRules(readFileSync(join(TEMPLATES, "wireframe.css"), "utf8"));
+  const shadow = (selector: string) =>
+    rules
+      .find((rule) => rule.selector === selector)
+      ?.declarations.find((declaration) => declaration.property === "box-shadow")
+      ?.value.replace(/\s+/g, " ");
+  const ring = shadow(".focusring");
+  const edited = shadow(".in.changed");
+  expect(ring).toBe("0 0 0 2px var(--acc)");
+  expect(edited).toBe("inset 3px 0 var(--acc)");
+  // `.in.changed` outranks `.focusring`, so the combination must carry both shadows.
+  expect(shadow(".in.changed.focusring")).toBe(`${edited}, ${ring}`);
+  const carets = rules.find((rule) => rule.selector.includes(".caret-dn"))?.selector.split(/\s*,\s*/);
+  expect(carets).toEqual([".caret-dn", ".caret-up", ".caret-lf", ".caret-rt"]);
+  for (const side of [".caret-lf", ".caret-rt"]) expect(rules.some((rule) => rule.selector === side)).toBe(true);
+});
+
 test("the docs server renders Markdown, serves HTML and CSS, and refuses anything else", async () => {
   const root = factory_testDirectory("serve-docs");
   factory_file(

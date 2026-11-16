@@ -89,6 +89,8 @@ describe("scheduledUpdate", () => {
       "packages/registry-cli/src/lib/pushScheduledCommits.ts",
       "packages/registry-cli/src/lib/getErrorMessage.ts",
       "packages/registry-cli/src/lib/getScheduledUpdatePaths.ts",
+      "packages/registry-cli/src/lib/readCommandLine.ts",
+      "packages/registry-cli/src/lib/entryPointCommandLines.ts",
     ]) {
       await Bun.write(join(repositoryPath, sourcePath), Bun.file(resolve(REPOSITORY_ROOT, sourcePath)));
     }

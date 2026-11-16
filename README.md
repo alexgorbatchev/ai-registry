@@ -33,7 +33,7 @@ The reusable source-of-truth layer.
 ### 2. Setup (`just bootstrap`)
 `just bootstrap` is the repo-local clone-and-run entrypoint for this repository.
 
-Root script entrypoints live directly under `packages/registry-cli/src/bin/` and use dash-based filenames. Helper modules that are imported by those entrypoints and are not intended to be executed directly belong under `packages/registry-cli/src/lib/`.
+Root script entrypoints live directly under `packages/registry-cli/src/bin/` and use dash-based filenames. Helper modules that are imported by those entrypoints and are not intended to be executed directly belong under `packages/registry-cli/src/lib/`. Entrypoints that change files, Git state, or harness homes print usage and exit for `-h` or `--help` before doing any work, so `just build --help` and `just bootstrap --help` are safe; unknown options and unexpected arguments fail with a usage error and exit status 2.
 
 ### 3. Generated Outputs (`.output/`)
 The final generated harness artifacts. The registry updates only the files and paths it manages there, writes a manifest for those managed entries, and leaves unrelated harness-owned files in place.

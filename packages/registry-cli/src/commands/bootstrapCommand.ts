@@ -1,6 +1,5 @@
 import { homedir } from "os";
 import { join, relative } from "path";
-import { parseArgs } from "node:util";
 
 import { applyEntriesTarget, type IEntriesApplyResult } from "../lib/applyEntriesTarget";
 import { applyLinkTarget, type ILinkApplyResult } from "../lib/applyLinkTarget";
@@ -22,7 +21,6 @@ type ILinkTarget = Extract<IBootstrapTarget, { kind: "link" }>;
 
 export type IBootstrapDependencies = {
   registryPaths: IRegistryPaths;
-  argv: string[];
   plugins: IUnifiedHarnessPlugin[];
   publicBinDir: string;
   getTimestamp: () => string;
@@ -39,22 +37,10 @@ function getTimestamp(): string {
 function createDefaultDependencies(): IBootstrapDependencies {
   return {
     registryPaths: getRegistryPaths(),
-    argv: process.argv,
     plugins: [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin],
     publicBinDir: join(homedir(), ".local", "bin"),
     getTimestamp,
   };
-}
-
-function hasAutoConfirmFlag(argv: string[]): boolean {
-  const { values } = parseArgs({
-    args: argv.slice(2),
-    options: {
-      yes: { type: "boolean", short: "y" },
-    },
-    strict: false,
-  });
-  return Boolean(values.yes);
 }
 
 async function getBootstrapTargets(plugins: IUnifiedHarnessPlugin[], outputDir: string): Promise<IBootstrapTarget[]> {
@@ -136,7 +122,12 @@ function printPublicScriptResult(binDir: string, result: ISyncPublicScriptsResul
   }
 }
 
+export type IBootstrapOptions = {
+  hasAutoConfirm: boolean;
+};
+
 export async function bootstrapCommand(
+  options: IBootstrapOptions,
   dependencies: IBootstrapDependencies = createDefaultDependencies(),
 ): Promise<void> {
   const { root, overlays, output } = dependencies.registryPaths;
@@ -165,7 +156,7 @@ export async function bootstrapCommand(
 
   console.log("Building generated outputs...");
   await runCommand({
-    cmd: hasAutoConfirmFlag(dependencies.argv) ? ["just", "build", "-y"] : ["just", "build"],
+    cmd: options.hasAutoConfirm ? ["just", "build", "-y"] : ["just", "build"],
     cwd: root,
     description: "build generated outputs",
     spawn: dependencies.spawn,

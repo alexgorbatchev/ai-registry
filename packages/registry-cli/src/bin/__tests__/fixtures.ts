@@ -1,1 +1,1 @@
-export { factory_testDirectory } from "../../__tests__/fixtures";
+export { factory_testDirectory, factory_testRoot } from "../../__tests__/fixtures";

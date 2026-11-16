@@ -1,17 +1,14 @@
 #!/usr/bin/env bun
-import { parseArgs } from "node:util";
 import { buildCommand } from "../commands/buildCommand";
+import { ENTRY_POINT_COMMAND_LINES } from "../lib/entryPointCommandLines";
 import { getErrorMessage } from "../lib/getErrorMessage";
+import { readCommandLine } from "../lib/readCommandLine";
 
-const { values } = parseArgs({
-  args: process.argv.slice(2),
-  options: {
-    yes: { type: "boolean", short: "y" },
-  },
-  strict: false,
-});
+const commandLine = readCommandLine(process.argv.slice(2), ENTRY_POINT_COMMAND_LINES["build.ts"]);
 
-buildCommand({ hasAutoConfirm: Boolean(values.yes) }).catch((error) => {
-  console.error(getErrorMessage(error));
-  process.exit(1);
-});
+if (commandLine !== undefined) {
+  buildCommand({ hasAutoConfirm: commandLine.flags.yes }).catch((error) => {
+    console.error(getErrorMessage(error));
+    process.exit(1);
+  });
+}

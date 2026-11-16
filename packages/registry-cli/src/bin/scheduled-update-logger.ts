@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
+import { ENTRY_POINT_COMMAND_LINES } from "../lib/entryPointCommandLines";
 import { getErrorMessage } from "../lib/getErrorMessage";
+import { readCommandLine } from "../lib/readCommandLine";
 import { runLoggedScheduledUpdate } from "../lib/runLoggedScheduledUpdate";
 
 async function main(): Promise<void> {
@@ -17,7 +19,11 @@ async function main(): Promise<void> {
   process.exitCode = exitCode === 75 ? 1 : exitCode;
 }
 
-main().catch((error) => {
-  console.error(getErrorMessage(error));
-  process.exitCode = 1;
-});
+const commandLine = readCommandLine(process.argv.slice(2), ENTRY_POINT_COMMAND_LINES["scheduled-update-logger.ts"]);
+
+if (commandLine !== undefined) {
+  main().catch((error) => {
+    console.error(getErrorMessage(error));
+    process.exitCode = 1;
+  });
+}

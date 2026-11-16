@@ -85,7 +85,6 @@ describe("bootstrapCommand", () => {
   function createDependencies(overrides: Partial<IBootstrapDependencies> = {}): IBootstrapDependencies {
     return {
       registryPaths,
-      argv: ["bun", "bootstrap.ts", "-y"],
       plugins: [fakePlugin],
       publicBinDir: join(homeDir, ".local", "bin"),
       getTimestamp: () => TIMESTAMP,
@@ -128,7 +127,7 @@ describe("bootstrapCommand", () => {
   it("installs, builds, and applies every target while keeping existing runtime state", async () => {
     await writeTestFile(join(homeDir, ".fake", "history.jsonl"), "kept\n");
 
-    await bootstrapCommand(createDependencies());
+    await bootstrapCommand({ hasAutoConfirm: true }, createDependencies());
 
     expect(spawnedCommands).toEqual([
       ["just", "setup"],
@@ -164,7 +163,7 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
   });
 
   it("reports reused, repointed, backed-up, and removed entries on a later run", async () => {
-    await bootstrapCommand(createDependencies());
+    await bootstrapCommand({ hasAutoConfirm: true }, createDependencies());
     const otherCheckout = join(root, "other-checkout");
     await writeTestFile(join(otherCheckout, "AGENTS.md"), "other\n");
     await rm(join(homeDir, ".fake", "AGENTS.md"));
@@ -178,7 +177,7 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
     await symlink(join(otherCheckout, "air-fake"), join(homeDir, ".local", "bin", "air-fake"));
     logLines = [];
 
-    await bootstrapCommand(createDependencies({ argv: ["bun", "bootstrap.ts"] }));
+    await bootstrapCommand({ hasAutoConfirm: false }, createDependencies());
 
     expect(spawnedCommands.slice(2)).toEqual([
       ["just", "setup"],
@@ -209,10 +208,11 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
   });
 
   it("reports reused links and the overlay on an unchanged run", async () => {
-    await bootstrapCommand(createDependencies());
+    await bootstrapCommand({ hasAutoConfirm: true }, createDependencies());
     logLines = [];
 
     await bootstrapCommand(
+      { hasAutoConfirm: true },
       createDependencies({ registryPaths: { ...registryPaths, overlays: [join(root, "overlay")] } }),
     );
 
@@ -265,12 +265,12 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
     const dependencies = createDependencies({ plugins: [entriesPlugin] });
 
     await writeServers('{ "servers": { "private": { "url": "x" } } }\n');
-    await bootstrapCommand(dependencies);
+    await bootstrapCommand({ hasAutoConfirm: true }, dependencies);
     await writeTestFile(
       join(homeDir, ".fake.json"),
       '{"theme":"dark","servers":{"local":{},"private":{"url":"edited"}}}\n',
     );
-    await bootstrapCommand(dependencies);
+    await bootstrapCommand({ hasAutoConfirm: true }, dependencies);
 
     expect(JSON.parse(await readFile(join(homeDir, ".fake.json"), "utf-8"))).toEqual({
       theme: "dark",
@@ -283,7 +283,7 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
       "    ⚠️ replaced servers.private: it changed outside the registry since the last bootstrap",
     ]);
 
-    await bootstrapCommand(dependencies);
+    await bootstrapCommand({ hasAutoConfirm: true }, dependencies);
     expect(logLines).toContain("  reused Fake servers: " + join(homeDir, ".fake.json"));
     expect(logLines).toContain("Fake servers are written to: " + join(homeDir, ".fake.json"));
   });
@@ -299,7 +299,10 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
     const primaryPath = await realpath(primary);
 
     await expect(
-      bootstrapCommand(createDependencies({ registryPaths: { ...registryPaths, root: worktree } })),
+      bootstrapCommand(
+        { hasAutoConfirm: true },
+        createDependencies({ registryPaths: { ...registryPaths, root: worktree } }),
+      ),
     ).rejects.toThrow(
       `Bootstrap links this machine's harness homes to the checkout it runs in, so it runs only from the primary checkout ${primaryPath}, not the linked worktree ${worktree}.`,
     );
@@ -308,7 +311,9 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
   });
 
   it("stops before touching any home when the build fails", async () => {
-    await expect(bootstrapCommand(createDependencies({ spawn: createSpawn(2) }))).rejects.toThrow(
+    await expect(
+      bootstrapCommand({ hasAutoConfirm: true }, createDependencies({ spawn: createSpawn(2) })),
+    ).rejects.toThrow(
       "Failed to build generated outputs (exit code 2).\nGenerated edits are recovered automatically when safe. Resolve any reported source conflict, unsupported recovery, or save failure before retrying; -y does not discard edits.",
     );
     expect(existsSync(join(homeDir, ".fake"))).toBe(false);
@@ -320,7 +325,7 @@ Override the targets with OPENCODE_CONFIG_DIR, CODEX_HOME, PI_CODING_AGENT_DIR, 
       return { exited: Promise.resolve(0) };
     };
 
-    await expect(bootstrapCommand(createDependencies({ spawn }))).rejects.toThrow(
+    await expect(bootstrapCommand({ hasAutoConfirm: true }, createDependencies({ spawn }))).rejects.toThrow(
       `Generated output manifest is missing from ${registryPaths.output}. Rebuild before bootstrapping.`,
     );
   });

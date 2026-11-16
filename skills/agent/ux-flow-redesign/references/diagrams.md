@@ -106,6 +106,13 @@ Cards keep their titles and dot colours in every diagram, so all diagrams read a
 4. Give each concurrent agent its own browser session for Archify's browser check, through the external browser endpoint the Archify skill describes or the private browser Archify launches itself. Never share a session between agents, and close yours when done, including after a failure.
 5. Archify serializes deliveries into one output directory, so all diagrams in `<docs>/ux-flows/` deliver one at a time. `delivery/concurrent-attempt` means another delivery holds the lock: wait and rerun finalize without editing the spec; it does not count as a repair. Never delete a lock file. For `delivery/lock-stale` or `delivery/lock-invalid`, follow the Archify skill's recovery.
 6. Never install, upgrade or update Archify. When a receipt carries an update notice, pass it to the owner.
+7. A unit that edits a spec but does not render it (shape D's flow units) validates it before committing, without writing any file:
+
+   ```bash
+   node <archify>/bin/archify.mjs validate workflow <docs>/ux-flows/<key>-proposed.json --repo-root <root> --quality showcase --json
+   ```
+
+   Validation applies the schema and layout limits that would otherwise fail the later render: string lengths (an explanation holds at most 1,200 characters), the canvas width, and edge sides the router can place. Fix every failure in the spec by shortening or re-placing, never by dropping a finding citation. Omit `--repo-root` only for a spec recorded as finalized without it ([Repository evidence](#repository-evidence)). A failure that survives the repair limit blocks the unit as step 3 says.
 
 ## Rendering for inspection
 

@@ -4,7 +4,7 @@ description: Use when reviewing an application's user experience across many fea
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-15 07:14
-  last_modified: 2026-11-15 14:30
+  last_modified: 2026-11-16 15:35
   status: current
 ---
 
@@ -22,7 +22,7 @@ Scope boundaries:
 - This skill designs and specifies. Implementing a redesign is separate work under the project's engineering workflow.
 - A review-only request produces findings and tickets, not redesigns. A design-only request files no tickets unless asked. "Tickets in scope" elsewhere in this skill means this rule allows them.
 - Product calls that evidence cannot settle go to the owner as decisions (Phase 7), never resolved silently.
-- Commit and push design artifacts only through the project's Git workflow and its authorization. Units do not commit; the orchestrator publishes their files serially, except Phase 8's delivery stage, which commits only its flow's files on the run branch. Publish a flow's docs before filing a ticket that links them; when publishing is not authorized, write "not published yet" in place of each repository link and list those tickets in the report.
+- Commit and push design artifacts only through the project's Git workflow and its authorization. Units do not commit; the orchestrator publishes their files serially, except Phase 8's delivery stage, which commits only its flow's files on the run branch and never pushes it. Publish a flow's docs before filing a ticket that links them; when publishing is not authorized, write "not published yet" in place of each repository link and list those tickets in the report.
 
 ## Setup
 
@@ -153,12 +153,12 @@ Read [pattern reference](references/pattern-reference.md) (Fact-checking, Produc
 
 ### Phase 8: Reconcile everything with the reference
 
-Read [orchestration](references/orchestration.md) (shape D), [pattern reference](references/pattern-reference.md) (Owner review), [design language](references/design-language.md), [diagrams](references/diagrams.md) and [proposals and tickets](references/proposals-and-tickets.md) (The redesign ticket, Tracker restructure, Linking the ticket) before conforming a flow.
+Read [orchestration](references/orchestration.md) (shape D), [pattern reference](references/pattern-reference.md) (Synthesis: per-flow conformance; Owner review), [design language](references/design-language.md), [diagrams](references/diagrams.md) and [proposals and tickets](references/proposals-and-tickets.md) (The proposal, Acceptance criteria, The redesign ticket, Tracker restructure, Linking the ticket) before conforming a flow.
 
-- **Inputs:** the current reference revision and its per-flow conformance lists, every flow artifact, the owner's answers.
-- **Do:** Per flow: reconcile the proposal, wireframe and proposed diagram spec with the reference (with before and after screenshots); two independent reviewers check it, one for reference conformance and consistency across the flow's artifacts, one for the design language and rendering; fix, re-checking only blockers and majors, for at most two rounds; then deliver it with any unresolved issues listed: commit only its files on a run branch in a dedicated worktree, push the branch, bring the ticket's criteria and covers in line with the proposal, list the unresolved issues on it, and apply the tracker restructure for the flow. After all flows, one integration step regenerates the changed diagrams, updates the shared index files and the reference's conformance section, runs the checks, rebases and lands; a completeness critic then checks every flow. Carry every reversal to every artifact that stated it, and search all artifacts for wording of the superseded framing.
-- **Output:** conformed artifacts; an empty or decided conflicts list on the wireframe index.
-- **Gate:** the critic reports every flow complete; every conformance item is done or recorded as an exception in the reference; unresolved review issues are listed on their tickets and in the report.
+- **Inputs:** the reference revision current at the run's start and its per-flow conformance lists, every flow artifact, the owner's answers. Integration re-checks the flows against the reference as it stands on the target branch when it lands.
+- **Do:** Per flow: reconcile the proposal, wireframe and proposed diagram spec with the reference (with before and after screenshots; the spec validated, not rendered); two independent reviewers check it, one for reference conformance and consistency across the flow's artifacts, one for the design language and rendering; fix, re-checking only blockers and majors, for at most two rounds; then deliver it with any unresolved issues listed: retake the after screenshots, commit only its files on a run branch in a dedicated worktree without pushing it, regenerate the ticket's criteria and covers from the proposal, list the unresolved issues on it, and apply the tracker restructure for the flow. After all flows, one integration step rebases onto the target branch, re-checks the flows a reference change since the run's base affects, regenerates every changed diagram once, re-renders and re-uploads the ticket images of those diagrams, updates the shared index files and the reference's reconciliation ledger, runs the checks, lands and deletes the run branch; a completeness critic then checks every flow. Carry every reversal to every artifact that stated it, and search all artifacts for wording of the superseded framing.
+- **Output:** conformed artifacts; an empty or decided conflicts list on the wireframe index; one ledger line per flow in the reference's per-flow conformance section.
+- **Gate:** the critic reports every flow complete; every conformance item is done or recorded as an exception in the reference; unresolved review issues are listed on their tickets, in the ledger and in the report; every ticket image of a regenerated diagram records the landed spec's blob.
 
 ### Phase 9: Publish and verify
 

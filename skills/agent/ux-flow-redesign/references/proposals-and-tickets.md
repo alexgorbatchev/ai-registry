@@ -121,7 +121,7 @@ Once redesign tickets exist they become the work. This changes the owner's queue
 - Each open finding under a redesign's `Resolves:` ([Tickets resolved](#the-proposal)) is blocked by that redesign, so it stops being claimable as patch work and becomes the redesign's acceptance evidence. A partially covered finding is blocked by every redesign that resolves a slice of it. A finding under `Related, not covered:` is never blocked by the redesign that lists it, only by the redesigns that resolve it. So the blockers on a finding are exactly the redesigns that resolve it.
 - Each non-foundation redesign is blocked by the foundation redesigns: the cross-cutting flows the others build on, typically selection, background work and activity, and undo and history. Another example is a command foundation: each action is declared once, with its label, group, shortcut, an "applies when" check and a "disabled because" reason, and that one declaration is rendered in menus, the command palette, the shortcut bar and the key handler. These are examples; name the foundations the product's flows actually build on.
 - Each redesign carries the highest verified priority among the open findings under its `Resolves:`, raised when one of their priorities rises; keep the proposal's priority paragraph at the same level in the same pass. The restructure never lowers a priority and never changes a finding's priority; raising the severity of a finding this run filed follows [review](review.md#verification) "Verification". Propose any lower priority to the owner as an ID'd action.
-- Findings no redesign covers keep their priority and stay claimable; bugs that damage data now get [stopgaps](#stopgaps) ahead of their redesign.
+- Findings no redesign resolves keep their priority and stay claimable; bugs that damage data now get [stopgaps](#stopgaps) ahead of their redesign.
 
 ## Linking the ticket
 
@@ -143,4 +143,4 @@ In a public project, where issue-tracker keeps tracker identity out of commits, 
 - File a standalone stopgap only for a bug that damages data now and cannot wait for the redesign. Everything else is covered by the redesign.
 - Confirm under the product rule that the behavior is a defect first. A stopgap that refuses an intended action is wrong; a hazard of intended behavior gets a warning in the redesign instead.
 - The stopgap's fix matches what the redesign specifies, so the redesign builds on it instead of undoing it.
-- It is its own ticket; list it in the redesign's **Tickets resolved** and covers, and name it in the priority line ("P1, with #418 shipped first as a P0 fix"), cited like a finding (SKILL.md "ID conventions").
+- It is its own ticket. List it under the redesign's `Related, not covered:` as resolved by the stopgap, never under `Resolves:`, so the redesign does not block it and it ships first; name it in the priority line ("P1, with #418 shipped first as a P0 fix"), cited like a finding (SKILL.md "ID conventions").

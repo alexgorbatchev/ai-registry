@@ -5,7 +5,7 @@
    - Inline review comments: `repos/{owner}/{repo}/pulls/{number}/comments`
    - Conversation comments: `repos/{owner}/{repo}/issues/{number}/comments`
    - Review submissions and their bodies: `repos/{owner}/{repo}/pulls/{number}/reviews`
-3. Acknowledge feedback before evaluating it: add an `eyes` reaction to every inline review comment and conversation comment, using the matching endpoint from the [reactions API](https://docs.github.com/en/rest/reactions/reactions):
+3. Acknowledge feedback before evaluating it: add an `eyes` reaction to every inline review comment and conversation comment written by someone other than the account owner (compare each comment's `user.login` with `gh api user --jq .login`). The account owner's own comments and replies are explanatory notes, not feedback; do not react to them. Use the matching endpoint from the [reactions API](https://docs.github.com/en/rest/reactions/reactions):
    - Inline review comment: `POST repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions -f content=eyes`
    - Conversation comment: `POST repos/{owner}/{repo}/issues/comments/{comment_id}/reactions -f content=eyes`
 

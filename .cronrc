@@ -1,3 +1,3 @@
-# Update and bootstrap this checkout every five minutes.
+# Update and bootstrap this checkout every 30 minutes.
 # The script owns locking and writes output to .state/scheduled-update.log.
-*/5 * * * * /usr/bin/env PATH="$HOME/.dotfiles/.generated/bin:$PATH" just scheduled-update
+*/30 * * * * /usr/bin/env PATH="$HOME/.dotfiles/.generated/bin:$PATH" just scheduled-update

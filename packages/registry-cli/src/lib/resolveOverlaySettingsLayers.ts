@@ -24,6 +24,10 @@ async function listFiles(directory: string): Promise<string[]> {
   return entries.filter((entry) => entry.isFile()).map((entry) => join(entry.parentPath, entry.name));
 }
 
+function getEmptySettingsText(filePath: string): string {
+  return filePath.endsWith(".toml") ? "" : "{}\n";
+}
+
 function getToolTraits(toolDir: string): Pick<ISettingsSourceLayer, "isTool" | "ownedMarkers"> {
   const { owns } = readToolManifest(toolDir);
   return owns.length > 0 ? { isTool: true, ownedMarkers: owns } : { isTool: true };
@@ -48,11 +52,19 @@ export async function resolveOverlaySettingsLayers(
     const layers: ISettingsSourceLayer[] = [];
     for (const overlayDir of options.overlayDirs) {
       const layerPath = join(overlayDir, "harnesses", harnessPath);
-      if (!existsSync(layerPath)) continue;
+      const toolTraits = options.toolDirs?.includes(overlayDir) ? getToolTraits(overlayDir) : undefined;
+      if (!existsSync(layerPath)) {
+        // A tool that owns settings values takes them even before it has a file for this
+        // settings file, so running its installer once is enough to capture its entries.
+        if (toolTraits?.ownedMarkers !== undefined) {
+          layers.push({ sourcePath: layerPath, renderedText: getEmptySettingsText(layerPath), ...toolTraits });
+        }
+        continue;
+      }
       layers.push({
         sourcePath: layerPath,
         renderedText: await options.renderLayer(layerPath, await Bun.file(layerPath).text()),
-        ...(options.toolDirs?.includes(overlayDir) ? getToolTraits(overlayDir) : {}),
+        ...toolTraits,
       });
       layerPaths.add(layerPath);
     }

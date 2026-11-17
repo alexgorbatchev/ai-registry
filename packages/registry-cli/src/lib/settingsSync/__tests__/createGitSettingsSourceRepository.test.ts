@@ -40,6 +40,9 @@ describe("createGitSettingsSourceRepository", () => {
     expect(await repository.getSourceState(join(repositoryRoot, "harnesses", "other.json"))).toBe("dirty");
     expect(await repository.getSourceState(join(repositoryRoot, "harnesses", "untracked.json"))).toBe("unversioned");
     expect(await repository.getSourceState("/settings.json")).toBe("unversioned");
+    expect(
+      await repository.getSourceState(join(repositoryRoot, "tools", "new-tool", "harnesses", "a", "settings.json")),
+    ).toBe("unversioned");
   });
 
   it("commits only the synced files, leaving other staged and unstaged edits alone", async () => {

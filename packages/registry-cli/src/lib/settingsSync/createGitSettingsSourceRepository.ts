@@ -1,4 +1,5 @@
 import { $ } from "bun";
+import { existsSync } from "fs";
 import { dirname, relative } from "path";
 
 import { runGitleaks } from "../runGitleaks";
@@ -6,8 +7,17 @@ import type { ISettingsSourceRepository, SettingsSourceState } from "./types";
 
 const COMMIT_SUBJECT = "chore(settings): sync harness settings";
 
+// The nearest existing directory holding `filePath`, which may not exist yet.
+function getExistingDirectory(filePath: string): string {
+  let directory = dirname(filePath);
+  while (!existsSync(directory) && dirname(directory) !== directory) {
+    directory = dirname(directory);
+  }
+  return directory;
+}
+
 async function getRepositoryRoot(filePath: string): Promise<string | null> {
-  const result = await $`git rev-parse --show-toplevel`.cwd(dirname(filePath)).quiet().nothrow();
+  const result = await $`git rev-parse --show-toplevel`.cwd(getExistingDirectory(filePath)).quiet().nothrow();
   return result.exitCode === 0 ? result.stdout.toString().trim() : null;
 }
 

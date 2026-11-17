@@ -117,7 +117,9 @@ async function writeSourceChanges(
       value: change.value === undefined ? undefined : reverseTemplateObject(change.value, reverseContext),
     }));
     if (layerChanges.length === 0) continue;
-    const sourceText = await Bun.file(layer.sourcePath).text();
+    // A tool layer without a file yet starts from its empty rendered text.
+    const sourceText = existsSync(layer.sourcePath) ? await Bun.file(layer.sourcePath).text() : layer.renderedText;
+    await mkdir(dirname(layer.sourcePath), { recursive: true });
     await Bun.write(layer.sourcePath, applySettingsChanges(sourceText, layerChanges, layer.sourcePath));
     const changeLabel = layerChanges.length === 1 ? "change" : "changes";
     console.log(`  - ↩️ Synced ${layerChanges.length} harness settings ${changeLabel} into ${layer.sourcePath}`);

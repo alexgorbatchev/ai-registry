@@ -96,6 +96,23 @@ describe("resolveOverlaySettingsLayers", () => {
     ]);
   });
 
+  it("gives a tool with owned markers an empty layer for every synced settings file it has no file for", async () => {
+    const options = await createOptions();
+    const [first, second] = options.overlayDirs;
+    await writeTestFile(join(first ?? "", "tool.json"), JSON.stringify({ owns: [".example-tool/"] }));
+    await writeTestFile(join(second ?? "", "tool.json"), "{}");
+
+    const layers = await resolveOverlaySettingsLayers({ ...options, toolDirs: [first ?? "", second ?? ""] });
+
+    const traits = { isTool: true, ownedMarkers: [".example-tool/"] };
+    expect(layers.get("codex/config.toml")).toEqual([
+      { sourcePath: join(first ?? "", "harnesses", "codex", "config.toml"), renderedText: "", ...traits },
+    ]);
+    expect(layers.get("opencode/opencode.jsonc")).toEqual([
+      { sourcePath: join(first ?? "", "harnesses", "opencode", "opencode.jsonc"), renderedText: "{}\n", ...traits },
+    ]);
+  });
+
   it("returns no layers without overlays", async () => {
     const options = await createOptions();
 

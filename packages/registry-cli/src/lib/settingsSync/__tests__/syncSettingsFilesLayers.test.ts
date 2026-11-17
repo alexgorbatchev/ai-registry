@@ -1,5 +1,6 @@
 import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { existsSync } from "fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
@@ -277,5 +278,55 @@ describe("syncSettingsFiles with a tool overlay layer", () => {
     expect(await readJson(layout.overlaySourcePath)).toEqual({
       hooks: { Stop: [templated("stop", 7)], Notification: [templated("notify", 7)] },
     });
+  });
+
+  it("captures an installer's entries into a tool overlay that has no settings file yet", async () => {
+    const layout = await createLayout("settings.json");
+    spyOn(console, "log").mockImplementation(() => {});
+    const homeDir = join(TEST_ROOT, "homes", "installer-user");
+    const livePath = join(layout.outputDir, file.relativePath);
+    const toolLayerPath = join(layout.rootDir, "tools", "new-tool", "harnesses", "harness", "settings.json");
+    const installed = { hooks: [{ type: "command", command: `${homeDir}/.new-tool/hook.sh start` }] };
+    await writeTestFile(layout.publicSourcePath, `${JSON.stringify({ hooks: { Stop: [guard] } })}\n`);
+    const sync = async () => {
+      await writeTestFile(join(layout.stagingDir, file.relativePath), await readFile(layout.publicSourcePath, "utf-8"));
+      const toolText = existsSync(toolLayerPath) ? await readFile(toolLayerPath, "utf-8") : "{}\n";
+      await syncSettingsFiles({
+        syncedSettingsFiles: [file],
+        stagingDir: layout.stagingDir,
+        outputDir: layout.outputDir,
+        stateDir: layout.stateDir,
+        sourcePathByOutputPath: new Map([[join(layout.stagingDir, file.relativePath), layout.publicSourcePath]]),
+        templateContext: { repo_root: join(layout.rootDir, "registry") },
+        sourceRepository: createRecordingSourceRepository("unversioned"),
+        overlayLayers: new Map([
+          [
+            file.relativePath,
+            [
+              {
+                sourcePath: toolLayerPath,
+                renderedText: toolText.replaceAll("<%- env('HOME') %>", homeDir),
+                isTool: true,
+                ownedMarkers: [".new-tool/"],
+              },
+            ],
+          ],
+        ]),
+        homeDir,
+      });
+    };
+    await sync();
+
+    await writeTestFile(livePath, `${JSON.stringify({ hooks: { Stop: [guard], SessionStart: [installed] } })}\n`);
+    await sync();
+
+    expect(await readJson(layout.publicSourcePath)).toEqual({ hooks: { Stop: [guard] } });
+    expect(await readJson(toolLayerPath)).toEqual({
+      hooks: {
+        SessionStart: [{ hooks: [{ type: "command", command: "<%- env('HOME') %>/.new-tool/hook.sh start" }] }],
+      },
+    });
+    await sync();
+    expect(await readJson(livePath)).toEqual({ hooks: { Stop: [guard], SessionStart: [installed] } });
   });
 });

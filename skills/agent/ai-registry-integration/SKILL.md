@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-17 14:05
+  last_modified: 2026-11-17 15:34
   status: current
 ---
 
@@ -75,8 +75,14 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 - Put configuration for a third-party tool on trial in `tools/<name>/` beneath the repo_root token, using the private overlay structure: `skills/`, `commands/`, and `harnesses/<path>` files that layer synced settings files. Deleting the directory removes everything it contributed on the next build.
 - Put only the tool's own entries in its settings layers, such as its hook entries under the hook events it uses; lists append, so they join the registry's entries for the same event.
-- Tool overlays layer after the public sources and before private overlays. They own harness edits only inside keys only they define; added list items go to another layer.
-- List text identifying the tool's own settings values, such as its install directory, under `owns` in `tools/<name>/tool.json`. Settings sync routes added entries and changed values containing it into the tool's overlay, so the tool's installer and updates edit its overlay once for every machine. Without `owns`, installer edits go to the public source; copy the entries into the overlay instead.
+- Tool overlays layer after the public sources and before private overlays. They own harness edits only inside keys only they define or values carrying their `owns` markers; other added list items go to another layer.
+- List text identifying the tool's own settings values, such as its install directory, under `owns` in `tools/<name>/tool.json`. Settings sync routes added entries and changed values containing it into the tool's overlay, creating missing settings files, so the tool's installer and updates edit its overlay once for every machine. Without `owns`, installer edits go to the public source.
+- To add a tool:
+  1. Write `tools/<name>/tool.json` with `owns` and `requires` before the tool's setup runs.
+  2. Run its setup, leaving shell startup files to its dotfiles recipe.
+  3. Run `just build` and confirm `git status` changes only `tools/<name>/`.
+  4. Find everything the setup wrote outside harness settings by inode change time across the home directory and the output_dir token, including backups beside linked settings files. Read the scripts its hooks run before reporting the tool ready, delete redundant backups, and move skills or commands it installed into the overlay.
+  5. Commit `tools/<name>/`; settings sync does not commit files it created.
 - Leave files the tool installs itself, such as the scripts its hooks run, to the tool. List them under `requires` in `tools/<name>/tool.json` so machines without the tool skip the overlay.
 - Tool overlays are public. Settings sync writes the home directory back through the env helper; use the file_dir or repo_root token or the env helper for other machine paths, and keep private details in a private overlay.
 

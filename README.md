@@ -115,7 +115,17 @@ Each directory under `tools/` is an overlay with the same structure and rules as
 
 Harness edits reach a tool overlay only inside what it defines, or when they belong to the tool. List text that identifies the tool's own settings values, such as its install directory, under `owns` in `tool.json`: added list entries and changed values containing it sync into the tool's overlay, so a tool that rewrites its hooks on update, or whose installer runs again on another machine, updates its overlay once for every machine. Other edits go to the public source or a private overlay, which win ties, and entries a harness adds to a list never go to a tool overlay unless they carry its marker. Deleting a tool's directory removes its skills, commands, and settings from the generated output and harness files on the next build.
 
-Tool overlays are public. Settings sync writes the home directory back as `<%- env('HOME') %>`, and other machine paths need template tokens; keep private details in a private overlay. To add a tool, run its installer once with `owns` set, or copy its entries into the overlay.
+Tool overlays are public. Settings sync writes the home directory back as `<%- env('HOME') %>`, and other machine paths need template tokens; keep private details in a private overlay.
+
+#### Adding a tool
+
+1. Create `tools/<name>/tool.json` before running the tool's setup. Set `owns` to text that appears only in the tool's settings values, usually its install directory such as `".example-tool/"`, and `requires` to a file the tool's own installer creates, such as the script its hooks run. A tool with `owns` captures entries into a settings file it has no copy of yet.
+2. Run the tool's setup and let it connect to the harnesses. Leave out edits to shell startup files such as `~/.zshrc`; put those in the tool's dotfiles recipe.
+3. Run `just build`. Settings sync moves the entries the tool wrote into `tools/<name>/harnesses/`. Check that `git status` shows changes only under `tools/<name>/`.
+4. Review what the setup wrote outside harness settings: list files whose inode change time falls in the setup window, for example `find ~ -newerct '<start>' ! -newerct '<end>'`, including the registry's `.output/`, where backups written beside linked settings files land. Read the scripts the new hooks run, delete redundant backups, and add any skills or commands the tool installed to the overlay.
+5. Commit `tools/<name>/`. Files the sync created are new and are not committed automatically.
+
+On another machine, install the tool, preferably through its dotfiles recipe so its own installer runs too; the overlay applies once the required file exists. A tool's own later changes to its entries sync into its overlay and reach every machine; removing its entries inside the tool removes them everywhere, while uninstalling it on one machine only skips the overlay there. Delete `tools/<name>/` to remove the tool from the registry.
 
 ### Hostname Skill Variants
 

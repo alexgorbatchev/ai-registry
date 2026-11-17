@@ -4,7 +4,7 @@ description: Use when reviewing an application's user experience across many fea
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-15 07:14
-  last_modified: 2026-11-17 03:27
+  last_modified: 2026-11-17 06:59
   status: current
 ---
 
@@ -22,7 +22,7 @@ Scope boundaries:
 - This skill designs and specifies. Implementing a redesign is separate work under the project's engineering workflow.
 - A review-only request produces findings and tickets, not redesigns. A design-only request files no tickets unless asked. "Tickets in scope" elsewhere in this skill means this rule allows them.
 - Product calls that evidence cannot settle go to the owner as decisions (Phase 7), never resolved silently.
-- Commit and push design artifacts only through the project's Git workflow and its authorization. Units do not commit; the orchestrator publishes their files serially, except Phase 8's delivery stage, which commits only its flow's files on the run branch and never pushes it. Publish a flow's docs before filing a ticket that links them; when publishing is not authorized, write "not published yet" in place of each repository link and list those tickets in the report.
+- Commit and push design artifacts only through the project's Git workflow and its authorization. Units do not commit; the orchestrator publishes their files serially, except Phase 8's delivery stage, which commits only its flow's files on the run branch and never pushes it. The orchestrator also commits `<state>` with every publish and at every phase gate, so the records in Git never lag the published docs; a public project keeps it uncommitted (**Setup**). Publish a flow's docs before filing a ticket that links them; when publishing is not authorized, write "not published yet" in place of each repository link and list those tickets in the report.
 
 ## Setup
 
@@ -41,7 +41,9 @@ Write these into `<state>/setup.md` before Phase 1. When one is missing and it c
 - **Diagram tool.** Archify, through the Archify skill, by default; see [diagrams](references/diagrams.md) for alternatives.
 - **Evidence environment.** A current build of the app from a clean checkout, disposable test data shaped like real use, a screenshot tool for the platform (a browser automation tool for web apps), and one isolated app instance per concurrent reviewer.
 - **Capacity.** Whether parallel agents are available, and how many app instances the machine can run.
-- **State directory.** `<state>` is the run's permanent working directory outside every checkout: `${XDG_DATA_HOME:-$HOME/.local/share}/ux-flow-redesign/<project>/`, where `<project>` is a stable kebab-case key for the repository plus the scope when the run covers part of it (`reports-app`, `monorepo-billing`). Resolve it to an absolute path once, create it, record it at the top of `<state>/setup.md` and in the run's task record, and give that absolute path to every unit; later phases resume from it weeks later. Never use a checkout's `.state/` or another ignored project directory, which worktree removal, fresh clones and ignored-file copies lose, nor session temp or a scratch directory that gets cleaned. To resume a run whose files are under a checkout's `.state/ux-flows/`, move that directory to `<state>` once no unit is running (its contents keep their relative paths) and leave a symlink at the old path, so absolute paths already recorded in checkpoints and prompts still resolve.
+- **State directory.** `<state>` holds the run's records and is committed to the project, so they are versioned and readable from every clone and machine: `<app-root>/.ux-flow-redesign/`, where `<app-root>` is the reviewed app's directory in a monorepo, else the repository root. It holds the setup notes, flow table, assignments, verification record and run log, owner decision pages' sources, unit prompts and helper tools, unit checkpoints and drafts, findings and verdicts, audits and critiques. Create it in the run's worktree, record its repository-relative path at the top of `<state>/setup.md` and in the run's task record, and give every unit its absolute path in that worktree; later phases resume from it weeks later. When the project's formatters, linters, type checks or source inventories would treat its files as project source, exclude the directory there the way the project excludes generated files. Keep credentials out of it, and private hostnames unless the project's instructions permit them in its repository. In a public project, whose commits must not carry tracker identity (**ID conventions**), keep `<state>` at `<local>/state/` instead and tell the owner it is not in Git.
+- **Local directory.** `<local>` holds machine-local working files that are bulky, regenerable or tied to this machine: screenshots, app instances and their data, pinned builds, disposable datasets, the diagram tool's out-dirs, browser state and logs. It is `${XDG_DATA_HOME:-$HOME/.local/share}/ux-flow-redesign/<project>/`, where `<project>` is a stable kebab-case key for the repository plus the scope when the run covers part of it (`reports-app`, `monorepo-billing`); it survives worktree removal and is never committed. Resolve it to an absolute path once, record it in `<state>/setup.md`, and give it to every unit. Records may point at its files by absolute path (handoff validators require absolute screenshot paths); those paths resolve only on this machine, and the tickets carry the annotated screenshots for everyone else. Never use session temp or a scratch directory that gets cleaned for either directory.
+- **Resuming an older layout.** When a run's files are all in a per-user directory (an earlier version of this skill) or in a checkout's `.state/ux-flows/`, wait until no unit is running, move the records into `<state>` and the machine-local files into `<local>`, leave a symlink at each moved path so absolute paths already recorded in checkpoints and prompts still resolve, apply the exclusions above, and commit `<state>`.
 
 ## Artifact layout and naming
 
@@ -64,7 +66,8 @@ Pick one flow key per flow: kebab-case, stable, used in every file name. `<docs>
 | Phase 9 verification record | `<state>/verification.md` |
 | Unit checkpoints and drafts | `<state>/units/<unit-key>.json`, `<state>/units/<unit-key>/` |
 | Findings, verdicts, audits, critiques | `<state>/findings/`, `<state>/patterns/` |
-| Screenshots | `<state>/shots/<unit-key>/` (never committed) |
+| Screenshots | `<local>/shots/<unit-key>/` (never committed) |
+| App instances, pinned builds, diagram tool out-dirs, logs | `<local>/` (never committed) |
 
 Add the diagram tool's delivery receipts (`<docs>/ux-flows/*.delivery.json`) to the project's ignore rules: they hold absolute local paths.
 

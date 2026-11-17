@@ -96,7 +96,7 @@ Cards keep their titles and dot colours in every diagram, so all diagrams read a
 
    ```bash
    node <archify>/bin/archify.mjs finalize workflow <docs>/ux-flows/<key>-current.json <docs>/ux-flows/<key>-current.html \
-     --repo-root <root> --quality showcase --out-dir <state>/archify/<key>-current-<n> --json
+     --repo-root <root> --quality showcase --out-dir <local>/archify/<key>-current-<n> --json
    ```
 
    The proposed spec runs the same way with `-proposed` names. Use a fresh `--out-dir` for every attempt (a new `<n>`), never inside the docs tree, where its receipts would match the regeneration glob.
@@ -117,7 +117,7 @@ Cards keep their titles and dot colours in every diagram, so all diagrams read a
 ## Rendering for inspection
 
 1. Open each render (its served docs URL, or its file URL with local file access allowed) in a browser automation session of your own, at a 1600×1000 viewport, and wait until the diagram has drawn.
-2. Hide floating viewer controls that cover labels, such as the viewer's navigation toolbar, then take a full-page screenshot to `<state>/shots/<key>/<key>-current.png` (or `-proposed.png`).
+2. Hide floating viewer controls that cover labels, such as the viewer's navigation toolbar, then take a full-page screenshot to `<local>/shots/<key>/<key>-current.png` (or `-proposed.png`).
 3. Open the image and confirm that every label is legible and the whole diagram is in the frame. Retake with a larger viewport if anything is cut off. Close the session.
 4. Never commit the images.
 
@@ -133,7 +133,7 @@ One task-runner recipe re-finalizes every spec; [publishing](publishing.md#diagr
 
 ```bash
 shopt -s nullglob
-run="$STATE/archify/regenerate-$(date +%Y%m%d-%H%M%S)"
+run="$LOCAL/archify/regenerate-$(date +%Y%m%d-%H%M%S)"
 status=0
 for spec in "$DOCS"/ux-flows/*.json; do
   case "$spec" in *.delivery*.json | *.finalize*.json) continue ;; esac
@@ -143,7 +143,7 @@ done
 exit "$status"
 ```
 
-Run it from the repository root, with `DOCS` the docs directory relative to that root, `STATE` the run's permanent state directory and `ARCHIFY` the installed Archify package.
+Run it from the repository root, with `DOCS` the docs directory relative to that root, `LOCAL` a machine-local directory outside the repository (the run's `<local>`, SKILL.md "Setup") and `ARCHIFY` the installed Archify package.
 
 ## Without Archify
 

@@ -11,7 +11,7 @@
 - [Completeness](#completeness)
 - [Salvage](#salvage)
 
-Phase 2 detail. `<state>` is the run's permanent state directory (SKILL.md "Setup") and `<skill>` is this skill's directory; run scripts from the project root as `bun <skill>/scripts/<name>.ts`. [Orchestration](orchestration.md) owns unit sizing, checkpoints, skip lists and bounded pools; this file owns what reviewers and verifiers do and what a filed finding carries. Every ticket read or write goes through the `issue-tracker` skill (SKILL.md "Setup"). Each area runs as unit `review-<area>` with the stages `review`, `verify` and `deliver`, checkpointed at `<state>/units/review-<area>.json`; re-verifying a filed ticket runs as unit `verify-<ticket>`. Units never commit: the orchestrator publishes the files they write under the commit rules in [SKILL.md](../SKILL.md#execute-the-task) "Scope boundaries".
+Phase 2 detail. `<state>` is the run's committed record directory and `<local>` its machine-local directory (SKILL.md "Setup") and `<skill>` is this skill's directory; run scripts from the project root as `bun <skill>/scripts/<name>.ts`. [Orchestration](orchestration.md) owns unit sizing, checkpoints, skip lists and bounded pools; this file owns what reviewers and verifiers do and what a filed finding carries. Every ticket read or write goes through the `issue-tracker` skill (SKILL.md "Setup"). Each area runs as unit `review-<area>` with the stages `review`, `verify` and `deliver`, checkpointed at `<state>/units/review-<area>.json`; re-verifying a filed ticket runs as unit `verify-<ticket>`. Units never commit: the orchestrator publishes the files they write under the commit rules in [SKILL.md](../SKILL.md#execute-the-task) "Scope boundaries".
 
 ## Preflight
 
@@ -36,7 +36,7 @@ Do these inline, in one context, before starting any parallel unit.
   - the roster IDs and the flows to exercise, with "exercise every flow in this brief";
   - the enumerated write permissions;
   - related existing tickets ("#N already covers X; add only new evidence");
-  - the unit's resources: app URL, browser session name, sandbox, `<state>/shots/<area>/`, `<state>/findings/<area>.json`;
+  - the unit's resources: app URL, browser session name, sandbox, `<local>/shots/<area>/`, `<state>/findings/<area>.json`;
   - recent product changes to expect, so nobody files against an older version of the app.
 - Journeys report clicks and context switches, lost state, dead ends, places the person must remember or retype IDs or paths, missing bulk affordances, and where the app should have guided them ("does the app surface problems, or must the person hunt for them?").
 
@@ -67,7 +67,7 @@ Every reviewer gets the same rules block, the product direction and owner rules 
    - `__uxr.note('text', x, y)` places a free callout.
 
    Labels state the problem ("Selection bar pushes the table down 52px"), not the element name. Boxes are fixed to the viewport: scroll first, then mark, and clear and mark again after any scroll. They attach to the topmost open `<dialog>`, so they render above modals.
-4. Save to an absolute path, `<state>/shots/<area>/NN-short-slug.png`; browser tools can ignore or misresolve relative paths.
+4. Save to an absolute path, `<local>/shots/<area>/NN-short-slug.png`; browser tools can ignore or misresolve relative paths.
 5. Open the saved image and confirm it shows the problem legibly with correctly placed boxes; recapture otherwise. Never cite an image you have not opened.
 6. Run `__uxr.clear()` before interacting again.
 
@@ -142,7 +142,7 @@ It writes `<state>/findings/<area>.verdicts.json` and validates it with `bun <sk
 - `adjusted`: any of `revisedTitle`, `revisedObserved`, `revisedSuggestion`; the final `severity` says what changed.
 - `refuted`: the notes say why.
 - `duplicate`: `duplicateOf` (a finding ID) or `existingTicket` (a ticket ID).
-- Any verdict may add `updatedScreenshots: [{path, caption}]`, absolute and existing; save the verifier's own captures as `<state>/shots/<area>/verify-NN-slug.png`.
+- Any verdict may add `updatedScreenshots: [{path, caption}]`, absolute and existing; save the verifier's own captures as `<local>/shots/<area>/verify-NN-slug.png`.
 
 Give every finding exactly one verdict. The validator does not compare the verdicts against the findings file, so check that the two ID sets match before returning.
 
@@ -150,7 +150,7 @@ Expect severity inflation: in practice most P0s drop a level on independent repr
 
 1. If the unit checkpoint `<state>/units/verify-<ticket>.json` records the verdict as recorded on the ticket, stop and return it. Otherwise resume from the checkpoint, which records each step as it completes.
 2. Read the ticket and its screenshots through `issue-tracker`, and open each screenshot.
-3. Reproduce from a clean state and capture an annotated screenshot of its own under `<state>/shots/verify-<ticket>/`. Take writes only up to their review or confirmation step and cancel; where a write is essential, write only inside a sandbox named in the verifier's brief, and undo it afterwards when the app offers undo.
+3. Reproduce from a clean state and capture an annotated screenshot of its own under `<local>/shots/verify-<ticket>/`. Take writes only up to their review or confirmation step and cancel; where a write is essential, write only inside a sandbox named in the verifier's brief, and undo it afterwards when the app offers undo.
 4. Check the cited code and write the verdict into the checkpoint: confirmed, adjusted (saying exactly what), or not reproduced, with what was done (viewport, exact inputs, what was and was not written), what was seen, the corrections (over-broad claims, claims verified only by code, backend-work corrections, overlap with other tickets) and a recommended severity.
 5. Record the verdict and its screenshots on the ticket through `issue-tracker`, then mark it recorded in the checkpoint.
 
@@ -184,7 +184,7 @@ After the first wave, one critic, with no browser, reads every coverage list, ev
 
 When units die before writing a findings file but leave screenshots or transcripts, rebuild their findings instead of re-exploring:
 
-1. Condense each dead unit's transcript into `<state>/shots/<area>/transcript-digest.md`, beside its screenshots: assistant text in full, tool calls and results clipped to a few hundred characters.
+1. Condense each dead unit's transcript into `<local>/shots/<area>/transcript-digest.md`, beside its screenshots: assistant text in full, tool calls and results clipped to a few hundred characters.
 2. Run one short agent per area with no browser and no servers. Its evidence is the area's screenshots (the primary evidence; open each before relying on it, and read annotation labels as the reviewer's problem statements), the digest (search it for annotation calls and screenshot saves rather than reading it whole) and the code.
 3. Every finding is visibly shown by at least one existing screenshot. Never invent behavior the screenshots, digest or code do not support. Aim for 6–18 findings, highest value first, within about 30 minutes.
 4. Record the result as the dead unit's `review` stage in `<state>/units/review-<area>.json`, then validate, verify, dedupe and deliver as for any unit. Requeue an area whose evidence is empty or unusable as a fresh review unit.

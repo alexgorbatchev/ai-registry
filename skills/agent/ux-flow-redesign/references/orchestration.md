@@ -16,7 +16,7 @@ Use this for every unit, parallel or sequential, whether agents, a workflow engi
 
 Run a long orchestration (a workflow run, a script or an orchestrating agent that launches units) in a process or agent thread independent of the interactive session the owner talks to: a detached or supervised run, or a separate agent thread whose lifetime does not depend on the conversation. Interrupting, compacting or restarting the conversation must not stop in-flight units; the conversation starts the run, reads its checkpoints, and resumes it with a skip list.
 
-Paths follow SKILL.md "Artifact layout and naming": working files live under `<state>/` and `<docs>` is the served docs directory. Unit keys follow SKILL.md "ID conventions". Unit prompts give every script as `bun <skill>/scripts/<name>.ts` run from the project root, with `<skill>` expanded to the skill's absolute directory and project paths relative to the project root or absolute.
+Paths follow SKILL.md "Artifact layout and naming": run records live under `<state>/` (committed), machine-local files under `<local>/`, and `<docs>` is the served docs directory. Unit keys follow SKILL.md "ID conventions". Unit prompts give every script as `bun <skill>/scripts/<name>.ts` run from the project root, with `<skill>` expanded to the skill's absolute directory and project paths relative to the project root or absolute.
 
 ## Unit design
 
@@ -43,7 +43,7 @@ Allocate resources per unit in the orchestrator, deterministically from the unit
 | Output files | its own checkpoint, handoff and artifact paths; it never touches another unit's files | overwrites between units |
 | App instance | its own port and its own preference or state store against the shared backend | one agent's saved view, sort or filter changing under another |
 | Browser session | a session named `<unit-key>-<stage>` (`review-<area>-verify`, `flow-<key>-current`), closed at the end | shared tabs, cookies and focus |
-| Screenshot directory | `<state>/shots/<unit-key>/` | name collisions and evidence that cannot be traced to its unit |
+| Screenshot directory | `<local>/shots/<unit-key>/` | name collisions and evidence that cannot be traced to its unit |
 | Data sandbox | named records it may write, with enumerated limits | writes that corrupt other units' evidence |
 | Diagram output directory | a fresh numbered directory per validation attempt (`<key>-<stage>-<n>`) | concurrent renders and stale receipts colliding |
 
@@ -64,7 +64,7 @@ Every unit prompt contains, in this order:
    - recent product changes to expect, so agents do not report against stale assumptions;
    - owner-settled intent stated as prohibitions (illustrative, for a reporting app: "Never treat an export that includes archived reports as a defect; that is intended");
    - the write boundary: read-only except the files the task names; no pushes, and no commits except shape D's deliver stage; no tracker changes except the delivery step (see **Ownership**);
-   - where evidence goes: every screenshot and other evidence file under the unit's absolute `<state>/shots/<unit-key>/` path, never in a checkout (the main checkout's root or a worktree), because browser tools resolve a relative path against their own working directory.
+   - where evidence goes: every screenshot and other evidence file under the unit's absolute `<local>/shots/<unit-key>/` path, never in a checkout (the main checkout's root or a worktree), because browser tools resolve a relative path against their own working directory.
 2. **Unit brief:** scope with roster IDs, every flow or journey end state to exercise, evidence locations, existing tickets it overlaps ("already covers X; add only new evidence"), and prior titles not to duplicate.
 3. **Safety and write limits:** enumerated and countable ("apply at most 4 imports", "preview only, never apply moves or deletions", "merge at most 2 groups, then undo one"). Reads and previews are allowed anywhere. Never install or upgrade tools, change server settings, edit repository files outside named outputs, run state-changing Git commands, or start, stop or restart services.
 4. **Evidence standard:** observe in the running app first, then read the code and cite `path:line`; pin the revision; mark every pain point with its finding, cited as SKILL.md "ID conventions" says; open every screenshot and confirm it shows the problem legibly before citing it. Phase details are in [review](review.md) and [diagrams](diagrams.md).

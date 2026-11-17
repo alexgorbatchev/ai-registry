@@ -112,8 +112,8 @@ Read [proposals and tickets](references/proposals-and-tickets.md) (Priority, Sto
 
 - **Inputs:** the flow table, the filed findings and their verdicts.
 - **Do:** Group findings by flow. For a flow that will be reworked, plan one redesign ticket that absorbs its findings: each covered finding becomes acceptance evidence for the redesign instead of separate patch work. Name the foundation redesigns (cross-cutting flows the others build on). Allow standalone stopgaps only for bugs that damage data now; their fix matches what the redesign specifies. Once redesign tickets exist, apply the [tracker restructure](references/proposals-and-tickets.md#tracker-restructure).
-- **Output:** `<state>/ux-flows/assignments.md`: each finding assigned to one redesign, a stopgap, or "patch, no redesign".
-- **Gate:** no finding is orphaned or claimed by two redesigns; partial covers state which slice each ticket owns.
+- **Output:** `<state>/ux-flows/assignments.md`: each finding assigned to one redesign, a stopgap, work another worker has already claimed, or "patch, no redesign".
+- **Gate:** no finding is orphaned or assigned to two redesigns; partial covers state which slice each ticket owns.
 
 ### Phase 4: Diagram today's flows from code
 
@@ -157,7 +157,7 @@ Read [orchestration](references/orchestration.md) (shape D), [pattern reference]
 
 - **Inputs:** the reference revision current at the run's start and its per-flow conformance lists, every flow artifact, the owner's answers. Integration re-checks the flows against the reference as it stands on the target branch when it lands.
 - **Do:** Per flow: reconcile the proposal, wireframe and proposed diagram spec with the reference (with before and after screenshots; the spec validated, not rendered); two independent reviewers check it, one for reference conformance and consistency across the flow's artifacts, one for the design language and rendering; fix, re-checking only blockers and majors, for at most two rounds; then deliver it with any unresolved issues listed: retake the after screenshots, commit only its files on a run branch in a dedicated worktree without pushing it, regenerate the ticket's criteria and covers from the proposal, list the unresolved issues on it, and apply the tracker restructure for the flow. After all flows, one integration step rebases onto the target branch, re-checks the flows a reference change since the run's base affects, regenerates every changed diagram once, re-renders and re-uploads the ticket images of those diagrams, updates the shared index files and the reference's reconciliation ledger, runs the checks, lands and deletes the run branch; a completeness critic then checks every flow. Carry every reversal to every artifact that stated it, and search all artifacts for wording of the superseded framing.
-- **Output:** conformed artifacts; an empty or decided conflicts list on the wireframe index; one ledger line per flow in the reference's per-flow conformance section.
+- **Output:** conformed artifacts; the wireframe index's conflicts list replaced by its decision-log pointer once every conflict is settled; one ledger line per flow in the reference's per-flow conformance section.
 - **Gate:** the critic reports every flow complete; every conformance item is done or recorded as an exception in the reference; unresolved review issues are listed on their tickets, in the ledger and in the report; every ticket image of a regenerated diagram records the landed spec's blob.
 
 ### Phase 9: Publish and verify

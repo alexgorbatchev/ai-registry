@@ -255,7 +255,7 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
 
 - Header: `nav.top` with `← Documentation index` (`/`), the `h1`, and one paragraph saying there is one page per flow and that the redesign tickets are authoritative.
 - `h2` "Shared patterns" with a paragraph linking `patterns.html` and `../patterns.md`.
-- `<h2 id="conflicts">Conflicts to settle before building</h2>` with a `.card.warn` list of every cross-flow disagreement found while drawing, one item each: `<li><b>Topic.</b> what one flow does (link to its page or step); what the other does (link).</li>`. An entry leaves the list when the pattern reference decides it; with none open, keep the heading and write "None open." Every "Open conflict" banner links `index.html#conflicts`, so never rename the id.
+- `<h2 id="conflicts">Conflicts to settle before building</h2>` with a `.card.warn` list of every cross-flow disagreement found while drawing, one item each: `<li><b>Topic.</b> what one flow does (link to its page or step); what the other does (link).</li>`. An entry leaves the list when the pattern reference decides it and its decision log records the outcome. Once none is open, replace the `.card.warn` list with a pointer to that log, keeping the heading: `<p>None open. Each settled conflict is recorded in the <a href="patterns.html#decision-log">decision log</a>.</p>`. Every "Open conflict" banner links `index.html#conflicts`, so never rename the id.
 - One `h2` per flow group, each followed by a `.grid` of cards:
 
   ```html

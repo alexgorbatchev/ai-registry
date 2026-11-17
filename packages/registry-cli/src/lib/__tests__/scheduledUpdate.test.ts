@@ -39,7 +39,19 @@ async function createRepository() {
   await Bun.write(join(remotePath, ".gitignore"), ".tmp/\n.state/\n");
   await Bun.write(join(remotePath, "content.txt"), "initial\n");
   await Bun.write(join(remotePath, "local.txt"), "initial\n");
-  await Bun.write(join(remotePath, "justfile"), "bootstrap *args:\n    bun bootstrap.ts {{args}}\n");
+  await Bun.write(join(remotePath, ".cronrc"), "*/5 * * * * just scheduled-update\n");
+  await Bun.write(
+    join(remotePath, "justfile"),
+    [
+      "bootstrap *args:",
+      "    bun bootstrap.ts {{args}}",
+      "",
+      "cron-enable:",
+      "    test ! -e .tmp/bootstrap-count",
+      "    mkdir -p .tmp && echo approved > .tmp/cron-enable",
+      "",
+    ].join("\n"),
+  );
   await Bun.write(
     join(remotePath, "bootstrap.ts"),
     [
@@ -129,6 +141,24 @@ describe("scheduledUpdate", () => {
     expect(await Bun.file(join(repositoryPath, ".tmp/hook-ran")).exists()).toBe(false);
     expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("2");
+  });
+
+  it("approves a pulled .cronrc change before bootstrapping", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    await Bun.write(join(remotePath, ".cronrc"), "*/30 * * * * just scheduled-update\n");
+    await run(remotePath, ["git", "commit", "-am", "schedule"]);
+
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
+    expect(await Bun.file(join(repositoryPath, ".tmp/cron-enable")).text()).toBe("approved\n");
+    expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
+  });
+
+  it("leaves the schedule approval alone when the pull does not change .cronrc", async () => {
+    const { remotePath, repositoryPath } = await createRepository();
+    await advanceRemote(remotePath);
+
+    expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
+    expect(await Bun.file(join(repositoryPath, ".tmp/cron-enable")).exists()).toBe(false);
   });
 
   it("skips the pull and bootstraps when uncommitted edits would conflict", async () => {

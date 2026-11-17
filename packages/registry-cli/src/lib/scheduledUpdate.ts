@@ -30,6 +30,17 @@ function createRunner(repositoryRoot: string, bunExecutable: string): IScheduled
   };
 }
 
+// cron-person approves this checkout's `.cronrc` by hash, so a pulled schedule change
+// would block every later run on this machine until someone approves it there. The job
+// already runs whatever code it pulls, so it approves a pulled change itself and
+// reinstalls the crontab before anything else can fail.
+async function approvePulledSchedule(before: string, run: IScheduledUpdateRunner): Promise<void> {
+  const changedPaths = await run(["git", "diff", "--name-only", before, "HEAD", "--", ".cronrc"], true);
+  if (changedPaths === "") return;
+  console.log("Approving the pulled .cronrc change and reinstalling the crontab...");
+  await run(["just", "cron-enable"]);
+}
+
 export async function scheduledUpdate(
   repositoryRoot: string,
   bunExecutable: string,
@@ -37,6 +48,9 @@ export async function scheduledUpdate(
 ): Promise<IScheduledUpdateResult> {
   const before = await run(["git", "rev-parse", "HEAD"], true);
   const hasPulled = await pullWithRebase(repositoryRoot, before, run);
+  if (hasPulled) {
+    await approvePulledSchedule(before, run);
+  }
   // Bootstrap on every run, not only after incoming commits: the build also syncs
   // settings the harnesses changed on this machine, leaving those edits uncommitted.
   await run(["just", "bootstrap", "-y"]);

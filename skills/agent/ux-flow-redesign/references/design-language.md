@@ -174,7 +174,7 @@ The caption (`.cap`):
 - `h2` reads "N. Step name", where N is the step's position on the page.
 - An optional `<p>` summary follows.
 - An `ol` follows, one `<li>` per callout, each starting with `<span class="n">k</span>`. Numbering restarts at 1 in each step. Place the same marker in the mockup next to the thing it explains. Every number in the mockup has exactly one explanation in the caption, and every explanation has a marker in the mockup (`callout`).
-- `p.fixes` ends the caption: "Fixes" with the findings this step resolves, cited as SKILL.md "ID conventions" says, then the backend work it needs.
+- `p.fixes` ends the caption: "Fixes" with the findings this step resolves, cited as SKILL.md "ID conventions" says, then "·" and the backend work it needs. Across the page, the Fixes lines cite exactly the findings under the redesign ticket's `Resolves:` ([Tickets resolved](proposals-and-tickets.md#the-proposal)): no related finding, and none left out. Check it with `bun <skill>/scripts/ticket-criteria.ts fixes <docs>/ux-flows/wireframes/<key>.html <ticket body file>`, or against the proposal while no ticket is filed.
 
 Each step must make sense alone, because owners screenshot and question single steps:
 

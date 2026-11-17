@@ -7,10 +7,10 @@
 import { extname } from "node:path";
 
 const STYLE =
-  ':root{--font:"Maple Mono Normal NF","Maple Mono Normal","Maple Mono NF","Maple Mono",ui-monospace,monospace}' +
+  ':root{color-scheme:dark;--font:"Maple Mono Normal NF","Maple Mono Normal","Maple Mono NF","Maple Mono",ui-monospace,monospace}' +
   "code,pre,samp,kbd{font-family:inherit}" +
-  "body{font:14px/1.55 var(--font);max-width:80rem;margin:2rem auto;padding:0 1rem;color:#1f2328;background:#fff}" +
-  "th,td{text-align:left;padding:.35rem .8rem}table{border-collapse:collapse}tr{border-bottom:1px solid #ddd}code{font-size:.9em}";
+  "body{font:14px/1.55 var(--font);max-width:80rem;margin:2rem auto;padding:0 1rem;color:#e6edf3;background:#0d1117}a{color:#4493f8}" +
+  "th,td{text-align:left;padding:.35rem .8rem}table{border-collapse:collapse}tr{border-bottom:1px solid #3d444d}code{font-size:.9em}";
 
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",

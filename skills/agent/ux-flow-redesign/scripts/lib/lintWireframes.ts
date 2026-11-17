@@ -60,7 +60,7 @@ const CONVENTIONS: { name: string; used: (element: HtmlElement) => boolean; lege
 ];
 
 /** A legend swatch drawn in the stylesheet's red (`--bad`, `--badbg`). */
-const RED_SWATCH = /var\(--bad(bg)?\)|#b91c1c|#fdecec/i;
+const RED_SWATCH = /var\(--bad(bg)?\)|#f85149|#33161a/i;
 /** What red marks in mockups; a legend entry that explains red names each meaning the mockups use. */
 const RED_MEANINGS: { name: string; used: (element: HtmlElement) => boolean; legend: RegExp }[] = [
   {

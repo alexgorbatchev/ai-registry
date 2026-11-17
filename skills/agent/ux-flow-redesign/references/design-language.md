@@ -39,27 +39,40 @@ A wireframe page is low-fidelity static HTML that lets the owner understand a pr
 - Page-specific rules go in the page's own short `<style>` after the link. A rule that a second page needs belongs in the stylesheet, because page-local copies drift apart.
 - Never redefine the stylesheet's top-level `:root` tokens in a page (`token-redefined`). Change a token in the stylesheet, which changes every page, then lint the whole folder and screenshot every page.
 - `--key-h` is deliberately not a top-level token: it is set only inside media queries, so a page whose key band differs may set its own value (the pattern page does). Keep it out of the top-level `:root` block.
-- The legend swatches repeat four hard-coded colors from the stylesheet: toast `#1f2328`, popover border `#9aa3af`, backdrop `#2b30381f`, panel `#fafbfc`. Changing one in the stylesheet means changing the swatch on every page.
+- Pages are dark. Every color is a stylesheet token: page `<style>` rules, inline styles and legend swatches use `var(--…)`, not color literals, so a palette change in the stylesheet reaches every page.
+- The scaffolder never overwrites `wireframe.css`, so a folder scaffolded before the dark palette keeps light colors, and its stylesheet lacks the tokens the current legend uses. Before adding or editing a page there, replace `wireframe.css` with the template, replace each page's legend with the [Legend](#legend) block, change color literals in page `<style>` blocks to tokens, then lint the folder and screenshot every page.
 - Serve the pages as [publishing](publishing.md) describes; it owns the server requirements, including the stylesheet's content type.
 
 ## Tokens
 
-The stylesheet's top-level `:root` defines:
+The stylesheet's top-level `:root` sets `color-scheme: dark` and defines:
 
 | Token | Value | Used for |
 | --- | --- | --- |
 | `--font` | `"Maple Mono Normal NF", "Maple Mono Normal", "Maple Mono NF", "Maple Mono", ui-monospace, monospace` | every font family |
-| `--ink` | `#1f2328` | body text, bold labels |
-| `--mute` | `#6b7280` | secondary text, field labels, legend text, `.fixes` lines |
-| `--line` | `#c9ced6` | borders and dividers |
-| `--bg` | `#f6f7f9` | page background |
-| `--card` | `#fff` | header, key band, windows, cards |
-| `--acc` | `#2563eb` | links, primary buttons, row-cursor bar, `.open` outline, edited fields, accent chips and banners |
-| `--accbg` | `#e8efff` | selected rows, current navigation item, info banners, accent chips |
-| `--warn`, `--warnbg` | `#9a4a00`, `#fff4e0` | warning chips and banners (the default `.banner`), conflict cards |
-| `--bad`, `--badbg` | `#b91c1c`, `#fdecec` | destructive buttons and menu items, invalid fields, error chips and banners, `del` |
-| `--ok`, `--okbg` | `#15803d`, `#e3f5e9` | just-changed tint, success chips and banners, `ins` |
-| `--note` | `#e11d48` | numbered callout markers |
+| `--ink` | `#e6edf3` | body text, bold labels |
+| `--mute` | `#9198a1` | secondary text, field labels, legend text, `.fixes` lines |
+| `--faint` | `#656c76` | dimmed rows |
+| `--line` | `#3d444d` | borders and dividers |
+| `--rule` | `#262c36` | row and menu dividers, chip fill |
+| `--bg` | `#0d1117` | page background |
+| `--card` | `#161b22` | header, key band, windows, cards, `.box`, the current tab |
+| `--bar` | `#21262d` | window title bar, buttons, `kbd`, reference-table headers |
+| `--panel` | `#1c222b` | docked panel |
+| `--raised`, `--edge` | `#1f2630`, `#6e7681` | popover, menu and dialog surface and its border and caret |
+| `--field` | `#0d1117` | input fields |
+| `--scrim` | `#01040999` | dimmed backdrop behind a dialog |
+| `--acc` | `#4493f8` | links, primary buttons, row-cursor bar, `.open` outline, edited fields, accent chips and banners |
+| `--accbg` | `#172b49` | selected rows, current navigation item, info banners, accent chips |
+| `--selbar` | `#12213a` | selection bar, reference-table group rows |
+| `--onfill` | `#0d1117` | text on primary and destructive buttons |
+| `--warn`, `--warnbg`, `--warnline` | `#d29922`, `#2d2410`, `#6c5216` | warning chips and banners (the default `.banner`), conflict and decision cards and their borders |
+| `--bad`, `--badbg` | `#f85149`, `#33161a` | destructive buttons and menu items, invalid fields, error chips and banners, `del` |
+| `--ok`, `--okbg` | `#3fb950`, `#13301d` | just-changed tint, success chips and banners, `ins` |
+| `--note` | `#e11d48` | numbered callout markers (white text) |
+| `--toast`, `--toastink`, `--toastlink` | `#d1d9e0`, `#0d1117`, `#0550ae` | the inverse toast, its text and links |
+
+Text pairs meet WCAG AA (4.5:1) on the surfaces they are drawn on, except `--faint`, which marks dimmed rows on purpose. A new or changed token keeps that: check its contrast against each surface it sits on.
 
 Font rules:
 
@@ -126,13 +139,13 @@ Copy this block verbatim into every page with mockups (each flow page and the pa
 
 ```html
 <div class="legend"><b style="color:var(--ink)">How to read:</b>
-<span><i class="k" style="background:#1f2328;border-color:#1f2328"></i>Toast: passing status message in a corner, links only, no decisions</span>
-<span><i class="k" style="background:#fff;border-color:#9aa3af;box-shadow:0 2px 6px #0003"></i>Popover or menu: opens from the outlined control its arrow points at</span>
-<span><i class="k" style="background:#fafbfc;box-shadow:inset 3px 0 var(--line)"></i>Panel: docked beside the table, stays open</span>
-<span><i class="k" style="background:#2b30381f"></i>Dimmed backdrop: dialog that blocks the page</span>
+<span><i class="k" style="background:var(--toast);border-color:var(--toast)"></i>Toast: passing status message in a corner, links only, no decisions</span>
+<span><i class="k" style="background:var(--raised);border-color:var(--edge);box-shadow:0 2px 6px #0009"></i>Popover or menu: opens from the outlined control its arrow points at</span>
+<span><i class="k" style="background:var(--panel);box-shadow:inset 3px 0 var(--line)"></i>Panel: docked beside the table, stays open</span>
+<span><i class="k" style="background:var(--scrim)"></i>Dimmed backdrop: dialog that blocks the page</span>
 <span><i class="k" style="background:var(--accbg)"></i>Selected rows</span>
 <span><i class="k" style="background:var(--okbg)"></i>Just changed</span>
-<span><i class="k" style="background:#fff;box-shadow:inset 3px 0 var(--acc)"></i>Row cursor</span>
+<span><i class="k" style="background:var(--card);box-shadow:inset 3px 0 var(--acc)"></i>Row cursor</span>
 <span><span class="n">1</span>Callout, explained on the right</span></div>
 ```
 
@@ -187,8 +200,8 @@ The legend's conventions:
 
 | Convention | Meaning | Markup | Rules |
 | --- | --- | --- | --- |
-| Toast | passing status after something finished | `.toastrow > .toast`: a dark inverse box in the window's bottom corner; one sentence, then `<a>` links | Links only (for example Undo, Show). Never a decision: no `.btn`, `button`, `input` or `select` (`toast-action`). Never a list someone must keep, such as failure details, because it disappears. Never covering a primary action. |
-| Popover or menu | a small surface opened from a control | `.popover` (plus `.menu` for menus), a light outlined card whose first child is its caret: `<i class="caret-dn">` when it sits above its trigger, `caret-up` when below, `caret-lf` when it opens to the trigger's right (a submenu beside its parent row) and `caret-rt` when to its left; then a `.from` line naming its opener, for example "Opened from Finance ▾ in the footer" | Every popover, menu and submenu keeps its caret (`popover-caret`); a `.menu` inside a `.popover` card uses the card's. Draw the trigger in the same `.win` with the `.open` outline (`popover-trigger`); a submenu's trigger is its parent row. Place the popover next to its trigger without covering it. Position the caret so it points at the trigger's center: for `caret-dn` and `caret-up`, inline `left` or `right` = trigger center − popover edge − 6 px (half the 12 px caret); for side carets, inline `top` the same way. Measure both rectangles in a browser; do not guess. |
+| Toast | passing status after something finished | `.toastrow > .toast`: a light inverse box in the window's bottom corner; one sentence, then `<a>` links | Links only (for example Undo, Show). Never a decision: no `.btn`, `button`, `input` or `select` (`toast-action`). Never a list someone must keep, such as failure details, because it disappears. Never covering a primary action. |
+| Popover or menu | a small surface opened from a control | `.popover` (plus `.menu` for menus), a raised outlined card whose first child is its caret: `<i class="caret-dn">` when it sits above its trigger, `caret-up` when below, `caret-lf` when it opens to the trigger's right (a submenu beside its parent row) and `caret-rt` when to its left; then a `.from` line naming its opener, for example "Opened from Finance ▾ in the footer" | Every popover, menu and submenu keeps its caret (`popover-caret`); a `.menu` inside a `.popover` card uses the card's. Draw the trigger in the same `.win` with the `.open` outline (`popover-trigger`); a submenu's trigger is its parent row. Place the popover next to its trigger without covering it. Position the caret so it points at the trigger's center: for `caret-dn` and `caret-up`, inline `left` or `right` = trigger center − popover edge − 6 px (half the 12 px caret); for side carets, inline `top` the same way. Measure both rectangles in a browser; do not guess. |
 | Docked panel | a panel beside the table that stays open while people keep working | `.app.dock3` with a `.dock` column: `h3`, `.fld` rows, `.ft` footer | Footer: Cancel, then the effect-named primary button. |
 | Dimmed backdrop | a dialog that blocks the page | `.scrim` holding `.dlg` with `.hd` (an `h3`), `.body` and `.ft` | Use only for blocking dialogs, never for panels or popovers. |
 | Selected rows | rows in the selection | `tr.sel` | |

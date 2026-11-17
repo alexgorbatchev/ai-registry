@@ -168,6 +168,16 @@ describe("legend colors", () => {
     ).toEqual([]);
   });
 
+  test("treats a swatch drawn with the palette's literal red as a red entry", () => {
+    for (const red of ["#f85149", "#33161a"]) {
+      const legend = RED("Red: destructive action").replace("var(--bad)", red);
+      expect(rules(lintPage(`${legend}${MOCKUP}`, { name: "patterns.html" }))).toEqual([
+        "error legend-color",
+        "error legend-color",
+      ]);
+    }
+  });
+
   test("checks only the meanings a page uses, and pages without a red entry", () => {
     const destructiveOnly =
       '<section class="step"><div class="win"><span class="btn danger">Delete</span></div><div class="cap"><h2>1. S</h2></div></section>';

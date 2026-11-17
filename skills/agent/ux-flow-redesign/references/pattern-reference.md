@@ -29,7 +29,7 @@ Prepend the run's shared context block, shaped as in [the unit prompt](orchestra
 - The problem: N flows are about to be designed in parallel with no shared reference, or N flows were designed independently and now disagree on selection, menus, surfaces, review, feedback, undo, keyboard and wording.
 - The inputs: the flow table, findings, current-flow diagrams, proposals, wireframes, code directories, the backend API's documentation and implementation, and the component library's capability index, naming every irregularity, such as a flow with no wireframe yet.
 - The seeds: the wireframe index's conflicts list, marked "seeds, not the full list".
-- For critics, skeptics and later agents: the reference's path and current revision, and `<state>/ux-flows/patterns/`, which holds the audit and critique files.
+- For critics, skeptics and later agents: the reference's path and current revision, and `<state>/patterns/`, which holds the audit and critique files.
 
 ## Audits
 
@@ -40,7 +40,7 @@ Run one unit per dimension. Name each dimension with one lowercase word; the val
 - **`feedback`: progress, outcome and undo.** In-place progress (row state, panel, toast); what a toast may contain; outcome sentences; partial results and per-item failure details; the jobs page and any activity menu; undo entry points (toast, Mod+Z, job page, history row, per-item history); clean undo versus conflict review; history rows; backups and checkpoints.
 - **`surfaces`: surface types and layout.** When to use a popover, menu, docked panel, side sheet, modal dialog, full page or toast; panel side and width, and how panels coexist with the main table and any persistent context; tool page layout (input, plan, run, receipt); a command palette; where tools sit in navigation; where results and receipts live; how write-blocking and failure banners appear; which component-library primitive and project dialog contract each maps to.
 - **`keyboard`: the complete keyboard map.** Every letter, digit, function-key and modifier shortcut in every flow; its scope (global, table, panel, sheet, dialog, editor or mode); every collision; the app's existing shortcuts; any contract that drives shortcut hints and handlers from one command definition; suspension in text entry, menus and dialogs.
-- **`language`: language, naming and states.** Starts from the Vocabulary table in `<state>/ux-flows/flows.md` (owner terms, UI labels, code identifiers). Names for the same operation across flows ("Export report" versus "Download report"); count formats in buttons and notifications; destination defaults; nouns (folder versus collection); status chips and verdict wording; empty, loading and error states; how messages follow the project's error-message rules.
+- **`language`: language, naming and states.** Starts from the Vocabulary table in `<state>/flows.md` (owner terms, UI labels, code identifiers). Names for the same operation across flows ("Export report" versus "Download report"); count formats in buttons and notifications; destination defaults; nouns (folder versus collection); status chips and verdict wording; empty, loading and error states; how messages follow the project's error-message rules.
 
 Add a project-specific dimension when two or more flows depend on a concern none of these covers, such as something that can block writes (another application holding the data, read-only permission, offline), or a persistent context people keep across views (in an illustrative reporting app, a live preview pane).
 
@@ -52,7 +52,7 @@ Each audit:
 - Records the current app's behavior with `path:line` evidence; every position with the flows holding it and a citation (proposal section or step, ticket, diagram step); silent flows, which need the decision but never state it; optional benchmarks (how the best tools of the domain do it, as evidence, not requirements); optional notes.
 - Lists coverage gaps: questions in scope that no input answers, such as "no flow defines what counts as destructive".
 
-Write `<state>/ux-flows/patterns/audit-<dimension>.json`. Illustrative content:
+Write `<state>/patterns/audit-<dimension>.json`. Illustrative content:
 
 ```json
 {
@@ -77,7 +77,7 @@ Write `<state>/ux-flows/patterns/audit-<dimension>.json`. Illustrative content:
 }
 ```
 
-Validate it with `bun <skill>/scripts/validate-handoff.ts audit <state>/ux-flows/patterns/audit-<dimension>.json`; fix and rerun at most three times, and handle an environment-caused failure as [Scripts](../SKILL.md#scripts) says. When an audit fails and cannot be rerun, the author continues without it, reads the flows directly for that dimension, and names the gap in the status line's inputs.
+Validate it with `bun <skill>/scripts/validate-handoff.ts audit <state>/patterns/audit-<dimension>.json`; fix and rerun at most three times, and handle an environment-caused failure as [Scripts](../SKILL.md#scripts) says. When an audit fails and cannot be rerun, the author continues without it, reads the flows directly for that dimension, and names the gap in the status line's inputs.
 
 ## Synthesis
 
@@ -178,7 +178,7 @@ Run three critics in parallel on the complete first draft. Each gets the shared 
 - **Accessibility and keyboard** (`A11Y`): focus order and return; screen-reader semantics for toasts, menus, sheets and dialogs; keyboard collisions and suspension in text entry, menus and dialogs; whether every flow can be completed without a pointer.
 - **Feasibility and contracts** (`ENG`): does each pattern fit the project's architecture contracts (state management, data fetching, component library, confirmation rules, error-message rules, never replaying writes, backend ownership) and what the backend API can actually do (name its documentation)? Flag contract changes missing from 2.14 and backend work no pattern names.
 
-Every critic spot-checks the reference's claims against the proposals, the audit files and the code, reports concrete issues only, each with evidence and a specific fix, and edits no file. It writes `<state>/ux-flows/patterns/critique-<lens>.json`:
+Every critic spot-checks the reference's claims against the proposals, the audit files and the code, reports concrete issues only, each with evidence and a specific fix, and edits no file. It writes `<state>/patterns/critique-<lens>.json`:
 
 ```json
 {

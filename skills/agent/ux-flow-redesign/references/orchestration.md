@@ -16,7 +16,7 @@ Use this for every unit, parallel or sequential, whether agents, a workflow engi
 
 Run a long orchestration (a workflow run, a script or an orchestrating agent that launches units) in a process or agent thread independent of the interactive session the owner talks to: a detached or supervised run, or a separate agent thread whose lifetime does not depend on the conversation. Interrupting, compacting or restarting the conversation must not stop in-flight units; the conversation starts the run, reads its checkpoints, and resumes it with a skip list.
 
-Paths follow SKILL.md "Artifact layout and naming": working files live under `<state>/ux-flows/` and `<docs>` is the served docs directory. Unit keys follow SKILL.md "ID conventions". Unit prompts give every script as `bun <skill>/scripts/<name>.ts` run from the project root, with `<skill>` expanded to the skill's absolute directory and project paths relative to the project root or absolute.
+Paths follow SKILL.md "Artifact layout and naming": working files live under `<state>/` and `<docs>` is the served docs directory. Unit keys follow SKILL.md "ID conventions". Unit prompts give every script as `bun <skill>/scripts/<name>.ts` run from the project root, with `<skill>` expanded to the skill's absolute directory and project paths relative to the project root or absolute.
 
 ## Unit design
 
@@ -43,7 +43,7 @@ Allocate resources per unit in the orchestrator, deterministically from the unit
 | Output files | its own checkpoint, handoff and artifact paths; it never touches another unit's files | overwrites between units |
 | App instance | its own port and its own preference or state store against the shared backend | one agent's saved view, sort or filter changing under another |
 | Browser session | a session named `<unit-key>-<stage>` (`review-<area>-verify`, `flow-<key>-current`), closed at the end | shared tabs, cookies and focus |
-| Screenshot directory | `<state>/ux-flows/shots/<unit-key>/` | name collisions and evidence that cannot be traced to its unit |
+| Screenshot directory | `<state>/shots/<unit-key>/` | name collisions and evidence that cannot be traced to its unit |
 | Data sandbox | named records it may write, with enumerated limits | writes that corrupt other units' evidence |
 | Diagram output directory | a fresh numbered directory per validation attempt (`<key>-<stage>-<n>`) | concurrent renders and stale receipts colliding |
 
@@ -64,7 +64,7 @@ Every unit prompt contains, in this order:
    - recent product changes to expect, so agents do not report against stale assumptions;
    - owner-settled intent stated as prohibitions (illustrative, for a reporting app: "Never treat an export that includes archived reports as a defect; that is intended");
    - the write boundary: read-only except the files the task names; no pushes, and no commits except shape D's deliver stage; no tracker changes except the delivery step (see **Ownership**);
-   - where evidence goes: every screenshot and other evidence file under the unit's absolute `<state>/ux-flows/shots/<unit-key>/` path, never in a checkout (the main checkout's root or a worktree), because browser tools resolve a relative path against their own working directory.
+   - where evidence goes: every screenshot and other evidence file under the unit's absolute `<state>/shots/<unit-key>/` path, never in a checkout (the main checkout's root or a worktree), because browser tools resolve a relative path against their own working directory.
 2. **Unit brief:** scope with roster IDs, every flow or journey end state to exercise, evidence locations, existing tickets it overlaps ("already covers X; add only new evidence"), and prior titles not to duplicate.
 3. **Safety and write limits:** enumerated and countable ("apply at most 4 imports", "preview only, never apply moves or deletions", "merge at most 2 groups, then undo one"). Reads and previews are allowed anywhere. Never install or upgrade tools, change server settings, edit repository files outside named outputs, run state-changing Git commands, or start, stop or restart services.
 4. **Evidence standard:** observe in the running app first, then read the code and cite `path:line`; pin the revision; mark every pain point with its finding, cited as SKILL.md "ID conventions" says; open every screenshot and confirm it shows the problem legibly before citing it. Phase details are in [review](review.md) and [diagrams](diagrams.md).
@@ -74,7 +74,7 @@ Every unit prompt contains, in this order:
    CHECKPOINT (mandatory; agents in this run can be killed at any moment and restarted from this prompt): <files> record your progress. Read them first. If they exist, keep everything they record and continue with work they do not record; never start over. If your stage is already "done" and its output files exist, return immediately with their paths. After each finding, decision or step, rewrite the complete file so it is valid on every write. Keep entries compact so rewrites stay cheap. If you cannot finish, set "status": "blocked" in your checkpoint with "blocker" (the cause and its evidence) and "unblock" (the exact condition and next action) before returning.
    ```
 
-6. **Handoff file and validator:** the exact path and command, for example `bun <skill>/scripts/validate-handoff.ts findings <state>/ux-flows/findings/<area>.json --feature-pattern '<roster ID regex>'`, with "fix the file and rerun until it prints OK, at most three times; if it still fails, return the validator output, in `environmentIssues` when the environment caused the failure (for example, screenshots could not be captured)". The orchestrator marks such a unit failed for re-queue.
+6. **Handoff file and validator:** the exact path and command, for example `bun <skill>/scripts/validate-handoff.ts findings <state>/findings/<area>.json --feature-pattern '<roster ID regex>'`, with "fix the file and rerun until it prints OK, at most three times; if it still fails, return the validator output, in `environmentIssues` when the environment caused the failure (for example, screenshots could not be captured)". The orchestrator marks such a unit failed for re-queue.
 7. **Environment-issue channel:** an `environmentIssues` field in the return for setup problems (service down, sandbox missing, isolation artifacts). They never become findings, and the agent never repairs shared services itself.
 8. **Delivery step:** in the last agent of the unit's pipeline (the verifier of a review unit, the package stage of a flow), only when tickets are in scope and after its handoff validates: file through `issue-tracker` and record each ticket ID in the checkpoint (see **Delivery**).
 9. **Budget:** about 30 minutes, with the target count, and "prefer fewer strong results over many weak ones".
@@ -84,7 +84,7 @@ Handoff fields are owned by each kind's reference and enforced by the validator'
 
 ## Checkpoints and resume
 
-Give every unit one durable checkpoint, `<state>/ux-flows/units/<unit-key>.json`, with a `status` of `pending`, `in-progress`, `done`, `blocked` or `failed`, and its drafts in `<state>/ux-flows/units/<unit-key>/`. A blocked or failed unit also records `blocker` and `unblock` (see **Failures**). A `committed` field holds the commit that published a stage's repository edits (the orchestrator's, except in shape D's deliver stage), or why they stay uncommitted when the project's Git workflow does not authorize the commit; a stage that edited repository files is done only once it is set.
+Give every unit one durable checkpoint, `<state>/units/<unit-key>.json`, with a `status` of `pending`, `in-progress`, `done`, `blocked` or `failed`, and its drafts in `<state>/units/<unit-key>/`. A blocked or failed unit also records `blocker` and `unblock` (see **Failures**). A `committed` field holds the commit that published a stage's repository edits (the orchestrator's, except in shape D's deliver stage), or why they stay uncommitted when the project's Git workflow does not authorize the commit; a stage that edited repository files is done only once it is set.
 
 - A review unit (`review-<area>`) records the status of its `review`, `verify` and `deliver` stages; their work lives in the findings file, the verdicts file and the checkpoint's `tickets` map (finding ID to ticket ID; a merged finding maps to its survivor's ticket), each rewritten after every finding, verdict or filed ticket.
 - An audit or critique unit keeps its work in its handoff file, rewritten after each decision or issue; its checkpoint holds the status.
@@ -138,9 +138,9 @@ Use for Phase 2. Each unit's verifier starts as soon as its review returns, with
 ```text
 units = review-<area> for each roster slice and end-to-end journey - skip
 pool(units, n, unit =>
-  review(unit)  -> <state>/ux-flows/findings/<area>.json            # checkpointed; validate findings
+  review(unit)  -> <state>/findings/<area>.json            # checkpointed; validate findings
   if no findings: return {unit, count: 0, coverage}
-  verify(unit)  -> <state>/ux-flows/findings/<area>.verdicts.json   # reproduces every P0 and P1; validate verdicts
+  verify(unit)  -> <state>/findings/<area>.verdicts.json   # reproduces every P0 and P1; validate verdicts
   deliver(unit) -> tickets through issue-tracker; IDs in units/review-<area>.json)
 after wave 1: critic(coverage, titles, filed tickets, roster) -> gap units -> same pipeline
 dedupe(units that exist) -> duplicates recorded on delivered tickets
@@ -175,10 +175,10 @@ Use for Phase 5, before any parallel design, and as recovery when flows were alr
 
 ```text
 factcheck = start parallel(P0 claims x angles, skeptic)              # joined at the end
-audits    = parallel(dimensions - skip, d => audit(d) -> <state>/ux-flows/patterns/audit-<d>.json)   # validate audit
+audits    = parallel(dimensions - skip, d => audit(d) -> <state>/patterns/audit-<d>.json)   # validate audit
 log dimensions without a valid audit; tell the author to read their sources directly
 author(audits that exist) -> patterns.md, written section by section
-issues    = parallel(lenses - skip, l => critique(l) -> <state>/ux-flows/patterns/critique-<l>.json) # validate critique; no edits
+issues    = parallel(lenses - skip, l => critique(l) -> <state>/patterns/critique-<l>.json) # validate critique; no edits
 same author revises(issues) -> every issue applied or rejected with a reason, as numbered review notes
 publish   -> wireframes/patterns.html; lint
 await factcheck -> verdicts to the author and the owner
@@ -261,7 +261,7 @@ pool(verify-<ticket> for delivered P0 tickets - skip, n, ticket =>
 - Start every service the units depend on (app instances, the backend, the docs server) outside the session's background tasks, which end at their time limits and with the session. Use an idempotent command that runs it detached or supervised: a terminal multiplexer, the OS service manager, or the dev runner's detached start that waits for readiness.
 - Health-check each service before launch and again on resume: every allocated instance port and the backend must answer.
 - Agents never start, stop or restart shared services. On an outage they record it in `environmentIssues`, stop the work that depends on it, and never report outage behavior as a product finding.
-- Keep launch scripts, helpers and validators in durable project paths; a reboot wipes session temp. A reboot still kills every service, so resumable units are what survives it.
+- Keep launch scripts and helpers under `<state>/tools/` and run validators from `<skill>`; a reboot wipes session temp. A reboot still kills every service, so resumable units are what survives it.
 
 ## Failures
 

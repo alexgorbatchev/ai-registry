@@ -17,13 +17,13 @@ Phase 4 draws each flow's current diagram and Phase 6 its proposed diagram, as s
 - The current diagram shows what the code does today, at a pinned revision, with every evidenced pain point marked on its step by its finding, cited as SKILL.md "ID conventions" says. The proposed diagram shows the target journey and, on each step, which of those findings it removes.
 - Start the proposed diagram from the current one and its findings, so a reader can compare them step by step.
 - The pair is the redesign's evidence: the proposal, the redesign ticket, the wireframe page's nav and the docs index row link both HTML files.
-- Before filing the redesign ticket, or finishing the proposal when none is filed, check the pair against Phase 3: every finding marked on the current diagram is resolved on a proposed step, or listed under the proposal's `Related, not covered:` with the redesign that resolves it, or accounted for in `<state>/ux-flows/assignments.md` (stopgap or patch). A finding that silently disappears is orphaned.
+- Before filing the redesign ticket, or finishing the proposal when none is filed, check the pair against Phase 3: every finding marked on the current diagram is resolved on a proposed step, or listed under the proposal's `Related, not covered:` with the redesign that resolves it, or accounted for in `<state>/assignments.md` (stopgap or patch). A finding that silently disappears is orphaned.
 
 ## Tracing the current flow
 
 1. **Pin the revision.** Trace in a clean checkout or worktree at the commit you will cite: the synced, pushed default branch, so the commit stays reachable for later regeneration. Never trace or cite the live checkout; uncommitted edits there are not evidence, and Archify verifies citations against committed bytes at the pinned revision. Trace every flow at the same revision when possible, because the docs index states one revision for all current flows.
 2. **Scaffold there.** From that checkout's root, run `bun <skill>/scripts/scaffold-flow.ts --docs <docs>/ux-flows --key <key> …` (flags under [Scripts](../SKILL.md#scripts)), so the revision it writes is the one you trace (see [Repository evidence](#repository-evidence)). The scaffold edits the shared wireframe and docs indexes, so scaffold every flow before parallel agents start. One shared worktree then serves all diagram agents under the [ownership rules](orchestration.md#ownership).
-3. **Read the flow's evidence:** its findings files (`<state>/ux-flows/findings/<area>.json`: problems with annotated screenshots and code references), the filed finding tickets, and the `tickets` map in each review unit's checkpoint (`<state>/ux-flows/units/review-<area>.json`) that gives each pain point its citation.
+3. **Read the flow's evidence:** its findings files (`<state>/findings/<area>.json`: problems with annotated screenshots and code references), the filed finding tickets, and the `tickets` map in each review unit's checkpoint (`<state>/units/review-<area>.json`) that gives each pain point its citation.
 4. **Trace the journey** from every entry point (menus, buttons, routes, shortcuts, links from other flows) along the path the code takes: screens and dialogs, decisions, confirmations, waits and background jobs, results, recovery, undo, dead ends, and every context switch (navigating away, a forced trip to another page, a manual refresh). Follow call sites until each step reaches its actual write or display, and record repository-relative paths with inclusive line ranges as you read.
 5. **Keep it readable.** Draw one complete journey from entry to end states rather than every branch. The workflow type has six columns (`col` 0 to 5): fold minor variations into a sublabel or explanation, and give a branch its own node only when it changes the outcome or carries a pain point. Budget about 30 minutes per diagram.
 6. **Mark the pain points** on the steps where they happen (see [Spec conventions](#spec-conventions)). A defect seen while tracing that has no finding goes in the "Not yet ticketed (seen in code)" card and the proposal's section of that name, never on a marked step. The Evidence card says what was exercised in the running app and what was traced from source only.
@@ -87,7 +87,7 @@ Cards keep their titles and dot colours in every diagram, so all diagrams read a
 - **`meta.repository.url`** comes from `git remote get-url origin` and must be credential-free: HTTP(S) without user info, or SSH. The scaffold fills it only when the origin already qualifies and otherwise leaves `{{REPOSITORY_URL}}`. Then remove the user name, password or token yourself and keep the transport, host, port, path and `.git` suffix; never rewrite an SSH origin as HTTPS.
 - **`link_mode: "local-only"`** is the template default; keep it for private repositories. The Archify skill decides when a public repository may use web links.
 - **Finalize with `--repo-root <root>`** so Archify verifies every citation against committed bytes at the revision. A current diagram always passes with repository evidence (the Phase 4 gate); a failure there is a wrong citation to fix.
-- **Proposed-only steps:** when repository evidence cannot accept a step that exists only in the proposal, record why in the flow's checkpoint (`<state>/ux-flows/units/flow-<key>.json`, or `reconcile-<key>.json` for a step added in Phase 8), add "Sources not verified: <reason>" to its Evidence card, and finalize without `--repo-root`.
+- **Proposed-only steps:** when repository evidence cannot accept a step that exists only in the proposal, record why in the flow's checkpoint (`<state>/units/flow-<key>.json`, or `reconcile-<key>.json` for a step added in Phase 8), add "Sources not verified: <reason>" to its Evidence card, and finalize without `--repo-root`.
 
 ## Running Archify
 
@@ -96,13 +96,13 @@ Cards keep their titles and dot colours in every diagram, so all diagrams read a
 
    ```bash
    node <archify>/bin/archify.mjs finalize workflow <docs>/ux-flows/<key>-current.json <docs>/ux-flows/<key>-current.html \
-     --repo-root <root> --quality showcase --out-dir <state>/ux-flows/archify/<key>-current-<n> --json
+     --repo-root <root> --quality showcase --out-dir <state>/archify/<key>-current-<n> --json
    ```
 
    The proposed spec runs the same way with `-proposed` names. Use a fresh `--out-dir` for every attempt (a new `<n>`), never inside the docs tree, where its receipts would match the regeneration glob.
 
    Whatever `--out-dir` says, Archify also writes a delivery receipt beside each render (`<key>-current.delivery.json`). It holds absolute local paths and every finalize rewrites it. Before the first finalize (in a parallel run, with the scaffold), add `<docs>/ux-flows/*.delivery.json` to the project's ignore rules; never commit one, and untrack any already committed through the project's Git workflow. `git ls-files '<docs>/ux-flows/*.delivery.json'` must print nothing, so the [privacy scan](publishing.md#privacy) and the Phase 9 gate find none tracked.
-3. A non-zero exit is a failure. Repair the failed gate as the Archify skill directs, within its repair limit, and rerun the complete finalize command. Mark the stage done in the flow's checkpoint (`<state>/ux-flows/units/flow-<key>.json`, [schema](orchestration.md#checkpoints-and-resume)), or for a Phase 8 re-render in the `integrate` checkpoint, only after a passing run, recording the finalize summary (`<out-dir>/<key>-current.finalize-summary.json`), the revision and the attempt count. When a defect survives the repair limit, leave the stage undone, record the defect as the blocker with its unblock condition in that checkpoint, report it, and continue with other flows.
+3. A non-zero exit is a failure. Repair the failed gate as the Archify skill directs, within its repair limit, and rerun the complete finalize command. Mark the stage done in the flow's checkpoint (`<state>/units/flow-<key>.json`, [schema](orchestration.md#checkpoints-and-resume)), or for a Phase 8 re-render in the `integrate` checkpoint, only after a passing run, recording the finalize summary (`<out-dir>/<key>-current.finalize-summary.json`), the revision and the attempt count. When a defect survives the repair limit, leave the stage undone, record the defect as the blocker with its unblock condition in that checkpoint, report it, and continue with other flows.
 4. Give each concurrent agent its own browser session for Archify's browser check, through the external browser endpoint the Archify skill describes or the private browser Archify launches itself. Never share a session between agents, and close yours when done, including after a failure.
 5. Archify serializes deliveries into one output directory, so all diagrams in `<docs>/ux-flows/` deliver one at a time. `delivery/concurrent-attempt` means another delivery holds the lock: wait and rerun finalize without editing the spec; it does not count as a repair. Never delete a lock file. For `delivery/lock-stale` or `delivery/lock-invalid`, follow the Archify skill's recovery.
 6. Never install, upgrade or update Archify. When a receipt carries an update notice, pass it to the owner.
@@ -117,7 +117,7 @@ Cards keep their titles and dot colours in every diagram, so all diagrams read a
 ## Rendering for inspection
 
 1. Open each render (its served docs URL, or its file URL with local file access allowed) in a browser automation session of your own, at a 1600×1000 viewport, and wait until the diagram has drawn.
-2. Hide floating viewer controls that cover labels, such as the viewer's navigation toolbar, then take a full-page screenshot to `<state>/ux-flows/shots/<key>/<key>-current.png` (or `-proposed.png`).
+2. Hide floating viewer controls that cover labels, such as the viewer's navigation toolbar, then take a full-page screenshot to `<state>/shots/<key>/<key>-current.png` (or `-proposed.png`).
 3. Open the image and confirm that every label is legible and the whole diagram is in the frame. Retake with a larger viewport if anything is cut off. Close the session.
 4. Never commit the images.
 
@@ -133,7 +133,7 @@ One task-runner recipe re-finalizes every spec; [publishing](publishing.md#diagr
 
 ```bash
 shopt -s nullglob
-run="$STATE/ux-flows/archify/regenerate-$(date +%Y%m%d-%H%M%S)"
+run="$STATE/archify/regenerate-$(date +%Y%m%d-%H%M%S)"
 status=0
 for spec in "$DOCS"/ux-flows/*.json; do
   case "$spec" in *.delivery*.json | *.finalize*.json) continue ;; esac
@@ -143,7 +143,7 @@ done
 exit "$status"
 ```
 
-Run it from the repository root, with `DOCS` the docs directory relative to that root, `STATE` the ignored state directory and `ARCHIFY` the installed Archify package.
+Run it from the repository root, with `DOCS` the docs directory relative to that root, `STATE` the run's permanent state directory and `ARCHIFY` the installed Archify package.
 
 ## Without Archify
 

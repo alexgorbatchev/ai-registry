@@ -11,12 +11,12 @@
 - [Privacy](#privacy)
 - [Reporting](#reporting)
 
-Phase 9 makes every design artifact reachable from one served index and proves it with the docs-site tests (or their direct checks), the wireframe linter, a link crawl, the privacy scan and inspected screenshots; [Phase 9](../SKILL.md#phase-9-publish-and-verify) owns the gate. Run commands from the project root: `<skill>` is this skill's directory, `<docs>` the served docs directory, `<state>` the ignored state directory and `<origin>` the running server's origin.
+Phase 9 makes every design artifact reachable from one served index and proves it with the docs-site tests (or their direct checks), the wireframe linter, a link crawl, the privacy scan and inspected screenshots; [Phase 9](../SKILL.md#phase-9-publish-and-verify) owns the gate. Run commands from the project root: `<skill>` is this skill's directory, `<docs>` the served docs directory, `<state>` the run's permanent state directory and `<origin>` the running server's origin.
 
 ## Where artifacts live
 
 - Move design artifacts (diagram specs and renders, proposals, research notes, wireframes, the pattern reference) from scratch into `<docs>/ux-flows/` as soon as the owner, a ticket or another agent needs to see them. Scratch directories get cleaned, sometimes automatically within a day; nothing a ticket or report links may stay there. Delete scratch copies of the owner's private data once they are no longer needed.
-- Working files stay under `<state>/ux-flows/` at the paths in [SKILL.md](../SKILL.md#artifact-layout-and-naming); they are not published or linked. Screenshots and diagram images stay under `<state>/ux-flows/shots/<unit-key>/`; never commit image files.
+- Working files stay under `<state>/` at the paths in [SKILL.md](../SKILL.md#artifact-layout-and-naming); they are not published or linked. Screenshots and diagram images stay under `<state>/shots/<unit-key>/`; never commit image files.
 - Keep the diagram tool's delivery receipts (`<docs>/ux-flows/*.delivery.json`) untracked as [Running Archify](diagrams.md#running-archify) requires.
 - Every Markdown document in the docs tree starts with front matter in local time, `YYYY-MM-DD HH:MM`. `scaffold-flow.ts` writes it on creation; update `last_modified` on every later edit, including scripted ones:
 
@@ -119,7 +119,7 @@ bun --use-system-ca <skill>/scripts/crawl-site.ts <origin>/ --root-dir <docs>
 - Before changing an existing page (the stylesheet, the legend, a mockup, the layout), capture screenshots of every page the change affects. Afterwards capture the same pages at comparable viewport sizes and scroll positions: at least one wide and one narrow viewport (for example 1440 and 800 CSS pixels), plus scrolled states for sticky elements and section-link landings.
 - Capture a full-page screenshot of every new page.
 - Open and inspect every screenshot before reporting. Look for overflow, overlap, clipped text, callouts that do not match their captions, and unstyled pages (a stylesheet that did not load).
-- Keep the screenshots in `<state>/ux-flows/shots/<unit-key>/` and never commit them.
+- Keep the screenshots in `<state>/shots/<unit-key>/` and never commit them.
 - State which pages were visually inspected and which only passed automated checks. When you cannot inspect every page, spot-check at least one page per flow group.
 
 ## Privacy

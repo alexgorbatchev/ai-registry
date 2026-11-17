@@ -11,7 +11,7 @@
 - [Completeness](#completeness)
 - [Salvage](#salvage)
 
-Phase 2 detail. `<state>` is the project's ignored durable state directory and `<skill>` is this skill's directory; run scripts from the project root as `bun <skill>/scripts/<name>.ts`. [Orchestration](orchestration.md) owns unit sizing, checkpoints, skip lists and bounded pools; this file owns what reviewers and verifiers do and what a filed finding carries. Every ticket read or write goes through the `issue-tracker` skill (SKILL.md "Setup"). Each area runs as unit `review-<area>` with the stages `review`, `verify` and `deliver`, checkpointed at `<state>/ux-flows/units/review-<area>.json`; re-verifying a filed ticket runs as unit `verify-<ticket>`. Units never commit: the orchestrator publishes the files they write under the commit rules in [SKILL.md](../SKILL.md#execute-the-task) "Scope boundaries".
+Phase 2 detail. `<state>` is the run's permanent state directory (SKILL.md "Setup") and `<skill>` is this skill's directory; run scripts from the project root as `bun <skill>/scripts/<name>.ts`. [Orchestration](orchestration.md) owns unit sizing, checkpoints, skip lists and bounded pools; this file owns what reviewers and verifiers do and what a filed finding carries. Every ticket read or write goes through the `issue-tracker` skill (SKILL.md "Setup"). Each area runs as unit `review-<area>` with the stages `review`, `verify` and `deliver`, checkpointed at `<state>/units/review-<area>.json`; re-verifying a filed ticket runs as unit `verify-<ticket>`. Units never commit: the orchestrator publishes the files they write under the commit rules in [SKILL.md](../SKILL.md#execute-the-task) "Scope boundaries".
 
 ## Preflight
 
@@ -22,7 +22,7 @@ Do these inline, in one context, before starting any parallel unit.
 3. **Disposable dataset.** Build scratch data shaped like real use and deliberately messy, never the owner's real data or data store; copies of a few real items are fine. For an illustrative reporting app: titles in ALL CAPS and in lowercase, one value spelled several ways, empty fields that are usually filled, near-duplicates in different formats, an empty folder, deep nesting, one folder holding hundreds of reports, a name long enough to overflow. Hide the real data from review instances; when the app's default commands open the real store, wrap them so they open the scratch one.
 4. **Write sandboxes.** Give each reviewer its own sandbox in the dataset (illustratively, a folder "UX review sandboxes / Bulk edit" holding 12 reports) and enumerate what it may write: which items, how many imports or deletions, "apply at most two merges, then undo one", "preview only, never apply moves or deletions". Reading and previews may target anything. Forbid by default: other data stores, installing or upgrading tools, changing connection or server settings, editing repository files, running git, starting or stopping servers.
 5. **Scout pass.** Drive the app once in a browser: map the surfaces in scope, confirm screenshots save, test [annotate.js](../assets/annotate.js), and record the selectors of development overlays to hide. Choose units from this map.
-6. **Helpers and validators.** Before fan-out, place annotate.js, the validator command and the service launch scripts in durable project paths, never session temp or a scratch directory that gets cleaned.
+6. **Helpers and validators.** Before fan-out, keep the run's service launch scripts and helpers under `<state>/tools/` and run annotate.js and the validators from `<skill>`, never from session temp or a scratch directory that gets cleaned.
 7. **Capacity.** Check free memory and measure one app instance's footprint; size the instance count and reviewer pool from them.
 8. **Isolated instances.** When the app keeps per-user state (saved selections, filters, last location, preferences), run one app instance per concurrent reviewer and verifier, each with its own port and state store, against one shared sandboxed backend. Allow those origins in the backend if it checks origins. Give each reviewer its URL and name the isolation artifacts that are not findings, such as a loopback address shown as the server name. Backend data stays shared, so sandboxes and the environment-issue rule cover data churn.
 9. **Supervised services.** Start the backend and instances as [orchestration](orchestration.md#services) specifies, and health-check every instance before launch, on resume and between waves.
@@ -36,7 +36,7 @@ Do these inline, in one context, before starting any parallel unit.
   - the roster IDs and the flows to exercise, with "exercise every flow in this brief";
   - the enumerated write permissions;
   - related existing tickets ("#N already covers X; add only new evidence");
-  - the unit's resources: app URL, browser session name, sandbox, `<state>/ux-flows/shots/<area>/`, `<state>/ux-flows/findings/<area>.json`;
+  - the unit's resources: app URL, browser session name, sandbox, `<state>/shots/<area>/`, `<state>/findings/<area>.json`;
   - recent product changes to expect, so nobody files against an older version of the app.
 - Journeys report clicks and context switches, lost state, dead ends, places the person must remember or retype IDs or paths, missing bulk affordances, and where the app should have guided them ("does the app surface problems, or must the person hunt for them?").
 
@@ -67,7 +67,7 @@ Every reviewer gets the same rules block, the product direction and owner rules 
    - `__uxr.note('text', x, y)` places a free callout.
 
    Labels state the problem ("Selection bar pushes the table down 52px"), not the element name. Boxes are fixed to the viewport: scroll first, then mark, and clear and mark again after any scroll. They attach to the topmost open `<dialog>`, so they render above modals.
-4. Save to an absolute path, `<state>/ux-flows/shots/<area>/NN-short-slug.png`; browser tools can ignore or misresolve relative paths.
+4. Save to an absolute path, `<state>/shots/<area>/NN-short-slug.png`; browser tools can ignore or misresolve relative paths.
 5. Open the saved image and confirm it shows the problem legibly with correctly placed boxes; recapture otherwise. Never cite an image you have not opened.
 6. Run `__uxr.clear()` before interacting again.
 
@@ -77,13 +77,13 @@ Every reviewer gets the same rules block, the product direction and owner rules 
 
 ## Findings file
 
-Write `<state>/ux-flows/findings/<area>.json` and validate it from the project root:
+Write `<state>/findings/<area>.json` and validate it from the project root:
 
 ```bash
-bun <skill>/scripts/validate-handoff.ts findings <state>/ux-flows/findings/<area>.json --feature-pattern '<roster ID regex>'
+bun <skill>/scripts/validate-handoff.ts findings <state>/findings/<area>.json --feature-pattern '<roster ID regex>'
 ```
 
-Pass the roster's ID pattern (for example `'^FEAT-\d+$'`); without it any non-empty string passes as a roster ID. Fix and rerun at most three times. If it still fails, return the validator output, under `environmentIssues` when the environment caused it (for example screenshots that cannot be captured); the orchestrator marks the unit failed for re-queue in `<state>/ux-flows/units/review-<area>.json`. Shape, with illustrative values:
+Pass the roster's ID pattern (for example `'^FEAT-\d+$'`); without it any non-empty string passes as a roster ID. Fix and rerun at most three times. If it still fails, return the validator output, under `environmentIssues` when the environment caused it (for example screenshots that cannot be captured); the orchestrator marks the unit failed for re-queue in `<state>/units/review-<area>.json`. Shape, with illustrative values:
 
 ```json
 {
@@ -101,7 +101,7 @@ Pass the roster's ID pattern (for example `'^FEAT-\d+$'`); without it any non-em
     "suggestion": "Specific improvement.",
     "wireframe": "Optional ASCII wireframe.",
     "acceptanceCriteria": ["After Apply the 12 reports stay selected"],
-    "screenshots": [{ "path": "/abs/project/.state/ux-flows/shots/bulk-edit/01-selection-lost.png", "caption": "1. Selection count resets to 0 after Apply" }],
+    "screenshots": [{ "path": "/home/me/.local/share/ux-flow-redesign/reports-app/shots/bulk-edit/01-selection-lost.png", "caption": "1. Selection count resets to 0 after Apply" }],
     "codeRefs": ["src/bulk/EditDialog.tsx:212"],
     "needsBackend": false,
     "existingTicket": null,
@@ -136,21 +136,21 @@ An independent adversarial verifier runs each unit's `verify` stage as soon as i
 4. Checks for duplicates within the area and against existing tickets.
 5. Judges the severity, and whether the suggestion is sound, fits the project's contracts and is better for the user.
 
-It writes `<state>/ux-flows/findings/<area>.verdicts.json` and validates it with `bun <skill>/scripts/validate-handoff.ts verdicts <file>`, under the same three-attempt cap. Each verdict has `id`, `verdict`, `severity` (the final one) and `notes` (the evidence), plus:
+It writes `<state>/findings/<area>.verdicts.json` and validates it with `bun <skill>/scripts/validate-handoff.ts verdicts <file>`, under the same three-attempt cap. Each verdict has `id`, `verdict`, `severity` (the final one) and `notes` (the evidence), plus:
 
 - `confirmed`: nothing more.
 - `adjusted`: any of `revisedTitle`, `revisedObserved`, `revisedSuggestion`; the final `severity` says what changed.
 - `refuted`: the notes say why.
 - `duplicate`: `duplicateOf` (a finding ID) or `existingTicket` (a ticket ID).
-- Any verdict may add `updatedScreenshots: [{path, caption}]`, absolute and existing; save the verifier's own captures as `<state>/ux-flows/shots/<area>/verify-NN-slug.png`.
+- Any verdict may add `updatedScreenshots: [{path, caption}]`, absolute and existing; save the verifier's own captures as `<state>/shots/<area>/verify-NN-slug.png`.
 
 Give every finding exactly one verdict. The validator does not compare the verdicts against the findings file, so check that the two ID sets match before returning.
 
 Expect severity inflation: in practice most P0s drop a level on independent reproduction. So after filing, run one short `verify-<ticket>` unit per filed P0 ticket:
 
-1. If the unit checkpoint `<state>/ux-flows/units/verify-<ticket>.json` records the verdict as recorded on the ticket, stop and return it. Otherwise resume from the checkpoint, which records each step as it completes.
+1. If the unit checkpoint `<state>/units/verify-<ticket>.json` records the verdict as recorded on the ticket, stop and return it. Otherwise resume from the checkpoint, which records each step as it completes.
 2. Read the ticket and its screenshots through `issue-tracker`, and open each screenshot.
-3. Reproduce from a clean state and capture an annotated screenshot of its own under `<state>/ux-flows/shots/verify-<ticket>/`. Take writes only up to their review or confirmation step and cancel; where a write is essential, write only inside a sandbox named in the verifier's brief, and undo it afterwards when the app offers undo.
+3. Reproduce from a clean state and capture an annotated screenshot of its own under `<state>/shots/verify-<ticket>/`. Take writes only up to their review or confirmation step and cancel; where a write is essential, write only inside a sandbox named in the verifier's brief, and undo it afterwards when the app offers undo.
 4. Check the cited code and write the verdict into the checkpoint: confirmed, adjusted (saying exactly what), or not reproduced, with what was done (viewport, exact inputs, what was and was not written), what was seen, the corrections (over-broad claims, claims verified only by code, backend-work corrections, overlap with other tickets) and a recommended severity.
 5. Record the verdict and its screenshots on the ticket through `issue-tracker`, then mark it recorded in the checkpoint.
 
@@ -184,7 +184,7 @@ After the first wave, one critic, with no browser, reads every coverage list, ev
 
 When units die before writing a findings file but leave screenshots or transcripts, rebuild their findings instead of re-exploring:
 
-1. Condense each dead unit's transcript into `<state>/ux-flows/shots/<area>/transcript-digest.md`, beside its screenshots: assistant text in full, tool calls and results clipped to a few hundred characters.
+1. Condense each dead unit's transcript into `<state>/shots/<area>/transcript-digest.md`, beside its screenshots: assistant text in full, tool calls and results clipped to a few hundred characters.
 2. Run one short agent per area with no browser and no servers. Its evidence is the area's screenshots (the primary evidence; open each before relying on it, and read annotation labels as the reviewer's problem statements), the digest (search it for annotation calls and screenshot saves rather than reading it whole) and the code.
 3. Every finding is visibly shown by at least one existing screenshot. Never invent behavior the screenshots, digest or code do not support. Aim for 6–18 findings, highest value first, within about 30 minutes.
-4. Record the result as the dead unit's `review` stage in `<state>/ux-flows/units/review-<area>.json`, then validate, verify, dedupe and deliver as for any unit. Requeue an area whose evidence is empty or unusable as a fresh review unit.
+4. Record the result as the dead unit's `review` stage in `<state>/units/review-<area>.json`, then validate, verify, dedupe and deliver as for any unit. Requeue an area whose evidence is empty or unusable as a fresh review unit.

@@ -4,7 +4,7 @@ description: Use when reviewing an application's user experience across many fea
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-15 07:14
-  last_modified: 2026-11-16 16:01
+  last_modified: 2026-11-17 03:27
   status: current
 ---
 
@@ -26,7 +26,7 @@ Scope boundaries:
 
 ## Setup
 
-Write these into `<state>/ux-flows/setup.md` before Phase 1. When one is missing and it changes the result, ask; otherwise use the stated default and record it.
+Write these into `<state>/setup.md` before Phase 1. When one is missing and it changes the result, ask; otherwise use the stated default and record it.
 
 - **Product direction and owner rules.** Read the project instructions for product direction, binding contracts and stated intent ("exports include archived items by design; that is not a defect"). Every review and design agent receives them. Owner corrections made during the effort become rules in the project's instructions where design agents work and in every later agent's shared context; a misunderstanding agents repeat marks a missing rule, recorded the same way.
 - **Feature roster.** The project's list of features with stable IDs. Without one, Phase 1 builds an inventory and assigns IDs.
@@ -41,7 +41,7 @@ Write these into `<state>/ux-flows/setup.md` before Phase 1. When one is missing
 - **Diagram tool.** Archify, through the Archify skill, by default; see [diagrams](references/diagrams.md) for alternatives.
 - **Evidence environment.** A current build of the app from a clean checkout, disposable test data shaped like real use, a screenshot tool for the platform (a browser automation tool for web apps), and one isolated app instance per concurrent reviewer.
 - **Capacity.** Whether parallel agents are available, and how many app instances the machine can run.
-- **State directory.** `<state>` is the project's ignored durable state directory (for example `.state/`), never session temp or a scratch directory that gets cleaned.
+- **State directory.** `<state>` is the run's permanent working directory outside every checkout: `${XDG_DATA_HOME:-$HOME/.local/share}/ux-flow-redesign/<project>/`, where `<project>` is a stable kebab-case key for the repository plus the scope when the run covers part of it (`reports-app`, `monorepo-billing`). Resolve it to an absolute path once, create it, record it at the top of `<state>/setup.md` and in the run's task record, and give that absolute path to every unit; later phases resume from it weeks later. Never use a checkout's `.state/` or another ignored project directory, which worktree removal, fresh clones and ignored-file copies lose, nor session temp or a scratch directory that gets cleaned. To resume a run whose files are under a checkout's `.state/ux-flows/`, move that directory to `<state>` once no unit is running (its contents keep their relative paths) and leave a symlink at the old path, so absolute paths already recorded in checkpoints and prompts still resolve.
 
 ## Artifact layout and naming
 
@@ -60,11 +60,11 @@ Pick one flow key per flow: kebab-case, stable, used in every file name. `<docs>
 | Pattern reference (visual) | `<docs>/ux-flows/wireframes/patterns.html` |
 | Built inventory, when there is no roster | `<docs>/ux-flows/inventory.md` |
 | Docs index section | "UX flows" section of `<docs>/index.md` |
-| Setup notes, flow table and vocabulary, finding assignments | `<state>/ux-flows/setup.md`, `flows.md`, `assignments.md` |
-| Phase 9 verification record | `<state>/ux-flows/verification.md` |
-| Unit checkpoints and drafts | `<state>/ux-flows/units/<unit-key>.json`, `<state>/ux-flows/units/<unit-key>/` |
-| Findings, verdicts, audits, critiques | `<state>/ux-flows/findings/`, `<state>/ux-flows/patterns/` |
-| Screenshots | `<state>/ux-flows/shots/<unit-key>/` (never committed) |
+| Setup notes, flow table and vocabulary, finding assignments | `<state>/setup.md`, `flows.md`, `assignments.md` |
+| Phase 9 verification record | `<state>/verification.md` |
+| Unit checkpoints and drafts | `<state>/units/<unit-key>.json`, `<state>/units/<unit-key>/` |
+| Findings, verdicts, audits, critiques | `<state>/findings/`, `<state>/patterns/` |
+| Screenshots | `<state>/shots/<unit-key>/` (never committed) |
 
 Add the diagram tool's delivery receipts (`<docs>/ux-flows/*.delivery.json`) to the project's ignore rules: they hold absolute local paths.
 
@@ -94,7 +94,7 @@ Proposals, wireframes, tickets and tests cite rule IDs. Never renumber or reuse 
 
 - **Inputs:** the roster, the app's routes, menus and commands, the owner's vocabulary.
 - **Do:** List every user journey in scope: one flow per tool or task, cross-cutting flows (for example selection, progress and jobs, undo and history, or how commands are declared and offered), and one or more end-to-end journeys that cross tools ("from new material to a finished deliverable"). Map every roster feature in scope to exactly one owning flow. Find each term the owner uses by searching source and UI labels for it and its synonyms. Rank flows by the risk they pose to the owner's data and work.
-- **Output:** `<state>/ux-flows/flows.md`: one row per flow `{key, title, roster IDs, scope sentence (entry, steps, end states), evidence areas, group, risk}`, where the group becomes the flow's heading in the docs index; then a **Vocabulary** section, a table `| Owner term | UI labels | Code identifiers |`, which the Phase 5 `language` audit reads.
+- **Output:** `<state>/flows.md`: one row per flow `{key, title, roster IDs, scope sentence (entry, steps, end states), evidence areas, group, risk}`, where the group becomes the flow's heading in the docs index; then a **Vocabulary** section, a table `| Owner term | UI labels | Code identifiers |`, which the Phase 5 `language` audit reads.
 - **Gate:** every in-scope roster feature maps to one flow or is listed as out of scope with a reason; a capability reached from several flows has one owner that holds its whole journey, and the others hand off to it.
 
 ### Phase 2: Review the real app and file findings
@@ -112,7 +112,7 @@ Read [proposals and tickets](references/proposals-and-tickets.md) (Priority, Sto
 
 - **Inputs:** the flow table, the filed findings and their verdicts.
 - **Do:** Group findings by flow. For a flow that will be reworked, plan one redesign ticket that absorbs its findings: each covered finding becomes acceptance evidence for the redesign instead of separate patch work. Name the foundation redesigns (cross-cutting flows the others build on). Allow standalone stopgaps only for bugs that damage data now; their fix matches what the redesign specifies. Once redesign tickets exist, apply the [tracker restructure](references/proposals-and-tickets.md#tracker-restructure).
-- **Output:** `<state>/ux-flows/assignments.md`: each finding assigned to one redesign, a stopgap, work another worker has already claimed, or "patch, no redesign".
+- **Output:** `<state>/assignments.md`: each finding assigned to one redesign, a stopgap, work another worker has already claimed, or "patch, no redesign".
 - **Gate:** no finding is orphaned or assigned to two redesigns; partial covers state which slice each ticket owns.
 
 ### Phase 4: Diagram today's flows from code
@@ -166,7 +166,7 @@ Read [orchestration](references/orchestration.md) (shape D), [pattern reference]
 
 - **Inputs:** every artifact, the served docs site.
 - **Do:** Link everything from the docs index (diagrams, wireframes, proposals, reference). Serve the docs locally, run the docs-site tests, `scripts/lint-wireframes.ts` over the wireframes and `scripts/crawl-site.ts` over the served site, and capture before and after screenshots for every visual change to existing pages. Check that no index row says "not filed yet" for a flow whose ticket ID is recorded.
-- **Output:** a served site where every page is linked and reachable, plus the verification record `<state>/ux-flows/verification.md` (check summary lines, privacy-scan review, inspected screenshots).
+- **Output:** a served site where every page is linked and reachable, plus the verification record `<state>/verification.md` (check summary lines, privacy-scan review, inspected screenshots).
 - **Gate:** the linter reports no errors; the crawl reports no broken links, missing fragments or unlinked files; the docs-site tests (or the direct checks that replace them) pass, including a 200 `text/css` response for `wireframe.css`; the privacy scan has no unreviewed hits; no delivery receipt is tracked; the screenshots were inspected. Any run that wrote docs pages, review-only runs included, runs the crawl before reporting.
 
 ## Scripts

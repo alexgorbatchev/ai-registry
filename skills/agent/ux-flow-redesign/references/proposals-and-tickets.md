@@ -52,7 +52,7 @@ Sections, in template order:
   - Write recovery as in-place actions ("Retry 1 failed", "Undo this export"), never as "go to page X".
 - **Branches and edge states.** One bold-labeled bullet per alternate gesture or keyboard path, per write-blocking state or unavailable backend, per partial or lost result (counts, per-item reasons, recovery without replaying the write), and per undo that needs review.
 - **What changes versus today.** `Removed`, `Merged` ("Preview and Export become one plan → export flow."), `New`, `Changed` (behavior that flips relative to today) and `Kept`. `Kept` is the safety inventory that stops a redesign from silently dropping safeguards: walk the current-flow diagram and list every confirmation, refusal, undo path and other project guarantee that survives, and every block on writes when something blocks them. A safeguard that does not survive is listed under `Removed` with what replaces it.
-- **Tickets resolved.** The flow's covers list, which the redesign ticket's covers copy and `<state>/ux-flows/assignments.md` agrees with. Cite findings as SKILL.md "ID conventions" says and put each in exactly one of two categories:
+- **Tickets resolved.** The flow's covers list, which the redesign ticket's covers copy and `<state>/assignments.md` agrees with. Cite findings as SKILL.md "ID conventions" says and put each in exactly one of two categories:
   - `Resolves:` the findings this redesign resolves, grouped by priority ("P0: #n. P1: #n."). A partial cover names the slice resolved here and the redesign that resolves the rest ("P1: #n (export part only; the rest: `archive`)").
   - `Related, not covered:` findings this journey meets, touches or depends on that another redesign, a stopgap, or work another worker has claimed resolves, each with that owner. Use no other category ("owned elsewhere", "touches", "addressed where they meet"): [Tracker restructure](#tracker-restructure) blocks findings by these two categories only.
 
@@ -109,7 +109,7 @@ One per flow, filed when tickets are in scope, after the proposal and both diagr
 
 - It references the proposal, both diagram pages and the wireframe at their published repository locations, never a local preview URL.
 - It carries the proposal's acceptance criteria verbatim, as [Acceptance criteria](#acceptance-criteria) produces and checks them.
-- Its covers list is the proposal's **Tickets resolved**, with the same `Resolves:` and `Related, not covered:` entries. The list matches `<state>/ux-flows/assignments.md`; a mismatch fails the Phase 6 gate.
+- Its covers list is the proposal's **Tickets resolved**, with the same `Resolves:` and `Related, not covered:` entries. The list matches `<state>/assignments.md`; a mismatch fails the Phase 6 gate.
 - A diagram image it carries is a render of the committed spec it shows. A changed spec makes the image stale: re-render it from the committed spec, inspect it, and upload it through `issue-tracker` in place of the old one. In Phase 8 the integration step does this for every diagram it regenerates ([shape D](orchestration.md#d-reconcile), Integrate).
 
 When Phase 7 decisions, owner reversals or Phase 8 conformance change the proposal, regenerate the ticket's criteria and covers from it in the same pass, drop withdrawn `CC-n` items and resolved `**[discuss]:**` items, and search the ticket for wording of the superseded framing.

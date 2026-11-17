@@ -5,7 +5,7 @@ import type { ProcessInspection } from './types';
 export function parseLsofResult(project: string, stdout: string, stderr: string, code: number): ProcessInspection {
   const warnings: string[] = [];
   const lines = stderr.trimEnd().split('\n');
-  for (let index = 0; index < lines.length; index += 2) {
+  for (let index = 0; index < lines.length;) {
     const line = lines[index];
     if (!line && lines.length === 1) break;
     const mount = /^lsof: WARNING: can't stat\(\) \S+ file system (\/.*)$/.exec(line ?? '')?.[1];
@@ -20,7 +20,14 @@ export function parseLsofResult(project: string, stdout: string, stderr: string,
     ) {
       throw new Error(`Process inspection is incomplete: ${stderr.trim()}`);
     }
-    warnings.push(`${line}\n${lines[index + 1]}`);
+    const warning = [line, lines[index + 1]];
+    index += 2;
+    // lsof adds this line when it takes the unreadable mount's device number from the mount table.
+    if (/^\s+assuming "dev=[0-9a-f]+" from mount table$/i.test(lines[index] ?? '')) {
+      warning.push(lines[index]);
+      index += 1;
+    }
+    warnings.push(warning.join('\n'));
   }
   // Older macOS lsof emits descriptor fields even when only PID fields are requested.
   const records = stdout

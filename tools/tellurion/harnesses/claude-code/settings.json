@@ -1,0 +1,104 @@
+{
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh claude notification",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh claude permission_request",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh claude tool_complete",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh claude pre_tool_use",
+            "timeout": 5,
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh claude session_end",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh claude session_start",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh claude stop",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh claude stop_failure",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh claude prompt_submit",
+            "timeout": 5,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

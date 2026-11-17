@@ -1,0 +1,116 @@
+{
+  "hooks": {
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex interrupt",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex permission_request",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex tool_complete",
+            "timeout": 3,
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex pre_tool_use",
+            "timeout": 3,
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex session_end",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex session_start",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex stop",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex subagent_start",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex subagent_stop",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "<%- env('HOME') %>/.ghostty-extreme/agent-hooks/agent-hook.sh codex prompt_submit",
+            "timeout": 3,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

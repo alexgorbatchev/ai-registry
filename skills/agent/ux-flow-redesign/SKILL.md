@@ -37,7 +37,7 @@ Write these into `<state>/setup.md` before Phase 1. When one is missing and it c
   - an instrument ticket in Phase 7 when a measurement shows the measuring tool cannot produce real values, carrying the calibration ladder ([product decisions](references/pattern-reference.md#product-decisions)).
 
   Once redesign tickets exist, the [tracker restructure](references/proposals-and-tickets.md#tracker-restructure) changes blockers and priorities. Committed artifacts cite tickets as **ID conventions** says, which differs in a public project.
-- **Docs site.** The directory the project serves locally and how it is served (see [publishing](references/publishing.md)).
+- **Docs site.** The docs directory, how the project serves it, and the owner preview: a URL the owner can open from their own devices, set up as [publishing](references/publishing.md#owner-preview) says before the first page goes to the owner.
 - **Diagram tool.** Archify, through the Archify skill, by default; see [diagrams](references/diagrams.md) for alternatives.
 - **Evidence environment.** A current build of the app from a clean checkout, disposable test data shaped like real use, a screenshot tool for the platform (a browser automation tool for web apps), and one isolated app instance per concurrent reviewer.
 - **Capacity.** Whether parallel agents are available, and how many app instances the machine can run.
@@ -168,9 +168,9 @@ Read [orchestration](references/orchestration.md) (shape D), [pattern reference]
 [Publishing](references/publishing.md) owns the commands and checks below.
 
 - **Inputs:** every artifact, the served docs site.
-- **Do:** Link everything from the docs index (diagrams, wireframes, proposals, reference). Serve the docs locally, run the docs-site tests, `scripts/lint-wireframes.ts` over the wireframes and `scripts/crawl-site.ts` over the served site, and capture before and after screenshots for every visual change to existing pages. Check that no index row says "not filed yet" for a flow whose ticket ID is recorded.
+- **Do:** Link everything from the docs index (diagrams, wireframes, proposals, reference). Serve the docs, bring the [owner preview](references/publishing.md#owner-preview) up to date, run the docs-site tests, `scripts/lint-wireframes.ts` over the wireframes and `scripts/crawl-site.ts` over the served site, and capture before and after screenshots for every visual change to existing pages. Check that no index row says "not filed yet" for a flow whose ticket ID is recorded.
 - **Output:** a served site where every page is linked and reachable, plus the verification record `<state>/verification.md` (check summary lines, privacy-scan review, inspected screenshots).
-- **Gate:** the linter reports no errors; the crawl reports no broken links, missing fragments or unlinked files; the docs-site tests (or the direct checks that replace them) pass, including a 200 `text/css` response for `wireframe.css`; the privacy scan has no unreviewed hits; no delivery receipt is tracked; the screenshots were inspected. Any run that wrote docs pages, review-only runs included, runs the crawl before reporting.
+- **Gate:** the linter reports no errors; the crawl reports no broken links, missing fragments or unlinked files; the docs-site tests (or the direct checks that replace them) pass, including a 200 `text/css` response for `wireframe.css`; the privacy scan has no unreviewed hits; no delivery receipt is tracked; the screenshots were inspected; the owner preview serves the current docs, or the report names its blocker. Any run that wrote docs pages, review-only runs included, runs the crawl before reporting.
 
 ## Scripts
 
@@ -195,7 +195,7 @@ Run them with Bun from the project root as `bun <skill>/scripts/<name>.ts`, wher
 
 ## Report to the owner
 
-- What was delivered: tickets created (from unit checkpoints), flows whose redesign ticket is not filed and why, commits made and files left uncommitted, pages and their clickable preview URLs (when pages were produced), the file layout, how to open pages offline, and how to restart the docs server.
+- What was delivered: tickets created (from unit checkpoints), flows whose redesign ticket is not filed and why, commits made and files left uncommitted, pages and their owner preview URLs (when pages were produced), the file layout, how to open pages offline, and how to restart the docs server.
 - Coverage: units reviewed, areas with no findings, coverage you capped or dropped and why, environment issues.
 - What is not done: failed or blocked units with their unblock condition and next action, owner decisions still awaited, and work held behind them.
 - Open questions and decisions as short ID-addressable items with a recommendation. When an item comes back later, re-read the state first, then restate its background, what changed since it was asked and its options as nested IDs, so the owner can answer it cold.

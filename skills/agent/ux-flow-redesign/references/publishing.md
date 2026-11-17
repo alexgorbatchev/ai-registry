@@ -63,6 +63,18 @@ Whatever serves the pages must send `.css` as `text/css`; browsers ignore a styl
 
 Start the server and health-check it as [orchestration](orchestration.md#services) describes before crawling or testing.
 
+### Owner preview
+
+The owner reads the pages on their own devices, often away from the machine that runs the review, so a loopback address or a `.localhost` hostname, which only that machine resolves, is never the preview you give them. Set the owner preview up before the first page goes to the owner:
+
+1. Use the remote preview convention the project's instructions name, if any (a shared preview machine, a hostname suffix). Otherwise use devhost's remote preview relay: read devhost's agent skill first (`AGENT=1 devhost skill` says how to install it) and take the relay's public hostname suffix from `[remote].domainSuffix` in devhost's machine `config.toml` on the serving machine.
+2. Write a devhost manifest outside the docs tree with a `name` and one service: `serve = "<absolute path of the served docs>"`, `host = "<name><public suffix>"`, `primary = true`, `alwaysStart = true`. Turn off toolbar panels a static site does not need, at least `[devtools.chat]`, which runs an agent on the serving machine. Start it with `devhost start --remote --detach`; `devhost serve` alone does not register with the relay. When the preview runs on another machine than the run's worktree, serve a copy of `<docs>` there, copy it again after every docs change the owner should see, and keep that copy command in `<state>/tools/`.
+3. Request the hostname only after the stack reports it started. A CDN in front of the relay can cache the relay's 404 for static files for hours, leaving every wireframe unstyled; if that happens, move the service to a fresh hostname instead of waiting.
+4. Verify through the sign-in that protects the relay, using the project's access tooling: the docs index, one wireframe and one diagram return 200, and `wireframe.css` returns 200 with `text/css`. Repeat the check after every copy.
+5. Record the URL, the manifest path, its start command and the copy command in `<state>/setup.md` when the project's instructions permit private hostnames in its repository, otherwise in the run's task record.
+
+Without a configured relay or preview convention, report the missing setup as a blocker with the exact step (a `[remote]` section in devhost's `config.toml`, or the convention the project should name), keep serving locally, and continue the run.
+
 ## Docs-site tests
 
 Add or extend these tests, and the regeneration recipe below, only when the project's instructions or the request cover docs tooling. Otherwise propose them to the owner as an ID'd action, and meanwhile run the equivalent checks directly: the link crawl, the wireframe linter, and a request for `wireframe.css` that must return 200 with `text/css`.
@@ -132,9 +144,9 @@ bun --use-system-ca <skill>/scripts/crawl-site.ts <origin>/ --root-dir <docs>
 
 Give the owner:
 
-- Clickable preview URLs, read from the running server, for the docs index, the wireframe index and each new or changed page.
+- The [owner preview](#owner-preview) URLs for the docs index, the wireframe index and each new or changed page, read from the running stack, with the result of its last check; a local-only URL only as a second link for this machine. Without a working owner preview, the blocker and the exact setup step.
 - The direct URL patterns, for example `<origin>/ux-flows/wireframes/<key>.html` and `<origin>/ux-flows/<key>-proposed.html` when `<docs>` is served at the site root.
 - The file layout of `<docs>/ux-flows/` as a short tree.
 - How to open pages offline: opening the HTML files from disk works for relative links between pages and for the standalone diagrams, but root links such as the wireframe index's `/` back link fail, and Markdown files open unrendered.
-- Which server serves the site and the exact command that restarts it: the dev runner's start command or recipe, or the template server command with its `DOCS_DIR` and `PORT`.
+- Which server serves the site and the exact command that restarts it: the dev runner's start command or recipe, or the template server command with its `DOCS_DIR` and `PORT`; for the owner preview, its manifest, start command and copy command.
 - The verification run: the lint, crawl and docs-site test summary lines (or the direct checks run in their place), the privacy scan and delivery-receipt check results, and the visual-inspection coverage statement.

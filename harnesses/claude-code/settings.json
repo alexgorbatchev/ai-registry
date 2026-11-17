@@ -46,7 +46,7 @@
       }
     ]
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "modelSettings": {
     "claude-opus-5-5": {
       "effortLevel": "high"

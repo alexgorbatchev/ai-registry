@@ -94,6 +94,36 @@ describe("listToolOverlays", () => {
     await rm(toolsDir, { recursive: true, force: true });
   });
 
+  it("skips a tool whose required paths are missing and keeps one whose paths exist", async () => {
+    const toolsDir = await mkdtemp(join(TEST_ROOT, "tools-"));
+    await mkdir(join(toolsDir, "installed", "bin"), { recursive: true });
+    await writeFile(join(toolsDir, "installed", "bin", "hook.sh"), "");
+    await writeFile(join(toolsDir, "installed", "tool.json"), JSON.stringify({ requires: ["bin/hook.sh", "~"] }));
+    await mkdir(join(toolsDir, "missing"));
+    await writeFile(join(toolsDir, "missing", "tool.json"), JSON.stringify({ requires: ["~/.no-such-tool-xyz/hook"] }));
+    await mkdir(join(toolsDir, "plain"));
+    await writeFile(join(toolsDir, "plain", "tool.json"), "{}");
+    const logSpy = spyOn(console, "log").mockImplementation(() => {});
+
+    expect(listToolOverlays(toolsDir)).toEqual([join(toolsDir, "installed"), join(toolsDir, "plain")]);
+    expect(logSpy).toHaveBeenCalledWith(
+      `⏭️ Skipping tool overlay ${join(toolsDir, "missing")}: ${join(homedir(), ".no-such-tool-xyz", "hook")} does not exist on this machine`,
+    );
+    logSpy.mockRestore();
+    await rm(toolsDir, { recursive: true, force: true });
+  });
+
+  it("rejects a tool manifest whose requires is not a list of paths", async () => {
+    const toolsDir = await mkdtemp(join(TEST_ROOT, "tools-"));
+    await mkdir(join(toolsDir, "broken"));
+    await writeFile(join(toolsDir, "broken", "tool.json"), JSON.stringify({ requires: "hook.sh" }));
+
+    expect(() => listToolOverlays(toolsDir)).toThrow(
+      `${join(toolsDir, "broken", "tool.json")}: "requires" must be a list of non-empty paths`,
+    );
+    await rm(toolsDir, { recursive: true, force: true });
+  });
+
   it("returns no tools when the directory is missing", () => {
     expect(listToolOverlays(join(TEST_ROOT, "missing-tools"))).toEqual([]);
   });

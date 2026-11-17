@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-17 12:54
+  last_modified: 2026-11-17 13:46
   status: current
 ---
 
@@ -77,6 +77,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Put only the tool's own entries in its settings layers, such as its hook entries under the hook events it uses; lists append, so they join the registry's entries for the same event.
 - Tool overlays layer after the public sources and before private overlays. They own harness edits only inside keys only they define; added list items go to another layer.
 - Copy a tool's settings into its overlay instead of running the tool's installer against harness settings files: settings sync writes installer edits into the public source.
+- Leave files the tool installs itself, such as the scripts its hooks run, to the tool. List them under `requires` in `tools/<name>/tool.json` so machines without the tool skip the overlay.
 - Tool overlays are public. Use the file_dir or repo_root token, or the env helper, for machine paths, and keep private details in a private overlay.
 
 ## Add A Skill

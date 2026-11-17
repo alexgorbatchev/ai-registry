@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "fs";
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { homedir } from "os";
 import { delimiter, join, resolve } from "path";
 
@@ -35,15 +35,41 @@ export type IRegistryPaths = {
   state: string;
 };
 
+const TOOL_MANIFEST_NAME = "tool.json";
+
+// The paths a tool overlay's optional `tool.json` lists under `requires`, such as the
+// scripts its hooks run; `~` expands to the home directory and relative paths resolve
+// from the tool's directory.
+function readRequiredPaths(toolDir: string): string[] {
+  const manifestPath = join(toolDir, TOOL_MANIFEST_NAME);
+  if (!existsSync(manifestPath)) return [];
+  const manifest: unknown = JSON.parse(readFileSync(manifestPath, "utf-8"));
+  const requires = typeof manifest === "object" && manifest !== null ? Reflect.get(manifest, "requires") : undefined;
+  if (requires === undefined) return [];
+  if (!Array.isArray(requires) || !requires.every((path) => typeof path === "string" && path.trim() !== "")) {
+    throw new Error(`${manifestPath}: "requires" must be a list of non-empty paths`);
+  }
+  return requires.map((path: string) => resolvePathWithHome(path, toolDir));
+}
+
 // Each directory under `tools/` is one tool overlay. Sorting by code point keeps the
-// layering order the same on every machine.
+// layering order the same on every machine. A tool whose required paths are missing
+// is not installed on this machine and is left out, so its settings never point at
+// files that do not exist.
 export function listToolOverlays(toolsDir: string): string[] {
   if (!existsSync(toolsDir)) return [];
-  return readdirSync(toolsDir, { withFileTypes: true })
+  const toolDirs = readdirSync(toolsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
     .map((entry) => entry.name)
     .sort()
     .map((name) => join(toolsDir, name));
+  return toolDirs.filter((toolDir) => {
+    const missingPath = readRequiredPaths(toolDir).find((path) => !existsSync(path));
+    if (missingPath !== undefined) {
+      console.log(`⏭️ Skipping tool overlay ${toolDir}: ${missingPath} does not exist on this machine`);
+    }
+    return missingPath === undefined;
+  });
 }
 
 export function getRegistryPaths(): IRegistryPaths {

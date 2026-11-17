@@ -1,0 +1,3 @@
+{
+  "requires": ["~/.ghostty-extreme/agent-hooks/agent-hook.sh"]
+}

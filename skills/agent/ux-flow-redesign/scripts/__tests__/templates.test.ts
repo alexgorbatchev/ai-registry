@@ -85,3 +85,12 @@ test("the docs server renders Markdown, serves HTML and CSS, and refuses anythin
   }
   expect((await fetch(server.url, { method: "POST" })).status).toBe(405);
 });
+
+test("the pattern page scopes its full-width section rules to section.full, so .app.full mockups keep the stylesheet spacing", () => {
+  const html = readFileSync(join(TEMPLATES, "patterns.html"), "utf8");
+  const style = html.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? "";
+  const selectors = readCssRules(style).flatMap((rule) => rule.selector.split(/\s*,\s*/));
+  // A compound that starts with `.full` also matches the stylesheet's `.app.full` mockups.
+  expect(selectors.filter((selector) => /(^|[\s>+~(])\.full\b/.test(selector))).toEqual([]);
+  expect(selectors.filter((selector) => /^section\.full\b/.test(selector)).length).toBeGreaterThanOrEqual(2);
+});

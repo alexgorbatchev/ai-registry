@@ -87,7 +87,7 @@ The pattern page always overrides, because its band also holds the contents nav.
 - Pages use the full window width. Never put `max-width` on `main` (`layout-cap`) or fixed widths on `.win`: a capped layout leaves a large empty gap on wide screens.
 - `.step` is a two-column grid, `minmax(0, 1fr) clamp(15rem, 40%, 48rem)`: the mockup takes the extra width and the caption stays between 15 and 48 rem, readable at any width. At 900 px and below it becomes one column with the caption under the mockup.
 - The pattern page's `.step.pat` uses `minmax(0, 1fr) clamp(18rem, 54%, 56rem)` because rule text is longer. Its mockup sticks under the key band (`top: calc(var(--key-h, 3.5rem) + 12px)`) and stops sticking at 900 px and below.
-- Text blocks keep a 72 rem reading cap: `header.page p`, the pattern page's `.decide` box and `.full > p`. Cap paragraphs, never the page.
+- Text blocks keep a 72 rem reading cap: `header.page p`, the pattern page's `.decide` box and `section.full > p` (scoped to the section, because `.app.full` mockups share the class). Cap paragraphs, never the page.
 - A step holds exactly one mockup element and one `.cap` as direct children; a second mockup wraps into the caption's column. Wrap two windows (for example before and after) in one `<div>`.
 
 ## Page anatomy

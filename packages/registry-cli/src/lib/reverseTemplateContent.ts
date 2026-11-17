@@ -65,5 +65,21 @@ export function reverseTemplateContent(content: string, templateContext: ITempla
     result = result.replaceAll(backwardSlashPath, token);
   }
 
-  return result;
+  return templateContext.home_dir ? reverseHomeDirectory(result, templateContext.home_dir) : result;
+}
+
+const HOME_TOKEN = "<%- env('HOME') %>";
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Turns the home directory into a template tag, after the more specific registry
+// paths, only where it is a whole path: `/home/al` is replaced in `/home/al/x` but not
+// in `/home/alex`.
+function reverseHomeDirectory(content: string, homeDir: string): string {
+  const trimmedHome = homeDir.replace(/[\\/]+$/, "");
+  if (trimmedHome === "") return content;
+  const pattern = new RegExp(`${escapeRegExp(trimmedHome)}(?=[\\\\/]|$|[^\\w.-])`, "g");
+  return content.replace(pattern, HOME_TOKEN);
 }

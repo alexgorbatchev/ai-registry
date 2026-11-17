@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
 import { delimiter, join, relative } from "path";
 
-import { getRegistryPaths, listToolOverlays, resolvePathWithHome } from "../getRegistryPaths";
+import { getRegistryPaths, listToolOverlays, readToolManifest, resolvePathWithHome } from "../getRegistryPaths";
 
 const TEST_ROOT = factory_testRoot("getRegistryPaths");
 
@@ -119,7 +119,7 @@ describe("listToolOverlays", () => {
     await writeFile(join(toolsDir, "broken", "tool.json"), JSON.stringify({ requires: "hook.sh" }));
 
     expect(() => listToolOverlays(toolsDir)).toThrow(
-      `${join(toolsDir, "broken", "tool.json")}: "requires" must be a list of non-empty paths`,
+      `${join(toolsDir, "broken", "tool.json")}: "requires" must be a list of non-empty strings`,
     );
     await rm(toolsDir, { recursive: true, force: true });
   });
@@ -130,5 +130,23 @@ describe("listToolOverlays", () => {
 
   it("reads tools from the registry root", () => {
     expect(getRegistryPaths().tools).toEqual(listToolOverlays(join(getRegistryPaths().root, "tools")));
+  });
+});
+
+describe("readToolManifest", () => {
+  it("reads owned markers and resolves required paths", async () => {
+    const toolDir = await mkdtemp(join(TEST_ROOT, "tool-"));
+    await writeFile(join(toolDir, "tool.json"), JSON.stringify({ requires: ["bin/x"], owns: [".example-tool/"] }));
+
+    expect(readToolManifest(toolDir)).toEqual({ requires: [join(toolDir, "bin", "x")], owns: [".example-tool/"] });
+    await rm(toolDir, { recursive: true, force: true });
+  });
+
+  it("rejects owned markers that are not a list of strings", async () => {
+    const toolDir = await mkdtemp(join(TEST_ROOT, "tool-"));
+    await writeFile(join(toolDir, "tool.json"), JSON.stringify({ owns: [""] }));
+
+    expect(() => readToolManifest(toolDir)).toThrow(`"owns" must be a list of non-empty strings`);
+    await rm(toolDir, { recursive: true, force: true });
   });
 });

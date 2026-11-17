@@ -37,19 +37,33 @@ export type IRegistryPaths = {
 
 const TOOL_MANIFEST_NAME = "tool.json";
 
-// The paths a tool overlay's optional `tool.json` lists under `requires`, such as the
-// scripts its hooks run; `~` expands to the home directory and relative paths resolve
-// from the tool's directory.
-function readRequiredPaths(toolDir: string): string[] {
-  const manifestPath = join(toolDir, TOOL_MANIFEST_NAME);
-  if (!existsSync(manifestPath)) return [];
-  const manifest: unknown = JSON.parse(readFileSync(manifestPath, "utf-8"));
-  const requires = typeof manifest === "object" && manifest !== null ? Reflect.get(manifest, "requires") : undefined;
-  if (requires === undefined) return [];
-  if (!Array.isArray(requires) || !requires.every((path) => typeof path === "string" && path.trim() !== "")) {
-    throw new Error(`${manifestPath}: "requires" must be a list of non-empty paths`);
+export interface IToolManifest {
+  // Files the tool's own installer manages, such as the scripts its hooks run; `~`
+  // expands to the home directory and relative paths resolve from the tool's directory.
+  requires: string[];
+  // Text that identifies the tool's settings values, such as its install directory, so
+  // the tool's own edits to harness settings sync into its overlay.
+  owns: string[];
+}
+
+function readStringList(manifest: unknown, key: string, manifestPath: string): string[] {
+  const value = typeof manifest === "object" && manifest !== null ? Reflect.get(manifest, key) : undefined;
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || !value.every((item) => typeof item === "string" && item.trim() !== "")) {
+    throw new Error(`${manifestPath}: "${key}" must be a list of non-empty strings`);
   }
-  return requires.map((path: string) => resolvePathWithHome(path, toolDir));
+  return value;
+}
+
+// Reads a tool overlay's optional `tool.json`.
+export function readToolManifest(toolDir: string): IToolManifest {
+  const manifestPath = join(toolDir, TOOL_MANIFEST_NAME);
+  if (!existsSync(manifestPath)) return { requires: [], owns: [] };
+  const manifest: unknown = JSON.parse(readFileSync(manifestPath, "utf-8"));
+  return {
+    requires: readStringList(manifest, "requires", manifestPath).map((path) => resolvePathWithHome(path, toolDir)),
+    owns: readStringList(manifest, "owns", manifestPath),
+  };
 }
 
 // Each directory under `tools/` is one tool overlay. Sorting by code point keeps the
@@ -64,7 +78,7 @@ export function listToolOverlays(toolsDir: string): string[] {
     .sort()
     .map((name) => join(toolsDir, name));
   return toolDirs.filter((toolDir) => {
-    const missingPath = readRequiredPaths(toolDir).find((path) => !existsSync(path));
+    const missingPath = readToolManifest(toolDir).requires.find((path) => !existsSync(path));
     if (missingPath !== undefined) {
       console.log(`⏭️ Skipping tool overlay ${toolDir}: ${missingPath} does not exist on this machine`);
     }

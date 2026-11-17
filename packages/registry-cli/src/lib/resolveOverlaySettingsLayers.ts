@@ -2,6 +2,7 @@ import { existsSync } from "fs";
 import { readdir } from "fs/promises";
 import { isAbsolute, join, relative } from "path";
 
+import { readToolManifest } from "./getRegistryPaths";
 import type { ISettingsSourceLayer, ISyncedSettingsFile } from "./settingsSync/types";
 
 export interface IResolveOverlaySettingsLayersOptions {
@@ -21,6 +22,11 @@ export interface IResolveOverlaySettingsLayersOptions {
 async function listFiles(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { recursive: true, withFileTypes: true });
   return entries.filter((entry) => entry.isFile()).map((entry) => join(entry.parentPath, entry.name));
+}
+
+function getToolTraits(toolDir: string): Pick<ISettingsSourceLayer, "isTool" | "ownedMarkers"> {
+  const { owns } = readToolManifest(toolDir);
+  return owns.length > 0 ? { isTool: true, ownedMarkers: owns } : { isTool: true };
 }
 
 // Finds the overlay layers of every synced settings file: an overlay file at
@@ -46,7 +52,7 @@ export async function resolveOverlaySettingsLayers(
       layers.push({
         sourcePath: layerPath,
         renderedText: await options.renderLayer(layerPath, await Bun.file(layerPath).text()),
-        ...(options.toolDirs?.includes(overlayDir) ? { isTool: true } : {}),
+        ...(options.toolDirs?.includes(overlayDir) ? getToolTraits(overlayDir) : {}),
       });
       layerPaths.add(layerPath);
     }

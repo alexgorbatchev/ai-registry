@@ -21,6 +21,18 @@ describe("reverseTemplateContent", () => {
     );
   });
 
+  it("turns the home directory into an env tag only where it is a whole path, after registry paths", () => {
+    const context: ITemplateContext = { repo_root: "/home/al/repo", home_dir: "/home/al/" };
+
+    expect(reverseTemplateContent("/home/al/.tool/hook /home/al/repo/x /home/alex /home/al:/home/al", context)).toBe(
+      "<%- env('HOME') %>/.tool/hook <%- repo_root %>/x /home/alex <%- env('HOME') %>:<%- env('HOME') %>",
+    );
+  });
+
+  it("leaves content alone for an empty home directory", () => {
+    expect(reverseTemplateContent("/x", { home_dir: "/" })).toBe("/x");
+  });
+
   it("reverses every string inside a JSON value and leaves other values unchanged", () => {
     const reversed = reverseTemplateObject(
       {

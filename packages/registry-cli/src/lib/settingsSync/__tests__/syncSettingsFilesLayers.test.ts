@@ -184,7 +184,11 @@ describe("syncSettingsFiles with a tool overlay layer", () => {
   const userHook = { hooks: [{ type: "command", command: "user" }] };
 
   // Stages the public source again before each run, as every build does.
-  async function runToolSync(layout: ILayout, hasTool: boolean): Promise<void> {
+  async function runToolSync(
+    layout: ILayout,
+    hasTool: boolean,
+    traits: { ownedMarkers?: string[]; homeDir?: string } = {},
+  ): Promise<void> {
     await writeTestFile(join(layout.stagingDir, file.relativePath), await readFile(layout.publicSourcePath, "utf-8"));
     const toolText = await readFile(layout.overlaySourcePath, "utf-8");
     await syncSettingsFiles({
@@ -197,9 +201,22 @@ describe("syncSettingsFiles with a tool overlay layer", () => {
       sourceRepository: createRecordingSourceRepository("unversioned"),
       overlayLayers: new Map(
         hasTool
-          ? [[file.relativePath, [{ sourcePath: layout.overlaySourcePath, renderedText: toolText, isTool: true }]]]
+          ? [
+              [
+                file.relativePath,
+                [
+                  {
+                    sourcePath: layout.overlaySourcePath,
+                    renderedText: toolText.replaceAll("<%- env('HOME') %>", traits.homeDir ?? ""),
+                    isTool: true,
+                    ...(traits.ownedMarkers ? { ownedMarkers: traits.ownedMarkers } : {}),
+                  },
+                ],
+              ],
+            ]
           : [],
       ),
+      ...(traits.homeDir ? { homeDir: traits.homeDir } : {}),
     });
   }
 
@@ -227,5 +244,38 @@ describe("syncSettingsFiles with a tool overlay layer", () => {
     await runToolSync(layout, false);
     expect(await readJson(livePath)).toEqual({ hooks: { PreToolUse: [guard, userHook] } });
     expect(await readJson(layout.publicSourcePath)).toEqual({ hooks: { PreToolUse: [guard, userHook] } });
+  });
+
+  it("syncs a tool's own rewritten and added hooks into its overlay with the home directory templated", async () => {
+    const layout = await createLayout("settings.json");
+    spyOn(console, "log").mockImplementation(() => {});
+    const homeDir = join(TEST_ROOT, "homes", "example-user");
+    const livePath = join(layout.outputDir, file.relativePath);
+    const toolCommand = (event: string, timeout: number) => ({
+      hooks: [{ type: "command", command: `${homeDir}/.example-tool/hook.sh ${event}`, timeout }],
+    });
+    const templated = (event: string, timeout: number) => ({
+      hooks: [{ type: "command", command: `<%- env('HOME') %>/.example-tool/hook.sh ${event}`, timeout }],
+    });
+    const traits = { ownedMarkers: [".example-tool/"], homeDir };
+    await writeSources(
+      layout,
+      file,
+      `${JSON.stringify({ hooks: { Stop: [guard] } })}\n`,
+      `${JSON.stringify({ hooks: { Stop: [templated("stop", 5)] } })}\n`,
+    );
+    await runToolSync(layout, true, traits);
+    expect(await readJson(livePath)).toEqual({ hooks: { Stop: [guard, toolCommand("stop", 5)] } });
+
+    await writeTestFile(
+      livePath,
+      `${JSON.stringify({ hooks: { Stop: [guard, toolCommand("stop", 7), userHook], Notification: [toolCommand("notify", 7)] } })}\n`,
+    );
+    await runToolSync(layout, true, traits);
+
+    expect(await readJson(layout.publicSourcePath)).toEqual({ hooks: { Stop: [guard, userHook] } });
+    expect(await readJson(layout.overlaySourcePath)).toEqual({
+      hooks: { Stop: [templated("stop", 7)], Notification: [templated("notify", 7)] },
+    });
   });
 });

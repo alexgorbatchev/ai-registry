@@ -1,5 +1,6 @@
 import { existsSync } from "fs";
 import { chmod, copyFile, lstat, mkdir, rm, stat } from "fs/promises";
+import { homedir } from "os";
 import { dirname, join } from "path";
 
 import type { ITemplateContext } from "../harnessBuild";
@@ -45,6 +46,9 @@ export interface ISyncSettingsFilesOptions {
   liveFilesAreForeign?: boolean;
   // The merge bases were taken for another checkout root and are not used.
   ignoreBases?: boolean;
+  // The home directory written back as `<%- env('HOME') %>` so no source file holds
+  // a machine path; defaults to `$HOME`.
+  homeDir?: string;
 }
 
 function formatValue(value: JsonValue | undefined): string {
@@ -95,20 +99,23 @@ async function getSourceLayers(
 }
 
 // Writes each layer's share of the harness edits into its registry file and returns
-// the files it changed.
+// the files it changed. Changes are routed while they still hold rendered values, the
+// form the layers are compared in, and only then have machine paths turned back into
+// template tags.
 async function writeSourceChanges(
   layers: ISettingsSourceLayer[],
   layerValues: IJsonObject[],
   sourceChanges: ISettingsChange[],
+  options: ISyncSettingsFilesOptions,
 ): Promise<string[]> {
   const writtenSourcePaths: string[] = [];
-  const changesByLayer = routeSettingsChanges(
-    layerValues,
-    sourceChanges,
-    layers.map((layer) => layer.isTool === true),
-  );
+  const changesByLayer = routeSettingsChanges(layerValues, sourceChanges, layers);
+  const reverseContext = { ...options.templateContext, home_dir: options.homeDir ?? process.env.HOME ?? homedir() };
   for (const [index, layer] of layers.entries()) {
-    const layerChanges = changesByLayer[index] ?? [];
+    const layerChanges = (changesByLayer[index] ?? []).map((change) => ({
+      keyPath: change.keyPath,
+      value: change.value === undefined ? undefined : reverseTemplateObject(change.value, reverseContext),
+    }));
     if (layerChanges.length === 0) continue;
     const sourceText = await Bun.file(layer.sourcePath).text();
     await Bun.write(layer.sourcePath, applySettingsChanges(sourceText, layerChanges, layer.sourcePath));
@@ -178,11 +185,8 @@ async function syncSettingsFile(
     console.warn(formatConflict(file.relativePath, conflict));
   }
 
-  const sourceChanges = listSettingsChanges(source, result.sourceValue).map((change) => ({
-    keyPath: change.keyPath,
-    value: change.value === undefined ? undefined : reverseTemplateObject(change.value, options.templateContext),
-  }));
-  const writtenSourcePaths = await writeSourceChanges(layers, layerValues, sourceChanges);
+  const sourceChanges = listSettingsChanges(source, result.sourceValue);
+  const writtenSourcePaths = await writeSourceChanges(layers, layerValues, sourceChanges, options);
 
   await Bun.write(basePath, `${JSON.stringify(result.liveValue, null, 2)}\n`);
   return writtenSourcePaths;

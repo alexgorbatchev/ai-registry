@@ -58,7 +58,13 @@ export interface ISettingsSourceLayer {
   // A tool overlay layer takes harness edits only inside what it defines, so deleting
   // the tool removes its settings without losing unrelated edits.
   isTool?: boolean;
+  // Text marking the tool's own settings values; harness edits whose value contains
+  // it go to this layer, so the tool's installer and updates sync into its overlay.
+  ownedMarkers?: string[];
 }
+
+// What settings routing needs to know about each layer.
+export type ISettingsLayerTraits = Pick<ISettingsSourceLayer, "isTool" | "ownedMarkers">;
 
 // "clean": tracked with no uncommitted edits, so a sync edit can be committed on its own.
 export type SettingsSourceState = "clean" | "dirty" | "unversioned";

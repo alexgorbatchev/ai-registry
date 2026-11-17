@@ -105,7 +105,7 @@ Try a third-party tool's configuration without mixing it into the shared sources
 tools/example-tool/
 ├── skills/agent/example-tool/SKILL.md
 ├── commands/example.md
-├── tool.json                       # optional: {"requires": ["~/.example-tool/hook.sh"]}
+├── tool.json                       # optional: {"requires": ["~/.example-tool/hook.sh"], "owns": [".example-tool/"]}
 └── harnesses/
     ├── claude-code/settings.json   # e.g. only the tool's hooks
     └── codex/hooks.json
@@ -113,9 +113,9 @@ tools/example-tool/
 
 Each directory under `tools/` is an overlay with the same structure and rules as a private overlay. List the files the tool installs itself, such as the scripts its hooks run, under `requires` in `tool.json`; the build skips the tool on machines where any of them is missing, so the tool's settings appear only where it is installed. Keep those files owned by the tool's installer instead of copying them into the registry. Tool overlays layer in name order after the public sources and before `AI_REGISTRY_OVERLAY` entries, so private overlays still override them. Because lists append, a tool's hook entries join the registry's hooks for the same event instead of replacing them.
 
-Harness edits reach a tool overlay only inside what it defines. On a tie, the public source or a private overlay owns the change, and entries a harness adds to a list never go to a tool overlay while another layer exists. Deleting a tool's directory removes its skills, commands, and settings from the generated output and harness files on the next build.
+Harness edits reach a tool overlay only inside what it defines, or when they belong to the tool. List text that identifies the tool's own settings values, such as its install directory, under `owns` in `tool.json`: added list entries and changed values containing it sync into the tool's overlay, so a tool that rewrites its hooks on update, or whose installer runs again on another machine, updates its overlay once for every machine. Other edits go to the public source or a private overlay, which win ties, and entries a harness adds to a list never go to a tool overlay unless they carry its marker. Deleting a tool's directory removes its skills, commands, and settings from the generated output and harness files on the next build.
 
-Tool overlays are public. Use template tokens for machine paths and keep private details in a private overlay. Copy a tool's settings into its overlay instead of letting its installer edit harness settings files; settings sync writes installer edits into the public source.
+Tool overlays are public. Settings sync writes the home directory back as `<%- env('HOME') %>`, and other machine paths need template tokens; keep private details in a private overlay. To add a tool, run its installer once with `owns` set, or copy its entries into the overlay.
 
 ### Hostname Skill Variants
 

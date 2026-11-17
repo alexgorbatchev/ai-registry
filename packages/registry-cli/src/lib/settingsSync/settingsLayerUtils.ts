@@ -1,6 +1,6 @@
 import { isJsonObject } from "./isJsonObject";
 import { getAtKeyPath } from "./keyPathUtils";
-import type { IJsonObject, ISettingsChange, JsonValue, SettingsKeyPath } from "./types";
+import type { IJsonObject, ISettingsChange, ISettingsLayerTraits, JsonValue, SettingsKeyPath } from "./types";
 
 function isEqual(left: JsonValue | undefined, right: JsonValue | undefined): boolean {
   return Bun.deepEquals(left, right, true);
@@ -51,8 +51,9 @@ function getDefinedPrefixLength(layer: IJsonObject, keyPath: SettingsKeyPath): n
 export function findOwningLayerIndex(
   layers: IJsonObject[],
   keyPath: SettingsKeyPath,
-  isToolLayer: readonly boolean[] = [],
+  layerTraits: readonly ISettingsLayerTraits[] = [],
 ): number {
+  const isToolLayer = (index: number) => layerTraits[index]?.isTool === true;
   let ownerIndex = 0;
   let ownerLength = 0;
   layers.forEach((layer, index) => {
@@ -60,7 +61,7 @@ export function findOwningLayerIndex(
     if (length === 0) return;
     const isLonger = length > ownerLength;
     const isTie = length === ownerLength;
-    const isToolLosingTie = isTie && isToolLayer[index] === true && isToolLayer[ownerIndex] !== true;
+    const isToolLosingTie = isTie && isToolLayer(index) && !isToolLayer(ownerIndex);
     if (isLonger || (isTie && !isToolLosingTie)) {
       ownerIndex = index;
       ownerLength = length;
@@ -69,14 +70,25 @@ export function findOwningLayerIndex(
   return ownerIndex;
 }
 
+// The last layer whose owned markers appear in `value`: a tool's own settings, such
+// as hooks running a script from its install directory, belong in its overlay.
+function findMarkedLayerIndex(value: JsonValue, layerTraits: readonly ISettingsLayerTraits[]): number | undefined {
+  const text = JSON.stringify(value);
+  let markedIndex: number | undefined;
+  layerTraits.forEach((traits, index) => {
+    if (traits.ownedMarkers?.some((marker) => text.includes(marker))) markedIndex = index;
+  });
+  return markedIndex;
+}
+
 // The layer that takes items the harness added to a list. Tool layers never take
 // them while another layer can, so deleting a tool cannot drop unrelated edits.
 function findListAdditionOwnerIndex(
   layers: IJsonObject[],
   keyPath: SettingsKeyPath,
-  isToolLayer: readonly boolean[],
+  layerTraits: readonly ISettingsLayerTraits[],
 ): number {
-  const candidateIndexes = layers.map((_, index) => index).filter((index) => isToolLayer[index] !== true);
+  const candidateIndexes = layers.map((_, index) => index).filter((index) => layerTraits[index]?.isTool !== true);
   if (candidateIndexes.length === 0) return findOwningLayerIndex(layers, keyPath);
   const candidateOwner = findOwningLayerIndex(
     candidateIndexes.map((index) => layers[index] ?? {}),
@@ -86,15 +98,16 @@ function findListAdditionOwnerIndex(
 }
 
 // Splits a changed list between the layers whose items make it up: each layer keeps
-// its items still present, in the list's new order, and the items no layer held go to
-// the addition owner. A layer left with no items loses the key, except the owner,
-// which keeps an emptied list. Returns undefined when a layer defines something other
-// than a list at that key, which merges by replacement and routes whole.
+// its items still present, in the list's new order. Items no layer held go to the
+// tool whose owned marker they contain, or else to the addition owner. A layer left
+// with no items loses the key, except the addition owner, which keeps an emptied list.
+// Returns undefined when a layer defines something other than a list at that key,
+// which merges by replacement and routes whole.
 function routeListChange(
   layers: IJsonObject[],
   keyPath: SettingsKeyPath,
   nextItems: JsonValue[],
-  isToolLayer: readonly boolean[],
+  layerTraits: readonly ISettingsLayerTraits[],
 ): Map<number, ISettingsChange> | undefined {
   const layerItems = layers.map((layer) => getAtKeyPath(layer, keyPath));
   if (layerItems.some((items) => items !== undefined && !Array.isArray(items))) return undefined;
@@ -104,17 +117,20 @@ function routeListChange(
     const items = layerItems[index];
     return Array.isArray(items) ? items : [];
   });
-  const addedItems = nextItems.filter((item) => !includesValue(heldItems, item));
-  const ownerIndex = findListAdditionOwnerIndex(layers, keyPath, isToolLayer);
+  const ownerIndex = findListAdditionOwnerIndex(layers, keyPath, layerTraits);
+  const addedItemsByLayer = new Map<number, JsonValue[]>();
+  for (const item of nextItems.filter((nextItem) => !includesValue(heldItems, nextItem))) {
+    const targetIndex = findMarkedLayerIndex(item, layerTraits) ?? ownerIndex;
+    addedItemsByLayer.set(targetIndex, [...(addedItemsByLayer.get(targetIndex) ?? []), item]);
+  }
 
   const changes = new Map<number, ISettingsChange>();
-  for (const index of new Set([...listLayerIndexes, ownerIndex])) {
+  for (const index of new Set([...listLayerIndexes, ownerIndex, ...addedItemsByLayer.keys()])) {
     const currentItems = layerItems[index];
     const ownItems = Array.isArray(currentItems) ? currentItems : [];
     const isOwner = index === ownerIndex;
-    const keptItems = nextItems.filter(
-      (item) => includesValue(ownItems, item) || (isOwner && includesValue(addedItems, item)),
-    );
+    const addedItems = addedItemsByLayer.get(index) ?? [];
+    const keptItems = nextItems.filter((item) => includesValue(ownItems, item) || includesValue(addedItems, item));
     const nextValue = keptItems.length > 0 || (isOwner && currentItems !== undefined) ? keptItems : undefined;
     if (!isEqual(nextValue, currentItems)) {
       changes.set(index, { keyPath, value: nextValue });
@@ -123,14 +139,15 @@ function routeListChange(
   return changes;
 }
 
-// Splits source changes between layers. A new or changed value goes to its owning
-// layer, and a changed list is split between the layers its items came from; a
-// removal clears the key from every layer that defines it, so a value from an
-// earlier layer cannot reappear in the merged source.
+// Splits source changes between layers. A new or changed value goes to the tool whose
+// owned marker it contains, or else to its owning layer, and a changed list is split
+// between the layers its items came from; a removal clears the key from every layer
+// that defines it, so a value from an earlier layer cannot reappear in the merged
+// source.
 export function routeSettingsChanges(
   layers: IJsonObject[],
   changes: ISettingsChange[],
-  isToolLayer: readonly boolean[] = [],
+  layerTraits: readonly ISettingsLayerTraits[] = [],
 ): ISettingsChange[][] {
   const changesByLayer = layers.map((): ISettingsChange[] => []);
   for (const change of changes) {
@@ -144,10 +161,12 @@ export function routeSettingsChanges(
     }
 
     const listChanges = Array.isArray(change.value)
-      ? routeListChange(layers, change.keyPath, change.value, isToolLayer)
+      ? routeListChange(layers, change.keyPath, change.value, layerTraits)
       : undefined;
     if (listChanges === undefined) {
-      changesByLayer[findOwningLayerIndex(layers, change.keyPath, isToolLayer)]?.push(change);
+      const ownerIndex =
+        findMarkedLayerIndex(change.value, layerTraits) ?? findOwningLayerIndex(layers, change.keyPath, layerTraits);
+      changesByLayer[ownerIndex]?.push(change);
       continue;
     }
     for (const [index, listChange] of listChanges) {

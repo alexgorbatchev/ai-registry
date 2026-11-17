@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-17 13:46
+  last_modified: 2026-11-17 14:05
   status: current
 ---
 
@@ -76,9 +76,9 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Put configuration for a third-party tool on trial in `tools/<name>/` beneath the repo_root token, using the private overlay structure: `skills/`, `commands/`, and `harnesses/<path>` files that layer synced settings files. Deleting the directory removes everything it contributed on the next build.
 - Put only the tool's own entries in its settings layers, such as its hook entries under the hook events it uses; lists append, so they join the registry's entries for the same event.
 - Tool overlays layer after the public sources and before private overlays. They own harness edits only inside keys only they define; added list items go to another layer.
-- Copy a tool's settings into its overlay instead of running the tool's installer against harness settings files: settings sync writes installer edits into the public source.
+- List text identifying the tool's own settings values, such as its install directory, under `owns` in `tools/<name>/tool.json`. Settings sync routes added entries and changed values containing it into the tool's overlay, so the tool's installer and updates edit its overlay once for every machine. Without `owns`, installer edits go to the public source; copy the entries into the overlay instead.
 - Leave files the tool installs itself, such as the scripts its hooks run, to the tool. List them under `requires` in `tools/<name>/tool.json` so machines without the tool skip the overlay.
-- Tool overlays are public. Use the file_dir or repo_root token, or the env helper, for machine paths, and keep private details in a private overlay.
+- Tool overlays are public. Settings sync writes the home directory back through the env helper; use the file_dir or repo_root token or the env helper for other machine paths, and keep private details in a private overlay.
 
 ## Add A Skill
 

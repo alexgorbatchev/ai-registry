@@ -68,7 +68,8 @@ The stylesheet's top-level `:root` sets `color-scheme: dark` and defines:
 | `--onfill` | `#0d1117` | text on primary and destructive buttons |
 | `--warn`, `--warnbg`, `--warnline` | `#d29922`, `#2d2410`, `#6c5216` | warning chips and banners (the default `.banner`), conflict and decision cards and their borders |
 | `--bad`, `--badbg` | `#f85149`, `#33161a` | destructive buttons and menu items, invalid fields, error chips and banners, `del` |
-| `--ok`, `--okbg` | `#3fb950`, `#13301d` | just-changed tint, success chips and banners, `ins` |
+| `--ok`, `--okbg` | `#3fb950`, `#13301d` | success chips and banners, `ins` |
+| `--chgbg` | `#472810` | just-changed tint (`tr.flash`, `td.chg`); orange, so it reads apart from success green and warning amber |
 | `--note` | `#e11d48` | numbered callout markers (white text) |
 | `--toast`, `--toastink`, `--toastlink` | `#d1d9e0`, `#0d1117`, `#0550ae` | the inverse toast, its text and links |
 
@@ -144,7 +145,7 @@ Copy this block verbatim into every page with mockups (each flow page and the pa
 <span><i class="k" style="background:var(--panel);box-shadow:inset 3px 0 var(--line)"></i>Panel: docked beside the table, stays open</span>
 <span><i class="k" style="background:var(--scrim)"></i>Dimmed backdrop: dialog that blocks the page</span>
 <span><i class="k" style="background:var(--accbg)"></i>Selected rows</span>
-<span><i class="k" style="background:var(--okbg)"></i>Just changed</span>
+<span><i class="k" style="background:var(--chgbg)"></i>Just changed</span>
 <span><i class="k" style="background:var(--card);box-shadow:inset 3px 0 var(--acc)"></i>Row cursor</span>
 <span><span class="n">1</span>Callout, explained on the right</span></div>
 ```

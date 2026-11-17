@@ -30,6 +30,7 @@
   --badbg: #33161a;
   --ok: #3fb950;
   --okbg: #13301d;
+  --chgbg: #472810;
   --note: #e11d48;
   --toast: #d1d9e0;
   --toastink: #0d1117;
@@ -203,7 +204,7 @@ table.t {
   background: var(--accbg);
 }
 .t tr.flash td {
-  background: var(--okbg);
+  background: var(--chgbg);
 }
 .t tr.dim td {
   color: var(--faint);
@@ -212,7 +213,7 @@ table.t {
   box-shadow: inset 3px 0 var(--acc);
 }
 .t td.chg {
-  background: var(--okbg);
+  background: var(--chgbg);
 }
 .selbar {
   display: flex;

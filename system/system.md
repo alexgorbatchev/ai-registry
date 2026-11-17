@@ -27,7 +27,7 @@ Put every question and decision request for the user on an Agent page: a private
 
 Complete the requested outcome through required validation, authorized integration, and task-owned cleanup. Apply the due-diligence repair authorization to discovered problems; seek a decision when its escalation conditions apply.
 
-Before UI-related changes, load `programming` and follow its **UI evidence** workflow for screenshot capture, acceptance review, and presentation to the user.
+Before the first edit that changes project code or configuration, load `programming` and follow it, including its ticket tracking; requests made directly in conversation are no exception. For UI-related changes, follow its **UI evidence** workflow for screenshot capture, acceptance review, and presentation to the user.
 
 When a new Git worktree lacks the primary checkout's gitignored dependencies or build caches and `wt` is available, run `wt step copy-ignored` in it before installing or building. If it reports reflinked copies, they share storage with the source: exclude them from task disk budgets even though `du` reports their full size.
 

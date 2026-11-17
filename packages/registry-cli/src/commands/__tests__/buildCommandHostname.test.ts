@@ -45,6 +45,7 @@ describe("hostname skill variants", () => {
     const root = join(tempDir, "repo");
     paths = {
       root,
+      tools: [],
       overlays: [],
       harnesses: join(root, "harnesses"),
       skills: join(root, "skills"),

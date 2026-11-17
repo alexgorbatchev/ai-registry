@@ -47,7 +47,7 @@ Generated harness outputs are compiled by plugins at `packages/registry-cli/src/
 Source files keep their filenames and use [EJS](https://ejs.co/docs/) syntax. `just build` renders generated text outputs exactly once. Templates support native JavaScript expressions and control flow; only trusted templates should be built. Unknown variables, invalid JavaScript, failed includes, and missing environment values without defaults fail the build. Use raw output tags for paths and plain text; `<%= value %>` performs HTML escaping. Use `<%%` to emit a literal opening delimiter. Foreign `{{...}}` syntax passes through unchanged. Available locals:
 
 - `<%- repo_root %>`: Absolute path to the repository root during template expansion.
-- `<%- overlay_dir %>`: Absolute path to the last active private overlay directory, or empty string if none is configured. Use file_dir for resources relative to an asset in another overlay.
+- `<%- overlay_dir %>`: Absolute path to the last active private overlay directory, or empty string if none is configured; tool overlays never set it. Use file_dir for resources relative to an asset in another overlay.
 - `<%- skills_dir %>`: Absolute path to the repository's `skills/` directory.
 - `<%- commands_dir %>`: Absolute path to the repository's `commands/` directory.
 - `<%- output_dir %>`: Absolute path to the generated output root at `.output/`.
@@ -93,9 +93,28 @@ Separate paths with the platform PATH separator (`:` on Linux/macOS, `;` on Wind
 
 Each overlay may contain `skills/`, `commands/`, and `harnesses/`. Skill bundles are replaced as a whole, not merged file by file. Harness-specific skill overrides retain their precedence over all overlays.
 
-Overlay harness files carry private settings, such as MCP servers with private URLs. A file at `harnesses/<path>` in an overlay layers the public synced settings file at the same path, for example `harnesses/codex/config.toml` or `harnesses/opencode/opencode.jsonc`. The build renders it as a template and deep-merges it over the public source in overlay order: objects merge per key, and other values, lists included, replace earlier ones. When a harness edits a merged setting, the build writes the change back to the layer defining the longest part of its key path, with later overlays winning ties, and removes a deleted key from every layer that defines it. An overlay file under `harnesses/` that matches no synced settings file fails the build.
+Overlay harness files carry private settings, such as MCP servers with private URLs. A file at `harnesses/<path>` in an overlay layers the public synced settings file at the same path, for example `harnesses/codex/config.toml` or `harnesses/opencode/opencode.jsonc`. The build renders it as a template and deep-merges it over the public source in overlay order: objects merge per key, lists append the items earlier layers do not already hold, and other values replace earlier ones. When a harness edits a merged setting, the build writes the change back to the layer defining the longest part of its key path, with later layers winning ties, and removes a deleted key from every layer that defines it. A changed list is split instead: each layer keeps its own items that remain, and items the harness added go to the last non-tool layer defining the most of their key path. An overlay file under `harnesses/` that matches no synced settings file fails the build.
 
 Claude Code reads user-scope MCP servers only from its global `.claude.json`. Declare them under `mcpServers` in `harnesses/claude-code/claude.json`, in the public registry or an overlay. `just build` only renders them into the generated output; `just bootstrap` writes the declared servers into `$CLAUDE_CONFIG_DIR/.claude.json` or `~/.claude.json`, removes servers the registry stopped declaring, and leaves every other key, including servers added with `claude mcp add`, alone.
+
+### Tool Overlays
+
+Try a third-party tool's configuration without mixing it into the shared sources: put it in `tools/<name>/` and delete that directory to remove it.
+
+```text
+tools/example-tool/
+├── skills/agent/example-tool/SKILL.md
+├── commands/example.md
+└── harnesses/
+    ├── claude-code/settings.json   # e.g. only the tool's hooks
+    └── codex/hooks.json
+```
+
+Each directory under `tools/` is an overlay with the same structure and rules as a private overlay. Tool overlays layer in name order after the public sources and before `AI_REGISTRY_OVERLAY` entries, so private overlays still override them. Because lists append, a tool's hook entries join the registry's hooks for the same event instead of replacing them.
+
+Harness edits reach a tool overlay only inside what it defines. On a tie, the public source or a private overlay owns the change, and entries a harness adds to a list never go to a tool overlay while another layer exists. Deleting a tool's directory removes its skills, commands, and settings from the generated output and harness files on the next build.
+
+Tool overlays are public. Use template tokens for machine paths and keep private details in a private overlay. Copy a tool's settings into its overlay instead of letting its installer edit harness settings files; settings sync writes installer edits into the public source.
 
 ### Hostname Skill Variants
 

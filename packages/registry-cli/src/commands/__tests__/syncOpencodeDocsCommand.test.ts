@@ -79,6 +79,7 @@ describe("syncOpencodeDocsCommand", () => {
     root = await mkdtemp(join(TEST_ROOT, "case-"));
     registryPaths = {
       root,
+      tools: [],
       overlays: [],
       harnesses: join(root, "harnesses"),
       skills: join(root, "skills"),

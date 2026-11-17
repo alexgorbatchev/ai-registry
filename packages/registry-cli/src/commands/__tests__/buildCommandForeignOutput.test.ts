@@ -18,6 +18,7 @@ afterAll(async () => {
 function getRegistryPaths(root: string): IRegistryPaths {
   return {
     root,
+    tools: [],
     overlays: [],
     harnesses: join(root, "harnesses"),
     skills: join(root, "skills"),

@@ -39,11 +39,11 @@ These are acceptance requirements for guidance maintained here. The system promp
 Before changing the corresponding area, read:
 
 - Asset placement, bundle dependencies, vendoring provenance, or PR guidance: [source layout](docs/internal/references/registry-source-layout.md).
-- Skill bundles: [skills/AGENTS.md](skills/AGENTS.md). This registry's authoring locations are `skills/agent/`, `skills/user/`, and `harnesses/<target>/skills/`; installed or generated directories are not authoring locations. This is the registry-specific exception to creating new project skills in `<project>/.agents/skills`.
+- Skill bundles: [skills/AGENTS.md](skills/AGENTS.md). This registry's authoring locations are `skills/agent/`, `skills/user/`, `harnesses/<target>/skills/`, and `tools/<name>/skills/`; installed or generated directories are not authoring locations. This is the registry-specific exception to creating new project skills in `<project>/.agents/skills`.
 - Shared system instructions: [system/AGENTS.md](system/AGENTS.md). `system/system.md` ships to every harness.
 - Harness behavior or configuration: [harnesses/AGENTS.md](harnesses/AGENTS.md). Consult `harnesses/<target>/.tmp/<target>-source/` first, running that harness's `fetch-source.sh` if absent. Edit checked-in configuration rather than installed machine-local copies.
 - Package implementation: the affected `packages/<package-name>/AGENTS.md`, where present.
-- Source selection, hostname variants, overlays, EJS, output assembly, ignores, entrypoints, or public wrappers: [generation contracts](docs/internal/references/registry-generation.md).
+- Source selection, hostname variants, private and tool overlays, EJS, output assembly, ignores, entrypoints, or public wrappers: [generation contracts](docs/internal/references/registry-generation.md).
 - Generated edits, settings sync, recovery, storage, harness homes, bootstrap, scheduled updates, secret scanning, or publication: [state and bootstrap contracts](docs/internal/references/registry-state-and-bootstrap.md). Keep runtime data outside `.output/`; never clear `.state/` as cleanup.
 - Harness output files, command invocation, wrappers, system distribution, or Codex trust: [harness mappings](docs/internal/references/registry-harness-mapping.md).
 

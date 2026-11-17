@@ -50,10 +50,14 @@ export interface ISyncedSettingsFileOptions {
 }
 
 // One registry file holding part of a synced settings file's source. The public
-// registry file comes first; private overlay files follow and override it.
+// registry file comes first; tool overlay files and then private overlay files follow
+// and override it.
 export interface ISettingsSourceLayer {
   sourcePath: string;
   renderedText: string;
+  // A tool overlay layer takes harness edits only inside what it defines, so deleting
+  // the tool removes its settings without losing unrelated edits.
+  isTool?: boolean;
 }
 
 // "clean": tracked with no uncommitted edits, so a sync edit can be committed on its own.

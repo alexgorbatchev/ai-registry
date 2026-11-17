@@ -37,6 +37,7 @@ describe("buildCommand settings sync", () => {
 
     registryPaths = {
       root: repoRoot,
+      tools: [],
       overlays: [],
       harnesses: join(repoRoot, "harnesses"),
       skills: join(repoRoot, "skills"),

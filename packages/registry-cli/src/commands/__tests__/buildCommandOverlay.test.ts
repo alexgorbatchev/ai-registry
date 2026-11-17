@@ -50,6 +50,7 @@ describe("buildCommand with overlay", () => {
 
     registryPaths = {
       root: repoRoot,
+      tools: [],
       overlays: [overlayDir],
       harnesses: join(repoRoot, "harnesses"),
       skills: join(repoRoot, "skills"),
@@ -182,6 +183,42 @@ describe("buildCommand with overlay", () => {
     expect(messages).toContain(
       `   ↳ overlay settings for codex/config.toml: ${join(overlayDir, "harnesses", "codex", "config.toml")}`,
     );
+  });
+
+  it("layers tool overlays between the registry and private overlays", async () => {
+    const toolDir = join(repoRoot, "tools", "example-tool");
+    await Bun.write(join(toolDir, "skills", "tool-skill", "SKILL.md"), "---\nname: tool-skill\n---\n# Tool Skill\n");
+    await Bun.write(join(toolDir, "commands", "tool-cmd.md"), "---\ndescription: Tool command\n---\n# Tool\n");
+    await Bun.write(join(toolDir, "skills", "work-skill", "SKILL.md"), "---\nname: work-skill\n---\n# Tool copy\n");
+    const publicSettings = await Bun.file(join(repoRoot, "harnesses", "claude-code", "settings.json")).json();
+    const toolHook = { hooks: [{ type: "command", command: "tool-hook <%- file_dir %>" }] };
+    await Bun.write(
+      join(toolDir, "harnesses", "claude-code", "settings.json"),
+      `${JSON.stringify({ hooks: { PreToolUse: [toolHook] } })}\n`,
+    );
+    registryPaths.tools = [toolDir];
+    const messages: string[] = [];
+    const logSpy = spyOn(console, "log").mockImplementation((message) => messages.push(String(message)));
+    try {
+      await buildCommand({ hasAutoConfirm: true, registryPaths, loadShellEnvironment: loadTestShellEnvironment });
+    } finally {
+      logSpy.mockRestore();
+    }
+
+    const outputDir = registryPaths.output;
+    expect(existsSync(join(outputDir, "claude-code", "skills", "tool-skill", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(outputDir, "claude-code", "commands", "tool-cmd.md"))).toBe(true);
+    expect(await Bun.file(join(outputDir, "claude-code", "skills", "work-skill", "SKILL.md")).text()).toBe(
+      "---\nname: work-skill\n---\n# Work Skill\n",
+    );
+    const liveSettings = await Bun.file(join(outputDir, "claude-code", "settings.json")).json();
+    const renderedToolHook = {
+      hooks: [{ type: "command", command: `tool-hook ${join(toolDir, "harnesses", "claude-code")}` }],
+    };
+    expect(liveSettings.hooks.PreToolUse).toEqual([...publicSettings.hooks.PreToolUse, renderedToolHook]);
+    expect(liveSettings.hooks.Stop).toEqual(publicSettings.hooks.Stop);
+    expect(messages).toContain(`🧰 Using tool overlay: ${toolDir}`);
+    expect(await Bun.file(join(repoRoot, "harnesses", "claude-code", "settings.json")).json()).toEqual(publicSettings);
   });
 
   it("fails before changing outputs when an overlay harness file layers no synced settings file", async () => {

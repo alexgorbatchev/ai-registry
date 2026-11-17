@@ -1,4 +1,4 @@
-import { existsSync } from "fs";
+import { existsSync, readdirSync } from "fs";
 import { homedir } from "os";
 import { delimiter, join, resolve } from "path";
 
@@ -20,6 +20,9 @@ export function resolvePathWithHome(inputPath: string, rootDir: string): string 
 
 export type IRegistryPaths = {
   root: string;
+  /** Tool overlays under `tools/`, sorted by name; layered before `overlays`. */
+  tools: string[];
+  /** Private overlays from `AI_REGISTRY_OVERLAY`, in precedence order. */
   overlays: string[];
   harnesses: string;
   skills: string;
@@ -31,6 +34,17 @@ export type IRegistryPaths = {
   /** Long-lived unchecked state, such as the settings-sync merge base. */
   state: string;
 };
+
+// Each directory under `tools/` is one tool overlay. Sorting by code point keeps the
+// layering order the same on every machine.
+export function listToolOverlays(toolsDir: string): string[] {
+  if (!existsSync(toolsDir)) return [];
+  return readdirSync(toolsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+    .map((entry) => entry.name)
+    .sort()
+    .map((name) => join(toolsDir, name));
+}
 
 export function getRegistryPaths(): IRegistryPaths {
   const root = resolveRepoRoot();
@@ -49,6 +63,7 @@ export function getRegistryPaths(): IRegistryPaths {
 
   return {
     root,
+    tools: listToolOverlays(join(root, "tools")),
     overlays,
     harnesses: join(root, "harnesses"),
     skills: join(root, "skills"),

@@ -80,6 +80,22 @@ describe("resolveOverlaySettingsLayers", () => {
     );
   });
 
+  it("marks layers from tool overlays", async () => {
+    const options = await createOptions();
+    const [first, second] = options.overlayDirs;
+    const firstCodex = join(first ?? "", "harnesses", "codex", "config.toml");
+    const secondCodex = join(second ?? "", "harnesses", "codex", "config.toml");
+    await writeTestFile(firstCodex, "a = 1\n");
+    await writeTestFile(secondCodex, "b = 1\n");
+
+    const layers = await resolveOverlaySettingsLayers({ ...options, toolDirs: [first ?? ""] });
+
+    expect(layers.get("codex/config.toml")).toEqual([
+      { sourcePath: firstCodex, renderedText: "a = 1\n", isTool: true },
+      { sourcePath: secondCodex, renderedText: "b = 1\n" },
+    ]);
+  });
+
   it("returns no layers without overlays", async () => {
     const options = await createOptions();
 

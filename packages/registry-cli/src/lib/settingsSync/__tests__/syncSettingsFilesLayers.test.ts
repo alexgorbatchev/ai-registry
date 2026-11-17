@@ -176,3 +176,56 @@ describe("syncSettingsFiles with overlay layers", () => {
     ).rejects.toThrow(`Cannot sync settings file ${layout.overlaySourcePath}: ValueExpected at offset 11.`);
   });
 });
+
+describe("syncSettingsFiles with a tool overlay layer", () => {
+  const file: ISyncedSettingsFile = { relativePath: "harness/settings.json", liveOnlyKeyPaths: [] };
+  const guard = { matcher: "Bash", hooks: [{ type: "command", command: "guard" }] };
+  const toolHook = { hooks: [{ type: "command", command: "tool" }] };
+  const userHook = { hooks: [{ type: "command", command: "user" }] };
+
+  // Stages the public source again before each run, as every build does.
+  async function runToolSync(layout: ILayout, hasTool: boolean): Promise<void> {
+    await writeTestFile(join(layout.stagingDir, file.relativePath), await readFile(layout.publicSourcePath, "utf-8"));
+    const toolText = await readFile(layout.overlaySourcePath, "utf-8");
+    await syncSettingsFiles({
+      syncedSettingsFiles: [file],
+      stagingDir: layout.stagingDir,
+      outputDir: layout.outputDir,
+      stateDir: layout.stateDir,
+      sourcePathByOutputPath: new Map([[join(layout.stagingDir, file.relativePath), layout.publicSourcePath]]),
+      templateContext: { repo_root: layout.rootDir },
+      sourceRepository: createRecordingSourceRepository("unversioned"),
+      overlayLayers: new Map(
+        hasTool
+          ? [[file.relativePath, [{ sourcePath: layout.overlaySourcePath, renderedText: toolText, isTool: true }]]]
+          : [],
+      ),
+    });
+  }
+
+  it("adds a tool's hooks, keeps new harness hooks out of the tool, and removes the tool's hooks with it", async () => {
+    const layout = await createLayout("settings.json");
+    spyOn(console, "log").mockImplementation(() => {});
+    const livePath = join(layout.outputDir, file.relativePath);
+    await writeSources(
+      layout,
+      file,
+      `${JSON.stringify({ hooks: { PreToolUse: [guard] } })}\n`,
+      `${JSON.stringify({ hooks: { PreToolUse: [toolHook], SessionStart: [toolHook] } })}\n`,
+    );
+
+    await runToolSync(layout, true);
+    expect(await readJson(livePath)).toEqual({
+      hooks: { PreToolUse: [guard, toolHook], SessionStart: [toolHook] },
+    });
+
+    await writeTestFile(livePath, `${JSON.stringify({ hooks: { PreToolUse: [guard, toolHook, userHook] } })}\n`);
+    await runToolSync(layout, true);
+    expect(await readJson(layout.publicSourcePath)).toEqual({ hooks: { PreToolUse: [guard, userHook] } });
+    expect(await readJson(layout.overlaySourcePath)).toEqual({ hooks: { PreToolUse: [toolHook] } });
+
+    await runToolSync(layout, false);
+    expect(await readJson(livePath)).toEqual({ hooks: { PreToolUse: [guard, userHook] } });
+    expect(await readJson(layout.publicSourcePath)).toEqual({ hooks: { PreToolUse: [guard, userHook] } });
+  });
+});

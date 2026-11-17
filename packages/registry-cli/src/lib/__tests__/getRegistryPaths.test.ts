@@ -1,10 +1,10 @@
 import { factory_testRoot } from "./fixtures";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
-import { mkdir, mkdtemp, rm } from "fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
 import { homedir } from "os";
 import { delimiter, join, relative } from "path";
 
-import { getRegistryPaths, resolvePathWithHome } from "../getRegistryPaths";
+import { getRegistryPaths, listToolOverlays, resolvePathWithHome } from "../getRegistryPaths";
 
 const TEST_ROOT = factory_testRoot("getRegistryPaths");
 
@@ -79,5 +79,26 @@ describe("getRegistryPaths", () => {
     await mkdir(second);
     process.env.AI_REGISTRY_OVERLAY = ["", first, second, join(first, "."), " "].join(delimiter);
     expect(getRegistryPaths().overlays).toEqual([second, first]);
+  });
+});
+
+describe("listToolOverlays", () => {
+  it("lists tool directories sorted by name, skipping files and hidden entries", async () => {
+    const toolsDir = await mkdtemp(join(TEST_ROOT, "tools-"));
+    await mkdir(join(toolsDir, "zeta"));
+    await mkdir(join(toolsDir, "alpha"));
+    await mkdir(join(toolsDir, ".hidden"));
+    await writeFile(join(toolsDir, "README.md"), "notes\n");
+
+    expect(listToolOverlays(toolsDir)).toEqual([join(toolsDir, "alpha"), join(toolsDir, "zeta")]);
+    await rm(toolsDir, { recursive: true, force: true });
+  });
+
+  it("returns no tools when the directory is missing", () => {
+    expect(listToolOverlays(join(TEST_ROOT, "missing-tools"))).toEqual([]);
+  });
+
+  it("reads tools from the registry root", () => {
+    expect(getRegistryPaths().tools).toEqual(listToolOverlays(join(getRegistryPaths().root, "tools")));
   });
 });

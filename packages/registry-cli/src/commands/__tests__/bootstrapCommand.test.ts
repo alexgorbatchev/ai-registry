@@ -103,6 +103,7 @@ describe("bootstrapCommand", () => {
     homeDir = join(root, "home");
     registryPaths = {
       root: join(root, "repo"),
+      tools: [],
       overlays: [],
       harnesses: join(root, "repo", "harnesses"),
       skills: join(root, "repo", "skills"),

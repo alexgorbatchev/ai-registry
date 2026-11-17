@@ -34,8 +34,8 @@ export interface ISyncSettingsFilesOptions {
   sourceRepository: ISettingsSourceRepository;
   // Scheduled updates sync edits without creating commits. Defaults to true.
   shouldCommitSourceChanges?: boolean;
-  // Private overlay layers merged over each file's registry source, keyed by the
-  // file's relative path.
+  // Tool and private overlay layers merged over each file's registry source, in
+  // order, keyed by the file's relative path.
   overlayLayers?: ReadonlyMap<string, ISettingsSourceLayer[]>;
   // The checkout root this build renders for, recorded with the merge bases.
   checkoutRoot?: string;
@@ -82,7 +82,7 @@ async function replaceSymlinkWithFile(livePath: string): Promise<void> {
 }
 
 // The registry layers of a synced file: the public source the build staged, then the
-// private overlay layers merged over it.
+// tool and private overlay layers merged over it.
 async function getSourceLayers(
   file: ISyncedSettingsFile,
   options: ISyncSettingsFilesOptions,
@@ -102,7 +102,11 @@ async function writeSourceChanges(
   sourceChanges: ISettingsChange[],
 ): Promise<string[]> {
   const writtenSourcePaths: string[] = [];
-  const changesByLayer = routeSettingsChanges(layerValues, sourceChanges);
+  const changesByLayer = routeSettingsChanges(
+    layerValues,
+    sourceChanges,
+    layers.map((layer) => layer.isTool === true),
+  );
   for (const [index, layer] of layers.entries()) {
     const layerChanges = changesByLayer[index] ?? [];
     if (layerChanges.length === 0) continue;

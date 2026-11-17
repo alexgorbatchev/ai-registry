@@ -7,7 +7,10 @@ import type { ISettingsSourceLayer, ISyncedSettingsFile } from "./settingsSync/t
 export interface IResolveOverlaySettingsLayersOptions {
   // The public registry's `harnesses/` directory.
   harnessesDir: string;
+  // Every overlay in layering order: tool overlays first, then private overlays.
   overlayDirs: string[];
+  // The overlays in `overlayDirs` that are the registry's own tool overlays.
+  toolDirs?: string[];
   syncedSettingsFiles: ISyncedSettingsFile[];
   stagingDir: string;
   sourcePathByOutputPath: Map<string, string>;
@@ -20,7 +23,7 @@ async function listFiles(directory: string): Promise<string[]> {
   return entries.filter((entry) => entry.isFile()).map((entry) => join(entry.parentPath, entry.name));
 }
 
-// Finds the private overlay layers of every synced settings file: an overlay file at
+// Finds the overlay layers of every synced settings file: an overlay file at
 // `harnesses/<path>` layers the public `harnesses/<path>` source, in overlay order.
 // Overlays carry only such layers, so any other file under an overlay's `harnesses/`
 // fails the build instead of being silently ignored.
@@ -43,6 +46,7 @@ export async function resolveOverlaySettingsLayers(
       layers.push({
         sourcePath: layerPath,
         renderedText: await options.renderLayer(layerPath, await Bun.file(layerPath).text()),
+        ...(options.toolDirs?.includes(overlayDir) ? { isTool: true } : {}),
       });
       layerPaths.add(layerPath);
     }

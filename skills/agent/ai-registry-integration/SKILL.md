@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-11 09:14
+  last_modified: 2026-11-17 12:54
   status: current
 ---
 
@@ -65,11 +65,19 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Work-specific, proprietary skills and commands that cannot be committed to this public repository live in a separate private repository.
 - Configure `AI_REGISTRY_OVERLAY` in shell configuration or git-ignored `.env` as a PATH-style list of overlay roots (`:` on Linux/macOS, `;` on Windows). Paths support home expansion and registry-relative resolution. Empty entries are ignored; missing paths warn and are skipped. Repeated normalized paths keep their last occurrence.
 - The overlay repository should mirror standard registry folders: `skills/`, `commands/`, and `harnesses/`.
-- Put private harness settings, such as MCP servers with private URLs, in an overlay file at the same path as the public synced settings file it extends, for example `harnesses/codex/config.toml`. The build deep-merges overlay files over the public source in overlay order: objects merge per key, and other values, lists included, replace earlier ones. Settings sync writes each harness edit back to the layer defining the longest part of its key path, with later overlays winning ties, and removes a deleted key from every layer that defines it. An overlay file under `harnesses/` that matches no synced settings file fails the build.
+- Put private harness settings, such as MCP servers with private URLs, in an overlay file at the same path as the public synced settings file it extends, for example `harnesses/codex/config.toml`. The build deep-merges overlay files over the public source in overlay order: objects merge per key, lists append items earlier layers do not hold, and other values replace earlier ones. Settings sync writes each harness edit back to the layer defining the longest part of its key path, with later layers winning ties, and removes a deleted key from every layer that defines it; a changed list is split so each layer keeps its remaining items and added items go to the last non-tool layer. An overlay file under `harnesses/` that matches no synced settings file fails the build.
 - Declare Claude Code MCP servers in `harnesses/claude-code/claude.json` (`mcpServers` only); keep private servers in the overlay's copy. `just build` renders them into the generated output; `just bootstrap` writes the declared entries into Claude Code's global `.claude.json` and leaves servers added in Claude Code and every other key alone.
 - Keep `just build` free of changes outside the registry checkout and its overlays. Put anything that writes machine-wide harness configuration in a bootstrap target, and never run bootstrap from a linked worktree; it refuses.
 - Build and bootstrap merge overlays left to right; the last matching skill or command wins. Replace complete bundles. Inspect skill conflict notes for the selected and replaced sources. Preserve harness-specific override precedence. The overlay_dir template variable identifies the last active overlay; use file_dir for resources relative to assets in other overlays.
 - Apply the same safe recovery checks to overlay-backed generated files. Recover supported edits to the mapped overlay source; preserve both versions and suspend application on conflicts or unsupported recovery.
+
+## Tool Overlays
+
+- Put configuration for a third-party tool on trial in `tools/<name>/` beneath the repo_root token, using the private overlay structure: `skills/`, `commands/`, and `harnesses/<path>` files that layer synced settings files. Deleting the directory removes everything it contributed on the next build.
+- Put only the tool's own entries in its settings layers, such as its hook entries under the hook events it uses; lists append, so they join the registry's entries for the same event.
+- Tool overlays layer after the public sources and before private overlays. They own harness edits only inside keys only they define; added list items go to another layer.
+- Copy a tool's settings into its overlay instead of running the tool's installer against harness settings files: settings sync writes installer edits into the public source.
+- Tool overlays are public. Use the file_dir or repo_root token, or the env helper, for machine paths, and keep private details in a private overlay.
 
 ## Add A Skill
 
@@ -194,6 +202,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Add a vendored third-party code package for a harness under `vendor/<name>/` beneath the repo_root token.
 - Add shared system guidance under `system/` beneath the repo_root token; `system/system.md` is the system prompt every harness ships.
 - Add shared harness guidance under `harnesses/AGENTS.md` beneath the repo_root token.
+- Add a third-party tool's trial configuration under `tools/<name>/` beneath the repo_root token.
 - Add or update a vendored third-party skill under the skills_dir token plus `skills-lock.json` beneath the repo_root token.
 - OpenCode configuration lives in `harnesses/opencode/opencode.jsonc` beneath the repo_root token.
 - Codex docs snapshots, build logic, and Codex-only shipped skills live under `harnesses/codex/` beneath the repo_root token.

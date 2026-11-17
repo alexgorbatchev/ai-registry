@@ -1,6 +1,6 @@
 ---
 created_on: 2026-11-10 11:33
-last_modified: 2026-11-10 13:36
+last_modified: 2026-11-17 12:54
 status: current
 ---
 
@@ -26,6 +26,7 @@ For agents adding, moving, or editing registry assets. Paths are relative to the
   - **USE SOURCE REFERENCE FIRST:** When diagnosing harness-specific issues, analyzing behavioral contracts, or updating configurations, ALWAYS consult the local checked-out source code under `harnesses/<harness>/.tmp/<harness>-source/` first. Never guess, assume, or rely on memory. Run the respective `fetch-source.sh` first if the directory is absent.
   - Only files inside `harnesses/<target>/` are injected directly into the matching target output directories during the build process, subject to `.registry-ignore` rules.
   - Current generated harnesses are OpenCode (`harnesses/opencode/`), Codex (`harnesses/codex/`), Pi (`harnesses/pi/`), and Claude Code (`harnesses/claude-code/`).
+- **Tool Overlays (`tools/<name>/`)**: Checked-in overlays for third-party tools on trial, each with optional `skills/`, `commands/`, and `harnesses/<path>` settings layers. Put a tool's harness settings, such as its hook entries, here rather than in `harnesses/<target>/`, so deleting the directory removes them. Contracts are in [generation contracts](registry-generation.md#tool-overlays-tools).
 - **Standalone Packages (`packages/<package-name>/`)**:
   - Publishable repo-local packages that are distributed independently from generated harness outputs live under `packages/`.
   - Add each standalone package to the root `package.json` workspaces so `bun install` manages it consistently, and give it its own `justfile` linked from the root `justfile` with `mod`.

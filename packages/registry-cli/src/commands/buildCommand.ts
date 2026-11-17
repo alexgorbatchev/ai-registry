@@ -292,8 +292,10 @@ interface IBuildOptions {
 async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): Promise<void> {
   console.log("🚀 Building Unified Agent Outputs...");
   const buildHostname = resolveBuildHostname(process.env.AI_REGISTRY_HOSTNAME, hostname());
-  const { root, overlays, output, harnesses, skills, commands, systemPrompt, temp, state } =
+  const { root, tools, overlays, output, harnesses, skills, commands, systemPrompt, temp, state } =
     options.registryPaths ?? getRegistryPaths();
+  // Tool overlays layer first so private overlays can still override them.
+  const layeredOverlays = [...tools, ...overlays];
 
   const GENERATED_OUTPUT_STAGING_DIR = join(temp, "generated-output-staging");
   const TEMPLATE_CONTEXT = {
@@ -304,6 +306,9 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     output_dir: output,
   } as const;
 
+  for (const tool of tools) {
+    console.log(`🧰 Using tool overlay: ${tool}`);
+  }
   for (const overlay of overlays) {
     console.log(`📦 Using overlay: ${overlay}`);
   }
@@ -334,8 +339,8 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     syncSettingsFile: settingsSyncRegistry.syncSettingsFile,
   };
 
-  const overlaySkillsDirs = overlays.map((overlay) => join(overlay, "skills"));
-  const overlayCommandsDirs = overlays.map((overlay) => join(overlay, "commands"));
+  const overlaySkillsDirs = layeredOverlays.map((overlay) => join(overlay, "skills"));
+  const overlayCommandsDirs = layeredOverlays.map((overlay) => join(overlay, "commands"));
   const [resolvedSkills, resolvedCommands] = await Promise.all([
     resolveRegistryAssets(skills, overlaySkillsDirs),
     resolveRegistryAssets(commands, overlayCommandsDirs),
@@ -355,9 +360,9 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     commandSourcePaths: resolvedCommands.sourcePaths,
   };
 
-  if (overlays.length > 0) {
+  if (layeredOverlays.length > 0) {
     const isOverlaySource = (sourcePath: string | undefined) =>
-      overlays.some((overlay) => sourcePath?.startsWith(overlay + sep));
+      layeredOverlays.some((overlay) => sourcePath?.startsWith(overlay + sep));
     const overlaySkillNames = assets.skills.filter((name) => isOverlaySource(assets.skillSourcePaths[name]));
     const overlayCommandNames = assets.commands.filter((name) => isOverlaySource(assets.commandSourcePaths[name]));
     if (overlaySkillNames.length > 0) {
@@ -372,7 +377,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   for (const unifiedHarnessPlugin of unifiedHarnessPlugins) {
     await unifiedHarnessPlugin.buildOutput({
       harnessDir: join(harnesses, unifiedHarnessPlugin.target),
-      overlayDirs: overlays,
+      overlayDirs: layeredOverlays,
       outputDir: GENERATED_OUTPUT_STAGING_DIR,
       systemPromptPath: systemPrompt,
       assets,
@@ -400,7 +405,8 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
   const unmanagedPaths: IUnmanagedOutputPaths = { syncedFilePaths };
   const overlayLayers = await resolveOverlaySettingsLayers({
     harnessesDir: harnesses,
-    overlayDirs: overlays,
+    overlayDirs: layeredOverlays,
+    toolDirs: tools,
     syncedSettingsFiles,
     stagingDir: GENERATED_OUTPUT_STAGING_DIR,
     sourcePathByOutputPath,
@@ -498,7 +504,7 @@ async function buildOutputs(options: IBuildOptions, canRecoverEdits: boolean): P
     console.log(`  - ${join(output, unifiedHarnessPlugin.target)}`);
   }
   console.log(`  - ${join(output, GENERATED_OUTPUT_MANIFEST_NAME)}`);
-  for (const overlay of overlays) {
+  for (const overlay of layeredOverlays) {
     console.log(`  - overlay merged: ${overlay}`);
   }
   console.log("\nTo test OpenCode instantly via CLI, run:");

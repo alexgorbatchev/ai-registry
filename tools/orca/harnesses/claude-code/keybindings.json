@@ -1,0 +1,10 @@
+{
+  "bindings": [
+    {
+      "bindings": {
+        "ctrl+alt+g": "command:orca-agent-view"
+      },
+      "context": "Chat"
+    }
+  ]
+}

@@ -276,7 +276,7 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
   <div class="card"><h3><a href="<key>.html">Flow title</a></h3><p>One-sentence TLDR</p><div class="links"><a href="../<key>-proposed.html">Diagram</a><a href="../proposals/<key>.md">Proposal</a><a href="<ticket URL>">Ticket label</a></div></div>
   ```
 
-  The scaffolder inserts each card with a `{{TLDR_ONE_SENTENCE}}` placeholder; replace it with the flow page's TLDR. Without a filed ticket it omits the ticket link; add it after filing, with the same target as the page's nav, except in a public project ([Linking the ticket](proposals-and-tickets.md#linking-the-ticket)). Until the proposed diagram is rendered, its Diagram link reads `<span class="muted">Diagram: not generated yet</span>`, as [publishing](publishing.md#the-docs-index) requires of every link to a missing file; restore the link in Phase 6.
+  Each card names its flow exactly as the flow page's `h1` does, so renaming a flow renames its card in the same change (`index-card-name`). The scaffolder inserts each card with a `{{TLDR_ONE_SENTENCE}}` placeholder; replace it with the flow page's TLDR. Without a filed ticket it omits the ticket link; add it after filing, with the same target as the page's nav, except in a public project ([Linking the ticket](proposals-and-tickets.md#linking-the-ticket)). Until the proposed diagram is rendered, its Diagram link reads `<span class="muted">Diagram: not generated yet</span>`, as [publishing](publishing.md#the-docs-index) requires of every link to a missing file; restore the link in Phase 6.
 - Keep the marker comment `<!-- flow cards: scaffold-flow.ts inserts new cards above this line -->` exactly as written. The scaffolder inserts every new card above it and fails when it is missing. There is one marker, so move a card into another group's grid by hand.
 
 ## The pattern page
@@ -337,6 +337,7 @@ It prints `file:line: severity rule: message` and exits 1 on any error. `--site-
 | `toast-action` | a `.toast` contains a `.btn`, `button`, `input` or `select` |
 | `nav` | a page with steps, other than `index.html` and `patterns.html`, lacks `nav.top` or its links to `index.html`, `<key>-current.html`, `<key>-proposed.html` and `proposals/<key>.md` |
 | `nav-ticket` (warning) | `nav.top` has no link that starts with `http://` or `https://` |
+| `index-card-name` | a card on `index.html` links a flow page (an `.html` page other than `index.html` and `patterns.html`, without a `#fragment`) and its link text differs from that page's `h1`, ignoring whitespace; rename the card, or the page when its own title is wrong |
 | `link` | a relative `href` or `src` on `a`, `link`, `img` or `script` points at a missing file, at a directory without `index.html` or `index.md`, or at a `#fragment` with no matching id on the page or in the target HTML page |
 | `h1` | a page has other than exactly one `h1` |
 | `duplicate-id` | an id appears twice on a page |

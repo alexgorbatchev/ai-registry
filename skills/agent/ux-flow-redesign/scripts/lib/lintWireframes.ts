@@ -628,6 +628,38 @@ function checkNavigation(page: Page, findings: Finding[]): void {
   }
 }
 
+/** On the wireframe index, a card that links a flow page names it exactly as that page's h1 does. */
+function checkIndexCards(page: Page, findings: Finding[], parsed: Map<string, HtmlElement>): void {
+  const name = (element: HtmlElement) => textContent(element).replace(/\s+/g, " ").trim();
+  for (const card of findAll(page.root, (element) => hasClass(element, "card"))) {
+    const heading = findAll(card, (element) => element.tag === "h3")[0];
+    const link = heading ? findAll(heading, (element) => element.tag === "a")[0] : undefined;
+    const href = link?.attrs.get("href") ?? "";
+    if (!link || !href.endsWith(".html") || /^[a-z][a-z0-9+.-]*:|^\/|[#?]/i.test(href)) continue;
+    let target: string;
+    try {
+      target = resolve(dirname(page.path), decodeURIComponent(href));
+    } catch {
+      continue;
+    }
+    if (["index.html", "patterns.html"].includes(basename(target)) || !existsSync(target)) continue;
+    let targetRoot = parsed.get(target);
+    if (!targetRoot) {
+      targetRoot = parseHtml(readFileSync(target, "utf8"));
+      parsed.set(target, targetRoot);
+    }
+    const titles = findAll(targetRoot, (element) => element.tag === "h1");
+    if (titles.length !== 1 || name(titles[0]) === name(link)) continue;
+    findings.push({
+      file: page.path,
+      line: link.line,
+      severity: "error",
+      rule: "index-card-name",
+      message: `the card names ${href} "${name(link)}", but its h1 reads "${name(titles[0])}"; use the page's title`,
+    });
+  }
+}
+
 function checkDocument(page: Page, findings: Finding[]): void {
   const headings = findAll(page.root, (element) => element.tag === "h1");
   if (headings.length !== 1) {
@@ -750,6 +782,7 @@ export function lintWireframes(paths: string[], options: LintOptions = {}): Find
     }
     checkMenus(page, findings);
     checkLinks(page, options, findings, parsed);
+    if (basename(page.path) === "index.html") checkIndexCards(page, findings, parsed);
     checkDocument(page, findings);
   }
   if (linkedSheets.size > 1) {

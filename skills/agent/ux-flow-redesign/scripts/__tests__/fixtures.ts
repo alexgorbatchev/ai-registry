@@ -34,7 +34,7 @@ export function factory_wireframeSet(
     join(wireframes, "index.html"),
     factory_filledTemplate("wireframes-index.html", key).replace(
       "<!-- flow cards",
-      `<div class="card"><h3><a href="${key}.html">Flow</a></h3></div>\n<!-- flow cards`,
+      `<div class="card"><h3><a href="${key}.html">flow title</a></h3></div>\n<!-- flow cards`,
     ),
   );
   writeFileSync(join(wireframes, "patterns.html"), factory_filledTemplate("patterns.html", key));

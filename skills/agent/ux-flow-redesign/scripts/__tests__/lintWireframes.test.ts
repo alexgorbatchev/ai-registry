@@ -29,6 +29,26 @@ test("the filled flow, index and pattern templates lint clean", () => {
   expect(lintWireframes(pages)).toEqual([]);
 });
 
+describe("index cards", () => {
+  test("a card that names its flow page differently from the page's h1 fails, other cards are ignored", () => {
+    const { pages, wireframes } = factory_wireframeSet(factory_testDirectory("lint-card-name"));
+    const index = join(wireframes, "index.html");
+    writeFileSync(
+      index,
+      readFileSync(index, "utf8").replace(
+        "<!-- flow cards",
+        '<div class="card"><h3><a href="patterns.html#selection">Selection rules</a></h3></div>\n<!-- flow cards',
+      ),
+    );
+    expect(lintWireframes(pages)).toEqual([]);
+    writeFileSync(index, readFileSync(index, "utf8").replace(">flow title</a>", ">\n  Old  flow name\n</a>"));
+    const findings = lintWireframes(pages);
+    expect(rules(findings)).toEqual(["error index-card-name"]);
+    expect(findings[0].file).toBe(index);
+    expect(findings[0].message).toContain('"Old flow name", but its h1 reads "flow title"');
+  });
+});
+
 describe("shared stylesheet", () => {
   test("requires the link, and flags copied blocks, redefined tokens, other fonts and a capped layout", () => {
     const root = factory_testDirectory("lint-sheet");

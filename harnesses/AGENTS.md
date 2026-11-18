@@ -15,6 +15,18 @@ This directory contains source-of-truth harness overrides and maintenance notes 
 - Pin external plugin versions and commit SHAs so generated outputs stay reproducible.
 - Treat harness-written generated-file edits as expected. Automatically recover supported edits into their mapped source only when the manifest baseline and exact reverse transformation establish that source changes will not be overwritten; regenerate every affected output afterward. Preserve source and generated versions and suspend output application on conflicts, unsupported recovery, or save failures. Do not add an ownership investigation or confirmation merely for harness drift, and do not bypass reconciliation with `-y`. Preserve all session/runtime data.
 
+## Skill Discovery
+
+Each harness loads user skills from these folders (verified in their sources):
+
+- Claude Code: `${CLAUDE_CONFIG_DIR:-~/.claude}/skills` only.
+- Codex: `${CODEX_HOME:-~/.codex}/skills` and `~/.agents/skills`. Roots are deduplicated by path, not by skill name.
+- Pi: `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills` and `~/.agents/skills`. A name collision keeps one skill and reports a collision diagnostic.
+- OpenCode: its own `skills/`, `~/.agents/skills`, and `~/.claude/skills`. Reading `.claude` skills stops only when `OPENCODE_DISABLE_CLAUDE_CODE` or `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS` is set in the environment; its config file has no equivalent.
+
+- Stage every skill into each harness's own skills folder. Do not write registry skills to `~/.agents/skills`: Claude Code does not read it, and harness-specific skills that override a shared skill by name would load twice in Codex and Pi.
+- Keep `~/.agents/skills` an empty read-only directory. The dotfiles Orca recipe enforces this after every Orca install or update, so Orca and global `npx skills add` installs cannot create copies there that duplicate registry skills in Codex, Pi, and OpenCode. Vendor external skills with `just skills-add` instead.
+
 Harnesses are only built into `.output/` when they provide `packages/registry-cli/src/harnesses/<name>/build.ts`.
 
 ## Claude Code

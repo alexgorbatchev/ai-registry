@@ -1,0 +1,8 @@
+# Orca tool overlay
+
+- `harnesses/{claude-code,codex,pi}/skills/agent/` hold identical copies of Orca's bundled skills. Orca skills ship only to Claude Code, Codex, and Pi; never add them to OpenCode or to the overlay's all-harness `skills/`.
+- Copy skills unmodified from the `skills/` directory of the upstream `stablyai/orca` tag matching the installed app (`CFBundleShortVersionString` in `/Applications/Orca.app/Contents/Info.plist`). Verify every file against the SHA-256 digests in `/Applications/Orca.app/Contents/Resources/skills/current-manifest.json` before committing, refresh all three copies together, and record the tag and commit in `README.md`.
+- Do not add `author` frontmatter. Without it the build emits the skills under their upstream names, which Orca matches to recognize them as installed.
+- Orca installs skills into `~/.agents/skills` and links them into each harness's skills folder, including the registry's generated output. That folder stays locked (see Skill Discovery in `harnesses/AGENTS.md`). Remove any link Orca leaves in `.output/` before building.
+- Orca's setup screens report the orchestration skill as missing for Codex, Pi, and other agents, with "Orca can't write to ~/.agents/skills". Its install plan counts only `~/.agents/skills` for those agents; Claude Code also counts `~/.claude/skills`. The status feeds only settings, onboarding, and activity views, and gates no orchestration behavior, so do not unlock the folder to clear it.
+- `tool.json` owns settings values containing `.orca/agent-hooks` or `orca-agent-view`, so Orca's hook and keybinding edits sync into `harnesses/` here. The hook scripts in `~/.orca/agent-hooks/` belong to Orca's installer; machines without them skip this overlay.

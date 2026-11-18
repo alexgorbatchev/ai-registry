@@ -75,14 +75,7 @@ export type IHarnessBuildContext = {
 // target writes the entries a generated settings file declares in `tables` into
 // a settings file the harness owns, such as Claude Code's `.claude.json`.
 export type IBootstrapTarget =
-  | {
-      kind: "home";
-      sourcePath: string;
-      targetPath: string;
-      description: string;
-      // Leaves the home directory read-only (0555) after linking, so other tools cannot add entries to it.
-      readOnly?: boolean;
-    }
+  | { kind: "home"; sourcePath: string; targetPath: string; description: string }
   | { kind: "link"; sourcePath: string; targetPath: string; description: string }
   | {
       kind: "entries";

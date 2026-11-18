@@ -1,6 +1,6 @@
 import { factory_testRoot } from "./fixtures";
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
-import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { smokeBootstrapCommand, type ISmokeBootstrapRunner } from "../smokeBootstrapCommand";
@@ -49,12 +49,8 @@ async function emulateBootstrap(repositoryDir: string, environment: NodeJS.Proce
   await link(join(outputDir, "claude-code", "settings.json"), join(claudeHome, "settings.json"));
   await link(join(outputDir, "pi", "APPEND_SYSTEM.md"), join(piHome, "APPEND_SYSTEM.md"));
 
-  const sharedSkillsHome = join(homeDir, ".agents", "skills");
   await writeTestFile(join(outputDir, "agents", "skills", "example", "SKILL.md"), "# Example\n");
-  await mkdir(sharedSkillsHome, { recursive: true });
-  await chmod(sharedSkillsHome, 0o755);
-  await link(join(outputDir, "agents", "skills", "example"), join(sharedSkillsHome, "example"));
-  await chmod(sharedSkillsHome, 0o555);
+  await link(join(outputDir, "agents", "skills"), join(homeDir, ".agents", "skills"));
 }
 
 describe("smokeBootstrapCommand", () => {
@@ -83,7 +79,6 @@ describe("smokeBootstrapCommand", () => {
 
   afterEach(async () => {
     mock.restore();
-    await chmod(join(root, ".tmp", "bootstrap-smoke", ".agents", "skills"), 0o755).catch(() => undefined);
     await rm(root, { recursive: true, force: true });
   });
 
@@ -121,14 +116,16 @@ describe("smokeBootstrapCommand", () => {
     );
   });
 
-  it("fails when bootstrap leaves the shared skills folder writable", async () => {
-    const writableRunner: ISmokeBootstrapRunner = async (repositoryDir, environment) => {
+  it("fails when bootstrap leaves ~/.agents/skills a real folder instead of a link to the shared skills", async () => {
+    const copyingRunner: ISmokeBootstrapRunner = async (repositoryDir, environment) => {
       await emulateBootstrap(repositoryDir, environment);
-      await chmod(join(environment.HOME ?? "", ".agents", "skills"), 0o755);
+      const sharedSkillsHome = join(environment.HOME ?? "", ".agents", "skills");
+      await rm(sharedSkillsHome, { force: true });
+      await writeTestFile(join(sharedSkillsHome, "example", "SKILL.md"), "# Example\n");
     };
 
-    await expect(smokeBootstrapCommand({ root, runBootstrap: writableRunner })).rejects.toThrow(
-      `Expected ${join(root, ".tmp", "bootstrap-smoke", ".agents", "skills")} to be read-only`,
+    await expect(smokeBootstrapCommand({ root, runBootstrap: copyingRunner })).rejects.toThrow(
+      `Expected symlink at: ${join(root, ".tmp", "bootstrap-smoke", ".agents", "skills")}`,
     );
   });
 });

@@ -1,15 +1,12 @@
 import { existsSync, type Stats } from "fs";
-import { chmod, lstat, mkdir, readdir, readlink, rename, rm, symlink } from "fs/promises";
-import { basename, dirname, isAbsolute, join, relative, resolve } from "path";
+import { lstat, mkdir, readdir, readlink, rename, rm, symlink } from "fs/promises";
+import { isAbsolute, join, relative, resolve } from "path";
 
 import type { IGeneratedOutputManifest } from "./generatedOutputUtils";
 import type { IBootstrapTarget } from "./harnessBuild";
 import { getErrorCode } from "./getErrorCode";
 
 type IHomeBootstrapTarget = Extract<IBootstrapTarget, { kind: "home" }>;
-
-const WRITABLE_DIRECTORY_MODE = 0o755;
-const READ_ONLY_DIRECTORY_MODE = 0o555;
 
 export type IHomeApplyResult = {
   linked: string[];
@@ -73,17 +70,6 @@ async function assertHomeDirectory(homePath: string): Promise<void> {
   }
 }
 
-// A read-only home is a folder tools scan as a whole, such as shared skills, so a
-// backup inside it would be loaded too; its backups go to a sibling folder instead.
-async function getBackupPath(target: IHomeBootstrapTarget, name: string, backupSuffix: string): Promise<string> {
-  if (target.readOnly !== true) {
-    return join(target.targetPath, `${name}.backup-${backupSuffix}`);
-  }
-  const backupDir = join(dirname(target.targetPath), `${basename(target.targetPath)}.backup-${backupSuffix}`);
-  await mkdir(backupDir, { recursive: true });
-  return join(backupDir, name);
-}
-
 async function linkManagedEntries(
   target: IHomeBootstrapTarget,
   managedEntryNames: readonly string[],
@@ -111,7 +97,7 @@ async function linkManagedEntries(
       continue;
     }
 
-    const backupPath = await getBackupPath(target, name, backupSuffix);
+    const backupPath = `${homeEntryPath}.backup-${backupSuffix}`;
     await rename(homeEntryPath, backupPath);
     await symlink(sourceEntryPath, homeEntryPath);
     result.backedUp.push({ name, backupPath });
@@ -153,16 +139,7 @@ export async function applyHomeTarget(
 
   const result: IHomeApplyResult = { linked: [], relinked: [], backedUp: [], removed: [] };
   await assertHomeDirectory(target.targetPath);
-  if (target.readOnly === true) {
-    await chmod(target.targetPath, WRITABLE_DIRECTORY_MODE);
-  }
-  try {
-    await linkManagedEntries(target, managedEntryNames, backupSuffix, result);
-    await removeStaleLinks(target, managedEntryNames, result);
-  } finally {
-    if (target.readOnly === true) {
-      await chmod(target.targetPath, READ_ONLY_DIRECTORY_MODE);
-    }
-  }
+  await linkManagedEntries(target, managedEntryNames, backupSuffix, result);
+  await removeStaleLinks(target, managedEntryNames, result);
   return result;
 }

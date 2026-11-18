@@ -37,7 +37,7 @@ import { readGeneratedOutputManifest } from "../lib/readGeneratedOutputManifest"
 import { reverseTemplateContent } from "../lib/reverseTemplateContent";
 import { isUserSkillPath, removeDisableModelInvocation, updateSkillName } from "../lib/userSkillUtils";
 import { resolveBuildHostname } from "../lib/resolveBuildHostname";
-import { parseSkillIdentity } from "../lib/resolveSkillVariant";
+import { parseSkillName } from "../lib/resolveSkillVariant";
 import { createSettingsSyncRegistry } from "../lib/settingsSync/createSettingsSyncRegistry";
 import { createGitSettingsSourceRepository } from "../lib/settingsSync/createGitSettingsSourceRepository";
 import {
@@ -149,8 +149,9 @@ export async function syncBackModifiedFiles(
       if (isUserSkillPath(nextSource) && nextSource.endsWith("SKILL.md")) {
         recovered = removeDisableModelInvocation(recovered);
       }
-      if (nextSource.endsWith("SKILL.md") && originalSource.startsWith("---")) {
-        recovered = updateSkillName(recovered, parseSkillIdentity(originalSource, nextSource).name);
+      const originalSkillName = nextSource.endsWith("SKILL.md") ? parseSkillName(originalSource) : null;
+      if (originalSkillName !== null) {
+        recovered = updateSkillName(recovered, originalSkillName);
       }
       return recovered;
     };

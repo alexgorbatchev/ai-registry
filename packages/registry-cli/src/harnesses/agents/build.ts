@@ -19,16 +19,17 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await context.buildSupport.stageRegistryAssets(context, { skillsDir });
 }
 
+// `~/.agents/skills` links to the whole output folder rather than to each skill, so
+// every skill resolves to a real folder: Orca recognizes its bundled skills only as
+// real folders. Orca's updates to its skills land in this output, and the build
+// recovers them into the Orca tool overlay like any other generated edit.
 async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {
   return [
     {
-      kind: "home",
+      kind: "link",
       sourcePath: getSharedSkillsOutputDir(outputDir),
       targetPath: join(homedir(), ".agents", "skills"),
       description: "Shared agent skills",
-      // Orca and `npx skills add -g` install into this folder; read-only keeps
-      // their copies from duplicating registry skills.
-      readOnly: true,
     },
   ];
 }

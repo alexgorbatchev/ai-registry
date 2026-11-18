@@ -45,17 +45,16 @@ describe("shared agent skills build", () => {
     expect(existsSync(join(repositoryRoot, ".output", "bin"))).toBe(false);
   });
 
-  it("applies the shared skills to a read-only ~/.agents/skills", async () => {
+  it("links ~/.agents/skills to the whole shared skills output, so each skill is a real folder", async () => {
     assert(plugin.getBootstrapTargets);
     const outputDir = join(TEST_ROOT, ".output");
 
     expect(await plugin.getBootstrapTargets(outputDir)).toEqual([
       {
-        kind: "home",
+        kind: "link",
         sourcePath: join(outputDir, "agents", "skills"),
         targetPath: join(homedir(), ".agents", "skills"),
         description: "Shared agent skills",
-        readOnly: true,
       },
     ]);
   });

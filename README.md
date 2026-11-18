@@ -355,10 +355,11 @@ Bootstrap also links generated Pi helpers into `~/.local/bin`:
 
 ### Shared skills
 
-The shared skills output `.output/agents/skills/` holds every registry skill. Bootstrap links each one into `~/.agents/skills`, which Codex, Pi, and OpenCode read alongside their own skills folders, and leaves that folder read-only so tools such as Orca or `npx skills add -g` cannot install duplicates there.
+The shared skills output `.output/agents/skills/` holds every registry skill, tool overlay skills included. Bootstrap links `~/.agents/skills`, which Codex, Pi, and OpenCode read alongside their own skills folders, to that whole folder, so each skill there is a real folder; tools such as Orca recognize their skills only that way.
 
 - a Codex, Pi, or OpenCode harness skill named like a registry skill stops the build, because those harnesses load both folders
-- a real entry already occupying a registry skill's name is moved to `~/.agents/skills.backup-<timestamp>/` before linking
+- an existing real `~/.agents/skills` is moved to `~/.agents/skills.backup-<timestamp>` before linking
+- edits tools make to registry skills through `~/.agents/skills` are recovered into their source on the next build, like other generated edits
 
 ### Using with Claude Code
 

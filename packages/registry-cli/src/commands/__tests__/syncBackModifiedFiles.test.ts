@@ -357,6 +357,37 @@ describe("syncBackModifiedFiles", () => {
     );
   });
 
+  it("recovers edits to a third-party skill whose frontmatter has no author", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const sourceDir = join(repositoryRoot, "tools/example/skills/agent/example");
+    const sourcePath = await writeTestFile(
+      sourceDir,
+      "SKILL.md",
+      "---\nname: example\ndescription: Example\n---\nOld.\n",
+    );
+    const outputDir = join(repositoryRoot, ".output");
+    const nextOutputDir = join(repositoryRoot, ".tmp/staging");
+    const relativePath = "agents/skills/example/SKILL.md";
+    const sourcePaths = new Map<string, string>();
+    await stageSourceDirectory(sourceDir, dirname(join(nextOutputDir, relativePath)), sourcePaths);
+    const editedContent = "---\nname: example\ndescription: Example\n---\nUpdated by the tool.\n";
+    await writeTestFile(outputDir, relativePath, editedContent);
+
+    const baseline = await collectGeneratedOutputEntries(nextOutputDir);
+    await syncBackModifiedFiles(
+      [{ path: relativePath, reason: "modified" }],
+      outputDir,
+      nextOutputDir,
+      sourcePaths,
+      {},
+      {},
+      baseline,
+      { [relativePath]: new Bun.CryptoHasher("sha256").update(await Bun.file(sourcePath).bytes()).digest("hex") },
+    );
+
+    expect(await Bun.file(sourcePath).text()).toBe(editedContent);
+  });
+
   it("rejects recovery into a different source before writing any edits", async () => {
     const repositoryRoot = await createTestDirectory();
     const outputDir = join(repositoryRoot, ".output");

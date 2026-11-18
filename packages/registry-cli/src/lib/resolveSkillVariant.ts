@@ -8,6 +8,21 @@ type ISkillIdentity = {
   author: string;
 };
 
+// Reads a skill's frontmatter `name` without requiring the rest of the registry's
+// skill metadata, which third-party skills such as tool overlays' may omit.
+export function parseSkillName(content: string): string | null {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  if (!match) return null;
+  try {
+    const frontmatter: unknown = YAML.parse(match[1]);
+    const name: unknown =
+      typeof frontmatter === "object" && frontmatter !== null ? Reflect.get(frontmatter, "name") : undefined;
+    return typeof name === "string" && name.trim() ? name : null;
+  } catch {
+    return null;
+  }
+}
+
 export function parseSkillIdentity(content: string, sourcePath: string): ISkillIdentity {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/);
   if (!match || !match[2].trim()) {

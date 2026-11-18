@@ -47,7 +47,7 @@ export type IBuildSupport = {
   mergeDirectory(sourceDir: string, destDir: string, options?: { move?: boolean }): Promise<void>;
   stageRegistryAssets(
     context: IHarnessBuildContext,
-    destinations: { skillsDir: string; commandsDir?: string },
+    destinations: { skillsDir?: string; commandsDir?: string },
   ): Promise<void>;
   stageHarnessSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void>;
   writeBinScript(outputDir: string, filename: string, content: string): Promise<void>;
@@ -75,7 +75,14 @@ export type IHarnessBuildContext = {
 // target writes the entries a generated settings file declares in `tables` into
 // a settings file the harness owns, such as Claude Code's `.claude.json`.
 export type IBootstrapTarget =
-  | { kind: "home"; sourcePath: string; targetPath: string; description: string }
+  | {
+      kind: "home";
+      sourcePath: string;
+      targetPath: string;
+      description: string;
+      // Leaves the home directory read-only (0555) after linking, so other tools cannot add entries to it.
+      readOnly?: boolean;
+    }
   | { kind: "link"; sourcePath: string; targetPath: string; description: string }
   | {
       kind: "entries";
@@ -435,9 +442,45 @@ export async function mergeDirectory(
 // Copies every registry skill and command into a harness output. Existing skill
 // paths are skipped so harness-local skills staged first take precedence; an
 // existing command path is a collision.
+function getRegistrySkillSourceDir(context: IHarnessBuildContext, skill: string): string {
+  return context.assets.skillSourcePaths[skill] ?? join(context.templateContext.skills_dir, skill);
+}
+
+async function getRegistrySkillOutputName(sourceDir: string, skill: string): Promise<string> {
+  const skillFilePath = join(sourceDir, "SKILL.md");
+  const skillAuthor = existsSync(skillFilePath) ? parseSkillAuthor(await readFile(skillFilePath, "utf-8")) : null;
+  return getOutputSkillName(skill, skillAuthor);
+}
+
+// Harnesses that also read the shared `~/.agents/skills` load a harness-specific
+// skill and a shared skill of the same name side by side instead of letting one
+// override the other, so such a collision fails the build.
+export async function assertNoSharedSkillCollisions(
+  context: IHarnessBuildContext,
+  skillsDir: string,
+  targetName: string,
+): Promise<void> {
+  if (!existsSync(skillsDir)) {
+    return;
+  }
+  const harnessSkillNames = new Set(await readdir(skillsDir));
+  const collisions: string[] = [];
+  for (const skill of context.assets.skills) {
+    const outputSkillName = await getRegistrySkillOutputName(getRegistrySkillSourceDir(context, skill), skill);
+    if (harnessSkillNames.has(outputSkillName)) {
+      collisions.push(outputSkillName);
+    }
+  }
+  if (collisions.length > 0) {
+    throw new Error(
+      `${targetName} skills share a name with shared skills in ~/.agents/skills, which ${targetName} also loads: ${collisions.sort().join(", ")}. Rename the ${targetName} skill or drop the shared one.`,
+    );
+  }
+}
+
 export async function stageRegistryAssets(
   context: IHarnessBuildContext,
-  destinations: { skillsDir: string; commandsDir?: string },
+  destinations: { skillsDir?: string; commandsDir?: string },
 ): Promise<void> {
   const { commandsDir, skillsDir } = destinations;
   const { assets } = context;
@@ -455,15 +498,13 @@ export async function stageRegistryAssets(
     }
   }
 
+  if (skillsDir === undefined) {
+    return;
+  }
+
   for (const skill of assets.skills) {
-    const sourceDir = assets.skillSourcePaths[skill] ?? join(context.templateContext.skills_dir, skill);
-    const skillFilePath = join(sourceDir, "SKILL.md");
-    let skillAuthor: string | null = null;
-    if (existsSync(skillFilePath)) {
-      const content = await readFile(skillFilePath, "utf-8");
-      skillAuthor = parseSkillAuthor(content);
-    }
-    const outputSkillName = getOutputSkillName(skill, skillAuthor);
+    const sourceDir = getRegistrySkillSourceDir(context, skill);
+    const outputSkillName = await getRegistrySkillOutputName(sourceDir, skill);
     const outputPath = join(skillsDir, outputSkillName);
     if (existsSync(outputPath)) continue;
     await context.buildSupport.stageSourceDirectory(sourceDir, outputPath);

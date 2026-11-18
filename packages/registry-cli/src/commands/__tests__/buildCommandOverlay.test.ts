@@ -71,15 +71,17 @@ describe("buildCommand with overlay", () => {
 
     const outputDir = registryPaths.output;
 
-    // OpenCode staging should include both base-skill and work-skill
-    expect(existsSync(join(outputDir, "opencode", "skills", "base-skill", "SKILL.md"))).toBe(true);
-    expect(existsSync(join(outputDir, "opencode", "skills", "work-skill", "SKILL.md"))).toBe(true);
+    // Codex, Pi, and OpenCode read shared skills from ~/.agents/skills, so only the
+    // shared output and Claude Code carry them.
+    for (const target of ["codex", "pi", "opencode"]) {
+      expect(existsSync(join(outputDir, target, "skills", "base-skill"))).toBe(false);
+    }
 
     // OpenCode commands should include both
     expect(existsSync(join(outputDir, "opencode", "commands", "base-cmd.md"))).toBe(true);
     expect(existsSync(join(outputDir, "opencode", "commands", "work-cmd.md"))).toBe(true);
 
-    for (const target of ["codex", "pi", "claude-code"]) {
+    for (const target of ["agents", "claude-code"]) {
       expect(existsSync(join(outputDir, target, "skills", "base-skill", "SKILL.md"))).toBe(true);
       expect(existsSync(join(outputDir, target, "skills", "work-skill", "SKILL.md"))).toBe(true);
     }
@@ -111,7 +113,7 @@ describe("buildCommand with overlay", () => {
       `NOTE: Skill "base-skill" conflict: ${firstSkill} replaces ${baseSkill}`,
       `NOTE: Skill "base-skill" conflict: ${lastSkill} replaces ${firstSkill}`,
     ]);
-    for (const target of ["opencode", "codex", "pi", "claude-code"]) {
+    for (const target of ["agents", "claude-code"]) {
       const outputSkill = join(registryPaths.output, target, "skills", "base-skill");
       expect(await Bun.file(join(outputSkill, "SKILL.md")).text()).toBe(expected);
       expect(await Bun.file(join(outputSkill, "first-only.txt")).exists()).toBe(false);

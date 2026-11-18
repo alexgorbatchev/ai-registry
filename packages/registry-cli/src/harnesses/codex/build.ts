@@ -3,8 +3,12 @@ import { existsSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
-import type { IBootstrapTarget, IHarnessBuildContext, IUnifiedHarnessPlugin } from "../../lib/harnessBuild";
-import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
+import {
+  assertNoSharedSkillCollisions,
+  type IBootstrapTarget,
+  type IHarnessBuildContext,
+  type IUnifiedHarnessPlugin,
+} from "../../lib/harnessBuild";
 import { applySettingsChanges } from "../../lib/settingsSync/applySettingsChanges";
 import { getCommandSkillName } from "./getCommandSkillName";
 import { CODEX_TRUSTED_DIRS_ENV, discoverTrustedProjects } from "./discoverTrustedProjects";
@@ -141,10 +145,8 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await stageCodexHooks(context, codexOutputDir);
   await stageHarnessRules(context, codexOutputDir);
   await context.buildSupport.stageHarnessSkills(context, skillsDir);
-  await context.buildSupport.stageRegistryAssets(context, { skillsDir });
   await stageCommandSkills(context, skillsDir);
-
-  await logHarnessSkillOverrides(context, "codex");
+  await assertNoSharedSkillCollisions(context, skillsDir, "codex");
 }
 
 async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {

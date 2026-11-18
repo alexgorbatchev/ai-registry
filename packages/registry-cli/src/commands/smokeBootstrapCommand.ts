@@ -1,4 +1,4 @@
-import { cp, lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from "fs/promises";
+import { chmod, cp, lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from "fs/promises";
 import { join } from "path";
 import { getRegistryPaths } from "../lib/getRegistryPaths";
 import { runCommand } from "../lib/runCommand";
@@ -49,6 +49,27 @@ async function assertRealDirectory(path: string): Promise<void> {
   }
 }
 
+// The shared skills folder is a read-only real directory holding only links into the
+// shared skills output.
+async function assertSharedSkillsLinked(targetDir: string, sourceDir: string): Promise<void> {
+  await assertRealDirectory(targetDir);
+  if (((await lstat(targetDir)).mode & 0o777) !== 0o555) {
+    fail(`Expected ${targetDir} to be read-only`);
+  }
+  const entries = await readdir(targetDir);
+  if (entries.length === 0) {
+    fail(`Expected shared skills in: ${targetDir}`);
+  }
+  for (const entry of entries) {
+    await assertSymlinkTarget(join(targetDir, entry), join(sourceDir, entry));
+  }
+}
+
+// A read-only folder blocks removing its entries, so restore write access first.
+async function makeWritableIfPresent(path: string): Promise<void> {
+  await chmod(path, 0o755).catch(() => undefined);
+}
+
 async function assertFileContent(path: string, expectedContent: string): Promise<void> {
   const content = await readFile(path, "utf-8").catch(() => fail(`Expected file to exist: ${path}`));
   if (content !== expectedContent) {
@@ -88,6 +109,8 @@ export async function smokeBootstrapCommand(
   const CLAUDE_CODE_TARGET = join(SMOKE_HOME, ".claude");
   const CLAUDE_CODE_SOURCE = join(SMOKE_REPO_DIR, ".output", "claude-code");
   const OUTPUT_MANIFEST = join(SMOKE_REPO_DIR, ".output", "manifest.json");
+  const SHARED_SKILLS_TARGET = join(SMOKE_HOME, ".agents", "skills");
+  const SHARED_SKILLS_SOURCE = join(SMOKE_REPO_DIR, ".output", "agents", "skills");
 
   async function seedExistingTargets(): Promise<void> {
     await mkdir(OPENCODE_TARGET, { recursive: true });
@@ -138,12 +161,14 @@ export async function smokeBootstrapCommand(
     await assertFileContent(join(PI_TARGET, "existing.txt"), "existing pi data\n");
     await assertSymlinkTarget(join(PI_TARGET, "APPEND_SYSTEM.md"), join(PI_SOURCE, "APPEND_SYSTEM.md"));
     await assertNoBackups(join(SMOKE_HOME, ".pi"), "agent.backup-");
+    await assertSharedSkillsLinked(SHARED_SKILLS_TARGET, SHARED_SKILLS_SOURCE);
     for (const scriptName of PUBLIC_SCRIPT_NAMES) {
       await assertSymlinkTarget(join(PUBLIC_BIN_DIR, scriptName), join(SMOKE_REPO_DIR, ".output", "bin", scriptName));
     }
   }
 
   console.log("🚬 Running bootstrap smoke test...\n");
+  await makeWritableIfPresent(SHARED_SKILLS_TARGET);
   await rm(SMOKE_HOME, { recursive: true, force: true });
   await createSmokeClone();
   await seedExistingTargets();

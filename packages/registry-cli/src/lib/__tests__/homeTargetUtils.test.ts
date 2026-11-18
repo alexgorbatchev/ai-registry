@@ -1,7 +1,7 @@
 import { factory_testRoot } from "./fixtures";
 import { afterAll, describe, expect, it } from "bun:test";
 import { existsSync } from "fs";
-import { lstat, mkdir, mkdtemp, readdir, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
+import { chmod, lstat, mkdir, mkdtemp, readdir, readFile, readlink, rm, symlink, writeFile } from "fs/promises";
 import { dirname, join } from "path";
 
 import { createGeneratedOutputManifest } from "../generatedOutputUtils";
@@ -141,6 +141,61 @@ describe("applyHomeTarget", () => {
     });
     expect(await readFile(backupPath, "utf-8")).toBe('{"local":true}\n');
     expect(await readlink(join(homePath, "settings.json"))).toBe(join(sourcePath, "settings.json"));
+  });
+
+  it("leaves a read-only home read-only after linking, backing up conflicts beside it rather than inside", async () => {
+    const root = await createTestDirectory();
+    const sourcePath = join(root, "output", "agents", "skills");
+    await writeTestFile(sourcePath, "shared/SKILL.md", "# Generated\n");
+    await writeTestFile(sourcePath, "fresh/SKILL.md", "# Fresh\n");
+    const homePath = join(root, "home", "skills");
+    await writeTestFile(homePath, "shared/SKILL.md", "# Installed by another tool\n");
+    await chmod(homePath, 0o555);
+
+    try {
+      const result = await applyHomeTarget(
+        { kind: "home", sourcePath, targetPath: homePath, description: "Shared agent skills", readOnly: true },
+        ["fresh", "shared"],
+        BACKUP_SUFFIX,
+      );
+
+      const backupPath = join(root, "home", `skills.backup-${BACKUP_SUFFIX}`, "shared");
+      expect(result).toEqual({
+        linked: ["fresh"],
+        relinked: [],
+        backedUp: [{ name: "shared", backupPath }],
+        removed: [],
+      });
+      expect(await readFile(join(backupPath, "SKILL.md"), "utf-8")).toBe("# Installed by another tool\n");
+      expect((await readdir(homePath)).sort()).toEqual(["fresh", "shared"]);
+      expect(await readlink(join(homePath, "shared"))).toBe(join(sourcePath, "shared"));
+      expect((await lstat(homePath)).mode & 0o777).toBe(0o555);
+    } finally {
+      await chmod(homePath, 0o755);
+    }
+  });
+
+  it("restores the read-only mode when linking fails", async () => {
+    const root = await createTestDirectory();
+    const sourcePath = join(root, "output", "agents", "skills");
+    await writeTestFile(sourcePath, "shared/SKILL.md", "# Generated\n");
+    const homePath = join(root, "home", "skills");
+    await writeTestFile(homePath, "shared/SKILL.md", "# Installed\n");
+    // A file where the backup folder belongs makes the backup fail.
+    await writeTestFile(root, `home/skills.backup-${BACKUP_SUFFIX}`, "occupied\n");
+
+    try {
+      await expect(
+        applyHomeTarget(
+          { kind: "home", sourcePath, targetPath: homePath, description: "Shared agent skills", readOnly: true },
+          ["shared"],
+          BACKUP_SUFFIX,
+        ),
+      ).rejects.toThrow();
+      expect((await lstat(homePath)).mode & 0o777).toBe(0o555);
+    } finally {
+      await chmod(homePath, 0o755);
+    }
   });
 
   it("removes dangling links into the generated output while keeping foreign links", async () => {

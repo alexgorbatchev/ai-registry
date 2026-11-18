@@ -32,9 +32,8 @@ describe("hostname skill variants", () => {
   }
 
   function outputSkills(): string[] {
-    return ["opencode/skills", "codex/skills", "pi/skills", "claude-code/skills"].map((relativePath) =>
-      join(paths.output, relativePath),
-    );
+    // Codex, Pi, and OpenCode read registry skills from the shared ~/.agents/skills.
+    return ["agents/skills", "claude-code/skills"].map((relativePath) => join(paths.output, relativePath));
   }
 
   beforeEach(async () => {
@@ -109,8 +108,8 @@ describe("hostname skill variants", () => {
       skillContent("example", "Default instructions."),
     );
     const manifest: IGeneratedOutputManifest = await Bun.file(join(paths.output, "manifest.json")).json();
-    expect(manifest.sourcePaths?.["codex/skills/example/SKILL.md"]).toBe(variantPath);
-    expect(manifest.sourcePaths?.["opencode/skills/example/SKILL.md"]).toBe(variantPath);
+    expect(manifest.sourcePaths?.["agents/skills/example/SKILL.md"]).toBe(variantPath);
+    expect(manifest.sourcePaths?.["claude-code/skills/example/SKILL.md"]).toBe(variantPath);
   });
 
   it("falls back to the default without rendering unmatched variants", async () => {
@@ -131,7 +130,7 @@ describe("hostname skill variants", () => {
       skillContent("example", "Detected machine."),
     );
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
-    expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text()).toBe(
+    expect(await Bun.file(join(paths.output, "agents/skills/example/SKILL.md")).text()).toBe(
       skillContent("example", "Detected machine."),
     );
   });
@@ -143,7 +142,7 @@ describe("hostname skill variants", () => {
       skillContent("example", "Different machine."),
     );
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
-    expect(await Bun.file(join(paths.output, "codex/skills/example/SKILL.md")).text()).toBe(
+    expect(await Bun.file(join(paths.output, "agents/skills/example/SKILL.md")).text()).toBe(
       skillContent("example", "Default instructions."),
     );
   });
@@ -184,23 +183,25 @@ describe("hostname skill variants", () => {
   });
 
   it("preserves harness override precedence with variants", async () => {
-    await write("repo/skills/agent/example/variants/workstation-a/SKILL.md", "Invalid overridden variant.");
-    for (const target of ["opencode", "codex", "pi", "claude-code"]) {
-      await write(
-        `repo/harnesses/${target}/skills/agent/example/SKILL.md`,
-        skillContent("example", "Harness default."),
-      );
-      await write(
-        `repo/harnesses/${target}/skills/agent/example/variants/workstation-a/SKILL.md`,
-        skillContent("example", "Harness variant."),
-      );
-    }
+    await write(
+      "repo/skills/agent/example/variants/workstation-a/SKILL.md",
+      skillContent("example", "Public variant."),
+    );
+    await write(
+      "repo/harnesses/claude-code/skills/agent/example/SKILL.md",
+      skillContent("example", "Harness default."),
+    );
+    await write(
+      "repo/harnesses/claude-code/skills/agent/example/variants/workstation-a/SKILL.md",
+      skillContent("example", "Harness variant."),
+    );
     await buildCommand({ hasAutoConfirm: true, registryPaths: paths, loadShellEnvironment: loadTestShellEnvironment });
-    for (const skillsDir of outputSkills()) {
-      expect(await Bun.file(join(skillsDir, "example/SKILL.md")).text()).toBe(
-        skillContent("example", "Harness variant."),
-      );
-    }
+    expect(await Bun.file(join(paths.output, "claude-code/skills/example/SKILL.md")).text()).toBe(
+      skillContent("example", "Harness variant."),
+    );
+    expect(await Bun.file(join(paths.output, "agents/skills/example/SKILL.md")).text()).toBe(
+      skillContent("example", "Public variant."),
+    );
   });
 
   it("preserves author prefixes and user invocation policy", async () => {

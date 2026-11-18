@@ -47,12 +47,19 @@ import {
 } from "../lib/settingsSync/syncSettingsFiles";
 
 // Statically import harness plugins
+import agentsPlugin from "../harnesses/agents/build";
 import claudeCodePlugin from "../harnesses/claude-code/build";
 import codexPlugin from "../harnesses/codex/build";
 import opencodePlugin from "../harnesses/opencode/build";
 import piPlugin from "../harnesses/pi/build";
 
-const unifiedHarnessPlugins: IUnifiedHarnessPlugin[] = [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin];
+const unifiedHarnessPlugins: IUnifiedHarnessPlugin[] = [
+  claudeCodePlugin,
+  codexPlugin,
+  opencodePlugin,
+  piPlugin,
+  agentsPlugin,
+];
 
 export async function syncBackModifiedFiles(
   drift: IGeneratedOutputDrift[],

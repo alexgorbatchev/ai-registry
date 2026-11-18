@@ -92,7 +92,7 @@ describe("OpenCode harness build plugin", () => {
     ]);
   });
 
-  it("builds the OpenCode config with registry skills and commands and no generated agents", async () => {
+  it("builds the OpenCode config with harness skills and registry commands, leaving shared skills to ~/.agents/skills, and no generated agents", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "harnesses/opencode/commands/harness.md", "Harness command.\n");
@@ -106,9 +106,8 @@ describe("OpenCode harness build plugin", () => {
     expect((await readdir(outputDir)).sort()).toEqual(["commands", "opencode.jsonc", "skills", "tui.json"]);
     expect(existsSync(join(outputDir, "agents"))).toBe(false);
     expect((await readdir(join(outputDir, "commands"))).sort()).toEqual(["harness.md", "review.md"]);
-    for (const skillName of ["shared-skill", "harness-skill"]) {
-      expect((await lstat(join(outputDir, "skills", skillName, "SKILL.md"))).isSymbolicLink()).toBe(false);
-    }
+    expect((await lstat(join(outputDir, "skills", "harness-skill", "SKILL.md"))).isSymbolicLink()).toBe(false);
+    expect(existsSync(join(outputDir, "skills", "shared-skill"))).toBe(false);
     expect((await readdir(join(repositoryRoot, ".output", "bin"))).sort()).toEqual([
       "air-opencode-conversation-extract",
       "air-opencode-session-analysis",
@@ -146,18 +145,15 @@ describe("OpenCode harness build plugin", () => {
     ]);
   });
 
-  it("overrides global skills with harness-specific skills on collision", async () => {
+  it("rejects a harness skill that shares a name with a shared skill, because OpenCode loads both", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Global version\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/extra.txt", "global extra\n");
     await writeTestFile(repositoryRoot, "harnesses/opencode/skills/shared-skill/SKILL.md", "# Harness version\n");
 
-    await buildOutput(repositoryRoot, { skills: ["shared-skill"] });
-
-    const skillDir = join(repositoryRoot, ".output", "opencode", "skills", "shared-skill");
-    expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
-    expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
+    await expect(buildOutput(repositoryRoot, { skills: ["shared-skill"] })).rejects.toThrow(
+      "opencode skills share a name with shared skills in ~/.agents/skills, which opencode also loads: shared-skill.",
+    );
   });
 
   it("stages grouped harness skills (agent and user), injecting disable-model-invocation for user skills", async () => {

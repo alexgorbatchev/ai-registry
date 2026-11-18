@@ -63,7 +63,7 @@ describe("Codex harness build plugin", () => {
     await rm(TEST_ROOT, { force: true, recursive: true });
   });
 
-  it("builds the Codex root with instructions, config, rules, skills, and command skills", async () => {
+  it("builds the Codex root with instructions, config, rules, harness skills, and command skills, leaving shared skills to ~/.agents/skills", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(
@@ -95,10 +95,8 @@ describe("Codex harness build plugin", () => {
     expect(await readFile(join(outputDir, "skills", "command-review", "SKILL.md"), "utf-8")).toBe(
       "---\ndescription: Test workflow\n---\nReview the changes.\n",
     );
-    for (const skillName of ["shared-skill", "harness-skill"]) {
-      expect((await lstat(join(outputDir, "skills", skillName, "SKILL.md"))).isSymbolicLink()).toBe(false);
-    }
-    expect(await readFile(join(outputDir, "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe("# Shared skill\n");
+    expect((await lstat(join(outputDir, "skills", "harness-skill", "SKILL.md"))).isSymbolicLink()).toBe(false);
+    expect(existsSync(join(outputDir, "skills", "shared-skill"))).toBe(false);
     expect(await readFile(join(outputDir, "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe("# Harness skill\n");
     expect(await readFile(join(outputDir, "rules", "default.rules"), "utf-8")).toBe(
       'prefix_rule(pattern = ["git", "reset"], decision = "forbidden")\n',
@@ -219,18 +217,15 @@ describe("Codex harness build plugin", () => {
     ]);
   });
 
-  it("overrides global skills with harness-specific skills on collision", async () => {
+  it("rejects a harness skill that shares a name with a shared skill, because Codex loads both", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Global version\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/extra.txt", "global extra\n");
     await writeTestFile(repositoryRoot, "harnesses/codex/skills/shared-skill/SKILL.md", "# Harness version\n");
 
-    await buildOutput(repositoryRoot, { skills: ["shared-skill"] });
-
-    const skillDir = join(repositoryRoot, ".output", "codex", "skills", "shared-skill");
-    expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
-    expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
+    await expect(buildOutput(repositoryRoot, { skills: ["shared-skill"] })).rejects.toThrow(
+      "codex skills share a name with shared skills in ~/.agents/skills, which codex also loads: shared-skill.",
+    );
   });
 
   it("stages grouped harness skills (agent and user), injecting disable-model-invocation for user skills", async () => {
@@ -269,7 +264,7 @@ describe("Codex harness build plugin", () => {
     );
   });
 
-  it("rejects a command that collides with a selected skill and keeps the skill", async () => {
+  it("rejects a command skill that shares a name with a shared skill", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Review changes\n---\nReview.\n");
@@ -280,11 +275,22 @@ describe("Codex harness build plugin", () => {
     );
 
     await expect(buildOutput(repositoryRoot, { skills: ["command-review"], commands: ["review.md"] })).rejects.toThrow(
+      "codex skills share a name with shared skills in ~/.agents/skills, which codex also loads: command-review.",
+    );
+  });
+
+  it("rejects a command that collides with a Codex harness skill and keeps the skill", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeHarnessFixture(repositoryRoot);
+    await writeTestFile(repositoryRoot, "commands/review.md", "---\ndescription: Review changes\n---\nReview.\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/skills/command-review/SKILL.md", "# Harness skill\n");
+
+    await expect(buildOutput(repositoryRoot, { commands: ["review.md"] })).rejects.toThrow(
       "Codex command skill command-review collides with a skill of the same name.",
     );
     expect(
       await Bun.file(join(repositoryRoot, ".output", "codex", "skills", "command-review", "SKILL.md")).text(),
-    ).toBe("---\nname: command-review\ndescription: Existing skill\n---\nInspect.\n");
+    ).toBe("# Harness skill\n");
   });
 
   it("preserves original command provenance through template rendering and sync-back", async () => {

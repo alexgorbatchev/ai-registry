@@ -40,7 +40,7 @@ The final generated harness artifacts. The registry updates only the files and p
 
 ## Building and Usage
 
-This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that collects every skill and command and builds generated harness outputs directly from the checked-in source tree. Every harness ships every registry skill and command.
+This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that collects every skill and command and builds generated harness outputs directly from the checked-in source tree. Every harness ships every registry command. Registry skills ship once to `~/.agents/skills`, which Codex, Pi, and OpenCode read, and again to Claude Code, which does not.
 
 Generated harness outputs are compiled by plugins at `packages/registry-cli/src/harnesses/<target>/build.ts`. The root build statically imports those plugins and calls each one's `buildOutput` hook to write that harness's output root.
 
@@ -333,7 +333,7 @@ The Codex harness compiles `.output/codex/`, which bootstrap applies to `${CODEX
 - `AGENTS.md` is a copy of `system/system.md`
 - set `AI_REGISTRY_CODEX_TRUSTED_DIRS` to a PATH-style list of folders (for example `~/development`) to trust every git checkout beneath them, including declared submodules; Codex matches trust by exact checkout path, so trusting a parent folder alone covers nothing below it. The entries go into the generated `config.toml` only, and trust Codex records itself, including `untrusted`, takes precedence
 - `config.toml` syncs both ways with `harnesses/codex/config.toml` on every build, keeping comments; trusted projects, hook trust, notices, and MCP credentials stay local to the machine
-- `skills/` contains every registry skill, Codex-only harness skills, and every command as a native skill bundle, with template tags resolved
+- `skills/` contains Codex-only harness skills and every command as a native skill bundle, with template tags resolved; registry skills reach Codex through `~/.agents/skills`
 - command bundles preserve their Markdown instructions and description and disable implicit invocation through `agents/openai.yaml`; invoke `--commit-changed-files.md` as `$command-commit-changed-files` or select it through `/skills`
 - commands with an explicit YAML `name` use that skill name; otherwise names use `command-<filename>` with leading hyphens removed and repeated hyphens collapsed
 - commands require YAML frontmatter with a non-empty `description`; invalid skill names, duplicate command names, and collisions with skills stop the build
@@ -345,13 +345,20 @@ The Pi harness compiles `.output/pi/`, which bootstrap applies to `${PI_CODING_A
 
 - `APPEND_SYSTEM.md` is a copy of `system/system.md`
 - `prompts/` holds every registry command plus `harnesses/pi/prompts/`; a name collision stops the build
-- `skills/` holds every registry skill plus Pi-only harness skills under `harnesses/pi/skills/` (grouped into `agent/` and `user/`), copied with template tags resolved
+- `skills/` holds Pi-only harness skills under `harnesses/pi/skills/` (grouped into `agent/` and `user/`), copied with template tags resolved; registry skills reach Pi through `~/.agents/skills`
 - `settings.json` syncs both ways with `harnesses/pi/settings.json`; `models.json`, `web-search.json`, and `extensions/` are copied when the harness ships them
 
 Bootstrap also links generated Pi helpers into `~/.local/bin`:
 
 - `pi-install`, `pi-update`, and `pi-uninstall` manage Pi packages in `harnesses/pi/settings.json` and rebuild afterward
 - no `pi` wrapper is generated, so the real `pi` binary stays on `PATH` untouched and reads `${PI_CODING_AGENT_DIR:-~/.pi/agent}`
+
+### Shared skills
+
+The shared skills output `.output/agents/skills/` holds every registry skill. Bootstrap links each one into `~/.agents/skills`, which Codex, Pi, and OpenCode read alongside their own skills folders, and leaves that folder read-only so tools such as Orca or `npx skills add -g` cannot install duplicates there.
+
+- a Codex, Pi, or OpenCode harness skill named like a registry skill stops the build, because those harnesses load both folders
+- a real entry already occupying a registry skill's name is moved to `~/.agents/skills.backup-<timestamp>/` before linking
 
 ### Using with Claude Code
 

@@ -3,8 +3,12 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 
-import type { IBootstrapTarget, IHarnessBuildContext, IUnifiedHarnessPlugin } from "../../lib/harnessBuild";
-import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
+import {
+  assertNoSharedSkillCollisions,
+  type IBootstrapTarget,
+  type IHarnessBuildContext,
+  type IUnifiedHarnessPlugin,
+} from "../../lib/harnessBuild";
 
 const CONFIG_FILE_NAME = "opencode.jsonc";
 const TUI_CONFIG_FILE_NAME = "tui.json";
@@ -62,13 +66,10 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   }
 
   await context.buildSupport.stageHarnessSkills(context, skillsDir);
-  await context.buildSupport.stageRegistryAssets(context, {
-    skillsDir,
-    commandsDir: join(visibleOutputDir, "commands"),
-  });
+  await context.buildSupport.stageRegistryAssets(context, { commandsDir: join(visibleOutputDir, "commands") });
 
   await generateAirHelpers(context);
-  await logHarnessSkillOverrides(context, "opencode");
+  await assertNoSharedSkillCollisions(context, skillsDir, "opencode");
 }
 
 async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {

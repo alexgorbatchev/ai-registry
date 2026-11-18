@@ -91,7 +91,7 @@ describe("Pi harness build", () => {
     ]);
   });
 
-  it("builds the Pi root from the system prompt, settings, prompts, and skills", async () => {
+  it("builds the Pi root from the system prompt, settings, prompts, and harness skills, leaving shared skills to ~/.agents/skills", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "commands/review.md", "Review the changes.\n");
@@ -114,10 +114,8 @@ describe("Pi harness build", () => {
     expect(await readFile(join(outputDir, "extensions", "timestamps.ts"), "utf-8")).toBe("// timestamps extension\n");
     expect(await readFile(join(outputDir, "prompts", "review.md"), "utf-8")).toBe("Review the changes.\n");
     expect(await readFile(join(outputDir, "prompts", "harness.md"), "utf-8")).toBe("Harness prompt.\n");
-    for (const skillName of ["shared-skill", "harness-skill"]) {
-      expect((await lstat(join(outputDir, "skills", skillName, "SKILL.md"))).isSymbolicLink()).toBe(false);
-    }
-    expect(await readFile(join(outputDir, "skills", "shared-skill", "SKILL.md"), "utf-8")).toBe("# Shared skill\n");
+    expect((await lstat(join(outputDir, "skills", "harness-skill", "SKILL.md"))).isSymbolicLink()).toBe(false);
+    expect(existsSync(join(outputDir, "skills", "shared-skill"))).toBe(false);
     expect(await readFile(join(outputDir, "skills", "harness-skill", "SKILL.md"), "utf-8")).toBe("# Harness skill\n");
   });
 
@@ -177,18 +175,15 @@ describe("Pi harness build", () => {
     expect(await readFile(join(binDir, "pi-update"), "utf-8")).toBe("#!/usr/bin/env bash\n# pi-update\n");
   });
 
-  it("overrides global skills with harness-specific skills on collision", async () => {
+  it("rejects a harness skill that shares a name with a shared skill, because Pi loads both", async () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
     await writeTestFile(repositoryRoot, "skills/shared-skill/SKILL.md", "# Global version\n");
-    await writeTestFile(repositoryRoot, "skills/shared-skill/extra.txt", "global extra\n");
     await writeTestFile(repositoryRoot, "harnesses/pi/skills/shared-skill/SKILL.md", "# Harness version\n");
 
-    await buildOutput(repositoryRoot, { skills: ["shared-skill"] });
-
-    const skillDir = join(repositoryRoot, ".output", "pi", "skills", "shared-skill");
-    expect(await readFile(join(skillDir, "SKILL.md"), "utf-8")).toBe("# Harness version\n");
-    expect(existsSync(join(skillDir, "extra.txt"))).toBe(false);
+    await expect(buildOutput(repositoryRoot, { skills: ["shared-skill"] })).rejects.toThrow(
+      "pi skills share a name with shared skills in ~/.agents/skills, which pi also loads: shared-skill.",
+    );
   });
 
   it("stages grouped harness skills (agent and user), injecting disable-model-invocation for user skills", async () => {

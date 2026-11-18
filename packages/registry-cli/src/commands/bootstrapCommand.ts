@@ -12,6 +12,7 @@ import { syncPublicScripts, type ISyncPublicScriptsResult } from "../lib/syncPub
 import { getRegistryPaths, type IRegistryPaths } from "../lib/getRegistryPaths";
 
 // We import the static harness plugins to retrieve their bootstrap targets
+import agentsPlugin from "../harnesses/agents/build";
 import claudeCodePlugin from "../harnesses/claude-code/build";
 import codexPlugin from "../harnesses/codex/build";
 import opencodePlugin from "../harnesses/opencode/build";
@@ -37,7 +38,7 @@ function getTimestamp(): string {
 function createDefaultDependencies(): IBootstrapDependencies {
   return {
     registryPaths: getRegistryPaths(),
-    plugins: [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin],
+    plugins: [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin, agentsPlugin],
     publicBinDir: join(homedir(), ".local", "bin"),
     getTimestamp,
   };

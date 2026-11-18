@@ -3,8 +3,12 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 
-import type { IBootstrapTarget, IHarnessBuildContext, IUnifiedHarnessPlugin } from "../../lib/harnessBuild";
-import { logHarnessSkillOverrides } from "../../lib/logHarnessSkillOverrides";
+import {
+  assertNoSharedSkillCollisions,
+  type IBootstrapTarget,
+  type IHarnessBuildContext,
+  type IUnifiedHarnessPlugin,
+} from "../../lib/harnessBuild";
 
 const APPEND_SYSTEM_FILE_NAME = "APPEND_SYSTEM.md";
 const PI_OUTPUT_DIR_NAME = "pi";
@@ -36,7 +40,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await context.buildSupport.stageSourcePath(context.systemPromptPath, join(piOutputDir, APPEND_SYSTEM_FILE_NAME));
 
   await context.buildSupport.stageHarnessSkills(context, skillsDir);
-  await context.buildSupport.stageRegistryAssets(context, { commandsDir: promptsDir, skillsDir });
+  await context.buildSupport.stageRegistryAssets(context, { commandsDir: promptsDir });
   await context.buildSupport.mergeDirectory(join(context.harnessDir, "prompts"), promptsDir);
 
   const settingsPath = join(piOutputDir, "settings.json");
@@ -51,7 +55,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await copyOptionalHarnessPath(context, piOutputDir, "extensions");
 
   await generatePiHelpers(context);
-  await logHarnessSkillOverrides(context, "pi");
+  await assertNoSharedSkillCollisions(context, skillsDir, "pi");
 }
 
 async function getBootstrapTargets(outputDir: string): Promise<IBootstrapTarget[]> {

@@ -26,7 +26,11 @@ Settings files a harness or a third-party installer edits at runtime (Claude Cod
 
 ## Local Storage
 
-`.tmp/` holds only disposable development artifacts: test fixtures, build staging and scratch, coverage, the bootstrap smoke home, and harness source fetches under `harnesses/<harness>/.tmp/`. Anything that must survive a session goes in git-ignored `.state/` (settings-sync merge bases with the checkout root they were taken for, settings files kept aside from output rendered for another checkout, the entries bootstrap applied to harness-owned settings files, and the scheduled update's log, lock, and recovery marker) or `.cache/` (rebuildable caches). Never move or clear `.state/` as cleanup.
+`.tmp/` holds only disposable development artifacts: test fixtures, build staging and scratch, coverage, the bootstrap smoke home, and harness source fetches under `harnesses/<harness>/.tmp/`. Anything that must survive a session goes in git-ignored `.state/` (settings-sync merge bases with the checkout root they were taken for, settings files kept aside from output rendered for another checkout, the entries bootstrap applied to harness-owned settings files, the build lock, and the scheduled update's log, lock, and recovery marker) or `.cache/` (rebuildable caches). Never move or clear `.state/` as cleanup.
+
+## Build Lock
+
+Builds of one checkout share its `.output/`, generated-output staging, manifest, and settings sync, so `packages/registry-cli/src/bin/build.ts` reruns itself under macOS `lockf` or Linux `flock` on `.state/build.lock`, marking the child with `AI_REGISTRY_BUILD_LOCK_HELD=1`. Manual builds, bootstrap, and the scheduled update all build through it, so they take turns: a build that finds the lock held says so and waits up to 600 seconds, then fails naming the lock. The operating system releases the lock when its holder exits, so a crashed build never leaves it stuck. The lock covers only the build, never bootstrap's linking or the scheduled update as a whole, so a process never waits on itself. Each checkout and worktree has its own lock. Calling `buildCommand` directly, as tests do, takes no lock.
 
 ## Bootstrap Command
 

@@ -44,7 +44,7 @@ Before changing the corresponding area, read:
 - Harness behavior or configuration: [harnesses/AGENTS.md](harnesses/AGENTS.md). Consult `harnesses/<target>/.tmp/<target>-source/` first, running that harness's `fetch-source.sh` if absent. Edit checked-in configuration rather than installed machine-local copies.
 - Package implementation: the affected `packages/<package-name>/AGENTS.md`, where present.
 - Source selection, hostname variants, private and tool overlays, EJS, output assembly, ignores, entrypoints, or public wrappers: [generation contracts](docs/internal/references/registry-generation.md).
-- Generated edits, settings sync, recovery, storage, harness homes, bootstrap, scheduled updates, secret scanning, or publication: [state and bootstrap contracts](docs/internal/references/registry-state-and-bootstrap.md). Keep runtime data outside `.output/`; never clear `.state/` as cleanup.
+- Generated edits, settings sync, recovery, storage, build locking, harness homes, bootstrap, scheduled updates, secret scanning, or publication: [state and bootstrap contracts](docs/internal/references/registry-state-and-bootstrap.md). Keep runtime data outside `.output/`; never clear `.state/` as cleanup.
 - Harness output files, command invocation, wrappers, system distribution, or Codex trust: [harness mappings](docs/internal/references/registry-harness-mapping.md).
 
 `just build` invokes `packages/registry-cli/src/commands/buildCommand.ts` to compile checked-in sources into `.output/`. Harness-specific generation belongs in `packages/registry-cli/src/harnesses/<target>/build.ts`, not top-level build or bootstrap code. Build operates on registry sources and overlays; bootstrap applies outputs to harness homes.

@@ -6,6 +6,7 @@ import { dirname, join } from "path";
 import { existsSync } from "fs";
 import {
   applyTemplateVariablesToGeneratedOutput,
+  stageHarnessSkills,
   stageSourceDirectory,
   stageSourcePath,
   stageRegistryAssets,
@@ -422,5 +423,38 @@ describe("harnessBuild template rendering", () => {
     ).rejects.toThrow(
       `Cannot stage command review.md because the output path already exists: ${join(commandsDir, "review.md")}`,
     );
+  });
+
+  it("stages harness-only skills from the public harness and every overlay, later overlays winning", async () => {
+    const repositoryRoot = await createTestDirectory();
+    const toolDir = join(repositoryRoot, "tools", "example");
+    const privateDir = join(repositoryRoot, "private");
+    await writeTestFile(repositoryRoot, "harnesses/codex/skills/agent/public-only/SKILL.md", "# Public\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/skills/agent/shared/SKILL.md", "# Public shared\n");
+    await writeTestFile(toolDir, "harnesses/codex/skills/agent/shared/SKILL.md", "# Tool shared\n");
+    await writeTestFile(
+      toolDir,
+      "harnesses/codex/skills/user/tool-user/SKILL.md",
+      "---\nname: tool-user\n---\n# User\n",
+    );
+    await writeTestFile(toolDir, "harnesses/opencode/skills/agent/opencode-only/SKILL.md", "# OpenCode\n");
+    await writeTestFile(privateDir, "harnesses/codex/skills/agent/shared/SKILL.md", "# Private shared\n");
+    const skillsDir = join(repositoryRoot, "staged", "skills");
+
+    await stageHarnessSkills(
+      {
+        ...createRegistryAssetContext(repositoryRoot, {}),
+        harnessDir: join(repositoryRoot, "harnesses", "codex"),
+        overlayDirs: [toolDir, join(repositoryRoot, "missing"), privateDir],
+      },
+      skillsDir,
+    );
+
+    expect(await readFile(join(skillsDir, "public-only", "SKILL.md"), "utf-8")).toBe("# Public\n");
+    expect(await readFile(join(skillsDir, "shared", "SKILL.md"), "utf-8")).toBe("# Private shared\n");
+    expect(await readFile(join(skillsDir, "tool-user", "SKILL.md"), "utf-8")).toContain(
+      "disable-model-invocation: true",
+    );
+    expect(existsSync(join(skillsDir, "opencode-only"))).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { existsSync } from "fs";
 import { join } from "path";
 
-import type { IHarnessBuildContext } from "./harnessBuild";
+import { getHarnessSkillsDirs, type IHarnessBuildContext } from "./harnessBuild";
 import { readHarnessSkillEntries } from "./userSkillUtils";
 
 export async function logHarnessSkillOverrides(
@@ -9,16 +9,13 @@ export async function logHarnessSkillOverrides(
   targetName: string,
   logger: (message: string) => void = console.log,
 ): Promise<string[]> {
-  const harnessSkillsDir = join(context.harnessDir, "skills");
-  if (!existsSync(harnessSkillsDir)) {
-    return [];
-  }
-
   const globalSkillsDir = context.templateContext.skills_dir;
   const overlaySkillsDirs = (context.overlayDirs ?? []).map((overlay) => join(overlay, "skills"));
 
-  const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
-  const overriddenSkills: string[] = [];
+  const harnessSkillEntries = (
+    await Promise.all(getHarnessSkillsDirs(context).map((skillsDir) => readHarnessSkillEntries(skillsDir)))
+  ).flat();
+  const overriddenSkills = new Set<string>();
 
   for (const entry of harnessSkillEntries) {
     const isOverridingGlobal =
@@ -33,15 +30,15 @@ export async function logHarnessSkillOverrides(
     );
 
     if (isOverridingGlobal || isOverridingOverlay) {
-      overriddenSkills.push(entry.name);
+      overriddenSkills.add(entry.name);
     }
   }
 
-  overriddenSkills.sort((left, right) => left.localeCompare(right));
+  const sortedSkills = [...overriddenSkills].sort((left, right) => left.localeCompare(right));
 
-  if (overriddenSkills.length > 0) {
-    logger(`   ↳ ${targetName} skill overrides (${overriddenSkills.length}): ${overriddenSkills.join(", ")}`);
+  if (sortedSkills.length > 0) {
+    logger(`   ↳ ${targetName} skill overrides (${sortedSkills.length}): ${sortedSkills.join(", ")}`);
   }
 
-  return overriddenSkills;
+  return sortedSkills;
 }

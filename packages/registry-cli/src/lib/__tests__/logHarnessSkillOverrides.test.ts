@@ -133,6 +133,24 @@ describe("logHarnessSkillOverrides", () => {
     expect(logged).toEqual(["   ↳ pi skill overrides (1): custom-skill"]);
   });
 
+  it("detects overlay harness skills that override global skills, listing each name once", async () => {
+    const repositoryRoot = await createTestDirectory();
+    await writeTestFile(repositoryRoot, "skills/agent/shared/SKILL.md", "# Global\n");
+    await writeTestFile(repositoryRoot, "harnesses/codex/skills/agent/shared/SKILL.md", "# Harness\n");
+    await writeTestFile(repositoryRoot, "overlay/harnesses/codex/skills/agent/shared/SKILL.md", "# Overlay harness\n");
+    await writeTestFile(repositoryRoot, "overlay/harnesses/pi/skills/agent/pi-only/SKILL.md", "# Pi\n");
+
+    const logged: string[] = [];
+    const context = createUnifiedContext(repositoryRoot, "codex", { hasOverlay: true });
+
+    const overrides = await logHarnessSkillOverrides(context, "codex", (message) => {
+      logged.push(message);
+    });
+
+    expect(overrides).toEqual(["shared"]);
+    expect(logged).toEqual(["   ↳ codex skill overrides (1): shared"]);
+  });
+
   it("returns empty array and does not log when there are no collisions", async () => {
     const repositoryRoot = await createTestDirectory();
     await writeTestFile(repositoryRoot, "skills/global-only/SKILL.md", "# Global\n");

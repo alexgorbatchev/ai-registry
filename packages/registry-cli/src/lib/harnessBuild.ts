@@ -12,7 +12,7 @@ import {
   writeFile,
 } from "fs/promises";
 import { existsSync } from "fs";
-import { dirname, isAbsolute, join, relative } from "path";
+import { basename, dirname, isAbsolute, join, relative } from "path";
 
 import { renderTemplate } from "@alexgorbatchev/template-resolver";
 import walk from "ignore-walk";
@@ -482,14 +482,30 @@ export async function stageRegistryAssets(
   }
 }
 
-// Copies harness-only skills from `harnesses/<target>/skills/` into a harness
-// output, replacing any skill already staged under the same output name.
-export async function stageHarnessSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void> {
-  const harnessSkillsDir = join(context.harnessDir, "skills");
-  if (!existsSync(harnessSkillsDir)) {
-    return;
-  }
+// Lists a harness's skill directories in precedence order: the public
+// `harnesses/<target>/skills/`, then each overlay's matching directory.
+export function getHarnessSkillsDirs(context: Pick<IHarnessBuildContext, "harnessDir" | "overlayDirs">): string[] {
+  const target = basename(context.harnessDir);
+  return [
+    join(context.harnessDir, "skills"),
+    ...(context.overlayDirs ?? []).map((overlayDir) => join(overlayDir, "harnesses", target, "skills")),
+  ].filter((skillsDir) => existsSync(skillsDir));
+}
 
+// Copies harness-only skills from `harnesses/<target>/skills/` in the public
+// source and every overlay into a harness output, replacing any skill already
+// staged under the same output name, so later overlays win.
+export async function stageHarnessSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void> {
+  for (const harnessSkillsDir of getHarnessSkillsDirs(context)) {
+    await stageHarnessSkillsDir(context, harnessSkillsDir, skillsDir);
+  }
+}
+
+async function stageHarnessSkillsDir(
+  context: IHarnessBuildContext,
+  harnessSkillsDir: string,
+  skillsDir: string,
+): Promise<void> {
   const harnessSkillEntries = await readHarnessSkillEntries(harnessSkillsDir);
   for (const harnessSkillEntry of harnessSkillEntries) {
     const skillFilePath = join(harnessSkillEntry.sourcePath, "SKILL.md");

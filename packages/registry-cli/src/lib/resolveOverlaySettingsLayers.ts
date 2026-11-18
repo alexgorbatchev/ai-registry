@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
 import { readdir } from "fs/promises";
-import { isAbsolute, join, relative } from "path";
+import { isAbsolute, join, relative, sep } from "path";
 
 import { readToolManifest } from "./getRegistryPaths";
 import type { ISettingsSourceLayer, ISyncedSettingsFile } from "./settingsSync/types";
@@ -24,6 +24,11 @@ async function listFiles(directory: string): Promise<string[]> {
   return entries.filter((entry) => entry.isFile()).map((entry) => join(entry.parentPath, entry.name));
 }
 
+// Files under `harnesses/<target>/skills/` are harness-only skills, not settings layers.
+function isHarnessSkillFile(overlayHarnessesDir: string, filePath: string): boolean {
+  return relative(overlayHarnessesDir, filePath).split(sep)[1] === "skills";
+}
+
 function getEmptySettingsText(filePath: string): string {
   return filePath.endsWith(".toml") ? "" : "{}\n";
 }
@@ -35,8 +40,8 @@ function getToolTraits(toolDir: string): Pick<ISettingsSourceLayer, "isTool" | "
 
 // Finds the overlay layers of every synced settings file: an overlay file at
 // `harnesses/<path>` layers the public `harnesses/<path>` source, in overlay order.
-// Overlays carry only such layers, so any other file under an overlay's `harnesses/`
-// fails the build instead of being silently ignored.
+// Apart from harness-only skills under `harnesses/<target>/skills/`, any other file
+// under an overlay's `harnesses/` fails the build instead of being silently ignored.
 export async function resolveOverlaySettingsLayers(
   options: IResolveOverlaySettingsLayersOptions,
 ): Promise<Map<string, ISettingsSourceLayer[]>> {
@@ -78,6 +83,7 @@ export async function resolveOverlaySettingsLayers(
     const overlayHarnessesDir = join(overlayDir, "harnesses");
     if (!existsSync(overlayHarnessesDir)) continue;
     for (const filePath of await listFiles(overlayHarnessesDir)) {
+      if (isHarnessSkillFile(overlayHarnessesDir, filePath)) continue;
       if (!layerPaths.has(filePath)) unmatchedPaths.push(filePath);
     }
   }

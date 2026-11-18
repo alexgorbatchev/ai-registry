@@ -80,6 +80,17 @@ describe("resolveOverlaySettingsLayers", () => {
     );
   });
 
+  it("accepts harness-only skills under an overlay's harnesses/<target>/skills/", async () => {
+    const options = await createOptions();
+    const [first] = options.overlayDirs;
+    await writeTestFile(join(first ?? "", "harnesses", "codex", "skills", "agent", "example", "SKILL.md"), "# Skill\n");
+    await writeTestFile(join(first ?? "", "harnesses", "pi", "skills", "example", "references", "notes.md"), "notes\n");
+
+    const layers = await resolveOverlaySettingsLayers(options);
+
+    expect(layers.size).toBe(0);
+  });
+
   it("marks layers from tool overlays", async () => {
     const options = await createOptions();
     const [first, second] = options.overlayDirs;

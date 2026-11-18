@@ -73,7 +73,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 ## Tool Overlays
 
-- Put configuration for a third-party tool on trial in `tools/<name>/` beneath the repo_root token, using the private overlay structure: `skills/`, `commands/`, and `harnesses/<path>` files that layer synced settings files. Deleting the directory removes everything it contributed on the next build.
+- Put configuration for a third-party tool on trial in `tools/<name>/` beneath the repo_root token, using the private overlay structure: `skills/`, `commands/`, `harnesses/<target>/skills/` for skills only some harnesses receive, and `harnesses/<path>` files that layer synced settings files. Deleting the directory removes everything it contributed on the next build.
 - Put only the tool's own entries in its settings layers, such as its hook entries under the hook events it uses; lists append, so they join the registry's entries for the same event.
 - Tool overlays layer after the public sources and before private overlays. They own harness edits only inside keys only they define or values carrying their `owns` markers; other added list items go to another layer.
 - List text identifying the tool's own settings values, such as its install directory, under `owns` in `tools/<name>/tool.json`. Settings sync routes added entries and changed values containing it into the tool's overlay, creating missing settings files, so the tool's installer and updates edit its overlay once for every machine. Without `owns`, installer edits go to the public source.
@@ -144,7 +144,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Only files under a harness directory are copied into generated output for that harness, subject to `.registry-ignore`.
 - Do not place repo-only notes inside a harness directory unless they are intentionally meant to ship.
 - Prefer the harness's native configuration surface over local wrappers when the harness already supports the feature directly.
-- Harness-specific skills under `harnesses/<target>/skills/` cleanly take precedence over global skills (`skills/` and overlay `skills/`) on name collision across all four harnesses.
+- Harness-specific skills under `harnesses/<target>/skills/`, public or in an overlay, cleanly take precedence over global skills (`skills/` and overlay `skills/`) on name collision across all four harnesses; among harness skills, the last overlay wins.
 - For Codex-only shipped skills, place them under `harnesses/codex/skills/`; the Codex build merges that directory into `.output/codex/skills/`.
 - For Claude Code-only shipped skills, place them under `harnesses/claude-code/skills/`; the Claude Code build merges that directory into `.output/claude-code/skills/`. Everything else under `harnesses/claude-code/` is copied verbatim into `.output/claude-code/`.
 - If a local file-based harness dependency needs installed runtime imports, vendor it under `vendor/<name>/` beneath the repo_root token, add it to the root Bun workspaces, and reference it from the harness config using the repo_root token.

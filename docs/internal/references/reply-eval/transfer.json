@@ -1,0 +1,41 @@
+[
+  {
+    "name": "read-only-role",
+    "prompt": "The access guide says Scout can view runs, Maker can start them, and Steward can change membership. Which role should I request if I only need to view runs?",
+    "concepts": ["scout"],
+    "omit": ["Maker", "Steward"],
+    "max_words": 22
+  },
+  {
+    "name": "parser-handoff",
+    "prompt": "Last time you proposed **a6** to accept an empty comments field and reported **f2** for a missing date in exports. The date issue is unchanged. The parser now accepts empty comments and the regression test passed. Report the completed action and separately offer to check whitespace-only comments next.",
+    "concepts": ["empt|blank", "test|regression", "whitespace|white.space|spaces?"],
+    "labels": ["a6", "a7|q1"],
+    "max_labels": 2,
+    "max_words": 70
+  },
+  {
+    "name": "queue-drain",
+    "prompt": "Write a chat update for the incident lead. All delayed jobs have now finished. New jobs are processing normally. The root cause is still unknown. The temporary dashboard was blue and the handover meeting ended ten minutes ago.",
+    "concepts": ["delay|backlog|queued", "finish|complet|clear|drain|done|caught up", "new|incoming|current", "cause|why"],
+    "omit": ["dashboard", "meeting"],
+    "max_words": 55
+  },
+  {
+    "name": "restore-preview",
+    "prompt": "The restore preview lists files it would replace and leaves the disk untouched. The actual restore overwrites those files, including any newer local versions. What happens if I preview, and what changes if I then run the restore?",
+    "concepts": ["preview|list|show", "restore|apply", "overwrit|replac", "newer|newest|recent|local|later"],
+    "max_words": 75
+  },
+  {
+    "name": "unlabelled-exit",
+    "prompt": "Two workers, East and West, were running. The aggregate monitor logged exactly one worker exit but didn't record the worker name. Can I say which worker exited, and what can I say for certain?",
+    "concepts": ["one|single|1", "exit|stop|end|quit|die|died|terminat", "can.t|cannot|unknown|unclear|no\\b|not\\b|doesn.t|didn.t|either|unable|unidentif|unrecorded|unspecified|without"],
+    "max_words": 50
+  },
+  {
+    "name": "publish-manifest",
+    "prompt": "Explain our static-site release process to a new teammate. We upload all new assets under versioned names, then switch the manifest to those names. Old assets stay available for browsers that already fetched the previous manifest. Explain why the upload precedes the switch and why we keep the old assets.",
+    "concepts": ["upload|asset", "manifest", "old|previous|earlier|prior", "browser|client|visitor|reader|session|user", "avail|exist|fetch|load|miss|404|broken|reference|point|request"]
+  }
+]

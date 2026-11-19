@@ -1,0 +1,42 @@
+[
+  {
+    "name": "release-target",
+    "prompt": "The Makefile uses make bundle to build the archive, make ship to publish it, and make scrub to clear intermediates. I need the command to build the archive. What's the command?",
+    "concepts": ["make\\s+bundle"],
+    "omit": ["make ship", "make scrub"],
+    "max_words": 20
+  },
+  {
+    "name": "export-update",
+    "prompt": "Earlier you recorded **f5** for blank CSV headers and **a2** for a spreadsheet import test. The import test is parked. A tester has now verified the corrected header names in an exported CSV. Update the finding, then offer a separate check of the delimiter.",
+    "concepts": ["header|column", "verif|correct|fix|confirm|resolv|pass", "delimiter|separator"],
+    "labels": ["f5", "a3|q1"],
+    "omit": ["parked"],
+    "max_words": 65,
+    "max_labels": 2
+  },
+  {
+    "name": "worker-status",
+    "prompt": "Give the on-call engineer a quick status update. The new worker is live in staging and has processed its first job. Production rollout is waiting for the maintenance window. The branch was renamed yesterday and the old screenshots are still archived.",
+    "concepts": ["staging", "job|task", "prod", "window"],
+    "omit": ["screenshot", "branch"],
+    "max_words": 55
+  },
+  {
+    "name": "cache-clear",
+    "prompt": "Our clear-cache command removes downloaded packages. It preserves the configuration file, but local edits inside a downloaded package are deleted with that package. What will I keep and lose if I run it?",
+    "concepts": ["config|settings", "package|download|dependenc", "edit|modif|change|customi[sz]"],
+    "max_words": 65
+  },
+  {
+    "name": "latency-samples",
+    "prompt": "Our timing log shows one request took 400 ms before a patch and one took 300 ms after. No other samples or load data were collected. What changed between those two observations, and do they establish that the patch improved typical latency?",
+    "concepts": ["100\\s*(?:ms|milliseconds?)|(?:a )?hundred milliseconds|25\\s*(?:%|percent)|quarter|400.{0,25}300", "no\\b|not\\b|can.t|cannot|couldn.t|doesn.t|insufficient|unknown|uncertain|inconclusive|too (?:few|little)|unproven|need"],
+    "max_words": 75
+  },
+  {
+    "name": "event-dedup",
+    "prompt": "I'm onboarding an engineer. Our event consumer stores the event ID and applies its balance update in one transaction. On redelivery, it skips the update if that ID already exists. Walk through the first delivery, then the redelivery, and explain why putting the two writes in the same transaction matters.",
+    "concepts": ["id\\b|identifier|key", "balance|update|credit|debit", "redeliver|duplicate|replay|again|retry|second", "atomic|together|both|neither|partial|all.or.nothing|crash|fail|commit|roll.?back"]
+  }
+]

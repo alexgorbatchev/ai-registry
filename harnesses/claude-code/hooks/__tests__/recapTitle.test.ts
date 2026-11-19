@@ -97,7 +97,8 @@ test("names the thread to rename when T3 cannot tell the caller, and omits an id
   expect(unnamed).toContain("`threadId` left out");
 });
 
-test("retitles a T3 Codex thread found from its rollout instead of the inherited Herdr pane", async () => {
+// T3 thread retitling is disabled in recapTitle.ts.
+test.skip("retitles a T3 Codex thread found from its rollout instead of the inherited Herdr pane", async () => {
   const path = join(factory_testDirectory("recap-rollout"), "rollout.jsonl");
   const meta = { id: "01a1b696", originator: "T3 Code", source: "vscode" };
   await writeFile(path, `${JSON.stringify({ type: "session_meta", payload: meta })}\n`);
@@ -110,7 +111,8 @@ test("retitles a T3 Codex thread found from its rollout instead of the inherited
   expect(calls).toEqual([]);
 });
 
-test("prefers the T3 thread over the Herdr pane a T3 server inherited, without asking Herdr", async () => {
+// T3 thread retitling is disabled in recapTitle.ts.
+test.skip("prefers the T3 thread over the Herdr pane a T3 server inherited, without asking Herdr", async () => {
   const calls: string[][] = [];
   const output = JSON.parse(
     await runUserPromptSubmit(INPUT, { ...HERDR, ...T3 }, herdrRunner("dotfiles", calls), HOOK_PID),
@@ -184,9 +186,10 @@ test("runs as a hook process, draining the harness input", async () => {
     return { code: await child.exited, stdout };
   };
   expect(await run({})).toEqual({ code: 0, stdout: "" });
-  expect(JSON.parse((await run(T3)).stdout).hookSpecificOutput.additionalContext).toBe(
-    buildT3RecapInstruction(T3_SESSION),
-  );
+  // T3 thread retitling is disabled in recapTitle.ts.
+  // expect(JSON.parse((await run(T3)).stdout).hookSpecificOutput.additionalContext).toBe(
+  //   buildT3RecapInstruction(T3_SESSION),
+  // );
   // This test process starts the hook, so a pane whose shell it is runs the hook. Herdr has no workspace label for
   // it, so the directory names the project.
   const herdr = join(factory_testDirectory("recap-herdr"), "herdr");

@@ -1,6 +1,8 @@
 import { quote } from "shell-quote";
 import { type Environment, paneHostsProcess, readProject, type Runner, spawnRunner } from "./herdr";
-import { resolveT3Session, type T3Session } from "./t3";
+// T3 thread retitling is disabled: it overwrote titles set by hand on every turn.
+// import { resolveT3Session, type T3Session } from "./t3";
+import type { T3Session } from "./t3";
 
 const RECAP_SOURCE = "recap";
 const RECAP_PLACEHOLDER = "<recap>";
@@ -69,8 +71,9 @@ async function recapInstruction(
   run: Runner,
   pid: number,
 ): Promise<string | undefined> {
-  const session = await resolveT3Session(input, env);
-  if (session) return buildT3RecapInstruction(session);
+  // T3 thread retitling is disabled; see the import above.
+  // const session = await resolveT3Session(input, env);
+  // if (session) return buildT3RecapInstruction(session);
   if (!env.HERDR_PANE_ID || !(await paneHostsProcess(env, run, pid))) return undefined;
   return buildHerdrRecapInstruction(env, await readProject(input, env, run));
 }

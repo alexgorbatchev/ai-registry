@@ -1,0 +1,406 @@
+[
+  {
+    "case": "archive-offer",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "797f1924c049f202e3e96cd40dee9dfca1ad83dcc43da0fd977d113c161eeb19",
+    "judge_log_id": "fcd126bf-fb46-40fd-ab34-88ee9bd3133e",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f6** closes the finding on the reviewer’s evidence. **a4** separately offers the transcript check.",
+        "reply_sha256": "dd29723785a908b16f928980b35527dae3c42692e1d90922019b32e74cb53cf7",
+        "graded_trials": [
+          "4670b6f6-6a87-4d98-b0ef-ee31aa019149"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f6** acknowledges the timing error and cites verification. **a4** clearly scopes the optional check to wording errors and omissions.",
+        "reply_sha256": "f96075119119e7a99d948736e5f22c1fa0669c1e942fd706be7adc4b369ccee4",
+        "graded_trials": [
+          "2a482eef-690f-4082-810a-908e389d106d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f6** retracts the finding with evidence. **a4** offers a separate check and makes clear it awaits approval.",
+        "reply_sha256": "f34e5bf6ea8724219ca98ed6e81da95630154d913d103b9e65b11e530101606a",
+        "graded_trials": [
+          "0d7e7fe7-9379-4d68-97ce-45b57cacebff"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f6** corrects the earlier report using the reviewer’s check. **a4** makes the transcript comparison optional.",
+        "reply_sha256": "a843434006d78080dfb57268af49cbadd9d159c2af144ee447c09eed03147cd3",
+        "graded_trials": [
+          "a2251485-a247-41c4-b0a6-5d254a883bc2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f6** withdraws the verified sync finding, and **a4** offers a focused transcript comparison.",
+        "reply_sha256": "ba7a2afacfcc0496a0fe9bf35b2eee3ed823d8bca671c28e64477b0c3e2f097c",
+        "graded_trials": [
+          "db1f3c6e-6991-476a-9fc5-cc5377d61581"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The reply invents a dependency claim about the slides and an Agent-page tracking status. It adds an unnecessary slide update, comparison procedure, and reply commands. The separate offer to create and link a page lacks its own bold ID.",
+        "reply_sha256": "9b91bd371e5ec7cea0808d58ad07403c07f3342530d990d6a598c833b34a8314",
+        "graded_trials": [
+          "4b6f8a59-1ad8-420c-932f-bb1732c22eb9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f6** closes the incorrect finding with reviewer verification. **a4** offers a separate transcript check without claiming it has been performed.",
+        "reply_sha256": "d1f1b3c3b9ec0a7138a248689a7cd399e42fe108ac827d767a001056fc7123f8",
+        "graded_trials": [
+          "3d6c755b-19b3-4bf3-b013-cbdedb903ceb"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The correction and optional transcript check have the proper IDs. The reply repeats the caption conclusion, revisits the parked slide job, and adds an unnecessary self-deprecating aside.",
+        "reply_sha256": "09e52b6a26e4c9e92730da77bcb10b8b55c0e752ab4a40703226f98636ada22b",
+        "graded_trials": [
+          "088c8844-13bb-45c0-b4a9-8e940657e9c6"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "clock-question",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "9cca2574e1ca2c2c0015d08ac489d1ca5c86b731c8314ec7c5827ad45f23a90a",
+    "judge_log_id": "2c23ee0c-6d94-4e17-a233-3c80bd1d82db",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Gives 02:40 UTC. The conversion instruction and daylight-saving jab are unsolicited.",
+        "reply_sha256": "3437374c471aaabe100352f9ab75c63d9f8b8675642bd6dd39d3864a6ef92b86",
+        "graded_trials": [
+          "fc6320c6-ab45-405c-a719-d81b5ef9eef6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Gives 02:40 UTC. The user did not ask how to convert it.",
+        "reply_sha256": "ff04732a30cce647276d0a4ad97cebdd607964bc9e8b4c12842bed827aa5164f",
+        "graded_trials": [
+          "5f28fe79-a5eb-4e07-af5d-3b8742cf4f28"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Identifies the snapshot start as 02:40 UTC. The other schedules, calendar speculation, and meeting joke add no value.",
+        "reply_sha256": "005a220520e85f44e9071a05dc78d8abeca7b7e554c5a5c3c008d312b005b23f",
+        "graded_trials": [
+          "e31dceba-0c82-49c6-9188-fcb1539c3c8e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single labeled finding gives the requested snapshot time and UTC zone directly.",
+        "reply_sha256": "d1920145c9c1640e17a6389453ed60e6b352ed1fb096b4df0eeee53c38175c77",
+        "graded_trials": [
+          "31582636-e1a6-45a7-90a4-bac4d5626495",
+          "1fb04556-8b2b-4938-b9d3-588ca52be7dc"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Gives 02:40 UTC. Dismissing the other times and discussing calendar entry and daylight saving go beyond the lookup.",
+        "reply_sha256": "cf6d6a0b46df83ca586f5fe5ed199368d47f1cb45e7008600997756402f8ab4f",
+        "graded_trials": [
+          "16ddf8d8-8f73-4fcd-bcc2-478f80dfac79"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single labeled finding identifies the nightly snapshot and gives its exact start time in UTC.",
+        "reply_sha256": "5bc46ef22d23fc1894737f6b69150c97b7ff1b686bbad78025b08a5f83cbe6b6",
+        "graded_trials": [
+          "6a88601f-ba4c-4b81-bea6-b3d5fe66a1ac",
+          "a469434d-4d8f-4603-a331-5e76cda4ea4a"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "cutoff-caveat",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "479c3698bff3132c37138db055a0712e699b87ac9c3baa8f547c2788ca8a0793",
+    "judge_log_id": "ffbecc1e-cefc-4186-af5a-546170a2c629",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both labeled statements give the requested outcomes accurately and directly.",
+        "reply_sha256": "224742ee355c81adbe8082f416fc39bd70bf31babb409ccf092c2de2e1cd3ba1",
+        "graded_trials": [
+          "ae9ab195-0f29-48af-ac6d-78571d774cf0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The final sentence repeats the existing-mail outcome and adds an aside about what everyone wishes.",
+        "reply_sha256": "05ace5d41fd687c1b42719fadbc69e1fa3d84e2ac65add33956f193ef887a1a3",
+        "graded_trials": [
+          "c2916124-449d-43b3-a9de-cebdd74e0eee"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two IDs distinguish immediate forwarding from the manual move required for existing mail.",
+        "reply_sha256": "238c5c8938e626f3194ecfc5472aadd3d06f7d56cd428465c56cecee4531b387",
+        "graded_trials": [
+          "f61ad0a7-a404-4467-a49e-b4ccb11f46fb"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The opening answers the question. The retention, branding, and search discussion goes beyond it, and the bulk-move recommendation is unsolicited. The search finding and recommendation have separate IDs.",
+        "reply_sha256": "9cf241f36503dd424be3713346965e19a8f95b4753a27fe92140bfad475cddbf",
+        "graded_trials": [
+          "96bae856-5bc2-460b-ac4b-218205a42f89"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The retention clause invents a second way existing mail leaves the inbox. That unsupported caveat is also extraneous to the forwarding question.",
+        "reply_sha256": "152197e21acbb094f73e6b0e55a13a0a1c9e89bfabc23d3bba0b225215d6f4ac",
+        "graded_trials": [
+          "d2ce0b73-e753-468d-8796-459391b858bf"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "The reply repeats the existing-mail outcome, adds unsolicited advice, and digresses into retention and branding. The f1 item duplicates the opening answer and bundles separate recommendations under the finding's ID.",
+        "reply_sha256": "5437270d4ec8ccf0a9879631b0eeb1fa3bf60dedb219d73edb3e10f3393eeaec",
+        "graded_trials": [
+          "66d8a1c9-fc8d-4b4c-81dc-7c7ec44134dd"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each outcome has its own ID, and both match the stated forwarding behavior.",
+        "reply_sha256": "47dc2dd7c225f468c05b84fed35942fa40d9e174b1c7e78bd3a0d0aefb143673",
+        "graded_trials": [
+          "215711d0-52c8-4e60-84ab-d77e39458833"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both outcomes are accurate and separately labeled. The final sentence repeats the point that forwarding leaves existing mail in place.",
+        "reply_sha256": "c98952ddfb7397bf78a492e69d78cc9175d1a5f4b11bde96e26732b1d170d752",
+        "graded_trials": [
+          "2494f6ec-4960-49c4-9c0f-202fb6fc2a9a"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "handover-detail",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "34f18e07a91fba3ae69c9c10cce24bd327f20fd7bfa9cf459720c40c3481afb7",
+    "judge_log_id": "5d415bcd-a6f3-47cf-b68b-27e754dc9c47",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives both actions in order with their stated purposes. Each step has its own bold ID.",
+        "reply_sha256": "e3690a204e2c28e9ebe10047c9980680df076a30d432157f1a6517ebe37fd1fa",
+        "graded_trials": [
+          "93062467-6c96-41d9-8d93-ab2a798fda68"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains who checks for missing keys and who then records custody. Each step has its own bold ID.",
+        "reply_sha256": "a73525386aaf4c6e2e22fd5e577230304f0901de80e06e8e62baf12902bc0a82",
+        "graded_trials": [
+          "e8fe9c85-4552-462c-8894-babdef1e42df"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Identifies both volunteers, their actions and their reasons in sequence, with distinct bold IDs.",
+        "reply_sha256": "dc26d81222806676b82a90b4fc38132474cac71b4dd6d8397604b3f6d07b986e",
+        "graded_trials": [
+          "a8b72f07-3fa3-4e34-a260-418ce84d35e3"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains the count and the signature accurately, in order, with a distinct bold ID for each.",
+        "reply_sha256": "78867ea05b2dff87dc8e37e48788012748aed60b6ec5331cba3e5abe7c421981",
+        "graded_trials": [
+          "2d2c978e-12c2-4b60-a594-8fd2f2eb45c6"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "Invents a reporting or escalation step and claims the count identifies the shift responsible for a loss. It repeats the sequence and adds unsolicited counting procedures under the same ID as the finding.",
+        "reply_sha256": "07b78ce092fde4a911839131ab60cbeaf4728b9663da4db4780e9f50b7a6c032",
+        "graded_trials": [
+          "24324850-d2eb-4ef5-ae43-c036eff0ff74"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "Claims the count pins a loss to the outgoing shift and gives an unsupported two-minute estimate. It repeats the order and bundles an unsolicited joint-count recommendation into the finding under f1.",
+        "reply_sha256": "0a85a92c9f010931b8e81d3df807ad336fbe912daa727f5a6943efa52209f916",
+        "graded_trials": [
+          "3e3a94b7-1985-456e-b4f6-9886f5133e7f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Treats the custody signature as proof of verification and assigns responsibility for a shortfall without support. It repeats the sequence and adds unsolicited instructions to recount, refuse to sign and document discrepancies. The finding and recommendation have distinct bold IDs.",
+        "reply_sha256": "71c66c2b5e9d81682586e1c44523a3e250466989505ea4a816d5af227691ac57",
+        "graded_trials": [
+          "a76c7d2e-e9f7-4ddb-b462-7d7f8f9fc868"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "Invents a discrepancy-reporting step and contradicts the stated custody purpose by claiming the signature only proves attendance. It adds unsolicited liability and joint-count advice, bundling the proposed fix under the finding’s ID.",
+        "reply_sha256": "2b459e90c65e60df71507fcb76b2717d028de9d09e7873fd0c39f3ef99b622a8",
+        "graded_trials": [
+          "ac3934ef-79be-47f6-a494-57a1d9002221"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "independent-discovery",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "5c04da6236827b67087db232dca145b8de0c1d597d9520c5784cc047eb4c1096",
+    "judge_log_id": "f07a6a22-3965-49f2-a9b0-4fa20f3b2cd1",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The support-ticket impact and repair status are unsupported. The reply repeats the refund finding and adds speculative causes and an unsolicited tracing procedure.",
+        "reply_sha256": "8f7b533ce2397018a619961a95ef3ced5db799246a8e9e181561503d6aff6207",
+        "graded_trials": [
+          "a649a44d-405b-45ba-a89c-74f41cc23ede"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It groups receipt enablement and the verified delivery under **a7**, then gives the Sunday refund delay its own **f1**.",
+        "reply_sha256": "84f56a68b3c90f99f768685e5eb13bb35bec524ea417ba4ac1647af0e8b9d06d",
+        "graded_trials": [
+          "44f63504-4709-46ab-b3b9-7f036d9d196b",
+          "58081b2a-f4a0-45b5-a844-45253a2c7cbc"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The comparison with everyone else assumes a delivery time for other refunds. The jokes, speculative causes, and tracing plan add unnecessary detail.",
+        "reply_sha256": "e4859144a21353541bd2931816e2c6ca7c6f06958ddba6fd62f751098184c59d",
+        "graded_trials": [
+          "702150d1-3364-4912-b518-1d58777ef2a0"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The delay does not establish when customers receive funds, whether support tickets increase, or who is responsible for a Monday submission. The reply repeats the completion update and adds sarcasm, chargeback speculation, and an unsolicited diagnostic procedure.",
+        "reply_sha256": "736c15fb998c79dc8f23a2c7a2640a78e5d1c530adbdc15ddb41af2c9d6e04f6",
+        "graded_trials": [
+          "a44ba7e6-1949-470e-807e-ded9228b1375"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It reports the completed change and delivery check under **a7** and states the separate refund finding under **f1**.",
+        "reply_sha256": "a058714fedd2a5c5f4ebc7a1c708c81f72769e495b7dd74fee6d4071a6820338",
+        "graded_trials": [
+          "8b4cd8dd-8ecd-4ae6-a6ab-8f2cdd749736",
+          "df87f26f-4f73-4c78-8888-fcb8fb84990b"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The finding does not establish settlement timing, a comparison with other customers, increased support tickets, or incident status. The reply repeats the delay and adds unsolicited guidance about possible causes.",
+        "reply_sha256": "fa83291cd81b0f467a816347b6fe9b069a95315b88d485d2a08b0f48700bfa09",
+        "graded_trials": [
+          "0f3ea191-c578-4779-b415-db8f4666464a"
+        ]
+      }
+    ]
+  }
+]

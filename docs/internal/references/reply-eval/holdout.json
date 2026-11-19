@@ -1,0 +1,39 @@
+[
+  {
+    "name": "clock-question",
+    "prompt": "The ops note gives three times in UTC: the collector wakes at 01:15, the nightly snapshot starts at 02:40, and old logs expire at 04:20. I only need the nightly snapshot time for my calendar. When is it?",
+    "concepts": ["(?:0?2[:.]40|two[ -]forty)"],
+    "omit": ["01:15", "04:20"],
+    "max_words": 20,
+    "max_labels": 1
+  },
+  {
+    "name": "independent-discovery",
+    "prompt": "We approved your **a7** Enable receipts. You have now enabled them and verified one arrived. Separately, you just found that refunds issued on Sundays are delayed until Monday. Give me the completion update and the new finding so I can refer either one to the team.",
+    "concepts": ["receipt", "refund", "sunday|sun\\b", "monday|mon\\b"],
+    "labels": ["a7", "f1"],
+    "max_words": 65,
+    "max_labels": 2
+  },
+  {
+    "name": "cutoff-caveat",
+    "prompt": "Our forwarding rule sends new mail to the replacement inbox immediately. Messages already in the old inbox stay there until someone moves them manually. The mailboxes use the same retention policy and the old logo is still on both. If I turn on forwarding, what happens to new and existing mail?",
+    "concepts": ["new|incoming|future", "forward|replacement|new inbox|destination", "old|exist|previous|already|earlier", "manual|mov|migrat|transfer|copy|stay|remain|left (there|behind|in)"],
+    "omit": ["retention", "logo"],
+    "max_words": 65
+  },
+  {
+    "name": "archive-offer",
+    "prompt": "You reported **f6** that the meeting captions were out of sync. A reviewer has now verified that the captions match the audio. Your earlier **a3** to republish the slides is still parked. Update the caption finding and offer to check the transcript as a separate next step.",
+    "concepts": ["caption|subtitle", "sync|match|align|correct|fix|accurate", "transcript"],
+    "labels": ["f6", "a4|q1"],
+    "omit": ["slides"],
+    "max_words": 65,
+    "max_labels": 2
+  },
+  {
+    "name": "handover-detail",
+    "prompt": "I'm training a new volunteer on our key handover. The outgoing volunteer counts the keys against the register to catch missing keys. The incoming volunteer then signs the register so there's a record of who has custody. Explain what each volunteer does and why, in order.",
+    "concepts": ["count|check|reconcil|compar|match|verify|verif|inventory|account", "missing|lost|discrepanc|mismatch|every key|all (the )?keys|shortage|unaccounted", "sign|signature", "custody|responsib|accountab|who (has|holds|took|received)|holder|possession"]
+  }
+]

@@ -382,6 +382,7 @@ def system_section(study="system-sections"):
                     "reason": grade["reason"],
                 }
             example_round, baseline_label, candidate_label = {
+                "ops-removals": ("ops-confirm-operational", "Full F16", "Selected partial cut"),
                 "mode-study": ("mode-both", "Deployed", "Both sections edited"),
                 "system-sections": ("trigger-operating", "Isolated rules", "With Operating Instructions"),
                 "clean-path": ("clean-operational", "Isolated rules", "Full F16"),
@@ -449,7 +450,15 @@ def system_section(study="system-sections"):
         )
     if not rows:
         return "", 0
-    if study == "clean-path":
+    if study == "ops-removals":
+        source = "sections/ops-removals.md"
+        intro = (
+            "<section class='logs' id='ops-removals'><h2 class='section-title'>Which operating paragraphs affect replies?</h2>"
+            "<p>In the first eight rows, each arrow removes one paragraph from the preceding prompt. "
+            "The confirmation rows compare intact F16 with the selected partial cut. "
+            "Scores count replies meeting all three criteria out of 12 per arm. Both models used medium effort.</p>"
+        )
+    elif study == "clean-path":
         source = "sections/clean-path.md"
         intro = (
             "<section class='logs' id='clean-path'><h2 class='section-title'>Do parent instruction files explain the gap?</h2>"
@@ -901,15 +910,16 @@ def render():
     sections_html, section_count = system_section()
     mode_html, mode_count = system_section("mode-study")
     clean_html, clean_count = system_section("clean-path")
+    ops_html, ops_count = system_section("ops-removals")
     values = {
-        "REPLAY": clean_html + mode_html + sections_html + tuning_section() + ablation_section() + replay_html,
+        "REPLAY": ops_html + clean_html + mode_html + sections_html + tuning_section() + ablation_section() + replay_html,
         "ARCHIVE": highlight,
         "HIGHLIGHT": ("<h2>System section comparisons</h2><p class='verdict'>Opus averaged 45 words with the isolated rules and 83 with the deployed prompt on the same transfer cases.</p>"
                       "<p><a href='#system-sections'>Compare passes, reply lengths and the original answers.</a></p>") if section_count else (replay_headline if replay_count else highlight),
         "COMPARISONS": comparisons,
         "WORDING": f'<section class="wording"><h2 class="section-title">Prompt wording</h2>{wording}'
         '<p><a href="../../../../system/system.md">Full shared prompt</a></p></section>',
-        "COUNT": str(clean_count or mode_count or section_count or replay_count),
+        "COUNT": str(ops_count or clean_count or mode_count or section_count or replay_count),
         "REUSED": f"The ledger contains {total + reused} comparison rows, including {reused} reused baseline entries. The historical ledger counts each generation once after removing those copies."
         if reused
         else "",
@@ -927,6 +937,12 @@ def render():
             "<h2>Clean-directory replay</h2><p class='verdict'>"
             "Opus fell from 12 to 6 passes on operational requests and from 10 to 5 on transfer requests with full F16. All 108 launches had clean ancestor paths.</p>"
             "<p><a href='#clean-path'>Compare scores, lengths and replies.</a></p>"
+        )
+    if ops_count:
+        values["HIGHLIGHT"] = (
+            "<h2>Operating Instructions, paragraph by paragraph</h2><p class='verdict'>"
+            "Removing the stopping and task-record paragraphs took Opus from 3 to 5 passes out of 12 on operational requests. Transfer stayed at 6. Astra lost passes on both suites.</p>"
+            "<p><a href='#ops-removals'>Compare the cuts and read both models’ replies.</a></p>"
         )
     template = (HERE / "summary.template.html").read_text()
     (HERE / "summary.html").write_text(

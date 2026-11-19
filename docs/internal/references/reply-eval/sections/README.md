@@ -1,5 +1,7 @@
 # Which instructions change reply behavior?
 
+The [ranked Operating Instructions removals](ops-removals.md) test one additional paragraph at a time.
+
 The [clean-directory replay](clean-path.md) checks for inherited instructions before each native launch.
 
 The [operations and recovery wording study](mode-study.md) compares scoped instructions inside the deployed prompt and explicitly credits conversational sarcasm.

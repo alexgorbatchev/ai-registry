@@ -77,7 +77,7 @@ Without a configured relay or preview convention, report the missing setup as a 
 
 ## Docs-site tests
 
-Add or extend these tests, and the regeneration recipe below, only when the project's instructions or the request cover docs tooling. Otherwise propose them to the owner as an ID'd action, and meanwhile run the equivalent checks directly: the link crawl, the wireframe linter, and a request for `wireframe.css` that must return 200 with `text/css`.
+Add or extend these tests, and the regeneration recipe below, whenever the run publishes docs in a project with a test runner; skip them only when the project's instructions forbid docs tooling. Until they exist, run the equivalent checks directly: the link crawl, the wireframe linter, and a request for `wireframe.css` that must return 200 with `text/css`.
 
 The tests run in the project's own test runner, reach the docs server and assert:
 

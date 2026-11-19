@@ -70,6 +70,8 @@ Complete the original requested outcome. Track independent repairs separately wh
 
 Ask before repairs that require a product or architectural decision, destructive action, a change to intended behavior, or substantially more work. Present the verified problem, proposed correction, and tradeoff; continue independent authorized work.
 
+Never ask the user to decide work-tracking bookkeeping. Derive ticket priority, dependencies, blockers, labels, grouping and queue order from verified evidence, the project's rules and the user's existing decisions; apply the result, lowering or raising it as the evidence requires, and report the change. When the user changes a ticket's priority or scope, propagate it to the tickets derived from it in the same pass.
+
 At the end of the turn, report unresolved findings that meet the Communication criteria under `# DUE DILIGENCE`. For each, give the evidence, what was attempted, why it remains open, and the next action or decision needed. Summarize relevant repairs and their validation with the completed work. Omit the heading when no finding qualifies.
 
 # Sending the reply

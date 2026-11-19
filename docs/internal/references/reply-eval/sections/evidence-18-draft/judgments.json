@@ -1,0 +1,458 @@
+[
+  {
+    "case": "baton-reason",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "f46777ee9f1a3fb01bd839b4b187c5a6b812fc8e7c69b1bb044190eabf03a83e",
+    "judge_log_id": "c567fdbf-f5a7-4116-bb81-8af727e89a70",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains how marking a connected cable records its socket and how checking the mark after reconnection reveals a swap.",
+        "reply_sha256": "3f6c680e0d5fa7870f7553ff5a4544818d05e63f8b2f65a55bc62e15e1c3eae9",
+        "graded_trials": [
+          "9348a474-8a1d-4146-bf3a-a9395183d374"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly explains both the return destination and the check for a wrong socket. The explanation can stand alone.",
+        "reply_sha256": "0b7b0ce878add8a59d19b6c327e1479e721f9c950c1ea78de66dfcec2ad02186",
+        "graded_trials": [
+          "4abc3859-dc90-459b-ae4a-47ea5efb4e83"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Two brief, labeled points explain why the crew records the socket before unplugging and keeps the mark through the swap check.",
+        "reply_sha256": "43f3385622b0cff0ddc585743e0cbd12b081eb8d1159fe610c75877f1edf6995",
+        "graded_trials": [
+          "9546b7e3-e690-449d-8185-3127c31fc2cc"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives both requested reasons in a concise standalone explanation.",
+        "reply_sha256": "7e7e357f5d24ad1fe44009b217cfbeec69f13619f398f96abf0f41a1130ee02d",
+        "graded_trials": [
+          "e7206e8e-bcf8-41b2-be23-75a845577e33"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Explains both reasons, but assumes the cables are identical and no other clue identifies their sockets. The rushed-changeover and power-up scenarios add unsupported detail. The explanation can stand alone.",
+        "reply_sha256": "699f4883903270d0196925e7e4ad14863c296f5f09c46a0a601339d740a69c88",
+        "graded_trials": [
+          "661cae6c-cea6-4a46-9162-4eb31d741715"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Connects marking to finding the right socket and retaining the mark to spotting a swap. Each point has its own bold ID.",
+        "reply_sha256": "460d59fd4cf17392f3cb7cb0ad0be10d48a517f33e1b70f1790c0956cf0ef883",
+        "graded_trials": [
+          "ca44ea3e-983d-4c5a-867e-8ae7af7a6c87"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Covers both reasons. The observation that both swapped cables can look connected helps explain why the crew compares each mark with the actual socket.",
+        "reply_sha256": "8865d454a7a9096fea2d34a9b06365649fb0b08a2c879c72a1098de1f4c77266",
+        "graded_trials": [
+          "df1254a1-8091-44e4-9c0f-ecc5c3bf134a"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Explains both reasons, but twice overstates what the request establishes. Calling the mark the only record and the comparison the only way to catch a swap adds unsupported claims. The humor is permissible, and the explanation can stand alone.",
+        "reply_sha256": "c04486c97470d97ca6c1ba1d9e4b609057df4ecf1b3208299e964c23b85ae2c3",
+        "graded_trials": [
+          "98c2c4f2-c36f-4642-a14a-3107bfb51aa0"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "caliper-offer",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "c4ff60af13f7200b3981e771d459e9921890932ba4ffb2c4881c9d352ecb3456",
+    "judge_log_id": "f8e81136-12e2-450d-8458-0fdc0a530c02",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 reports completion with both checks. a5 separately offers the post-shipping recheck.",
+        "reply_sha256": "0c3ce614882e39da484464669439ebd7ff55f2b25c03ed206e177b23f58e6879",
+        "graded_trials": [
+          "b252e836-d1a4-4f6f-a9e9-9df871cce820",
+          "77cb5938-9851-4ef0-b0cc-40d469af7433",
+          "2b54cd8b-4fab-47ea-a70a-b503293ab1d3",
+          "624616da-a3a8-429f-9efa-dca6195865df"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 reports completion with both checks. a5 separately offers the post-shipping recheck.",
+        "reply_sha256": "f960680969606d1fcc00e800067668c008762587b8ecded6cfd866e500c998f2",
+        "graded_trials": [
+          "c8dbee0f-892b-4d4c-a31d-1355f5fbb7d2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 reports completion with both checks. a5 separately offers the post-shipping recheck.",
+        "reply_sha256": "2a1b282e9b1ca8d3c591720eaa4b70ce0a089e377be9514815fbfd29866f1689",
+        "graded_trials": [
+          "0287c95b-e5c0-442d-92a9-7e28262a124b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 reports completion with both checks. a5 separately offers the post-shipping recheck.",
+        "reply_sha256": "d880849c9c037e96ccbe321529bc899682b612a34a152defd97fff33f6e9b86e",
+        "graded_trials": [
+          "e156f6e8-b7bd-4964-a98d-2ae24c36d8e6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 reports completion with both checks. a5 separately offers the post-shipping recheck.",
+        "reply_sha256": "db1f4365f641c80cf83f8478a6cbfb9c81c2403017a52e4e2cd095534eb1ebd6",
+        "graded_trials": [
+          "3f5e17c9-b1f9-4aa5-a22e-66415082798f"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "chart-room",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "42a6e46143a84c9a384c2bf33b26886acdaf3919dc17f13d09a7cbb914cd66ec",
+    "judge_log_id": "9c7fb6ee-ee9a-4cc2-ab30-035e3126233f",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The final sentence repeats the completion status and adds an unsupported claim about what the next watch must do.",
+        "reply_sha256": "d448ceb9689ce285371509c78fb425ceae666ad26673739ca23061252d0ee718",
+        "graded_trials": [
+          "d8218a09-1e74-416e-b7a3-4c20ea0e8074"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The request establishes where the copy opens, but gives no evidence that anyone checked it. The final sentence unnecessarily extends the completion status to the watch’s workload.",
+        "reply_sha256": "7f025bf5290c39c37ba7e29f0420ae8ee84b7ee062518d9b0868d4d821df5daa",
+        "graded_trials": [
+          "71c6eca2-2c42-4a1a-93da-e49d0f1786cb"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both supplied facts appear in a standalone handoff, and the separate loan is omitted.",
+        "reply_sha256": "f498ef7685146a59cdb2508418a58eb8329b7d0aa4f1c6d2580856e56b5bcd15",
+        "graded_trials": [
+          "db66be4e-4305-4eb0-8c95-56918e2bf759",
+          "562fb08d-5f8b-478f-919c-02d2e4a3c601",
+          "5815f5be-4b82-4059-8975-5997e3a50c6a",
+          "1825aca6-17a3-4c9a-913f-13c80284c6a7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "One bold ID covers the index status and its supporting detail. The handoff stays within scope.",
+        "reply_sha256": "5af740e7b2a13ac00b3840676ed7133dda843804a1bf898673df28772468bf77",
+        "graded_trials": [
+          "9d651812-5d0e-431c-bb93-1e224889b753",
+          "5a26d595-f704-4c6a-9223-eec113c7aded"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "kiln-shift",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "f91feba0ca63c7e77f2d9401c8627d48e9490e38a7bd1e315da54274e576069f",
+    "judge_log_id": "3a20d818-b812-4573-92a9-449c3a9d3641",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The kiln status and all three actions have separate bold IDs. The names and sequence are correct.",
+        "reply_sha256": "a010744ff9c38e097d533a5bf067f8227f8afb8479d73ca8b8459d4490a9991b",
+        "graded_trials": [
+          "be5b6db3-cef8-4414-bb9f-430962cbb12c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The handover stands alone and gives the correct status, names and sequence. The final note repeats the loading condition already stated in step 3.",
+        "reply_sha256": "fbb326717b0aa1871bccf53aec2ee2a2a925d9e2fc9b80538453454d6509fba1",
+        "graded_trials": [
+          "c80f87d7-a484-41f1-9096-88e55cf55c2b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone handover gives the kiln status and names the person responsible for each step in order.",
+        "reply_sha256": "56f0ef9e97f7c505844182839dcc7cceb11ed6437c4e691ea26a6e362d185f5f",
+        "graded_trials": [
+          "bba6a622-4b0e-4500-a2c1-c73f88ff1da2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The numbered handover gives the correct status, names and sequence. The closing instruction repeats the loading condition.",
+        "reply_sha256": "6c010a1f7e446b41b0aab095f986ce01df7d1d0e78db1a6b0e6c4ec543a2117e",
+        "graded_trials": [
+          "7c9db913-1f3f-4a3d-99c3-27b4791a45bd"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each item has its own bold ID, and the handover gives the correct status, names and sequence without repetition.",
+        "reply_sha256": "35b3b925a654e14d664d5ffc0232d37a7a2a5ba786a905b33362c1f52736eccf",
+        "graded_trials": [
+          "f199c7b3-fcb8-4269-b6e7-3a3f836517e5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "“Then” and “After that” establish the required order. The standalone handover includes the kiln status and names each person at the correct step.",
+        "reply_sha256": "d4202a463a36b61486071d6a66e283be6b4d4bb87f46354b31f63b1405587afe",
+        "graded_trials": [
+          "b4c15469-f588-40d2-a089-9a3be8bf73dc"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": false,
+        "reason": "The status, names and sequence are correct, but the single finding ID groups the kiln status with three independently addressable actions.",
+        "reply_sha256": "6cdab08d1e3269019549ce486e564aed3f4a452e50eb49ee571ab79c5a1de591",
+        "graded_trials": [
+          "2440efc8-a765-457d-931d-1b6a662c59f6",
+          "4e8095b3-63b6-4dd8-8e85-6d0b4b1dae43"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "meter-reading",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "e6ed1338df139dcb95981869003c446a25ee8856bf8fdefae4a6326083a5f172",
+    "judge_log_id": "e4b0eaa1-fb25-4f84-b23d-b8f92e072758",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the inclusive range and explains why it cannot be narrowed.",
+        "reply_sha256": "5585103890a747d517544bdff0fe4abcacf6565b353609b1691b4471840ea178",
+        "graded_trials": [
+          "4002515a-9efe-4956-a68f-96fb4485e8b1"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly gives the range and explains that the meter reports only the combined total.",
+        "reply_sha256": "52710ea523dd66e6cae2aa129ca2241545deebc63faf2af3d71dd2718eda37df",
+        "graded_trials": [
+          "d3276701-10e4-4c6f-ba81-9e0c1c1dd2a6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States both endpoints and the limit on precision in one direct answer.",
+        "reply_sha256": "6738f7cbb4694afb1f7b1c4f36ad0272ef710819995d153cf87faac6e57896e7",
+        "graded_trials": [
+          "e44e16b9-d6db-4e71-9be0-e4b39c0105b5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the full range and explains why the north room’s exact usage is unknown.",
+        "reply_sha256": "17b556e9b75c94ea88a876b9e81b81fdb5c23747b24df0bad62f5fe6066ec409",
+        "graded_trials": [
+          "f6933f05-d6ac-41e9-b481-e06569ada411"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the inclusive range and ties it to the total-only reading.",
+        "reply_sha256": "68ba20f0bcdd3290821a0b701b3c2e79dbcb4c69b0b9faaa3d711c07810e642e",
+        "graded_trials": [
+          "c5cf14a8-abf1-4983-9b78-0561db919248"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The range and rationale are correct. The examples of additional data go beyond what the user asked.",
+        "reply_sha256": "8a30ddd2c2115b1cfe44b1a2030fa003665945f80aa069300e34fc5b2f9e693d",
+        "graded_trials": [
+          "4288403f-c159-4a91-9bc3-6d93b0735ad7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The range is correct, but “none to all of it” repeats the endpoints, and the final sentence restates the same limit.",
+        "reply_sha256": "13bcd6b31bbdef9acd897e298a2e9aefc83b4ddf32fa05fd3c11afbf2f6e4b5c",
+        "graded_trials": [
+          "e3421ec8-1a47-4f03-afa4-3f3f2ff6a5ca"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the range and explains why the combined reading cannot determine the split.",
+        "reply_sha256": "55bf894a96b50bed9f03417b2bd6beeb8e869c9b0ea76f1b823ba3e8709ef028",
+        "graded_trials": [
+          "80874251-5d20-4772-b37b-be29bcf65140"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "thread-sample",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "0d00e2a7020e79882cee9b322288bdfbc77f6777ae5ac93db22b0dfd71f2bfcf",
+    "judge_log_id": "57455fb5-7bbd-4055-b4c1-3ec851016b6c",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The swatch observation supports f4, and the missing cuff button has its own f6 entry.",
+        "reply_sha256": "6c76143645c4426800341cbff94fec06e213e4361aacf93c61364cc72e5347b2",
+        "graded_trials": [
+          "e776f140-f4cc-44c3-a1fb-6cf8edaa728b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two entries accurately record the corroboration under f4 and the missing button under f6.",
+        "reply_sha256": "f7e5fd23ed5323738295f7fe91106031f88a80d253ded99736d778b503721629",
+        "graded_trials": [
+          "ea6c884e-c518-4fd9-be62-77244428ef0c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The swatch evidence stays with f4, and f6 records the missing button on one cuff.",
+        "reply_sha256": "acf3d22ca53b298c3759f2a471bf2f4493437473bdfb059100d8d409b6ba459b",
+        "graded_trials": [
+          "53389804-aab3-419b-a789-3394ec8d223d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "“Also showed loose threads” conveys corroboration under f4. The separate button finding starts with f6.",
+        "reply_sha256": "50baaff5555173ea083ff51d038e7ca0c4315fb4c316b06e4133df0a4f26d545",
+        "graded_trials": [
+          "e3dd42ff-3191-477c-88cc-aa0afe427ded"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "“Also had loose threads” connects the swatch to f4, and f6 identifies the missing cuff button.",
+        "reply_sha256": "995da27ea15cdb43e9e4b5513bd1fdd34426bb74fc47304d6d9505cc64f79050",
+        "graded_trials": [
+          "36f0abbf-e46f-40ef-acaa-fc9c00ff473d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The compact log entries preserve f4 and its supporting evidence and assign f6 to the missing button.",
+        "reply_sha256": "5e1f5625e8b16dc9eab40b1a39d1288d02f0d91c1b8b267da2f62c20c6d96bdf",
+        "graded_trials": [
+          "4624be13-ace2-4dac-93a2-9100fc2a2744"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both findings are concise and correctly labeled, with the corroborating swatch included under f4.",
+        "reply_sha256": "9b69e249ab3540e38e081b701936bf7459cf9253c5622ddede68f5bb953ee26a",
+        "graded_trials": [
+          "4de12634-b193-4998-b9da-4ee2686e8e5e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply directly records the swatch corroboration under f4 and the missing cuff button under f6.",
+        "reply_sha256": "b9c1593b74bac3e810e40617743571f0ed6bba9a0837b687e566205d2f4920f8",
+        "graded_trials": [
+          "f6120355-d702-468a-9a34-71c74f47feba"
+        ]
+      }
+    ]
+  }
+]

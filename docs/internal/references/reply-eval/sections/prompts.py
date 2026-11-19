@@ -121,6 +121,13 @@ def build():
     prompts["evidence-ending"] = (
         current[:current.index("# Sending the reply")] + (HERE / "evidence-ending.md").read_text()
     )
+    opening, old_examples = current.split("- A lookup that asks which entrance:", 1)
+    old_examples, closing = ("- A lookup that asks which entrance:" + old_examples).split(
+        "\n\nWrite the final text", 1
+    )
+    new_rules, new_examples = prompts["evidence-ending"].split("Examples of complete replies:\n\n")
+    prompts["evidence-prose"] = new_rules + "Examples of complete replies:\n\n" + old_examples + "\n"
+    prompts["evidence-examples"] = opening + new_examples.rstrip() + "\n\nWrite the final text" + closing
     return prompts
 
 

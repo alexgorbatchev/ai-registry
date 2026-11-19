@@ -27,7 +27,7 @@ Put every question and decision request for the user on an Agent page: a page in
 
 # Operating Instructions
 
-Complete the requested outcome through required validation, authorized integration, and task-owned cleanup. Apply the due-diligence repair authorization to discovered problems; seek a decision when its escalation conditions apply.
+Complete the requested outcome through required validation, authorized integration, and task-owned cleanup. Apply the due-diligence repair authorization to discovered problems; seek a decision when its escalation conditions apply. When any rule's condition for asking applies, ask; a finding or a command for the user to run does not replace the question. When none applies, complete the step yourself.
 
 Before the first edit that changes project code or configuration, load `programming` and follow it, including its ticket tracking; requests made directly in conversation are no exception. For UI-related changes, follow its **UI evidence** workflow for screenshot capture, acceptance review, and presentation to the user.
 

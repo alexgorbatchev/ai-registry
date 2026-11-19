@@ -1,0 +1,404 @@
+[
+  {
+    "case": "parser-handoff",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "9a2a0881e46e017b0d8fbc55e4d487f59e8dff7387052b68ae39bc4c94246235",
+    "judge_log_id": "992f93d8-dfaf-46ec-927e-837daba1f1a2",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**a6** reports empty-comment support and the passing test. **a7** separately offers the whitespace-only check. The unchanged date issue is omitted.",
+        "reply_sha256": "68883c3eb7a50693d55651c347200a188d574f744be862d1a6db5ac3a7d21556",
+        "graded_trials": [
+          "c5a4475a-dbc3-493e-9295-eaf15f1f3381"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**a6** reports empty-comment support and the passing test. **a7** separately offers the whitespace-only check. The unchanged date issue is omitted.",
+        "reply_sha256": "0487232621c60529747982136b8401176adb051dc7e270ce79ec3176caa8be11",
+        "graded_trials": [
+          "c3a1566b-82f3-4e14-bbbf-3b75a96eed79"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**a6** reports empty-comment support and the passing test. **a7** separately offers the whitespace-only check. The unchanged date issue is omitted.",
+        "reply_sha256": "fc0ad0571f46ce3c78f26c3b3ae9c1e86f5fb897f68f36b8a475e4752110e5a4",
+        "graded_trials": [
+          "814d6855-e182-487d-85b4-454f9bb7f227",
+          "64b1360b-94ba-4a97-8d44-226210b5d14f",
+          "24fa39e3-7680-4b4d-97b5-653d8fee571f",
+          "f0ee2d8a-7775-41fc-be5f-76c9c501490e",
+          "44819558-25c1-4edc-b74b-788aade83792",
+          "b58096f8-6895-4bd0-81e0-097aac9e3d97"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "publish-manifest",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "11446e4245fe6a030b8877ae682b7b9b54afd2c527c05ecdbc6ce734d3b66d0e",
+    "judge_log_id": "1f805931-22f3-4b48-bf84-5b48d08c822c",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It explains both steps, but the request establishes neither that the manifest is the only source of asset references nor that clients can never mix versions. It repeats when the release takes effect and adds an unsolicited rollback procedure with an unsupported promise of immediate restoration.",
+        "reply_sha256": "408ea30d4f2fbfa85d68bc2f072080fdd39b14baef45a2875934637b421cd473",
+        "graded_trials": [
+          "dd2345f2-0204-4988-a437-73b886ec5542"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "It explains both failure modes, but it guarantees that the next manifest load delivers the new version. The request gives no cache or refresh behavior that establishes when a browser will receive it.",
+        "reply_sha256": "3b18a6d02839d625f06a3462f031f2179dd371e2556ae3f5d12a9806a2648c94",
+        "graded_trials": [
+          "5a1b7836-31aa-4a89-af7c-c4b3b0cd10a2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each ID explains one decision and connects it to the filenames a browser may request.",
+        "reply_sha256": "1eda3cadfdb142ccb31f84a9e66bcf2e8ee13ffb600d31d3d69ef8d7348aeaeb",
+        "graded_trials": [
+          "d046ded5-288c-4137-af59-d1cc724df640"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone explanation shows how switching early or deleting old files can break requests from browsers using the corresponding manifest.",
+        "reply_sha256": "fe1ba594c6a9b80adc450c8ba79709c368b2660095003f7b274ef041ed7a6575",
+        "graded_trials": [
+          "87e9573a-1d72-482d-a373-f4f3acf763ea"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two labeled points explain why new references must resolve at the switch and why old references must still resolve afterward.",
+        "reply_sha256": "6b7036156ce8148c34f43c9cd26f3a84c95d03801da4fd361598e6d4f397f10b",
+        "graded_trials": [
+          "255f74f0-c40b-4d28-8138-3b1826307561"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Its claim that everyone gets the new release immediately contradicts its own old-manifest example. Half-written responses and adoption on the next page load are also unsupported. It repeats the filename rationale and adds an unrequested file-confirmation step and caching advice.",
+        "reply_sha256": "abcee52f72204acd68c31ab4be345946de104d1fd02fc52dbf56b600763cb046",
+        "graded_trials": [
+          "7aeae808-fcfd-4ee3-97b7-02a61b0f12c5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled step gives its reason, including how a later request using an old filename can succeed.",
+        "reply_sha256": "6d68544cb998e0e7d1b01fb3af346d26bb460808a61cc3d3f03ee243ffefe8af",
+        "graded_trials": [
+          "fd75e60c-abf3-4625-b59a-fbf635bfb38a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The separate IDs tie upload order to new-file availability and retention to continued access at the original URL.",
+        "reply_sha256": "8b9d10ce6319eca662fc1ac8b53bb985b885e276d13a9ecac39df3d61b4ddea8",
+        "graded_trials": [
+          "433e6f46-8a61-412e-965c-7203478dea27"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "queue-drain",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "40c45cba1b8a5addff80ee50020066c69e1e48109ecd99988f7726d720e23bc2",
+    "judge_log_id": "584df736-51f7-4607-9370-dce07207f35b",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The direct chat update covers all three incident facts without extra detail.",
+        "reply_sha256": "b2dca193d37b0860485414a3910524d9528124ff14da328996f81a45517ea8c4",
+        "graded_trials": [
+          "0558b443-1945-452a-9673-10a584cab776"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": false,
+        "reason": "The update is accurate and concise, but **f1** labels two distinct findings: the backlog cleared and new jobs are processing normally.",
+        "reply_sha256": "6345897c5507786437f4fb2ac3baf9ab59e70b7db5c204a97400e2e14fd9ca58",
+        "graded_trials": [
+          "d1d9e240-97d0-43a2-b7a0-820e9e6c2b6b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The direct update reports backlog clearance, normal processing, and the unknown cause.",
+        "reply_sha256": "95cff27ddb6af5cf192c7cbe5fe0d3fe6c8ef85fff5875ffc0fb5198d5654625",
+        "graded_trials": [
+          "76626ebc-0a84-4dca-8736-bda32c787af6",
+          "78b8e2ba-7e48-447d-aa4c-2fe9225c0c66"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each of the three required facts has its own bold ID, with no extraneous detail.",
+        "reply_sha256": "c5b899be70b3f9a3f44409c4d454578905c07c6c94c6fef221cc867c690c2c43",
+        "graded_trials": [
+          "fef2c4e8-084c-419a-b476-de8b15d5ce1b",
+          "fdf14e87-0af6-455a-b89e-29d6622b196f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The concise factual update stands alone and covers all three required facts.",
+        "reply_sha256": "711b264908af57cf4273d9d3395d5a5a45ee926159e128dc1ff2292a25894277",
+        "graded_trials": [
+          "ddbc634b-139e-41f0-95a9-f8bc0c19ce06"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The brief chat update gives the complete operational status and states that the cause is still unknown.",
+        "reply_sha256": "e2afe24726f5ccb396945c86a1b7cb42c7628775f0fbb122bb7d2d4c6bb7975a",
+        "graded_trials": [
+          "e650a808-1b7b-4a8e-9c42-8ee82c6bc6e0"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "read-only-role",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "9218b0e86514ccb5bdda5dce8236528b8f903dd47829276f6d0f5426733bedcc",
+    "judge_log_id": "b23f0df0-a210-4ec6-83d1-d6dc3c293838",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Scout is the documented role for viewing runs. The direct answer stands alone and adds no unnecessary detail.",
+        "reply_sha256": "709d5d4697374cc111edee516850e20c08fd9cf88b082dbc9310d58c6f9b883f",
+        "graded_trials": [
+          "78453783-be35-4a2d-835d-0a0e4e50296b",
+          "1494598d-18f7-4b89-8157-bcddcba6c2e3",
+          "493758d3-b121-4a45-a940-f0fca97a9a2c",
+          "a8bd1f7a-b449-4782-aed0-de36c8c07d9a",
+          "d3734e70-3d32-4ca3-815f-c23cb880fec0",
+          "912cf485-7aea-43e5-acf3-00e0212a3919",
+          "68d7ae6d-36eb-44ed-9912-b939b0d82be6",
+          "c58cb7f1-f7c1-43e6-98cb-45854aa1662a"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "restore-preview",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "4cf7ca02b9a66900b6fe64d7d25d2416de96bdb4437d52ebbbcd2f4ee69507c7",
+    "judge_log_id": "ddd17026-35a3-4ff8-810e-0b99e76ca843",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly explains that preview lists replacements without changing disk and restore overwrites newer local copies.",
+        "reply_sha256": "5a1766a49b897fdd5c47cd388386cd5ab921d9cc5e3ac6d56ada6c58f0209d8d",
+        "graded_trials": [
+          "c6fe14bf-f3c8-4a42-b21b-951f18c7f3e2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Distinct IDs identify both effects. The caveat about edits saved elsewhere accurately qualifies the loss.",
+        "reply_sha256": "14c59adf310f941d765a202ba85fa47ad3cea805407e6b1d45f6fb854ddfc1de",
+        "graded_trials": [
+          "971681a4-a3c4-4e09-ad48-906ac5240ac7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Separate IDs clearly explain the read-only preview and the loss of newer edits in overwritten files.",
+        "reply_sha256": "e213458cb6b6ba8c2770d56bb2d61e42439f47cd496d9466be0ce118e417ac31",
+        "graded_trials": [
+          "906f454f-e8e9-4182-ab1d-c1d51324fdbc"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Separate IDs distinguish the unchanged disk during preview from replacement of newer local files during restore.",
+        "reply_sha256": "575b838f85739429739c69c0a6e75dd21843d270c0839d9a53fb56ba73863692",
+        "graded_trials": [
+          "7ce1cac9-aafa-4e7c-abef-fbf58b0e5bd5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The direct factual answer covers both operations and the loss of newer edits. It can stand alone without IDs.",
+        "reply_sha256": "887782800f3ab1f2397ad72db6d995c646410e6f34417f23a8f5f446122364d4",
+        "graded_trials": [
+          "a9388875-e57b-48bb-998a-acc71fd29370"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each operation has its own ID, and the answer explicitly covers both the unchanged disk and overwrite of newer versions.",
+        "reply_sha256": "20435220a6a6817160cc31965b39bbd4f71cc559cf9ecf12b4aa1517997b84e7",
+        "graded_trials": [
+          "9d4f9768-008f-4d7c-830d-d2ed5278622b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Distinct IDs identify the preview list and the subsequent overwrite, including replacement of newer local versions.",
+        "reply_sha256": "eccd0b739cfe847bef6819963a5569ef924a9670f8e16c436404d13d43bacdf7",
+        "graded_trials": [
+          "f4b8afa3-3914-44df-8317-7e15a9fbe09e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each ID identifies one operation. The answer states that preview leaves disk untouched and restore overwrites even newer local copies.",
+        "reply_sha256": "0ea6d66a9343994effb428ed8276c00eab417ff25f71fd457478e208f3c2159e",
+        "graded_trials": [
+          "ca1be174-480c-4700-b20d-ffa20cefe917"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "unlabelled-exit",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "146e2fb422427cbb957a49bd828d7b20ab96db55c1530ed7267ed5433fd6ff51",
+    "judge_log_id": "b75930df-a1dd-40cc-b19d-60109489abe0",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States the exact exit count and the unknown identity.",
+        "reply_sha256": "c85917e361a3bb44bf4e3dd5484f889efbc70b64a6981ddc324c1da24df03ea0",
+        "graded_trials": [
+          "dfe27e0b-9c5b-4d24-b655-200723d9083d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Answers directly and explains why the log cannot distinguish East from West.",
+        "reply_sha256": "5ae3957f8c6f0ce188549485d11a734a6ce0abb2142be555ab3879c052f2c4e9",
+        "graded_trials": [
+          "b6622a4a-bc94-4517-ab62-86440d4ce1bc"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Accurately states what the monitor recorded. A direct answer can stand without an ID.",
+        "reply_sha256": "901efe1df156a8b923378919c266e1d2959e815e82d8368992d2398bfc24995f",
+        "graded_trials": [
+          "2371d66d-8b61-441a-bdd9-355e85df6018"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Uses separate IDs for identity and count. The capture caveat explains when one recorded exit establishes one actual exit.",
+        "reply_sha256": "ec18ed7fbc1a7a5aed2c133004e5cc9a1e8a00f2601439ff0cae28eaf683bee3",
+        "graded_trials": [
+          "0953007c-9898-49f5-a4b5-268b5d8cdace"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives both requested facts in one direct finding.",
+        "reply_sha256": "189521cd9cb48ebbfad0a3ac69b433b94952099218c86f736fef782a9cb5a8ab",
+        "graded_trials": [
+          "6fccdd4f-265f-4f0e-ad59-74e3e2cb3469"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the exact count and correctly leaves the worker unidentified.",
+        "reply_sha256": "989991a2aaf14d9db4a4d03d65020cf87d4b43e31cfd12be8e5a7c77d20d1c9c",
+        "graded_trials": [
+          "316912a7-b2f8-4d41-b28c-67c52a2f3daa"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The request establishes only that the name was missing. Claiming the log lacks exit-time and cause information is unsupported and adds an unnecessary tangent.",
+        "reply_sha256": "42621feeb1df7558a83f9f6165a12b1ae089fc1fb875935164cb36101f342424",
+        "graded_trials": [
+          "de9b098c-31d7-4c79-aa01-39ae87c1c7b8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States the count within the monitored period and explains why neither worker can be singled out. The direct answer needs no ID.",
+        "reply_sha256": "c09ab887161ac04c845039dc9f12701d0b2d73b3fc4f4848cdbb4cb764283066",
+        "graded_trials": [
+          "e778fa57-8b49-4a07-a4c9-e737dca99112"
+        ]
+      }
+    ]
+  }
+]

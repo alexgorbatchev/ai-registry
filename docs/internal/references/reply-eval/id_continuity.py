@@ -19,6 +19,7 @@ ARMS = {
     "baseline": "evidence-control",
     "candidate": "evidence-ending",
     "source": "source-ending",
+    "labeled": "source-labeled",
 }
 QUESTIONS = json.loads((HERE / "sections/id-continuity.json").read_text())
 NAMES = (

@@ -131,6 +131,12 @@ def build():
     prompts["source-ending"] = (
         current[:current.index("# Sending the reply")] + (HERE / "source-ending.md").read_text()
     )
+    anchor = "Apply this after choosing what belongs in the reply."
+    assert prompts["source-ending"].count(anchor) == 1
+    prompts["source-labeled"] = prompts["source-ending"].replace(
+        anchor, anchor + " In a draft containing several independently addressable findings, "
+        "actions or options, their bold IDs belong inside the draft itself."
+    )
     return prompts
 
 

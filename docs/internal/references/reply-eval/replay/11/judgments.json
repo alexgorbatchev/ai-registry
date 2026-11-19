@@ -1,0 +1,458 @@
+[
+  {
+    "case": "cache-clear",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "208b0eb082e0a0445f46e2901ba6a1a926ab2e12ea14f7af39686eb0159df2d6",
+    "judge_log_id": "cff43681-1c55-411a-bdd2-e36fdf913a02",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Clearly identifies the configuration file as retained and both the packages and their local edits as lost.",
+        "reply_sha256": "267e7a8d1ad1c2b7da08e621f79b14ce264538eca1da29deb6bba17482eff447",
+        "graded_trials": [
+          "1c363726-661c-4595-9793-daa9eb31e885"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two labeled statements accurately cover what is kept and what is lost.",
+        "reply_sha256": "c288cc286b10ef270813e1586b76f14562d3b91d9a3ac831747aad3bb0b9e6b4",
+        "graded_trials": [
+          "137d0392-cbd9-4d57-9340-08b6c279af37"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Covers all consequences and clarifies that downloading a package again will not recover local edits.",
+        "reply_sha256": "5f80502cdece202d7b2a4d28d55c902da5b50302f25968d963491882b3d190ba",
+        "graded_trials": [
+          "2c95282e-b9f4-436a-8142-052fd6c7c399"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Distinguishes all outcomes and ties the recovery warning and protective advice directly to the edits at risk.",
+        "reply_sha256": "44160b5a9a6f83437d9c0413d4932491220cc217ce3bba9f9c9477fc0da929ad",
+        "graded_trials": [
+          "f7604f0b-dedc-40e0-9511-212f64145ce4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "Accurately covers all consequences, but repeats that edits disappear with the package and introduces unrelated file types. The f3 label groups a scope caveat with distinct advice about preserving edits.",
+        "reply_sha256": "0ae4948effe35ca94e026a92736f7304b751c19f52f3d1c03c2da6db40b93ebb",
+        "graded_trials": [
+          "81c8d7b6-8b4a-46e9-8e82-109ecc86e3df"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly distinguishes configuration retention, package removal, and loss of edits within the packages.",
+        "reply_sha256": "1598de4bb110144423e4977aa91241d6ffd200c5ef3a8fc64abb45c679c19b72",
+        "graded_trials": [
+          "e160a37e-56b3-4270-bc95-e720a00c6afe"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Covers all outcomes and gives a brief protective step tied to the edits being deleted.",
+        "reply_sha256": "a4c5cef4cc77ac71c3530db5c0a4e262c137d9a6daaac885a2788ec7d4ed608b",
+        "graded_trials": [
+          "cd7f9cc8-3fcf-4582-a909-8c4439a8ebf8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Clearly labels what is kept and lost, with concise advice for saving the affected edits.",
+        "reply_sha256": "a946ea15eaad82e5900975c2777b6e56b516bda30828d8d5cee5b35c61c34d85",
+        "graded_trials": [
+          "fada7e02-ce1d-41bb-86c6-75c25e24da91"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "event-dedup",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "9674e797f14f346de657dd7c746bebecec242925b5c47a69aa9811302c5ba51d",
+    "judge_log_id": "d8b0fe61-72b8-4bf0-bdbc-e79af87ff31c",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "It explains both partial-write failures but assumes a specific schema, acknowledgment order, and broker guarantee. The SQL advice and downstream alternatives exceed the request. It reuses i1 through i4 and references l1i5 without assigning that ID.",
+        "reply_sha256": "d7306a857f6415bc5bc982c4d9c5af643652bdc2c0b33984384dcbb415ce571d",
+        "graded_trials": [
+          "f057a40c-8b0c-4d48-9a28-12973fbb19ba"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The balance example traces both deliveries, and the two crash cases explain how separate commits could lose or duplicate the credit.",
+        "reply_sha256": "cd6f832355a46155fbf24dd70ee6af84866a98bdcb100b6e7d323bbb7c4d23de",
+        "graded_trials": [
+          "fa918878-c22b-46a4-b887-be91b55deaf0"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It explains the atomicity benefit but asserts a processed-events table, post-commit acknowledgment, and at-least-once broker delivery. It repeats the atomicity explanation and adds unsolicited constraint and outbox advice. The headings make the walkthrough easy to follow.",
+        "reply_sha256": "c93244d8922121696648279aa24e9f4f5d3adee7594abb7be74ca822d4fad70f",
+        "graded_trials": [
+          "93600ad8-53fd-425b-b1dd-df32d0e712e9"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "The example clearly explains both deliveries and both partial-write failures, but it presents a specific processed-events table and post-commit acknowledgment order as facts about the consumer.",
+        "reply_sha256": "da652a1dd1aa2fd82a6be36116292dafccb282f4e84b66e523ff71af28f39e93",
+        "graded_trials": [
+          "80784500-3bf3-4dda-b19e-93f7320938ed"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It assumes a unique constraint, a specific cause of redelivery, and a broker guarantee. It also claims a unique-constrained insert is required. The SQL procedure, external-side-effect advice, and repeated atomicity summary exceed the requested walkthrough.",
+        "reply_sha256": "7a8ace549e232b74dfcf7f0cbe972375e10b9a8622c68af6241801553ce2fe8e",
+        "graded_trials": [
+          "75803320-2ed6-4f1a-bab6-2918d2aa1902"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The example shows the credit committing once and the retry skipping it. The crash cases explain why the ID remains reliable and how either separate commit could leave the wrong balance.",
+        "reply_sha256": "3122d72334f2740f3d998f7558d7914113ee8e7a5e9280739ab0e4df7e63cf6d",
+        "graded_trials": [
+          "8980d7ae-1809-4d5e-af9e-8c984e3739ab"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It traces the new ID and the repeat, explains both partial-write failures, and shows why retrying is safe after either rollback or commit.",
+        "reply_sha256": "35aa30c7b7dbb646e6de3f4ab5c159f7ff327433c66151170527b293ba87211e",
+        "graded_trials": [
+          "ecfbb0e5-8fc9-429f-adc7-088d00b39bbb"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It assumes a unique constraint, acknowledgment order, and specific database blocking behavior. The claim that the lost update produces no error anywhere is unsupported. The concurrency procedure and discussion of moving data to another store exceed the request.",
+        "reply_sha256": "d3d098d058a45857d601552c8bb957c8f20894198b566a69e45b938f32730a2e",
+        "graded_trials": [
+          "3adbc2f9-21bb-441c-a4ed-2c9b6b6d084b"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "export-update",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "f752fd0f06424900e544f3b703363cdd6e22245db9de3114dee3ef7c30527bb3",
+    "judge_log_id": "88ec0ee5-3cb4-4b08-8c00-f0ad1a24d80e",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f5** records the tester’s verification, and **a3** offers a separate delimiter check.",
+        "reply_sha256": "08a6bed9abab87afc44f55a00c865730fd3b40b8f1fe70a0740a2fca9525d6b8",
+        "graded_trials": [
+          "4db45b9f-2ea7-416c-aac0-a9d613a927b8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f5** reports the verified fix, and **a3** offers the delimiter check separately.",
+        "reply_sha256": "34fcb8258fdae32a784770d1ae5afccb2063a944f70b34fb5cf0cbda9f29ad1f",
+        "graded_trials": [
+          "62d7bafc-dc38-47b8-bdda-5d12d9e5a736"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The raw-file inspection procedure, quoted-field cases, and explanation of why headers do not establish delimiter correctness go beyond the requested offer.",
+        "reply_sha256": "8ca97a359f74e0b18b58dae09ba33a2fb551a63add6c03e5b938b213c37b54f1",
+        "graded_trials": [
+          "0bccaedd-e809-4647-b160-1e4214fb1a6b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f5** ties the fix to the tester’s exported CSV evidence, and **a3** offers the delimiter check.",
+        "reply_sha256": "8641c3112051bac5bd05cc433783bfcb17d141b77cb6eb0bef249628d7dd3edc",
+        "graded_trials": [
+          "a418169a-1e6c-4fd0-a514-7fbc1402d4e3"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f5** marks the finding resolved with verification, and **a3** offers to compare the delimiter with the expected one.",
+        "reply_sha256": "923d8740f6e1be7a22e6c023f0fadc866df42656f90e5a8e7293ddd1faf32257",
+        "graded_trials": [
+          "2338a0b9-5306-4e79-8f6d-2236e7a1d0b9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f5** records the verified header names, and **a3** offers to identify the delimiter used.",
+        "reply_sha256": "8c307fefaf38c6ebc64e170108a24f18223b7c21edfd2551493bcb2660cc084f",
+        "graded_trials": [
+          "df7ad1cd-1c94-498c-b0ac-43eeb85889f1"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f5** records the corrected names and tester confirmation, and **a3** offers a separate delimiter check.",
+        "reply_sha256": "05108acc0f594bbf87a7adaf75399b9cdefc2cc501c749116c0cabd3c46543ad",
+        "graded_trials": [
+          "f87d92fc-e021-4a4a-ad08-aaa8376ade99"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f5** closes the finding with tester verification, and **a3** offers to check the expected separator.",
+        "reply_sha256": "c00ab3286371aff1892c3285b693f8ac2232543726d28e554d55de11a021967c",
+        "graded_trials": [
+          "c2b17a5a-8bc0-44f0-bd76-15f3327effd3"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "latency-samples",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "8d299fcf3456c0517b84678957a6869a1eb883794c802f87726f81486a128cd8",
+    "judge_log_id": "c75c4272-605c-4c73-8ac9-914453f07319",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It quantifies the observed drop and explains why the data establish neither a typical improvement nor causation.",
+        "reply_sha256": "9e46a062160e54ad553428a9e952701e610fce467b1a4ffd184ce7c2781401e2",
+        "graded_trials": [
+          "036777e8-ed85-49bf-b132-ce6d2fe25032"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gives the correct decrease and briefly explains how load or ordinary variation could account for it.",
+        "reply_sha256": "707a36e57556f349b69e9c9d73c9bc8b137b363bf668bb06a6bc21b0830feab6",
+        "graded_trials": [
+          "3bb4a641-46ec-4e9e-b20a-bbd9b8b90469"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "It asserts without evidence that latency routinely varies by more than 100 ms and that the listed conditions went unrecorded. The unlabeled opening duplicates both labeled findings, and the confounder list and testing procedure exceed the request.",
+        "reply_sha256": "662522c231324287d1f89fa9ff8f626a0bd88958b6ace2fa8736a3229f182e9b",
+        "graded_trials": [
+          "83f762b4-b4cd-413f-8ddf-64fe87348cc0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gives the correct decrease and accurately states both limits of inference under distinct IDs.",
+        "reply_sha256": "4e7c03c23204d53c6459487e22c9d6e99f9cf345013be98f4605fe3174cd7534",
+        "graded_trials": [
+          "795dd554-32ac-4ff9-bcb2-0da7acf48c27"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It claims unreported metadata were absent and that each listed factor could explain the full 100 ms. The data also give no basis for saying the causal explanations fit equally well. The extended caveats and testing procedure exceed the request.",
+        "reply_sha256": "91f4e8e0d4b940ca25b0dd1bac49758229e6d4cde1ec207e08b051db500425ad",
+        "graded_trials": [
+          "dd0a3ad3-09df-4cec-96cf-ceb8741dd407"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It assumes the log contained no other metadata and claims routine jitter could easily account for 100 ms without baseline evidence. The two lists of possible causes and closing restatement repeat points already made.",
+        "reply_sha256": "efcea5f0f5f4db0ab5267afda2f9e4ee5cbce41bb4ec4621f23eb0e41e212052",
+        "graded_trials": [
+          "6e228a60-5e05-479e-90cb-d26fed9c061a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It reports the correct absolute and percentage decrease and explains why typical latency and patch causation remain undetermined.",
+        "reply_sha256": "0502a22cefeb7e7fcc69135413dfdd1f37dfa66bf53d3a682634973c6863590c",
+        "graded_trials": [
+          "67503b77-2306-4679-b5cb-bade0d162287"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The measurements do not establish that 100 ms is within ordinary variation or that the listed metadata were absent. The extra confounder list and proposed percentile comparison go beyond the requested explanation.",
+        "reply_sha256": "31a3c078f4cb4fbef80d69092d6ba493356164ce0a1653fdfd613249f06c292c",
+        "graded_trials": [
+          "fce35e7b-4c39-4089-adb7-19eba2903dfa"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "release-target",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "99fcfaca74a22d77d6b909bfcc448d65df53439ec52bcc15b5d05c617361ef02",
+    "judge_log_id": "44d0862e-444d-4a0a-9956-5e62c8f223de",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "`make bundle` is the exact command requested and can stand alone.",
+        "reply_sha256": "a4a26b2231df4547de66442dfe8a50ca8c334962ae154560549f779343d1381a",
+        "graded_trials": [
+          "2a5d3c78-4127-4ed8-9efd-6d1322fb1148",
+          "8f40145f-867b-4ad8-b30d-fc4ca4aad916",
+          "06d5aaaa-3e1e-45d3-ab42-0b900e200cfb",
+          "627978c3-45a3-4a33-9c85-447421345a4b",
+          "bf2d9e77-7bad-4e49-8c99-3b223ad85cc7",
+          "af1d6f0d-088f-4a03-8a17-0aa5adaec882",
+          "5d238206-2424-4c57-88e5-327d62f8352e",
+          "dd5eea91-725d-4677-84c4-a4a397e0cc0a"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "worker-status",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "1d25cc387c030d80984457c785a7cbeb120510bf12b189750992ada6d7349f3e",
+    "judge_log_id": "6e8cb16b-a401-485e-930a-8027b5def7d6",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports staging success and the production dependency, each under its own ID.",
+        "reply_sha256": "6adb20ddbd57cc9f364f57b937278a0a1a7a4a9d8050f1066a5fdf87747846ce",
+        "graded_trials": [
+          "086e7431-04f7-44b6-bda2-28ea22657f8c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both status facts are accurate, concise, and separately identified.",
+        "reply_sha256": "3cfc09aa119eff748f88867aa07023fe55a3ce1f6f4aa27fd053e433331e9bae",
+        "graded_trials": [
+          "f135c190-bc95-4638-b13a-836b01a651a4",
+          "07de4130-f02c-4660-b6ca-b606705a1423"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the requested facts directly. A standalone status update needs no IDs.",
+        "reply_sha256": "847db18929ae6f03c3bc397f491db971175d871efdec921781da5618bec68546",
+        "graded_trials": [
+          "288985cb-11b6-4b90-bec4-9705a74eb2cd"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Waiting for a maintenance window does not establish that rollout is scheduled for the next one.",
+        "reply_sha256": "fc0d0d8f555f2fe7158c14d36449e7fafa90fff87631f37ef7feac7f0784ca34",
+        "graded_trials": [
+          "7935ef09-6537-44e5-8612-e252d35c619e"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The claim that no action is needed is unsupported. Branch instructions and screenshot history distract from rollout status. The single draft ID does not identify the separate operational instructions.",
+        "reply_sha256": "2980a72bc8cccbda1585500d4ad183e93004d9229cee4b4df9085fc2df976bde",
+        "graded_trials": [
+          "7713e1a9-92bc-4c3b-8d5f-85ae2c1c78e7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports both required facts under distinct IDs without extra detail.",
+        "reply_sha256": "51ee5c394a3a93d2a2f79413d59649c5a4fb793b5c752e4ecd95a8d8a6ccdca2",
+        "graded_trials": [
+          "5ca12c44-34bd-4196-bb1e-7f6312302a2f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The branch rename does not establish a rule for deployments or rollbacks. The branch and screenshot details are extraneous, and the added directive has no distinct bold ID.",
+        "reply_sha256": "2fc7e8235c47192521efda845e825dce6a42957ac22a4f6cc76f67f9e730f286",
+        "graded_trials": [
+          "9b41f7f1-7aff-497d-a1ae-899f7d9cc515"
+        ]
+      }
+    ]
+  }
+]

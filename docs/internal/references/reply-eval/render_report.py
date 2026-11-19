@@ -347,7 +347,8 @@ def replay_section(historical):
     sections = []
     count = 0
     latest = ""
-    for directory in sorted((HERE / "replay").glob("*")):
+    directories = sorted((HERE / "replay").glob("*"))
+    for directory in directories:
         number = directory.name
         prefix = f"replay/{number}"
         reviews = json.loads((directory / "judgments.json").read_text())
@@ -413,7 +414,7 @@ def replay_section(historical):
             raise ValueError(f"Unmatched judgments in replay {number}")
         latest = " · ".join(pairs)
         sections.append(
-            f"<details class='record'><summary>Round {number} · {latest}</summary>"
+            f"<details class='record'{' open' if directory == directories[-1] else ''}><summary>Round {number} · {latest}</summary>"
             "<div class='review replay-table'><table><thead><tr><th>Model</th><th>Arm</th><th>Review passes</th>"
             "<th>Automatic passes</th><th>Mean words</th><th>Complete</th><th>Concise</th><th>IDs</th>"
             f"</tr></thead><tbody>{''.join(rows_html)}</tbody></table></div><p class='refs'>"
@@ -438,7 +439,7 @@ def replay_section(historical):
             "<p>Baseline → candidate on the same cases. Each case ran twice per arm. "
             "One Astra 6.2 reviewer saw shuffled answers without model or arm labels. The mechanical checks and reviewer can disagree. "
             "For example, in round 01 the reviewer accepted a completion update listing passing checks that the fixture explicitly excludes.</p>"
-            + "".join(sections)
+            + "".join(reversed(sections))
             + "</section>"
         ),
     )

@@ -218,6 +218,8 @@ just build
 
 Development tasks live in `justfile` recipes; `package.json` files have no `scripts`. The root `justfile` links each package's own `justfile` as a module (`registry-cli`, `template-resolver`, `session-analysis`, `disk-cleanup`, `claude-code-hooks`, `ux-flow-redesign`). Select affected package recipes using the shared impact-based testing policy and report measured test-command durations. Use `just check` when repository-wide validation applies (formatting, lint, type checks, unused code, and tests), `just fix` to apply formatting and lint fixes, `just test` to run every package's tests, and `just --list --list-submodules` to see all recipes. All first-party test commands isolate their fixtures in unique scratch directories and remove those directories after success, failure, timeout, or interruption; coverage reports are consumed before cleanup.
 
+The [reply evaluation suite](docs/internal/references/reply-eval/PROTOCOL.md) compares complete system prompts on concise answers, follow-up actions, and stable reply IDs. Its [pilot results](docs/internal/references/reply-eval/PILOT.md) include the original model responses.
+
 ### Repo-local PATH commands
 
 The repo-local OpenCode session tools are:

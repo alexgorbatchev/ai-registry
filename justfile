@@ -124,3 +124,12 @@ cron-disable:
 # Print the latest scheduled-update output
 cron-logs:
     tail -n 100 .state/scheduled-update.log
+
+# Evaluate shared communication instructions against synthetic reply cases
+[positional-arguments]
+reply-eval *args:
+    uv run --no-project python docs/internal/references/reply-eval/run.py "$@"
+
+# Check the reply graders offline
+reply-eval-test:
+    uv run --no-project python -B -m unittest discover -s docs/internal/references/reply-eval -p 'test_*.py'

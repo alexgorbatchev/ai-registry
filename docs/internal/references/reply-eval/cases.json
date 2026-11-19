@@ -1,0 +1,98 @@
+[
+  {
+    "name": "location",
+    "prompt": "Our build guide says dependency locking belongs in each service's own build configuration. It also describes generating lockfiles, verification metadata and CI checks. Turn on locking where?",
+    "concepts": [
+      "service",
+      "build"
+    ],
+    "omit": [
+      "verification metadata",
+      "write-locks"
+    ],
+    "max_words": 35,
+    "max_labels": 1
+  },
+  {
+    "name": "completion",
+    "prompt": "Earlier you proposed **a4** Make overlapping builds wait. I approved it. The change is live. You ran two simultaneous builds and saw the second wait. Other passing checks covered formatting, imports and documentation. Give me the completion update.",
+    "concepts": [
+      "build",
+      "wait|serializ|queued",
+      "two|second|concurrent|simultaneous|overlapping"
+    ],
+    "omit": [
+      "formatting",
+      "imports"
+    ],
+    "labels": [
+      "a4"
+    ],
+    "max_words": 55,
+    "max_labels": 1
+  },
+  {
+    "name": "independent-offer",
+    "prompt": "Earlier you reported **f2** The parser accepts mixed manifests. We've now confirmed that on a sample containing both formats. Update that finding and offer to run the same check on the archive. I already have the sample output.",
+    "concepts": [
+      "mix|both",
+      "archive"
+    ],
+    "labels": [
+      "f2",
+      "a1|q1"
+    ],
+    "max_words": 55,
+    "max_labels": 2
+  },
+  {
+    "name": "progress-risk",
+    "prompt": "Give me a progress update. The import has processed 70 of 100 records. The remaining 30 are blocked by an expired token; I own the token and have to renew it. Earlier you reported **f3** Import paused for an expired token. Formatting passed again. The unchanged backlog has eight cleanup items. The profiler recorded 84 MB peak memory.",
+    "concepts": [
+      "70",
+      "token",
+      "renew|refresh|rotat|replac|reissu"
+    ],
+    "omit": [
+      "formatting",
+      "backlog",
+      "84 MB"
+    ],
+    "labels": [
+      "f3"
+    ],
+    "max_words": 65,
+    "max_labels": 2
+  },
+  {
+    "name": "detail-request",
+    "prompt": "Explain all three recovery steps in order and why each matters. The procedure says to pause writers to stop new changes, copy the journal to preserve a recovery point, then resume writers to restore service. We are documenting the procedure in chat, so I want the reasoning for every step.",
+    "concepts": [
+      "paus|stop",
+      "new (changes|writes)|further (changes|writes)|freez|consistent|changing|mutat|in.flight",
+      "journal",
+      "recovery point|restore point|rollback|snapshot|recoverable|fall back",
+      "resume|restart|re-enable",
+      "restore service|normal (service|operation|writes)|accept.*writes|service.*again|back online|writ.*again|back.*service"
+    ],
+    "omit": []
+  },
+  {
+    "name": "new-finding",
+    "prompt": "Earlier findings were **f1** Index stale and **f2** Cache unavailable. Only the cache is fixed. A new independent finding is that exports truncate after 500 rows. Give me just the changed findings.",
+    "concepts": [
+      "cache",
+      "export",
+      "500"
+    ],
+    "omit": [
+      "index"
+    ],
+    "labels": [
+      "f2",
+      "f3"
+    ],
+    "max_words": 55,
+    "max_labels": 2
+  }
+]

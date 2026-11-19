@@ -300,7 +300,7 @@ def candidate_wording(patch, label):
     )
 
 
-def ledger(run, judgments):
+def ledger(run, judgments, source_directory="rounds"):
     header = run["header"]
     rows = run["rows"]
     entries = []
@@ -337,13 +337,13 @@ def ledger(run, judgments):
     )
     return (
         f'<details class="record"><summary>{escape(title)} · {len(rows)}/{run["planned"]} replies</summary>'
-        f'<p class="refs"><a href="rounds/{escape(run["file"], quote=True)}">Raw JSONL</a> · '
+        f'<p class="refs"><a href="{source_directory}/{escape(run["file"], quote=True)}">Scored JSONL</a> · '
         f"{escape(header['started_utc'])} · requested {escape(header['model'])}</p>"
         f'<div class="cases">{"".join(entries)}</div><p class="refs">Prompt SHA-256 · {hashes}</p></details>'
     )
 
 
-def replay_section():
+def replay_section(historical):
     sections = []
     count = 0
     latest = ""
@@ -358,6 +358,7 @@ def replay_section():
             for trial in judgment["graded_trials"]
         }
         pairs = []
+        examples = []
         rows_html = []
         for alias in ("astra", "opus"):
             filename = f"{number}-{alias}.jsonl"
@@ -365,6 +366,18 @@ def replay_section():
                 json.loads, (directory / filename).read_text().splitlines()
             )
             model = MODELS[header["model"]]
+            archive = next(run for run in historical[number] if run["file"] == filename)
+            if header["suite_sha256"] != archive["header"]["suite_sha256"]:
+                raise ValueError(f"Replay suite differs in {filename}")
+            assessments = {}
+            for row in rows:
+                grade = grades[row["raw_log_id"]]
+                key = (filename, row["case"], row["arm"], row["repetition"])
+                assessments[key] = {
+                    "pass": all(grade[k] for k in ("concision", "completeness", "addressability")),
+                    "reason": grade["reason"],
+                }
+            examples.append(ledger(dict(archive, header=header, rows=rows), assessments, prefix))
             count += len(rows)
             scores = []
             for arm in ("baseline", "candidate"):
@@ -401,7 +414,9 @@ def replay_section():
             f'<a href="{prefix}/{number}-astra.jsonl">Astra replies</a> · '
             f'<a href="{prefix}/{number}-opus.jsonl">Opus replies</a> · '
             f'<a href="{prefix}/judgments.json">Judgments by reply</a> · '
-            f'<a href="{prefix}/raw-index.json">Native transcript fingerprints</a></p></details>'
+            f'<a href="{prefix}/raw-index.json">Native transcript fingerprints</a></p>'
+            + "".join(examples)
+            + '</details>'
         )
     headline = (
         f"<h2>Isolated single-pass replay</h2><p class='verdict'>Latest comparison · {latest}</p>"
@@ -622,7 +637,7 @@ def render():
             '<section class="wording"><h2 class="section-title">Single-pass wording trials</h2>'
             f'<div class="models">{"".join(outcomes)}</div></section>'
         )
-    replay_headline, replay_count, replay_html = replay_section()
+    replay_headline, replay_count, replay_html = replay_section(rounds)
     values = {
         "REPLAY": replay_html,
         "ARCHIVE": highlight,

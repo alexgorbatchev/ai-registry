@@ -18,6 +18,17 @@ BLOCKS = (
     "integrity",
     "diligence",
 )
+# Rank is fixed before scoring. Each prefix identifies one whole F16 paragraph.
+OPS_REMOVALS = (
+    ("stop", "Stop when the authorized scope"),
+    ("records", "Keep the active scope"),
+    ("queue", "When execution of a queue"),
+    ("completion", "Complete the requested outcome"),
+    ("interruption", "Assume delegated and long-running work"),
+    ("investigation", "Keep investigation and implementation proportional"),
+    ("engineering", "Before the first edit"),
+    ("worktrees", "When a new Git worktree"),
+)
 HEADINGS = (
     "Operating Instructions",
     "Git Authorization",
@@ -94,6 +105,12 @@ def build():
             marker = f"# {heading}\n\n"
             candidate = candidate.replace(marker, marker + boundary + "\n\n", 1)
         prompts[name] = candidate
+    paragraphs = blocks["operating"].strip().split("\n\n")[1:]
+    candidate = deployed
+    for rank, (name, prefix) in enumerate(OPS_REMOVALS, 1):
+        (paragraph,) = [p for p in paragraphs if p.startswith(prefix)]
+        candidate = candidate.replace(paragraph + "\n\n", "", 1)
+        prompts[f"ops-{rank:02}-{name}"] = candidate
     return prompts
 
 

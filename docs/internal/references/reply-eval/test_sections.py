@@ -7,7 +7,7 @@ from pathlib import Path, PurePosixPath
 
 from review_replay import INSTRUCTION, review_input
 from run import failures
-from sections.prompts import build
+from sections.prompts import OPS_REMOVALS, build
 
 HERE = Path(__file__).resolve().parent
 
@@ -17,9 +17,29 @@ def digest(value):
 
 
 class SectionTrials(unittest.TestCase):
+    def test_one_operating_paragraph_removed_per_step(self):
+        prompts = build()
+        previous = prompts["deployed"]
+        before, rest = previous.split("# Operating Instructions\n\n")
+        ops, after = rest.split("# Git Authorization\n\n")
+        remaining = ops.strip().split("\n\n")
+        for rank, (name, prefix) in enumerate(OPS_REMOVALS, 1):
+            (removed,) = [
+                paragraph for paragraph in remaining if paragraph.startswith(prefix)
+            ]
+            remaining.remove(removed)
+            current = prompts[f"ops-{rank:02}-{name}"]
+            self.assertEqual(current, previous.replace(removed + "\n\n", "", 1))
+            previous = current
+        self.assertEqual(remaining, [])
+        self.assertEqual(
+            previous,
+            before + "# Operating Instructions\n\n# Git Authorization\n\n" + after,
+        )
+
     def test_clean_path_receipts(self):
-        for path in (HERE / "sections").glob("clean-*/comparison.json"):
-            directory = path.parent
+        for audit_path in (HERE / "sections").glob("*/ancestor-audit.json"):
+            directory = audit_path.parent
             with self.subTest(round=directory.name):
                 audit = json.loads((directory / "ancestor-audit.json").read_text())
                 receipts = json.loads((directory / "raw-index.json").read_text())

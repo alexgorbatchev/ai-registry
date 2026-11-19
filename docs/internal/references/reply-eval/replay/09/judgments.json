@@ -1,0 +1,282 @@
+[
+  {
+    "case": "counter-reset",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "4d53120182cb7cd7a6ce4e79af1b44001b59328f90055d5e9ed14a37b8542ab1",
+    "judge_log_id": "53da7c66-b5ee-44b3-b181-c2eadf5ca119",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the exact total and explains why repeat entries permit any distinct count from 1 to 17.",
+        "reply_sha256": "dfb138bcbc5f1b448617396a82dda0e17402b51b5861690fc373dfbe5391775b",
+        "graded_trials": [
+          "c195cc78-0881-4c4c-aab2-ec92cfdae166"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The “at least 17” fallback casts doubt on an exact total despite the stated full coverage. The reply repeats both results and adds unsolicited tracking procedures under the same ID as the report wording.",
+        "reply_sha256": "ba49f2698e4484bc11db9c49a3fd0bad17e8a650e9db34f8d4628931e49a4fab",
+        "graded_trials": [
+          "56484656-5a93-4e7b-8f08-438051fef936"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Separately identifies the 17 entries and the unknown visitor count, with a brief explanation of the range.",
+        "reply_sha256": "421aa90758866cfbfef9467ec41902c3a74c3e8a82df3fcbee8ef81dcde903b1",
+        "graded_trials": [
+          "07d0ec06-b341-4d5e-b146-53ffdee6763e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both findings are correct and separately labeled. The reset caveat is unnecessary because the prompt establishes that every entry was counted.",
+        "reply_sha256": "e4e6d7f581be74178b2a2670b008c6610531d231a047bc3403a4229f04102e71",
+        "graded_trials": [
+          "1facb6d5-9951-498d-9b4b-82885a89eed6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives both results, illustrates the range with its endpoints, and supplies a brief sentence the user can report.",
+        "reply_sha256": "909557d0e0cfda70d018e7afa254e496c542253884e18489a901c5792ea65277",
+        "graded_trials": [
+          "56edc570-7f49-434f-ac8f-c7afb3e07a73"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the exact total and ties the visitor range to the inability to identify repeat visits.",
+        "reply_sha256": "f3233fe346c98e828ec83f1593729f24c203efa30b6c433dc5b037c60b4eaad2",
+        "graded_trials": [
+          "34c1a319-47cc-477c-8b15-e9834c2fd68c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both findings are correct and separately labeled. The closing warning about relabeling repeats the distinction already made.",
+        "reply_sha256": "4b642cc2a59f0b78d45e926aa58669b30cb323e16b1823f5eb390e4d550af83f",
+        "graded_trials": [
+          "cd08dc78-b704-4285-8c45-1a27c991e087"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports 17 entries and explains why the distinct visitor count can only be bounded from 1 to 17.",
+        "reply_sha256": "62528f4b7035a88be9a805e38574d26cc82900ca211a74c4f5c6cb3166f17ae9",
+        "graded_trials": [
+          "c1343542-967b-4abc-b071-dea45f774e30"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "parcel-shelf",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "7983d3cca09282ca75f7c411fd0103b7086552a43941e1ca1126c4c815844f3e",
+    "judge_log_id": "72ed2554-1e10-48d8-a8d0-7cb5c48d0e58",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly identifies the bottom shelf.",
+        "reply_sha256": "9a70f045427468b2aeb2cc93585a71c67aac9db6ffe3f8336886658ce376eeb5",
+        "graded_trials": [
+          "136aa9f5-3328-430a-b89a-ab519c7610cf",
+          "462dc916-a8db-4784-aaf4-f97ea8483f9a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly identifies the bottom shelf.",
+        "reply_sha256": "debf806f7686004547132650ea8e8d102e72e8b3976eb7786d1cfe8af0b6ecdd",
+        "graded_trials": [
+          "dc49a45a-57ad-494c-869c-fe7c544c49d2",
+          "c1f745fc-8096-40e6-9099-b151b78db425",
+          "2b1aac78-54df-4f52-a349-dac8b01ff65d",
+          "b301f723-0735-4456-9405-e9e06d5f1ee3",
+          "ba4b868a-aeaa-4147-bcef-627983329534"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The notice gives no exception for rolled posters inside tubes. That unsupported exception also adds an unsolicited alternative.",
+        "reply_sha256": "1f53d786738484e29756a611bb6eef340ae59e0a020b7abe1f6bfd68927ca0dd",
+        "graded_trials": [
+          "fc3689fc-c714-4b5b-a82d-7e5b6824c98b"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "programme-change",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "d82d439cb882ede4f1418058617eb621e58cdbdce07ae94717d41aec2c1587ec",
+    "judge_log_id": "0df2479d-2ef6-40b8-9299-f9179c7a37d7",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "f8 records the staff-verified correction to Room Lime, and f9 reports video attendance.",
+        "reply_sha256": "f58c569612436ceb9eb77c9b150e58f27642f7d2d2469b2c005bdb946cc05e1d",
+        "graded_trials": [
+          "113af59c-d8d5-4c61-84d7-42f00e1801d6"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The reply invents equipment requirements and a pre-talk AV sign-off. It also reports the same setup concern under both f9 and d1.",
+        "reply_sha256": "7151e203acba145eb2947199be6d6fd0a616226843db808c2b8a39199d0dd491",
+        "graded_trials": [
+          "46a93f2a-37c9-45a8-8f7f-f3f7959cc5ad"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both updates have the correct IDs. The verified current listing is sufficient without repeating Room Grey.",
+        "reply_sha256": "9e78d03999aeb175bd1e7bef24a0651554985d1b8372c13dedb32015d20bac38",
+        "graded_trials": [
+          "4360585d-e3b8-4c94-9dba-f1308d529a81",
+          "cf3f5c72-76d1-4df4-ae35-7f097c34eeb2",
+          "fedd2af5-024f-4172-9a29-4e6bd7e4acc7",
+          "fdebc0a9-0ddf-47df-aa33-2060d6cbb8f5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both updates have the correct IDs. The brief caveat qualifies what the speaker has personally confirmed without claiming a setup problem.",
+        "reply_sha256": "d25c97c68eeecbaaa0f56ec83f8c6bc41d48ada919495fa541941f2e94eb6474",
+        "graded_trials": [
+          "90b28f10-a86f-41a8-9930-be4126407c3f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The claim that nobody has confirmed the setup lacks evidence. d1 also states the verification gap twice, though each item has a distinct ID.",
+        "reply_sha256": "ab2a8fe5648eea9da9aa3ba4462cb9690241debccb28c17a1080bacfb81bff95",
+        "graded_trials": [
+          "28ae4b04-c716-4ddb-9e16-1a31d5be3097"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "sign-copy",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "a50142bfb99e0047e391617e8d063c018100c4c1d714a13e2ed8a7ec396f98ee",
+    "judge_log_id": "f2bf448e-8e9c-44fd-88f3-8daa205243d9",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“Please remove all items” repeats “Empty it” without explaining that loose items should not be left inside.",
+        "reply_sha256": "87039242b916ba351f70e60c043b564cfb922260bb372b4cf50ba72edb3a8a3a",
+        "graded_trials": [
+          "36817923-fb53-488f-b423-ecd369c689c5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both steps give their reasons in clear, printable wording.",
+        "reply_sha256": "98ed2422dfe5a5eea99e6f4e0fe0edb68dda20a1045b989ccac6ef1acda7e530",
+        "graded_trials": [
+          "8b5f0cbd-bd67-4415-a97f-ff8fe5ad41ef"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both reasons are present, but “Please remove all items” repeats “Empty it.”",
+        "reply_sha256": "a83b204ff44d4bb34b925f05a695274283dedf9c3b1f1f0cb3474d8d6083b676",
+        "graded_trials": [
+          "65afd4a4-8241-486a-a9f1-78ceabf94653"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both steps and reasons are clear, but “Please take out all your items” repeats “Empty it first.”",
+        "reply_sha256": "c76334963f14db7c423e110befaf249683c7ee8f0ba785806769495c4d647956",
+        "graded_trials": [
+          "6bb419e0-4347-494a-a8c2-984d0dfda676"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The first step repeats the emptying instruction and omits its reason. “One of the hooks” also assumes multiple hooks.",
+        "reply_sha256": "8acfc29c51a49c93cdcde5035e03fcb279f5c02baeb2914ef6d9440ebb8a82f2",
+        "graded_trials": [
+          "aafcf1f0-0d41-42f9-8fa7-3f799c5f03af"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The sign tells visitors to take loose items with them, then use a hook to keep the aisle clear.",
+        "reply_sha256": "cd19586d0831cc2dfb801562aa1cd376add814552bd71b0e2996f142bf9c133e",
+        "graded_trials": [
+          "077dc2ca-f469-4752-84b2-10a6e5dcbc75"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The numbered steps establish the order and state both reasons directly.",
+        "reply_sha256": "4c1e8bb6371701fb97634c6430c87ca0b6af35f86dccb3ef6543e6980d342441",
+        "graded_trials": [
+          "85b464a6-9f3b-4f01-b6f0-9a6856cbae81"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "“So nothing is left inside” covers loose items, and the hook instruction explains how to keep the aisle clear.",
+        "reply_sha256": "32e8f4532ed4eee5fd5aea82a6e44c5675878282d23924c5e4335bbf47d9e1b5",
+        "graded_trials": [
+          "23a9b46d-eab3-4715-9624-bf4dca0ed2fd"
+        ]
+      }
+    ]
+  }
+]

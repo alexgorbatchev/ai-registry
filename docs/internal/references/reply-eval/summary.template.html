@@ -528,8 +528,9 @@
       </section>
       <section class="overview" aria-label="Featured comparison">
         <div>@@HIGHLIGHT@@</div>
-        <div class="stat"><strong>@@COUNT@@</strong><span>target replies</span></div>
+        <div class="stat"><strong>@@COUNT@@</strong><span>generated replies</span></div>
       </section>
+      @@COMPARISONS@@
       @@WORDING@@
       <section>
         <div class="section-head">
@@ -559,14 +560,15 @@
         <p>
           Each count shows replies passing every automatic check out of replies recorded. Each bar spans all
           planned replies. Hatching marks missing replies. Length is the mean whitespace word count. A brief
-          answer can still miss a required fact or put the wrong ID on a finding.
+          answer can still miss a required fact or put the wrong ID on a finding. @@REUSED@@
         </p>
         <p>
           A blind AI reviewer judged completeness, concision and whether each reply ID identified the right
           point. Passing requires all three. Round 03 used a first holdout. Round 04 replayed those same cases
           after a wording change. Round 05 used fresh verification cases. Round 06 replayed them. Round 07
-          tested the last revision on a third fresh set. Round 08 checked that revision against the original
-          development cases. Compare prompts within the same model, round, and case set.
+          tested revision 06 on a third fresh set. Round 08 checked revision 06 against the original
+          development cases. Round 09 replayed the third set using the adopted revision 06 as its baseline.
+          Round 10 tested the same comparison on fresh challenges. Rounds 11 and 12 compared revision 06 to a prompt with worked examples, first on the challenge replay and then on fresh transfer cases. The editing experiment reused the original revision 06 drafts from rounds 10 and 12. In rounds 13 and 14 the same model received each original answer for a second editing pass. Rounds 15 and 16 reused the same Opus drafts and asked Astra to edit them. These replay comparisons add no independent cases. Compare arms within the same model, round, and case set.
         </p>
       </section>
       <section id="evidence" class="logs">

@@ -1,4 +1,0 @@
-{
-  "requires": ["~/.local/bin/omnigraph", "~/.omnigraph/local-agent.token"],
-  "owns": ["omnigraph"]
-}

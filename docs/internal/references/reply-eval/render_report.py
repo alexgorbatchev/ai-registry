@@ -343,6 +343,47 @@ def ledger(run, judgments, source_directory="rounds"):
     )
 
 
+def tuning_section():
+    rounds = []
+    for directory in sorted((HERE / "tuning").glob("tune-*")):
+        prefix = f"tuning/{directory.name}"
+        reviews = json.loads((directory / "judgments.json").read_text())
+        grades = {
+            trial: grade for case in reviews for grade in case["judgments"]
+            for trial in grade["graded_trials"]
+        }
+        lines = []
+        for path in sorted(directory.glob("*.jsonl")):
+            header, *rows = map(json.loads, path.read_text().splitlines())
+            for arm in ("baseline", "candidate"):
+                subset = [r for r in rows if r["arm"] == arm]
+                scores = [grades.pop(r["raw_log_id"]) for r in subset]
+                passed = sum(all(s[k] for k in ("completeness", "concision", "addressability")) for s in scores)
+                counts = [sum(s[k] for s in scores) for k in ("completeness", "concision", "addressability")]
+                lines.append(
+                    f"<tr><th>{MODELS[header['model']]}</th><td><a href='{prefix}/{path.name}'>{arm.title()}</a></td>"
+                    f"<td>{mean(r['words'] for r in subset):.1f}</td>"
+                    + "".join(f"<td>{n}/{len(scores)}</td>" for n in [*counts, passed]) + "</tr>"
+                )
+        if grades:
+            raise ValueError(f"Unexpected judgments in {directory}")
+        description = (directory / "comparison.txt").read_text().strip()
+        rounds.append(
+            f"<details class='record'><summary>{escape(description)}</summary><div class='review replay-table'><table>"
+            "<thead><tr><th>Model</th><th>Arm / replies</th><th>Mean words</th><th>Complete</th>"
+            "<th>Concise</th><th>IDs</th><th>All three</th></tr></thead><tbody>"
+            + "".join(lines) + "</tbody></table></div>"
+            f"<p><a href='{prefix}/judgments.json'>Individual judgments</a> · "
+            f"<a href='{prefix}/raw-index.json'>Transcript fingerprints</a></p></details>"
+        )
+    return (
+        "<section class='logs'><h2 class='section-title'>Tuning TLDR and reply IDs</h2>"
+        "<p>Each round compares fresh replies from the original isolated prompt and a revision. "
+        "Both models ran at medium effort. Open a round for scores and replies.</p>"
+        + "".join(reversed(rounds)) + "<p><a href='tuning/README.md'>Results, prompt text and reproduction</a></p></section>"
+    )
+
+
 def ablation_section():
     directory = HERE / "ablation"
     reviews = json.loads((directory / "judgments.json").read_text())
@@ -712,7 +753,7 @@ def render():
         )
     replay_headline, replay_count, replay_html = replay_section(rounds)
     values = {
-        "REPLAY": ablation_section() + replay_html,
+        "REPLAY": tuning_section() + ablation_section() + replay_html,
         "ARCHIVE": highlight,
         "HIGHLIGHT": replay_headline if replay_count else highlight,
         "COMPARISONS": comparisons,

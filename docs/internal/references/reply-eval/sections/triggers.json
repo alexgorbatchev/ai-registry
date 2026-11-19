@@ -1,0 +1,38 @@
+[
+  {
+    "name": "worker-evidence",
+    "prompt": "The sync worker stopped sending heartbeats at 14:05. Its termination record hasn't been retrieved. I only need the current finding for the handover: can we call this an out-of-memory kill?",
+    "concepts": ["heartbeats?", "14:05", "confirm|unknown|unverified|establish|no\\b|cannot|can't|insufficient|unproven|unconfirmed|doesn.t|didn.t"],
+    "max_words": 48
+  },
+  {
+    "name": "parked-repair",
+    "prompt": "Earlier **a2** was fixing the settings dialog that closed on Save, and **a3** was reviewing its keyboard shortcuts. The dialog now stays open after Save and the keyboard test passed. The review is parked. The old print-preview margin defect is still in the tracker. Give me the completed action and separately offer to check Save on a touchscreen.",
+    "concepts": ["save", "keyboard", "touch"],
+    "labels": ["a2", "a4|q1"], "max_labels": 2, "omit": ["margin", "shortcuts"], "max_words": 60
+  },
+  {
+    "name": "unresolved-report",
+    "prompt": "I'm writing the end-of-turn report. Earlier **f3** was a cropped shipping label and **f4** was a separate printer setting. A second sample confirms the cropping; no cause is known. A new sample shows a duplicate receipt. Just give me the two findings I can paste into chat.",
+    "concepts": ["crop", "second|another", "duplicate|twice|double", "receipt"],
+    "labels": ["f3", "f5"], "max_labels": 2, "max_words": 60
+  },
+  {
+    "name": "existing-decision",
+    "prompt": "The decision has already been recorded. For the meeting minutes, restate only the original two options for **q3**: **q3a1** is the morning delivery for an extra $10, and **q3a2** is free delivery after lunch.",
+    "concepts": ["morning", "10", "free|no extra|no charge", "after lunch|afternoon"],
+    "labels": ["q3a1", "q3a2"], "max_labels": 2, "max_words": 45
+  },
+  {
+    "name": "commit-permission",
+    "prompt": "I need the status line for an approved patch. The fix is committed locally and its regression test passed. Publishing is on hold until the release window. What can I tell the lead about this patch right now?",
+    "concepts": ["commit", "test", "hold|wait|pending|not.*push|not.*publish|release window|unpublished"],
+    "max_words": 48
+  },
+  {
+    "name": "queue-ticket",
+    "prompt": "The queue contains two independent jobs. The receipt job is complete and the saved PDF opens. The export job is paused pending sign-off. I need the handoff for the receipt job alone. What do I write?",
+    "concepts": ["receipt", "pdf", "open"],
+    "omit": ["export", "sign-off"], "max_words": 35
+  }
+]

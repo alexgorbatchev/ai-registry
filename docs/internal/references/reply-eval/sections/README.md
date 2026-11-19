@@ -1,5 +1,7 @@
 # Which instructions change reply behavior?
 
+The [closing-example study](evidence-study.md) tests factual scope and native conversation ID continuity.
+
 The [ranked Operating Instructions removals](ops-removals.md) test one additional paragraph at a time.
 
 The [clean-directory replay](clean-path.md) checks for inherited instructions before each native launch.

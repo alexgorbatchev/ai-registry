@@ -344,6 +344,49 @@ def ledger(run, judgments, source_directory="rounds", title=None, anchor=None):
     )
 
 
+def conversation_section():
+    directory = HERE / "sections/id-continuity"
+    if not directory.is_dir():
+        return "", 0
+    questions = json.loads(directory.with_suffix(".json").read_text())
+    details = []
+    total = 0
+    for provider, label in (("claude", "Opus 5.5"), ("codex", "Astra 6.2")):
+        for arm, variant in (
+            ("baseline", "Current full prompt"),
+            ("candidate", "Replacement ending"),
+            ("source", "Edit the source record"),
+            ("labeled", "Explicit draft IDs"),
+        ):
+            chats = []
+            passed = 0
+            for path in sorted(directory.glob(f"{provider}-{arm}-*.json")):
+                record = json.loads(path.read_text())
+                passed += record["scores"]["continuity"]
+                total += len(record["replies"])
+                turns = "".join(
+                    f'<p class="prompt">{escape(question)}</p><pre>{escape(reply)}</pre>'
+                    for question, reply in zip(questions, record["replies"], strict=True)
+                )
+                missing = [name for name in ("initial", "lookup", "update", "recall") if not record["scores"][name]]
+                status = "All four turns passed" if not missing else "Missed " + ", ".join(missing)
+                chats.append(
+                    f'<details class="case"><summary>Conversation {record["repetition"]} · {status}</summary>'
+                    f'{turns}<a href="sections/id-continuity/{path.name}">Answers and log fingerprints</a></details>'
+                )
+            details.append(
+                f'<details class="record"><summary>{label} · {variant} · {passed}/{len(chats)} kept IDs</summary>'
+                f'{"".join(chats)}</details>'
+            )
+    return (
+        "<section class='logs' id='native-continuity'><h2 class='section-title'>Do IDs survive an interruption?</h2>"
+        "<p>Each four-turn chat starts with two findings. After a lookup, the model updates an earlier "
+        "finding, assigns a new ID and recalls two earlier subjects. The user never supplies an ID. "
+        "Both final models kept the correct IDs in four chats each. Scores track labels against the subjects in that chat.</p>" + "".join(details) + "</section>",
+        total,
+    )
+
+
 def system_section(study="system-sections"):
     rows = []
     examples = []
@@ -382,6 +425,7 @@ def system_section(study="system-sections"):
                     "reason": grade["reason"],
                 }
             example_round, baseline_label, candidate_label = {
+                "evidence-study": ("evidence-15-draft", "Current full prompt", "Final ending"),
                 "ops-removals": ("ops-confirm-operational", "Full F16", "Selected partial cut"),
                 "mode-study": ("mode-both", "Deployed", "Both sections edited"),
                 "system-sections": ("trigger-operating", "Isolated rules", "With Operating Instructions"),
@@ -395,8 +439,8 @@ def system_section(study="system-sections"):
                 }
                 handoff = (
                     "<div class='review'><h4>Same receipt handoff · Opus 5.5</h4>"
-                    f"<p><b>{baseline_label}</b> · {sample['baseline']}</p>"
-                    f"<p><b>{candidate_label}</b> · {sample['candidate']}</p></div>"
+                    f"<p><b>{baseline_label}</b></p><pre>{sample['baseline']}</pre>"
+                    f"<p><b>{candidate_label}</b></p><pre>{sample['candidate']}</pre></div>"
                 )
             cases = json.loads((HERE / comparison["suite"]).read_text())
             title = f"{comparison['label']} · {comparison['suite_label']} · {MODELS[header['model']]}"
@@ -450,7 +494,14 @@ def system_section(study="system-sections"):
         )
     if not rows:
         return "", 0
-    if study == "ops-removals":
+    if study == "evidence-study":
+        source = "sections/evidence-study.md"
+        intro = (
+            "<section class='logs' id='evidence-study'><h2 class='section-title'>Which closing instructions improve the replies?</h2>"
+            "<p>Each row starts from the full prompt except the partial-ending comparison and the two comparisons starting from isolated TLDR and ID rules. Scores count complete, concise, "
+            "correctly addressed replies out of 12 per arm. Both models used medium effort.</p>"
+        )
+    elif study == "ops-removals":
         source = "sections/ops-removals.md"
         intro = (
             "<section class='logs' id='ops-removals'><h2 class='section-title'>Which operating paragraphs affect replies?</h2>"
@@ -911,15 +962,17 @@ def render():
     mode_html, mode_count = system_section("mode-study")
     clean_html, clean_count = system_section("clean-path")
     ops_html, ops_count = system_section("ops-removals")
+    evidence_html, evidence_count = system_section("evidence-study")
+    chats_html, chat_count = conversation_section()
     values = {
-        "REPLAY": ops_html + clean_html + mode_html + sections_html + tuning_section() + ablation_section() + replay_html,
+        "REPLAY": evidence_html + chats_html + ops_html + clean_html + mode_html + sections_html + tuning_section() + ablation_section() + replay_html,
         "ARCHIVE": highlight,
         "HIGHLIGHT": ("<h2>System section comparisons</h2><p class='verdict'>Opus averaged 45 words with the isolated rules and 83 with the deployed prompt on the same transfer cases.</p>"
                       "<p><a href='#system-sections'>Compare passes, reply lengths and the original answers.</a></p>") if section_count else (replay_headline if replay_count else highlight),
         "COMPARISONS": comparisons,
         "WORDING": f'<section class="wording"><h2 class="section-title">Prompt wording</h2>{wording}'
         '<p><a href="../../../../system/system.md">Full shared prompt</a></p></section>',
-        "COUNT": str(ops_count or clean_count or mode_count or section_count or replay_count),
+        "COUNT": str(evidence_count + chat_count or ops_count or clean_count or mode_count or section_count or replay_count),
         "REUSED": f"The ledger contains {total + reused} comparison rows, including {reused} reused baseline entries. The historical ledger counts each generation once after removing those copies."
         if reused
         else "",
@@ -943,6 +996,12 @@ def render():
             "<h2>Operating Instructions, paragraph by paragraph</h2><p class='verdict'>"
             "Removing the stopping and task-record paragraphs took Opus from 3 to 5 passes out of 12 on operational requests. Transfer stayed at 6. Astra lost passes on both suites.</p>"
             "<p><a href='#ops-removals'>Compare the cuts and read both models’ replies.</a></p>"
+        )
+    if evidence_count:
+        values["HIGHLIGHT"] = (
+            "<h2>Keep the workflow. Change the ending.</h2><p class='verdict'>"
+            "On six untouched requests, Opus improved from 3 to 7 passes out of 12 and Astra from 10 to 12. On the four development suites, Opus went from 21 to 41 out of 48.</p>"
+            "<p><a href='#evidence-study'>Compare the replies</a> · <a href='#native-continuity'>Follow the IDs</a> · <a href='sections/reply-ending.patch'>Read the exact change</a></p>"
         )
     template = (HERE / "summary.template.html").read_text()
     (HERE / "summary.html").write_text(

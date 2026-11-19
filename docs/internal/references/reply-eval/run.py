@@ -208,7 +208,11 @@ def pair_source_drafts(path, identity, trials, source_provider=None, source_mode
         raise ValueError("Specify both source provider and model")
     source_identity = dict(identity)
     if source_provider:
-        source_identity.update(provider=source_provider, model=source_model)
+        source_identity.update(
+            provider=source_provider,
+            model=source_model,
+            effort_requested=header["effort_requested"],
+        )
         identity.update(
             source_provider=source_provider,
             source_model=source_model,

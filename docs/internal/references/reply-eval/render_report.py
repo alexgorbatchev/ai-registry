@@ -9,7 +9,12 @@ from pathlib import Path
 from statistics import mean
 
 HERE = Path(__file__).resolve().parent
-MODELS = {"gpt-6.2-astra": "Astra 6.2", "claude-opus-5-5": "Opus 5.5"}
+MODELS = {
+    "gpt-6.2-astra": "Astra 6.2",
+    "claude-opus-5-5": "Opus 5.5",
+    "claude-haiku-5-5": "Haiku 5.5",
+    "gpt-6-luna": "Luna 6",
+}
 
 ROUND_NAMES = {
     "03": "First holdout",
@@ -26,6 +31,8 @@ ROUND_NAMES = {
     "14": "Second-pass edit · transfer drafts",
     "15": "Cross-model edit · challenge replay",
     "16": "Cross-model edit · transfer replay",
+    "17": "Low-effort editors · challenge replay",
+    "18": "Low-effort editors · transfer replay",
 }
 
 
@@ -78,7 +85,7 @@ def arm_stats(run, arm):
     return passed, len(rows), length
 
 
-EDIT_SOURCES = {"13": "10", "14": "12", "15": "10", "16": "12"}
+EDIT_SOURCES = {"13": "10", "14": "12", "15": "10", "16": "12", "17": "10", "18": "12"}
 
 
 def count_generations(rounds):
@@ -110,8 +117,8 @@ def count_generations(rounds):
 
 
 def model_label(number, model):
-    if number in ("15", "16"):
-        return "Opus 5.5 draft → Astra 6.2 edit"
+    if number in ("15", "16", "17", "18"):
+        return f"Opus 5.5 draft → {MODELS[model]} edit"
     return MODELS.get(model, model)
 
 
@@ -450,6 +457,33 @@ def render():
             f"<p>With the adopted examples, single-pass Astra passed {astra}/{trials} and Opus {opus}/{trials} "
             "on separately generated replies. The test covered 12 distinct synthetic prompts, each repeated twice. "
             "One reviewer scored the replies and knew a cross-model edit was being tested.</p>"
+        )
+    if {"17", "18"} <= reviews.keys():
+        lightweight_editors = []
+        for model in ("gpt-6-luna", "claude-haiku-5-5"):
+            edits = [
+                row
+                for number in ("17", "18")
+                for run in rounds[number]
+                if run["header"]["model"] == model
+                for row in run["rows"]
+                if row["arm"] == "candidate"
+            ]
+            passed = sum(
+                reviews[n]["summary"][model]["arms"]["candidate"]["pass"]
+                for n in ("17", "18")
+            )
+            lightweight_editors.append(
+                f"<strong>{MODELS[model]} {passed}/{len(edits)}</strong> "
+                f"({mean(row['words'] for row in edits):.0f} words per edit)"
+            )
+        highlight = (
+            "<h2>Low-effort editors on the same Opus drafts</h2>"
+            f"<p class='verdict'>{' · '.join(lightweight_editors)}. "
+            f"Raw drafts passed {raw}/{trials} and Astra at medium passed {cross}/{trials}.</p>"
+            "<p>One reviewer scored completeness, concision and IDs across 12 synthetic prompts, "
+            "each repeated twice. Model labels were hidden during scoring, but the reviewer had seen "
+            "interim automatic results. The editor runs only in this experiment.</p>"
         )
     latest_patch = (
         by_digest.get(

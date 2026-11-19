@@ -188,6 +188,7 @@ class ParallelRoundChecks(unittest.TestCase):
         self.options.output = self.path.with_name("cross.jsonl")
         self.options.provider = "codex"
         self.options.model = "editor"
+        self.options.effort = "low"
         with patch("run.generate", return_value=("edited", ["editor"], {})) as edit:
             with self.assertRaisesRegex(ValueError, "Source mismatch: provider"):
                 self.run_round()
@@ -203,6 +204,8 @@ class ParallelRoundChecks(unittest.TestCase):
                 json.loads, self.options.output.read_bytes().splitlines()
             )
             self.assertEqual(header["source_model"], "fixture")
+            self.assertEqual(header["source_effort_requested"], "medium")
+            self.assertEqual(header["effort_requested"], "low")
             self.assertEqual(header["model"], "editor")
             self.assertEqual(
                 {row["arm"]: row["models"] for row in rows},

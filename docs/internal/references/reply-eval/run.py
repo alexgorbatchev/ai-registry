@@ -55,14 +55,20 @@ class NoRedirect(HTTPRedirectHandler):
         return None
 
 
-def verify_instructions(provider, logs, system):
+def verify_instructions(provider, logs, system, prompt=None):
     expected = system.strip()
     received = []
+    saw_request = False
     for log in logs:
         with log.open() as events:
             for line in events:
                 event = json.loads(line)
                 if provider == "claude":
+                    if (
+                        event["type"] == "user"
+                        and event.get("message", {}).get("content") == prompt
+                    ):
+                        saw_request = True
                     attachment = event.get("attachment", {})
                     if attachment.get("type") == "instructions":
                         received.extend(
@@ -75,6 +81,8 @@ def verify_instructions(provider, logs, system):
                         and message.get("role") == "user"
                     ):
                         for item in message.get("content", []):
+                            if item.get("text") == prompt:
+                                saw_request = True
                             received.extend(
                                 re.findall(
                                     r"<INSTRUCTIONS>\n(.*?)\n</INSTRUCTIONS>",
@@ -82,7 +90,10 @@ def verify_instructions(provider, logs, system):
                                     re.DOTALL,
                                 )
                             )
-    if received != [expected]:
+    # Empty instruction files may be omitted entirely from the native transcript.
+    if not expected and saw_request and received in ([], [""]):
+        return
+    if not expected or received != [expected]:
         raise RuntimeError(
             "Native transcript did not confirm the isolated instruction file"
         )
@@ -204,7 +215,7 @@ def generate_cli(args, system, prompt):
         if not logs:
             raise RuntimeError(f"No native transcript in raw attempt {attempt.name}")
         if not editing:
-            verify_instructions(args.provider, logs, system)
+            verify_instructions(args.provider, logs, system, prompt)
         metrics = {"raw_log_id": attempt.name}
         if args.provider == "codex":
             banner = (attempt / "stderr").read_text().splitlines()

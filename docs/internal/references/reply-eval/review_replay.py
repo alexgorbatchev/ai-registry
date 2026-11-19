@@ -74,15 +74,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path)
     parser.add_argument("suite", type=Path)
+    parser.add_argument(
+        "--responses",
+        nargs="+",
+        type=Path,
+        help="score these paired runs together with arm and model hidden",
+    )
     args = parser.parse_args()
     cases = json.loads(args.suite.read_text())
     records = []
-    for alias in ("astra", "opus"):
+    files = args.responses or [
+        args.directory / f"{args.directory.name}-{alias}.jsonl"
+        for alias in ("astra", "opus")
+    ]
+    for path in files:
         header, *rows = map(
             json.loads,
-            (args.directory / f"{args.directory.name}-{alias}.jsonl")
-            .read_text()
-            .splitlines(),
+            path.read_text().splitlines(),
         )
         if header["suite_sha256"] != hashlib.sha256(
             args.suite.read_bytes()

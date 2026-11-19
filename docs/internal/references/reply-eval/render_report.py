@@ -343,6 +343,71 @@ def ledger(run, judgments, source_directory="rounds"):
     )
 
 
+def ablation_section():
+    directory = HERE / "ablation"
+    reviews = json.loads((directory / "judgments.json").read_text())
+    grades = {
+        trial: judgment
+        for case in reviews
+        for judgment in case["judgments"]
+        for trial in judgment["graded_trials"]
+    }
+    cases = json.loads((HERE / "transfer.json").read_text())
+    table = []
+    examples = defaultdict(list)
+    for model in ("astra", "opus"):
+        for pair, arm, label in (
+            ("scope", "baseline", "Blank"),
+            ("scope", "candidate", "TLDR"),
+            ("context", "candidate", "TLDR + IDs"),
+            ("context", "baseline", "Full production"),
+        ):
+            filename = f"{pair}-{model}.jsonl"
+            header, *rows = map(json.loads, (directory / filename).read_text().splitlines())
+            subset = [row for row in rows if row["arm"] == arm]
+            sums = defaultdict(int)
+            for row in subset:
+                grade = grades.pop(row["raw_log_id"])
+                keys = ("completeness", "concision", "addressability")
+                for key in keys:
+                    sums[key] += grade[key]
+                passed = all(grade[key] for key in keys)
+                sums["all"] += passed
+                if row["case"] == "parser-handoff":
+                    sums["handoff"] += grade["addressability"]
+                title = f"{MODELS[header['model']]} · {label} · sample {row['repetition']} · {row['words']} words"
+                examples[row["case"]].append(
+                    f"<details class='reply'><summary>{title}</summary><pre>{escape(row['reply'])}</pre>"
+                    f"<p>{'Passed' if passed else 'Missed'} · {escape(grade['reason'])}</p></details>"
+                )
+            count = len(subset)
+            table.append(
+                f"<tr><th>{MODELS[header['model']]}</th><td><a href='ablation/{filename}'>{label}</a></td>"
+                f"<td>{mean(r['words'] for r in subset):.1f}</td>"
+                + "".join(f"<td>{sums[key]}/{count}</td>" for key in (*keys, "all"))
+                + f"<td>{sums['handoff']}/2</td></tr>"
+            )
+    if grades:
+        raise ValueError("Unmatched ablation judgments")
+    return (
+        "<section class='logs'><h2 class='section-title'>What changes when the rest of the prompt is removed?</h2>"
+        "<p>Six transfer cases, two fresh replies per case and model. Each CLI kept its native base instructions. "
+        "The blank arm had an empty shared file. TLDR + IDs used the deployed communication rules and worked examples. "
+        "Full production also included personality, Agent Pages and operating instructions. "
+        "One Astra reviewer graded all four variants together with model and variant hidden.</p>"
+        "<div class='review replay-table'><table><thead><tr><th>Model</th><th>Shared file</th><th>Mean words</th>"
+        "<th>Complete</th><th>Concise</th><th>IDs</th><th>All three</th><th>Handoff IDs</th></tr></thead><tbody>"
+        + "".join(table)
+        + "</tbody></table></div><p>Handoff IDs measures the case that required keeping an earlier action ID "
+        "and assigning a new ID to a separate offer. Other cases allow a direct answer.</p>"
+        "<p><a href='ablation/README.md'>Protocol and prompts</a> · <a href='ablation/raw-index.json'>Transcript fingerprints</a></p>"
+        + "".join(
+            f"<details class='case'><summary>{escape(case['name'])}</summary><p>{escape(case['prompt'])}</p>"
+            + "".join(examples[case["name"]]) + "</details>" for case in cases
+        ) + "</section>"
+    )
+
+
 def replay_section(historical):
     sections = []
     count = 0
@@ -427,7 +492,7 @@ def replay_section(historical):
             + '</details>'
         )
     headline = (
-        f"<h2>Isolated single-pass replay</h2><p class='verdict'>Latest comparison · {latest}</p>"
+        f"<h2>Isolated single-pass replay</h2><p class='verdict'>Latest replay round · {latest}</p>"
         "<p>Each scored reply has a retained native transcript confirming the intended instruction file. "
         "Passes require completeness, concision and correct reply IDs.</p>"
     )
@@ -647,7 +712,7 @@ def render():
         )
     replay_headline, replay_count, replay_html = replay_section(rounds)
     values = {
-        "REPLAY": replay_html,
+        "REPLAY": ablation_section() + replay_html,
         "ARCHIVE": highlight,
         "HIGHLIGHT": replay_headline if replay_count else highlight,
         "COMPARISONS": comparisons,

@@ -81,6 +81,47 @@ class ReplyChecks(unittest.TestCase):
 
 
 class TranscriptChecks(unittest.TestCase):
+    def test_blank_requires_recorded_request_and_no_loaded_text(self):
+        with tempfile.TemporaryDirectory() as root:
+            log = Path(root) / "session.jsonl"
+            for provider, event, leaked in (
+                (
+                    "codex",
+                    {
+                        "type": "response_item",
+                        "payload": {"role": "user", "content": [{"text": "hello"}]},
+                    },
+                    {
+                        "type": "response_item",
+                        "payload": {
+                            "role": "user",
+                            "content": [
+                                {"text": "<INSTRUCTIONS>\nother\n</INSTRUCTIONS>"}
+                            ],
+                        },
+                    },
+                ),
+                (
+                    "claude",
+                    {"type": "user", "message": {"content": "hello"}},
+                    {
+                        "type": "attachment",
+                        "attachment": {
+                            "type": "instructions",
+                            "files": [{"content": "other"}],
+                        },
+                    },
+                ),
+            ):
+                log.write_text(json.dumps(event) + "\n")
+                verify_instructions(provider, [log], "", "hello")
+                with self.assertRaises(RuntimeError):
+                    verify_instructions(provider, [log], "", "different request")
+                with log.open("a") as stream:
+                    print(json.dumps(leaked), file=stream)
+                with self.assertRaises(RuntimeError):
+                    verify_instructions(provider, [log], "", "hello")
+
     def test_both_providers_reject_missing_or_extra_instructions(self):
         with tempfile.TemporaryDirectory() as root:
             log = Path(root) / "session.jsonl"

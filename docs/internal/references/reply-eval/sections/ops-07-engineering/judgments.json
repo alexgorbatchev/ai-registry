@@ -1,0 +1,386 @@
+[
+  {
+    "case": "commit-permission",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "73663eb3014a42440508216d1828c665f7b430d2a422a010c8dd30608008aa64",
+    "judge_log_id": "eab82398-123a-437b-be17-447bf333a8b9",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States the local commit, passing regression test, and publication hold in one status line.",
+        "reply_sha256": "d61306f6fbd5e07811920cac07a01c42510d5b93c568934378359eb5c294ed86",
+        "graded_trials": [
+          "f030a422-a2a8-422b-bf43-9275cd5f37cb"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Accurately reports the committed fix, test result, and publication hold.",
+        "reply_sha256": "87ebc391ee3651a946d30896fd52970a71f9dea1c6f5ad6d05355ae0084b7b46",
+        "graded_trials": [
+          "3be80b6f-15b6-4645-8036-520675f97e2c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives all three required facts as a single status update.",
+        "reply_sha256": "9e416b085229f8fda15c76580b8c2536e19447c281a3d0780993b17215eec986",
+        "graded_trials": [
+          "ab6eb4ff-fb5a-4c3b-859a-92193531a007"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Replaces the publication hold with an unsupported promise to push during the release window. The single status line is addressable.",
+        "reply_sha256": "12f8c40cc1950fe52f84bf9667842ce0272b298efd1e8496d146aff97fc539db",
+        "graded_trials": [
+          "65fbc8c7-8b80-409c-a4a6-d82d12bf8c07"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Includes approval and all three required status facts without promising publication.",
+        "reply_sha256": "13d7f1aa7fa927c6eaa80ea1ff3a45b7c9cd174f741840af134dbf663e6f666b",
+        "graded_trials": [
+          "2659ab83-73fc-40ab-8f14-e7ab3e9e63c2",
+          "aef21ff4-f195-45fe-8991-5190f5858227",
+          "0bb8a4dd-c50b-4377-ae41-3dfe47aba167"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Concisely reports approval, the local commit, the passed test, and the publication hold.",
+        "reply_sha256": "5d0873a91a235cbfc500856cf6d7635982605ba3a4c4f324b1c839d2ba24ab01",
+        "graded_trials": [
+          "97c580e7-2847-451e-830d-78eb1ddde8a0"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "existing-decision",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "c1b3db9c5ecc4c68d4e1f1317d36c9cc400ecc3af25b51ff5ff52eaeb714b5ff",
+    "judge_log_id": "f6e5d661-d728-4e1a-a35e-d7799cc3b982",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply accurately restates only the two original options and starts each with its supplied bold ID.",
+        "reply_sha256": "8e148234e14d97733af0ba418bc8bba5eb103afe739808ab18bc2ea133702eb9",
+        "graded_trials": [
+          "f7c50beb-c522-48b0-933a-0230eb98e4bb",
+          "bf0d545d-f5a7-4c8e-834b-ac8bcadfe167",
+          "72fbc3f5-c01e-4180-a8e9-f74674e1b3af",
+          "e368e82b-f905-4fb6-8c9a-07771a059409",
+          "e03ed1fa-ba86-4cec-8c31-5b9bd9a5c9de",
+          "da3d8a7f-d029-48a3-99b0-e019ec1600f1",
+          "93858326-76af-4287-b603-f06267743ac9",
+          "b1850f4e-5e71-4a42-82a8-3be1ac2b9626"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "parked-repair",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "15a67c4df09834c5572a6f062344527caadf3f9356dd907bec5343af85f5ca6c",
+    "judge_log_id": "333c53fa-9a44-45ee-a109-1900cb6bbca6",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the Save fix and passing keyboard test under **a2**, with the touchscreen offer under **a4**.",
+        "reply_sha256": "fc0db068bcc8e98cdff3cab9e2cb4d9e837e281640a909018644dec0237d84de",
+        "graded_trials": [
+          "95810edc-c7eb-42b6-b103-f2e3c9326d37"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The observed behavior communicates the completed fix. **a2** includes the test result, and **a4** offers the touchscreen check.",
+        "reply_sha256": "b70ae1631fe42ec919797600d47dd9a3666be63bc4c6598441905e2eb7911c15",
+        "graded_trials": [
+          "c69d07e3-cde6-4f29-9e35-7ff2a4c8df2b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Groups the Save fix and its test evidence under **a2** and gives the touchscreen offer its own **a4**.",
+        "reply_sha256": "a9449335a886a0cd1bf949c57ffc4c1bbbd043fc1ba5c670953c45e520982bb1",
+        "graded_trials": [
+          "9dfc40fd-091e-4171-933d-ce6d6f50c8ea"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Omits the passing keyboard test and states the same outcome twice. The touchscreen offer is correctly labeled **a4**.",
+        "reply_sha256": "243d997dd7610139783732f4a6bb49d6302c23042b4be0100eed6cf7f77d5807",
+        "graded_trials": [
+          "4bf539e9-ebc2-4229-a927-461f50c15652"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Names the fix and its outcome under **a2** but omits the passing keyboard test. **a4** specifies what the touchscreen check would verify.",
+        "reply_sha256": "4dba8e873693fc5d30f8e88f9b66c7825149d2c2187d34a30c0279ab58550ee5",
+        "graded_trials": [
+          "1fbe257b-cb9e-4c6d-bb9e-0c3aff58ec53"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the fix under **a2** but omits the passing keyboard test. The specific touchscreen offer has its own **a4**.",
+        "reply_sha256": "6e05a3a63c3a960e165a468e82762de3d9ce6eaac7fae699f4077a06af271f61",
+        "graded_trials": [
+          "01372c75-70d1-40e8-b6ee-168ea817cbf8"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the fix under **a2** but omits the passing keyboard test. **a4** separately offers the requested touchscreen check.",
+        "reply_sha256": "d9e3219b7e8513de0d14b226ef235a42e977d1ab538bb552168468d2ee712d42",
+        "graded_trials": [
+          "d07076d0-b0c1-4e6b-89c5-c5362be22583",
+          "a9d3f1a2-4636-41c5-9f34-efac822dcaef"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "queue-ticket",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "9280f3a35e27b9e1778a4e02c34cd30b85ca8231987f5c33bc848918ad30c8b5",
+    "judge_log_id": "64908e40-80b2-4ed1-902f-ed9448f71053",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“I verified” adds an unsupported claim about who checked the PDF.",
+        "reply_sha256": "a3318783d1acc9e936f094955379f71e88dfa9bcfcb5ceb564bd5f589531f2b5",
+        "graded_trials": [
+          "265f9206-367c-41ab-a2ff-a0e40938219b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "“No further action needed” repeats the receipt job’s completion.",
+        "reply_sha256": "4973eac9e3e543b05de630ec86eac7b4a082e0703706a302bd1d89f1ad263fff",
+        "graded_trials": [
+          "4d3c7122-e09d-4d03-80b4-f4f6604b01fd"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone draft states both supplied facts directly.",
+        "reply_sha256": "194afbfcce06e69622b511ec6e00bef79c79401ba611a69d3ebeaaaf272a97fa",
+        "graded_trials": [
+          "5f943636-7278-4d22-8ab2-dba4708bb2a8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "One bold ID covers the receipt status and its supporting evidence.",
+        "reply_sha256": "ff522ac5095d9de7a47da6b7414c434bca767e710926f11ff9580c35f9f9e70a",
+        "graded_trials": [
+          "0c12c359-d8d6-4e6b-b861-6e8df05302ec",
+          "028260c6-721f-4024-b0b1-b3ccbf5470b6",
+          "97d9ddac-492c-40ee-917d-b0b410c96ded"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The draft reports that the PDF opens without attributing the check to the author. “No further action is needed” repeats completion.",
+        "reply_sha256": "2ad48196537f33750e9ab75d0c024398574e1df6cae22fd076d2f337129f837c",
+        "graded_trials": [
+          "c5df1d9d-fac9-4dfa-9e5f-2841fef236aa"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "“No further action is needed” repeats completion after both requested facts are stated.",
+        "reply_sha256": "a82d5075fcce5ab6c04727302575ad7283b97759bf90cf44d93454a5faf16c97",
+        "graded_trials": [
+          "dc828d03-3fc6-407d-be8b-58508e1d83ce"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "unresolved-report",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "507dfa366b7bb5f8375ce5b4a6260658127e5816e16d270c44dfb0bc3f67df93",
+    "judge_log_id": "f6e30aa2-4d94-4f28-a927-c45ac3876982",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both findings stay within the sample evidence, preserve the unknown cause, and use the correct IDs.",
+        "reply_sha256": "05ae2c69c91ae0ae0a8e17daab3aa830ae396c1c41a99d4c48a81a05b079d6e5",
+        "graded_trials": [
+          "eac41c80-fa56-4d52-b2e5-21804c327c6b",
+          "c5ecab82-cbd8-4d16-ba49-733180dcd48d",
+          "73bcffa7-995d-4b70-8813-6b53016cbe28",
+          "eb96ff37-f938-4358-af52-389a45c27af1"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The IDs are correct, but the opening sentences add unsupported claims about how labels and receipts print in general. The evidence establishes two cropped labels and one duplicate receipt.",
+        "reply_sha256": "2bc109410309cf6ed766056309ebefe2574596249ede82bb6d255fddc48a6cce",
+        "graded_trials": [
+          "696ed328-d07e-4ae4-b3e0-1c3c0af6f951",
+          "4023abd0-67b3-4f2f-b032-af0203de36fd"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply reports the confirmed cropping and unknown cause under f3 and limits f5 to the one receipt observed.",
+        "reply_sha256": "cb2e178d91eaba130e59c299dab731437211527f709d38a8f7d4e0e0ceec8a6e",
+        "graded_trials": [
+          "74dc61db-a882-4dc8-820d-171d44d56720"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The IDs are correct, but “Shipping labels print cropped” and “Receipts print twice” add unsupported generalizations beyond the observed samples.",
+        "reply_sha256": "922e5650527cacfbde3d0c8d556292714c56dc3e0d45bc172cbfd2e3a54cda16",
+        "graded_trials": [
+          "dbf69886-180e-4847-891d-c6bf8e280bd8"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "worker-evidence",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "e2801e387505201a729ca0f02831e03882b2b2a0b23bbb7203ba86832ade0956",
+    "judge_log_id": "8e3cad9e-272a-41fd-9de7-f1ed82c3b880",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Correctly leaves OOM unconfirmed and identifies the missing record. The catalog of possible causes is unrequested.",
+        "reply_sha256": "752292e49c071d8100c06f4b5e3e0e5d15652c0876b2f48e17ee0063f8f07394",
+        "graded_trials": [
+          "11b2b3a8-7221-4ba8-bd3a-ffa11f72541c"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The OOM conclusion is sound, but the reply adds an unsupported timestamp for the last heartbeat received. The request only dates when reporting stopped.",
+        "reply_sha256": "ecc3cca32dfecc450ec6ef58f22dd52784d51fab5415dc206884ffc61d44403b",
+        "graded_trials": [
+          "e238d75d-e35d-4b76-8c38-1107f3d3e633"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The first sentence gives the complete finding. The second repeats it and adds unrequested diagnostic detail.",
+        "reply_sha256": "21194dee6b31998a6f9c47d147d41e14bf082132237418c5b89f664ac9187f25",
+        "graded_trials": [
+          "75044ad7-dfb6-4b0b-a21b-9f0c499e035b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly answers the OOM question, accurately dates the loss of heartbeats, and explains why the cause is unknown.",
+        "reply_sha256": "fbcaef98279fed2d2a25f794ac4be594b9ad1fd277dd125f0a2c3692a49c7dc9",
+        "graded_trials": [
+          "2ed35d10-6fc7-450c-a448-d7fc217c1084"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "The finding is accurate. The cause list and diagnostic details are unrequested, and the separate instruction to record handover wording lacks its own bold ID.",
+        "reply_sha256": "7214fd0f54b661dd058c3df1da08a284949f6c320bfbd28a9ed65fd23eb0144a",
+        "graded_trials": [
+          "2a06307a-b4fa-4a83-aa64-c622ca2a1904"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Correctly links OOM uncertainty to the missing record, but adds an unsupported claim that the last heartbeat occurred at 14:05. Only the time reporting stopped is given.",
+        "reply_sha256": "1104626a102aed5bcf906e199faa97b515f6c52cc4adf8ebd622ab2d919eec14",
+        "graded_trials": [
+          "711e2aa4-c0b9-4418-9521-5aa804b9c63d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives one supported finding. The brief parenthetical clarifies the missing evidence without prescribing a diagnostic procedure.",
+        "reply_sha256": "d1ce33d8b098df750127ede40417e3b1390ccef7f96b726fdde9ef9c4356ce86",
+        "graded_trials": [
+          "45cd18ae-99d7-4ee4-9aac-4b5c5b11c482"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Correctly leaves OOM unconfirmed, but adds an unsupported last-heartbeat timestamp. The supplied 14:05 time marks when reporting stopped.",
+        "reply_sha256": "04f747a11489b6681a0c0e244d2ed94eda3bc2b008796d6592e6bc588622766d",
+        "graded_trials": [
+          "ed772d63-24aa-4ee3-83e4-5d9db5c97688"
+        ]
+      }
+    ]
+  }
+]

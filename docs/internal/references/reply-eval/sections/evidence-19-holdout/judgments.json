@@ -1,0 +1,476 @@
+[
+  {
+    "case": "booking-options",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "447bd1983e5ca39834577217bc92167ed83f2c0cfb9882bf13e421762c719704",
+    "judge_log_id": "152dd46b-0ea2-47cf-9637-367a1e8d234d",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Lists both options coach first with correct seat counts and bold IDs, without implying a selection.",
+        "reply_sha256": "67080d11a459c1f343e106956c8bc192d3d1e1c86c0580938bc9c21c3b869436",
+        "graded_trials": [
+          "4b82ecf7-53e5-477c-9d82-676fcc769491",
+          "31a5aa24-80a4-4015-b923-3e73bc9b3e33"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Lists both options coach first with correct seat counts and bold IDs, without implying a selection.",
+        "reply_sha256": "c0380705932e1500dfb8a58e59ce19693358d605da29d1ca7ecc0de7bac8a327",
+        "graded_trials": [
+          "512a7da7-8fa8-4db6-b345-905151c5cf46",
+          "58b4c311-7c1b-4abe-a176-4e55e2d818cc"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Lists both options coach first with correct seat counts and bold IDs, without implying a selection.",
+        "reply_sha256": "ce1ac1a09910b097f0224c72194f49e0640acb8697366df4db3491a1fd0bc264",
+        "graded_trials": [
+          "1877f01f-c981-4819-a998-5bd0c469af16"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Lists both options coach first with correct seat counts and bold IDs, without implying a selection.",
+        "reply_sha256": "a2543fb9567f9b5f0c20f04d11ae7bc71d4b065b3151646012fedf23d4b103c9",
+        "graded_trials": [
+          "4da8e77f-e16a-4c21-92c4-9b784e1dd4af"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Lists both options coach first with correct seat counts and bold IDs, without implying a selection.",
+        "reply_sha256": "b851c2676d939cf4475b51454fb088f7ddf699dffcabb575bc9cb685fd05b4f0",
+        "graded_trials": [
+          "c936310c-fbd5-449d-8fd5-39f941445d8f",
+          "e622b0c2-002f-45b8-b0df-e9ff9eb0784c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "late-carton",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "24ff649df14bf58053a31cd825c39dd8a39333677b320544245e55972fbf3f52",
+    "judge_log_id": "4e132316-342d-43d7-bd99-60cc00088e64",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Distinguishes the carrier’s record from Priya’s observation and accurately says the exact arrival time is unknown.",
+        "reply_sha256": "4e330ceb855e4f541768bcdf7d4612f79ba30c3d71434604cbc04c94ce98b518",
+        "graded_trials": [
+          "8563e04c-8b4d-45c6-b53e-0bbea514187c",
+          "7d30693d-c6fa-40fc-9556-598828936f6f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The noon record does not rule out an earlier arrival, so the claimed interval is inaccurate and adds an unsupported conclusion.",
+        "reply_sha256": "76278c0c1256b9956c9caf9e3d0bf9253d3a8a4c676d5ac8eafa8ff499b8e4eb",
+        "graded_trials": [
+          "0bbf658e-e68a-46ab-821d-b3c55000ea9b"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The claimed arrival window has no established lower bound, and “first seen” generalizes Priya’s observation to everyone. Both claims exceed the evidence.",
+        "reply_sha256": "2766a893e20f068e665324161477732c8ea9a7e5c345cea1c3e58dffb35d080d",
+        "graded_trials": [
+          "3fa7b5bb-cd45-49ba-9597-aabe3602bc1b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Uses Priya’s sighting to establish arrival by three while leaving the exact time open.",
+        "reply_sha256": "850549d415efe141c06b8dd75c0383c68ba162c3a57334d5458960b32df046d2",
+        "graded_trials": [
+          "0c18ed3e-dc3e-4be6-bcd5-2c4ed9444230"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports both time points and accurately explains what the 3 p.m. sighting establishes.",
+        "reply_sha256": "9bc7138a5239806ca71068c16dd9fd834803b253e1870965e0ebd1c1ff547daa",
+        "graded_trials": [
+          "486bcf3e-8ae6-4316-b3ee-a8d9b38927fb"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly reports the two known facts in one sender-ready sentence without inferring an arrival time.",
+        "reply_sha256": "93b16367e77cde19bf266a5ead58a6b880d9810548d03ad4ad4ea72ec63b8726",
+        "graded_trials": [
+          "6d1286e4-38e7-453c-9322-f0085466582b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports both facts and draws the supported conclusion that the carton had arrived by 3 p.m.",
+        "reply_sha256": "b72223f50bb4378a90817a8755ca0f091a03636f2e50f95fa93bd31965ff0573",
+        "graded_trials": [
+          "c53357ba-96f9-4cbc-bc12-70fec8844bc8"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "rain-plan",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "b189d6a5ea99c152086cd5a0771c462dff628fc778e9ba7b141b6824db6db491",
+    "judge_log_id": "639bb77d-085b-4a20-8df5-f48156cedaf9",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both labeled branches name each usher’s job and make the rain sequence explicit.",
+        "reply_sha256": "6974adade0d69cbbc04610908ec07711aef90a542ac4f5d9441a820db43cbe58",
+        "graded_trials": [
+          "9bafe55e-b158-4364-aa6c-b2b0d392290a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The instructions cover both branches and the required rain sequence. The table repeats every assignment already listed.",
+        "reply_sha256": "492f9c732035503813d7ec041303b0643e8ca790ee7b2111db3bac0b65bdaa1d",
+        "graded_trials": [
+          "3187e387-ea69-4fed-8b3f-68fc47b66e34"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The weather headings distinguish both branches, and “Then” makes the rain sequence clear. The requested draft can stand alone.",
+        "reply_sha256": "b47c3aa31b4ab7127397513b9fdd29d87357787ac1f99a1333d6fbc79e063a57",
+        "graded_trials": [
+          "ffc19674-2a50-4bce-b162-62222e30870e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled branch gives both assignments, and Sol waits until the lectern is inside before opening the side doors.",
+        "reply_sha256": "b38b033807f6c3ff7dcac9161728b103ae3fa0a5d240727aed396f39b350f379",
+        "graded_trials": [
+          "e16eb517-435e-41a2-a02d-bbf3530300d2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two paragraphs identify each usher’s job and the required rain sequence. The requested draft can stand alone.",
+        "reply_sha256": "95588f771af92de496ccbefc286f65a0b1270fa19c80153a1c4697f180307c45",
+        "graded_trials": [
+          "aaa7fa65-ef37-4267-ae26-1c89c974bcb1"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both labeled branches give the correct assignments, with Sol opening the side doors only once the lectern is indoors.",
+        "reply_sha256": "f6a7b0fd76ac1ad12c51039ce43def295df3ef9a01d09fbeb1a77bafc48ea6d8",
+        "graded_trials": [
+          "4fa89906-6380-4fd0-bd83-b1ed419e1b3b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both labeled branches specify who does each job and when Sol opens the side doors.",
+        "reply_sha256": "638d49483d7f7ff06bf67222146bca4d481d8f51c2ccc5555a611dae0e0683f9",
+        "graded_trials": [
+          "947fe43e-23c7-44e0-b29b-81820b35b117"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both branches are complete. The extra sentence repeats the rain sequence, and the summary table repeats all four assignments.",
+        "reply_sha256": "f2de9f8405f0c50369767bf827b4c16c789dac80457773b82a3fc024a3da8b46",
+        "graded_trials": [
+          "d1b5ace0-6162-4abf-8529-ff98bf4f23ef"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "revision-note",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "58274cf5ab781f5aa7e29ad07a7db038e5687525c64e6bc6fb4c095d5bbaa272",
+    "judge_log_id": "3e1d5c39-cc8a-4eb9-a199-c791bedb7b68",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives only the trio, corrected day and original time.",
+        "reply_sha256": "ff11f28b783fcb26a2c24806af517cc1cf1bd04b2d02819e442eafbe9b4e7dad",
+        "graded_trials": [
+          "5bf522a5-47a3-4537-b780-97f904d44f55",
+          "36f149b8-db2f-4faf-9559-b41540ca2a04"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The sentence stands alone as the corrected listing.",
+        "reply_sha256": "55a2ccf3b8ab912516ec78fa3bfe385d19047132c71c221b232d4c55affeb612",
+        "graded_trials": [
+          "aaac5a12-ee50-4158-9687-614327836e29"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“6 pm” assumes an evening performance. The correction label and reference to Friday add material beyond the requested listing.",
+        "reply_sha256": "8aec340e632d127134676ed1f274e1bcd5b79a2f4d7f5722da360089c00554f0",
+        "graded_trials": [
+          "ae1cd278-9500-4871-b38e-425b91f147c2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The correction label and reference to the previously printed day are unnecessary in the listing.",
+        "reply_sha256": "753008dcc95f5a590fdc4ff733cf15d21ab4e5d602f625e3e4cb50dd1d6436bd",
+        "graded_trials": [
+          "ae82fb30-9a2e-4fd4-a236-cc447b79a8ad"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The listing is accurate, but “Correction:” adds an editorial label the user did not request.",
+        "reply_sha256": "6db40cd6c12a0960df22c9e72429b43731e7c500968e516f2b5236d85c45f884",
+        "graded_trials": [
+          "eb9ff4cb-cc63-4964-a732-c61b343f1216",
+          "6a8d2726-540e-4c99-a8eb-dae6ccb9768d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives a standalone programme entry with the corrected day and original time.",
+        "reply_sha256": "1d1340b4c736b0bad33bb9131d1666e9e870557b83035ced631a99a94256b019",
+        "graded_trials": [
+          "d90ece90-d119-4433-8cae-51723f079b6a"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "signup-count",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "5b1c1becc0bb1163307641424be7dfaaa7ba7f5e5bd4b4a997a6a4f9d2187c95",
+    "judge_log_id": "d467de14-7b2b-4e57-9111-f97c07ec5cd1",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the correct range and identifies the missing fact in one direct answer.",
+        "reply_sha256": "c4f01f3e3da36b91a69b4127cc78da5360a4fed48fe3da7e754aad3c6c5d5152",
+        "graded_trials": [
+          "4118dde1-42b4-4bfd-bbd5-7bd0e0acab55"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the correct range and explains why the exact count is unknown.",
+        "reply_sha256": "7932336d0a67944a369d64c912fa282068ba17f2d19f00a06567511a7ee19e0e",
+        "graded_trials": [
+          "dad67246-3cb5-49ba-9c90-b148fbe93932"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The range is correct. The unsolicited advice about matching names or emails goes beyond the requested newsletter conclusion.",
+        "reply_sha256": "844023353c6b6bd78e287cc0c8c72721da3a62b2061567c6b3a71668aac8f009",
+        "graded_trials": [
+          "c0e362c1-692e-49b0-a5ee-3cae83a7be03"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the correct range and ties the uncertainty to second submissions.",
+        "reply_sha256": "2c45e666c8c7d178d448fb8ae1177531c20d3dbcfea9f87841b368d78f70cda6",
+        "graded_trials": [
+          "69746f48-86ab-4e69-bda0-884dffd51d76"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The newsletter sentence is accurate and usable. The preamble repeats its conclusion and adds an unsolicited name-matching procedure.",
+        "reply_sha256": "fdc7623a70f48b54f3d5b3604fdd8c3ae29276835f06ddeb859aed74aa0b77fc",
+        "graded_trials": [
+          "c6e94343-b394-4107-bc63-a63e0dc35dfd"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the correct range and briefly identifies the unknown number of second submissions.",
+        "reply_sha256": "e51dcc267449a5946640469e026495a5bc670831f40665042521a15927005a1a",
+        "graded_trials": [
+          "d27e9b17-5fe8-445e-b375-51dd84c7c51b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single bold ID covers one concise, accurate answer and its explanation.",
+        "reply_sha256": "2a6b96402d51b8515612aaf4e3ee7607c9a98e5f4bb178331fb6a615172a0716",
+        "graded_trials": [
+          "479807a4-76e3-422d-b2dd-c2a4adc75135"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The one-form and two-form cases correctly justify both endpoints. The final sentence adds an unsolicited matching procedure.",
+        "reply_sha256": "ae073b9fb308190e2e6ab47c6e62570e72b79ee4a6ff74e2a12931790eabb20a",
+        "graded_trials": [
+          "d71928bb-682c-461c-82aa-2048df2dc76a"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "two-errata",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "3d2f6390b3521692db3c31bf8f57145c1b295c03724feedff5e803d6695c1db3",
+    "judge_log_id": "23d37c34-a8dc-4035-a55a-4190270a42c5",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The proofreader’s observation extends **f11**, and the cover correction receives **f13**.",
+        "reply_sha256": "4047fdfdd547518157c7e89568f8f44a8db45cfb671a4456113d2f738d524b4b",
+        "graded_trials": [
+          "f695b343-aea4-4ac0-b277-b7daec1334cf"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“Original” is unsupported. The request establishes the existing index error but does not identify its edition. Both IDs are correct.",
+        "reply_sha256": "195ba46828768bfc77137e076ece2448d098c6ff38bab9bfa2e33f5224b0cc1b",
+        "graded_trials": [
+          "d180c476-aff3-4345-9151-39615a045888"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both findings identify what is wrong and where. The proofreader’s observation stays with **f11**, and the cover receives **f13**.",
+        "reply_sha256": "7b894b2b0825d079875c552006b941acdf177d201d9c81c3b60938d82424991e",
+        "graded_trials": [
+          "c03e6e42-5a65-4d8b-b763-5cf551b4785e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each finding identifies the affected item and defect under the correct ID. Naming the proofreader is optional.",
+        "reply_sha256": "f2e9f3b2d79c1bc01f8ae21af6de5ba8ccf46b4de6d7b59d1662a88424d3723e",
+        "graded_trials": [
+          "81d31e86-673e-43a6-aea3-9ac58f6c830a"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The claim that separate large-print files need their own correction adds an unsupported implementation detail. The occurrence belongs under **f11**, leaving **f13** for the cover.",
+        "reply_sha256": "7c162c1c1153d651cb3dedfefbb573f031178c18f6afa543b80aeefd29c09865",
+        "graded_trials": [
+          "5d166d4f-f0e9-4fba-96f1-17af2fc2e394"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "“Standard index” and the separate file correction are unsupported additions. An inline reference to **f11** does not preserve it as the finding’s ID. The cover should receive **f13**.",
+        "reply_sha256": "a629269bedfd65906a68fe79359cb0330c8b793c82c33d65a55ff9a4216d6bb4",
+        "graded_trials": [
+          "ed0e22f0-973e-4d54-a04e-267eaaa77f64"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“Original” assigns an unsupported edition to **f11**. The cover instruction also repeats what correcting the illustrator credit entails. Both IDs are correct.",
+        "reply_sha256": "ada474dc1e706ef5fd163c951e92b063cd0a27bebdcdfdfe40dc6a222097af85",
+        "graded_trials": [
+          "3061e914-9870-46d6-8b82-1108d02a54fe"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“The cause is unknown” adds an unsupported and unnecessary claim. Both defects otherwise have the correct IDs.",
+        "reply_sha256": "379ebe544d11faeb01648c105c5084d0640fa827239ac66d662b1eb68181dc09",
+        "graded_trials": [
+          "6bb3c516-1282-4e01-809e-216e9501e7f2"
+        ]
+      }
+    ]
+  }
+]

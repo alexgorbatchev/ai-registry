@@ -1,0 +1,10 @@
+{
+  "study": "evidence-study",
+  "label": "Explicit draft IDs",
+  "baseline": "evidence-control",
+  "candidate": "source-labeled",
+  "suite": "sections/frozen-holdout.json",
+  "suite_label": "Final untouched requests",
+  "rubric": "sections/source-rubric.json",
+  "rubric_sha256": "cc7fc84c2610191fd5c4d819189cae679a5a61ef451eadd2c9bbea44916c3615"
+}

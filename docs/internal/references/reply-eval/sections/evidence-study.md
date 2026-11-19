@@ -10,6 +10,8 @@ The draft-ID sentence placed the labels inside each maintenance-chat draft. Both
 
 ## Scores and reply lengths
 
+“Current” in the table means the full prompt at `9999cae`. A separate change added a memory instruction at `58a8236` after generation. The candidate patch still applies to that version. Its behavioral effect was measured against the pinned control.
+
 Each arrow compares fresh independent generations on the same six requests. Each model produced two replies per request per arm, giving 12 per score cell. A blind Astra reviewer graded completeness, concision and correct addressability together. The means count every reply, including failures. Repeated suites and repeated samples of each request are related observations. Both models ran at medium effort through their ordinary user instruction files. No editing pass was used. The [HTML report](../summary.html#evidence-study) links every score to the exact replies and blind judgments.
 
 | Round | Control → candidate | Requests | Opus passes | Opus mean words | Astra passes | Astra mean words |

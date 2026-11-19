@@ -1,0 +1,395 @@
+[
+  {
+    "case": "commit-permission",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "e3df0bcfdcdddb7849cfabd368339ed47399263ce738ec5287247ed41a68a545",
+    "judge_log_id": "de310a4d-66a3-4200-9a52-6c628fb51236",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Accurately reports the local commit, passed regression test and publication hold.",
+        "reply_sha256": "dd1f1b875b2ee907b9b97e14afbaeed4094ea277dfc558b06db73c8f6a65ceb6",
+        "graded_trials": [
+          "76ed57ea-846b-42ab-8be5-a417923f2344"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The window opening is the earliest publication can occur. The reply makes no commitment to publish then.",
+        "reply_sha256": "b825581cf0656fc76309dd692b793fd1f5dfe7a0836296baf3f88a2ca52b0512",
+        "graded_trials": [
+          "6c1f5339-27f6-4c93-82bf-dda91ac633f4"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It makes an unsupported commitment to publish during the window. Only the current hold is confirmed.",
+        "reply_sha256": "a27c69b87ee4f9c1beb9b07c2f8cac63be18d2884b77a0629eaef6e4bdfbdd40",
+        "graded_trials": [
+          "59b3888c-abf9-446a-823b-18f9badd8e59"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The quoted status line makes an unsupported promise to publish during the window.",
+        "reply_sha256": "c7c3d7b56ab64e57897e7247f017d6b95b32f6c9a77c8bce42c20248e86ac463",
+        "graded_trials": [
+          "71f3b979-a2a4-4696-9fc5-613833efe2ee"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It promises publication during the window without evidence and adds unnecessary commentary about the reply ID.",
+        "reply_sha256": "8c7fca30937d426cfabf2dbd4210a2369f72d151976fde11bb03af20e10f25a1",
+        "graded_trials": [
+          "f24dac2e-7e93-4c88-8267-0d79ee543d2a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gives the lead the approval, local commit, test result and publication hold in one concise status update.",
+        "reply_sha256": "13d7f1aa7fa927c6eaa80ea1ff3a45b7c9cd174f741840af134dbf663e6f666b",
+        "graded_trials": [
+          "73f6a26d-9f8c-4d04-bbb5-e83d7a8bf1b4",
+          "c34841ec-c2cd-4bff-b5ad-0e3f7fae5441",
+          "3507e59e-0eee-4c13-b49b-bd69d9b3f4ac"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "existing-decision",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "be0af17de5647eedf1c37ba9bb489606fc2f844bbb6cb7b29a0a8f4cf01b84d3",
+    "judge_log_id": "195cdd13-db8a-41dd-8536-18c8ac45248c",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both options are accurate and each starts with its supplied bold ID.",
+        "reply_sha256": "8e148234e14d97733af0ba418bc8bba5eb103afe739808ab18bc2ea133702eb9",
+        "graded_trials": [
+          "a22e354d-a9ab-4e6b-8421-9a52f12a7f4b",
+          "a98617f8-771b-4858-8faa-f43f152fd429",
+          "3b3bd31f-e1f1-4c79-9f3a-8831e4df30a3",
+          "90962b85-df17-4e6e-ae08-57d9ba746fc8",
+          "03f46da2-c437-4575-b7f5-85d3c3437f40",
+          "c2e35894-1b1b-4811-b372-93cb6dca9a95",
+          "af06016e-55a3-4bdc-b25f-5767459435f4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both options are accurate and correctly labeled. The redundant q3 heading adds text when only the two options were requested.",
+        "reply_sha256": "4bcd0f5c1a2d3e2eef00819fca6f43f493b6045fb831fdf9d2e762d5bc7cfb1b",
+        "graded_trials": [
+          "5c0fc1ae-17b3-4a05-bf97-4a573ea5923e"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "parked-repair",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "875d3bb1711346cb99db066e6702697d5be450c20de25d3ce7807046f2fd4f8a",
+    "judge_log_id": "8616fb91-274d-455a-800e-40da9fbe652f",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Includes the passing keyboard test under a2 and the separate a4 offer, but states twice that the dialog stays open after Save.",
+        "reply_sha256": "167bd3604c22d5edd20adaf57bb0c97c4950783821da3bd24c26cfee3fd08543",
+        "graded_trials": [
+          "0907e579-f3d6-409b-8e71-a8e0b0174dac"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Omits the passing keyboard test that supports the a2 fix.",
+        "reply_sha256": "4dba8e873693fc5d30f8e88f9b66c7825149d2c2187d34a30c0279ab58550ee5",
+        "graded_trials": [
+          "c45a3267-aab8-4302-93c5-f9c308fda95b"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Omits the passing keyboard test that supports the a2 fix.",
+        "reply_sha256": "a50fcdb9ebc04967be58479d1920642b2aa50ed813bf1805eb6e4f217ab3b72b",
+        "graded_trials": [
+          "81b5670e-4937-43a7-a475-8c135def1d44"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the fix and passing keyboard test under a2 and separately offers the touchscreen check under a4.",
+        "reply_sha256": "9d3e4ba721fb5922b6c7ffb4786ecee25f80380b910eaa9370563bed4f2e3ebd",
+        "graded_trials": [
+          "362aefe2-eb03-4691-a095-034279eacf5b"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Omits the passing keyboard test and states twice that the dialog stays open after Save.",
+        "reply_sha256": "243d997dd7610139783732f4a6bb49d6302c23042b4be0100eed6cf7f77d5807",
+        "graded_trials": [
+          "2c331d03-9c3e-4458-b87e-3229842abf66"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Omits the passing keyboard test that supports the a2 fix.",
+        "reply_sha256": "6e05a3a63c3a960e165a468e82762de3d9ce6eaac7fae699f4077a06af271f61",
+        "graded_trials": [
+          "ee70bce1-e1f1-4cb8-9102-f9856d30823c"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Omits the passing keyboard test that supports the a2 fix.",
+        "reply_sha256": "d9e3219b7e8513de0d14b226ef235a42e977d1ab538bb552168468d2ee712d42",
+        "graded_trials": [
+          "24e866db-e5f5-4338-9cad-32823dfd556d",
+          "0745a7aa-7974-4964-bcf7-517aaa7ee780"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "queue-ticket",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "5f57d89778bd0399a5892aadc816467fd977644a6d27e365ddf4647b2318b852",
+    "judge_log_id": "be44a140-46a1-4237-9b2b-7e51ffef6b0d",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The draft states both receipt facts directly.",
+        "reply_sha256": "a7e0e13852811bf3a21a9a4875624c349cbccee723c5e07e220ee60b73b1fbc0",
+        "graded_trials": [
+          "eb5fb250-9585-4af4-8415-4a4ce0138bae"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The draft reports the observed result without attributing the check to anyone.",
+        "reply_sha256": "cde8934711968403de6fdcebf62999aa254528036a73275849eabcbe4683c710",
+        "graded_trials": [
+          "25b5b5ae-db73-4d46-8acf-ecc5c087257c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "“No further action required” repeats the completion status.",
+        "reply_sha256": "309448eb0c3078a678dc4e31a0fb6b70b8407a9e30942251c7becc68294b3837",
+        "graded_trials": [
+          "5794a990-f055-48c2-bf12-2c2f1feaebe9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The saved PDF opening supports the single labeled completion statement.",
+        "reply_sha256": "ff522ac5095d9de7a47da6b7414c434bca767e710926f11ff9580c35f9f9e70a",
+        "graded_trials": [
+          "1799a3c1-0ca3-420b-9479-3b428b9af04e",
+          "f0a20a78-fdd1-46c9-a571-0f3ed328ca39",
+          "c9d6fe25-d590-4fc2-aaba-f3e9b7cd920b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "“No further action needed” repeats the completion status.",
+        "reply_sha256": "ec36550dc643161865dadd6f4497972387cf004ef090ce6e5cf3f066afff5c98",
+        "graded_trials": [
+          "9d3c1d14-817c-4406-baea-80b9503dde7b"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“I verified” adds an unsupported claim about who opened the PDF.",
+        "reply_sha256": "6ce1a17cc2da73b499e7f57a7a9724abb3c800984ccf3e94459f12515e50b2fc",
+        "graded_trials": [
+          "e276a7d6-eb4d-4c7b-8d57-3aed8d858359"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "unresolved-report",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "a199895d1fdeb3dd0b44ffe61b2aef1af5ff6802ad0a072d128c4cc6e277968f",
+    "judge_log_id": "2077a539-9858-4d30-bfb2-e76e627b7053",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The second sample confirms cropping. Calling it a second shipping label adds an unsupported detail.",
+        "reply_sha256": "4c292b0f58a0f4d2127e6c6a96398c73d1d2363be404398787340238a863ce09",
+        "graded_trials": [
+          "7990d218-3f6f-4803-ba78-cec4859234ab"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports both observations accurately, preserves the unknown cause, and uses f3 and f5 for the two findings.",
+        "reply_sha256": "05ae2c69c91ae0ae0a8e17daab3aa830ae396c1c41a99d4c48a81a05b079d6e5",
+        "graded_trials": [
+          "c1b49585-3a0d-460d-9c08-b70e61149ee9",
+          "b2fa011a-9a4a-4393-8431-5e42e7217f6c",
+          "85c7c988-6a80-462e-8833-3ff71f348553"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Generalizes sample observations into printing behavior. In particular, one duplicate receipt does not establish that receipts print twice. The generalizations add unsupported claims.",
+        "reply_sha256": "2ad43968a7c0101d38b76a27c926b803f5a523a33a5a715aeebf82a263634e24",
+        "graded_trials": [
+          "708810d7-7bcd-4b31-aee1-4bca2b7a230d"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Adds unsupported general claims about label and receipt printing. The samples confirm cropping and show one duplicate receipt, without establishing how the duplicate arose.",
+        "reply_sha256": "999dfd70410beb3eba7924ba2998e198b116907813474831923c799e7d65d1a9",
+        "graded_trials": [
+          "71601d62-4711-4c99-979d-bc1bdc991694",
+          "acb94281-6b94-4d6f-b821-543dced44bc3",
+          "4752f8e5-1e47-4b83-927a-d35b9755eece"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "worker-evidence",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "15f367f22bc5e80ef5803dd427282f4eeefa06e83e5de7d4a82a828a6c033f32",
+    "judge_log_id": "730608ce-d90e-4096-b5e1-7074ea25d52b",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Heartbeat loss leaves the cause unknown. The claim that all listed causes fit equally well is unsupported, and the lists of causes and diagnostic checks exceed the handover request.",
+        "reply_sha256": "c3e9744720769f421f3280fb20f19d79d9fb39227eace59a23eea3e7404cc731",
+        "graded_trials": [
+          "032e6fad-5052-484b-ace4-d03ce95c1f0f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly answers the question and gives the observed time and the missing evidence.",
+        "reply_sha256": "6b413c62347dbfdb55692514401ddba8ca5c7798180001b3334bb4bb42574ade",
+        "graded_trials": [
+          "41d325f7-ec1a-46e6-a4a9-4cc312b58f53"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Clearly states the observation, the missing record and the unconfirmed OOM finding.",
+        "reply_sha256": "2c9c94ef047a4b9b24f0c31198042b73c2b1c637befbfbfdaccf515f7c4df99c",
+        "graded_trials": [
+          "b0f1e76f-aa0a-4585-9a31-33e5b4d32f5f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The claim that only the termination record can confirm OOM is unsupported. The lists of alternative causes and diagnostic evidence are unrequested.",
+        "reply_sha256": "3b68046f528a93232ced5ebb6f3c458670da7101776e609467b81c48dcd25535",
+        "graded_trials": [
+          "e36d8544-799d-41e5-a1c7-e42a24c7ff5e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the requested finding and explains why heartbeat loss at 14:05 is insufficient.",
+        "reply_sha256": "77920e87a265245f5f4562eeade1daf55e77db998c1811e84820a538e9475850",
+        "graded_trials": [
+          "43587adb-7b4c-45ad-8346-751f6bf9ffeb"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Correctly explains the evidentiary limit, but listing exit status, signal and log tail adds diagnostic detail beyond the requested finding.",
+        "reply_sha256": "6fb83252cb36f55d1f14a678edf4c93d71fc8a87c2b81d94a2075abe26f93a68",
+        "graded_trials": [
+          "ccee0ce4-83a2-412d-b448-8bf6e2683ecb"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly reports that OOM is unconfirmed and ties that conclusion to the missing termination record.",
+        "reply_sha256": "cc3d267b78a37c9b1b5a08b7d38eb2656fc46dfecb4838b14c40a62df314ad6a",
+        "graded_trials": [
+          "98e85ae6-1a61-49e8-9b90-6e9f0fe0a59e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Accurately reports that OOM remains a hypothesis, but the lists of possible causes and diagnostic evidence exceed the request.",
+        "reply_sha256": "6f56c0976242303c0548e4b1d9cbf5f7bf60de6f5585a46fa2753249afefa402",
+        "graded_trials": [
+          "1ca52c65-2ffc-4bd5-bce0-4ae8167a6472"
+        ]
+      }
+    ]
+  }
+]

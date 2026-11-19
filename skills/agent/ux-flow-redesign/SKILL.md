@@ -4,7 +4,7 @@ description: Use when reviewing an application's user experience across many fea
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-15 07:14
-  last_modified: 2026-11-17 06:59
+  last_modified: 2026-11-18 16:49
   status: current
 ---
 

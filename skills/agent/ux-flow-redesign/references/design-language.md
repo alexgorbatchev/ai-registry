@@ -262,6 +262,7 @@ When one of these carries a meaning a reader cannot infer from the drawing, expl
 
 - Draw the selection summary and the command or shortcut bar exactly as the pattern reference decides (its section 2.2, the `BAR-n` rules): position, content and order of items, identically on every page.
 - The `.selbar` in the flow template is a placeholder for those rules, not a decision. When the reference moves the summary into a footer or removes the in-table bar, draw that instead.
+- Size a summary or status line for its worst realistic case at each acceptance width, not the drawn example: three- and four-digit counts, the product's real control labels, and the narrowest width a docked panel leaves. State in the rule which parts give way first. The counts never truncate; secondary totals do, before links shorten or controls leave the line.
 
 ## The index page
 

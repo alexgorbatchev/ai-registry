@@ -4,7 +4,7 @@ description: Use when asked to commit changes or when committing task-owned chan
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-10 06:25
-  last_modified: 2026-11-10 18:24
+  last_modified: 2026-11-19 10:27
   status: current
 ---
 
@@ -12,8 +12,8 @@ When requested to commit, analyze the user's intent to select the correct strate
 
 ### 1. Default: Commit Changed Files Only
 If the user asks to commit, or when finalizing changes made during the session, **always default** to committing only the files that you have modified.
-- **Reference**: See [commit-changed-files.md](references/commit-changed-files.md) for detailed guidelines, message structure, and staging rules.
-- **Goal**: Protect files modified by other agents/collaborators in the same repository by only staging your own changes.
+- **Reference**: See [commit-changed-files.md](references/commit-changed-files.md) for detailed guidelines, message structure, and the path-limited commit commands.
+- **Goal**: Protect files modified by other agents/collaborators in the same repository by committing only your own paths, whatever else is staged.
 
 ### 2. Explicit Override: Commit All Files
 Only commit all files if the user **explicitly** asks to commit all files (e.g., "commit all", "commit everything").

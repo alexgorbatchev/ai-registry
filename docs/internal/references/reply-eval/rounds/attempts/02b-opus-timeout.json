@@ -1,0 +1,17 @@
+{
+  "round": "02b",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "exit_status": 1,
+  "elapsed_seconds": 192.37,
+  "error": "subprocess.TimeoutExpired",
+  "timeout_seconds": 180,
+  "completed_rows": 23,
+  "missing_trial": {
+    "arm": "baseline",
+    "case": "location",
+    "repetition": 2
+  },
+  "resume_elapsed_seconds": 12.9,
+  "resume_completed_rows": 1
+}

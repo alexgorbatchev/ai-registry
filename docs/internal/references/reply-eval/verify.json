@@ -1,0 +1,29 @@
+[
+  {
+    "name": "pickup-desk",
+    "prompt": "The festival guide lists the Lantern desk for wristbands, the Meadow desk for lost property and the Cove desk for badges. I'm collecting a badge. Which desk do I go to?",
+    "concepts": ["cove"],
+    "omit": ["Lantern", "Meadow"],
+    "max_words": 20,
+    "max_labels": 1
+  },
+  {
+    "name": "meter-reading",
+    "prompt": "The meter displayed 18 litres at noon and 26 litres at one. Nobody recorded which taps were open. How much water went through in that hour, and can we tell which tap it came from?",
+    "concepts": ["(?:8|eight)\\s*(?:lit(?:er|re)|l\\b)", "unknown|unclear|undetermined|no (?:way|record|data|evidence)|can.t|cannot|couldn.t|not (?:tell|know|determin|identif|record|enough|show)|doesn.t|insufficient|unrecorded|unidentif|unable|impossible"],
+    "max_words": 55
+  },
+  {
+    "name": "tour-updates",
+    "prompt": "Earlier you reported **f4** that the tour map gives the wrong entrance. We also approved **a9** to add a shuttle stop. The corrected map has been verified, but the shuttle stop is still awaiting a permit. Give me the current status of both.",
+    "concepts": ["map|entrance", "correct|verif|fix|right|resolv|accurate", "shuttle|stop", "permit|authori[sz]ation|approval"],
+    "labels": ["f4", "a9"],
+    "max_words": 65,
+    "max_labels": 2
+  },
+  {
+    "name": "colour-proofs",
+    "prompt": "Write a short explanation for a trainee about our two print proofs. We use the screen proof to catch spelling errors. After that, we use a paper proof because it shows how the ink looks on the actual stock. Explain both checks and why we do them in that order.",
+    "concepts": ["screen|digital|monitor|soft proof", "spell|typo|text|word", "paper|print|hard proof|physical", "ink|colou?r", "stock|paper|substrate|material"]
+  }
+]

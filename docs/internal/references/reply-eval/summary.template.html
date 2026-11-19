@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>The reply spellbook · ai-registry</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #302741;
+        --dim: #675b72;
+        --paper: #faf7ef;
+        --pale: #f1edf7;
+        --line: #d9d1df;
+        --purple: #6e4f99;
+        --green: #326c55;
+        --red: #95504e;
+        font-family: "DM Sans", "Avenir Next", system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        line-height: 1.5;
+      }
+      a {
+        color: #604788;
+        text-underline-offset: 0.2em;
+      }
+      a:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #936aba;
+        outline-offset: 3px;
+      }
+      main {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 0 4vw 64px;
+      }
+      .masthead {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        padding: 19px 0;
+        border-bottom: 1px solid var(--line);
+        color: var(--dim);
+        font-size: 0.8rem;
+      }
+      .brand {
+        font-weight: 750;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .mark {
+        display: inline-grid;
+        place-items: center;
+        background: var(--ink);
+        color: #ecddff;
+        border-radius: 5px;
+        width: 25px;
+        height: 25px;
+      }
+      .masthead a {
+        font-weight: 650;
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: 1fr 210px;
+        align-items: center;
+        gap: 22px;
+        padding: 38px 0 31px;
+      }
+      .hero h1 {
+        font:
+          normal clamp(3.2rem, 6.4vw, 6rem) / 0.94 "DM Serif Text",
+          Baskerville,
+          "Palatino Linotype",
+          Georgia,
+          serif;
+        letter-spacing: -0.065em;
+        margin: 0;
+      }
+      .hero h1 span {
+        display: block;
+        color: #75518e;
+        font-style: italic;
+      }
+      .hero p {
+        max-width: 640px;
+        margin: 18px 0 0;
+        color: var(--dim);
+        font-size: 1.04rem;
+      }
+      .illustration {
+        display: grid;
+        place-content: center;
+        position: relative;
+        isolation: isolate;
+        min-height: 184px;
+        background-image: radial-gradient(#caacd2 1.1px, transparent 1.1px);
+        background-size: 13px 13px;
+        border-radius: 40%;
+        overflow: hidden;
+      }
+      .illustration img {
+        width: 126px;
+        image-rendering: pixelated;
+        filter: drop-shadow(5px 7px 0 #dfcfe6);
+      }
+      .spark {
+        position: absolute;
+        font: 26px Georgia;
+        color: #915f9e;
+      }
+      .s1 {
+        left: 13%;
+        top: 15%;
+      }
+      .s2 {
+        right: 13%;
+        bottom: 19%;
+        font-size: 19px;
+      }
+      .s3 {
+        right: 11%;
+        top: 20%;
+        font-size: 12px;
+      }
+      .overview {
+        background: #ebe3f3;
+        border: 1px solid #cbbad8;
+        border-radius: 16px;
+        padding: 22px 25px;
+        display: flex;
+        gap: 34px;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+      .overview h2 {
+        font-weight: 650;
+        line-height: 1.3;
+        margin: 0 0 4px;
+        font-size: 1.12rem;
+      }
+      .overview p {
+        margin: 0;
+        color: #554662;
+      }
+      .overview .verdict {
+        margin-top: 8px;
+        font-size: 0.9rem;
+      }
+      .stat {
+        margin-left: auto;
+        flex-shrink: 0;
+        text-align: right;
+        line-height: 1.2;
+      }
+      .stat strong {
+        font:
+          normal 2rem/1 Georgia,
+          serif;
+        color: #5e427b;
+      }
+      .stat span {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--dim);
+        margin-top: 4px;
+      }
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 15px;
+      }
+      .section-head h2,
+      h2.section-title {
+        margin: 0;
+        font:
+          normal clamp(1.8rem, 4vw, 2.6rem) / 1.2 Baskerville,
+          Georgia,
+          serif;
+        letter-spacing: -0.045em;
+      }
+      .legend {
+        color: var(--dim);
+        font-size: 0.8rem;
+      }
+      .round {
+        padding: 24px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .round-head {
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .round-head h3 {
+        margin: 0;
+        font-size: 1.08rem;
+      }
+      .round-head small {
+        color: var(--dim);
+        font-size: 0.83rem;
+      }
+      .models {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
+        gap: 14px;
+      }
+      .model {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fffdf8;
+        padding: 16px 18px;
+      }
+      .model h4 {
+        margin: 0;
+        display: flex;
+        gap: 7px;
+        align-items: center;
+        font-size: 1rem;
+      }
+      .model .emblem {
+        color: #75518e;
+      }
+      .model .meta {
+        font-size: 0.78rem;
+        color: var(--dim);
+        margin: 3px 0 12px;
+      }
+      .score {
+        display: grid;
+        grid-template-columns: 88px 1fr 52px;
+        align-items: center;
+        gap: 12px;
+        margin: 8px 0;
+        font-size: 0.85rem;
+      }
+      .score strong {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .track {
+        height: 10px;
+        display: flex;
+        border-radius: 3px;
+        overflow: hidden;
+        background: repeating-linear-gradient(135deg, #eee9e2, #eee9e2 2px, #f8f5f0 2px, #f8f5f0 5px);
+      }
+      .pass {
+        background: var(--green);
+      }
+      .miss {
+        background: #cc8982;
+      }
+      .model .length {
+        font-size: 0.82rem;
+        color: var(--dim);
+        margin: 13px 0 0;
+      }
+      .methods {
+        margin-top: 35px;
+      }
+      .methods p {
+        max-width: 80ch;
+        color: var(--dim);
+        margin: 8px 0;
+      }
+      .logs {
+        margin-top: 34px;
+      }
+      .logs > p {
+        color: var(--dim);
+        margin: 5px 0 15px;
+      }
+      .record,
+      .source {
+        border-top: 1px solid var(--line);
+        padding: 10px 0;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      summary::marker {
+        color: #8c6d9d;
+      }
+      .cases {
+        margin: 8px 0 0 12px;
+      }
+      .case {
+        padding: 7px 8px;
+      }
+      .case > summary {
+        font-weight: 500;
+      }
+      .prompt {
+        font-size: 0.94rem;
+        color: var(--dim);
+        max-width: 85ch;
+      }
+      .reply {
+        background: #fffdf8;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 9px 12px;
+        margin: 8px 0;
+      }
+      .reply summary {
+        font-size: 0.83rem;
+      }
+      .reply pre {
+        font:
+          0.88rem/1.55 ui-monospace,
+          SFMono-Regular,
+          Consolas,
+          monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        margin: 10px 0 2px;
+      }
+      .reason {
+        color: var(--red);
+        font-size: 0.86rem;
+      }
+      .source {
+        margin-top: 30px;
+        color: var(--dim);
+        font-size: 0.82rem;
+      }
+      code {
+        overflow-wrap: anywhere;
+      }
+      .swatch {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 2px;
+        margin: 0 3px 0 8px;
+      }
+      .notice {
+        color: var(--red);
+        font-weight: 650;
+      }
+      .refs {
+        font-size: 0.8rem;
+        color: var(--dim);
+        overflow-wrap: anywhere;
+      }
+      .method-link {
+        font-size: 0.87rem;
+      }
+      @media (max-width: 650px) {
+        main {
+          padding: 0 18px 40px;
+        }
+        .hero {
+          grid-template-columns: 1fr 90px;
+          gap: 8px;
+          padding: 28px 0;
+        }
+        .hero h1 {
+          font-size: 3.3rem;
+        }
+        .hero p {
+          font-size: 0.92rem;
+        }
+        .illustration {
+          min-height: 106px;
+        }
+        .illustration img {
+          width: 75px;
+        }
+        .spark {
+          font-size: 13px;
+        }
+        .s1 {
+          left: 0;
+        }
+        .s2 {
+          right: 1%;
+        }
+        .overview {
+          align-items: flex-start;
+          padding: 16px;
+          gap: 12px;
+        }
+        .stat strong {
+          font-size: 1.6rem;
+        }
+        .stat span {
+          max-width: 55px;
+        }
+        .section-head {
+          display: block;
+        }
+        .legend {
+          margin-top: 5px;
+        }
+        .round {
+          padding: 19px 0;
+        }
+        .round-head {
+          gap: 4px 10px;
+        }
+        .models {
+          gap: 9px;
+        }
+        .model {
+          padding: 13px;
+        }
+        .score {
+          grid-template-columns: 78px 1fr 42px;
+          gap: 8px;
+        }
+        .masthead {
+          padding: 12px 0;
+        }
+      }
+      .wording {
+        margin: 30px 0;
+      }
+      .wording details {
+        margin-top: 12px;
+      }
+      .wording pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        max-width: 85ch;
+        font: inherit;
+        border-left: 3px solid #ba9bca;
+        padding: 0 16px;
+      }
+      .review {
+        padding: 14px 16px;
+        margin-top: 12px;
+        background: #f2edf5;
+        border-radius: 10px;
+      }
+      .review h4,
+      .review p {
+        margin: 0 0 6px;
+      }
+      .review summary,
+      .assessment {
+        font-size: 0.88rem;
+      }
+      .review table {
+        font-size: 0.84rem;
+        border-collapse: collapse;
+        margin: 10px 0;
+        width: 100%;
+        max-width: 570px;
+      }
+      .review td,
+      .review th {
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        padding: 5px 4px;
+      }
+      .review .refs {
+        margin-top: 8px;
+      }
+      .review,
+      .wording pre {
+        line-height: 1.5;
+      }
+      @media print {
+        body {
+          background: white;
+        }
+        .hero {
+          padding: 14px 0;
+        }
+        .illustration {
+          min-height: 100px;
+        }
+        .illustration img {
+          width: 70px;
+        }
+        .logs,
+        .masthead a {
+          display: none;
+        }
+        .round,
+        .overview {
+          break-inside: avoid;
+        }
+        .track,
+        .overview {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="masthead">
+        <span class="brand"><span class="mark" aria-hidden="true">✦</span> ai-registry</span>
+        <nav><a href="#field">Claude threads</a> &nbsp;·&nbsp; <a href="#evidence">Response ledger</a></nav>
+      </header>
+      <section class="hero">
+        <div>
+          <h1>The reply <span>spellbook.</span></h1>
+          <p>
+            Can a shared prompt keep engineering replies brief, preserve reply IDs, and still explain the
+            details when asked?
+          </p>
+        </div>
+        <div class="illustration" aria-hidden="true">
+          <span class="spark s1">✧</span
+          ><img
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAYCAYAAAD6S912AAAAx0lEQVR4nGNgIBLYaHv8B2Fi1RM0bHLxJjCm2FBkwyg2EGbY/1vllBuI7DJkA8kyFN2b6JgkA5ENO7buDhiTZSgsWeBzGTZDsRoMk6AE43Tl96Nz4IpAbGwYWQ6v1/EZgs9wog3EZQHJLvwwfSIYIxuyLCoJzkaWJyq2qeJdZAOJMZSo0gdXOoRlPWyJHG+SwZWAQQai52e8hhLKIfgMwzAUPQng04TLyxiRhC8f4yocCOZpUgsGghFDk8IBW5iSKk/QpaTKAwD1weBkYsf73AAAAABJRU5ErkJggg=="
+            alt=""
+          /><span class="spark s2">✦</span><span class="spark s3">✧</span>
+        </div>
+      </section>
+      <section class="overview" aria-label="Featured comparison">
+        <div>@@HIGHLIGHT@@</div>
+        <div class="stat"><strong>@@COUNT@@</strong><span>target replies</span></div>
+      </section>
+      @@WORDING@@
+      <section>
+        <div class="section-head">
+          <h2>Round results</h2>
+          <div class="legend">
+            <i class="swatch pass"></i> Automatic pass <i class="swatch miss"></i> Missed
+          </div>
+        </div>
+        @@ROUNDS@@
+      </section>
+      <section class="methods" id="field">
+        <h2 class="section-title">What changed in Claude threads?</h2>
+        <p>
+          Across 97 earlier and 155 later final replies, mean length fell from
+          <strong>334 to 300 words</strong> and the median from 332 to 280. Replies containing any bold ID
+          rose from 68% to 70%. That count does not establish whether an ID identifies the right item.
+        </p>
+        <p>
+          Six threads had replies on both sides of the earlier prompt change. Their pooled mean fell from 443
+          to 355 words. Four of the six got shorter. We could not verify which instructions each session
+          received, so the reduction cannot be attributed to the prompt.
+          <a href="rounds/field-observations.md">Sampling and field observations</a>
+        </p>
+      </section>
+      <section class="methods">
+        <h2 class="section-title">How to read the scores</h2>
+        <p>
+          Each count shows replies passing every automatic check out of replies recorded. Each bar spans all
+          planned replies. Hatching marks missing replies. Length is the mean whitespace word count. A brief
+          answer can still miss a required fact or put the wrong ID on a finding.
+        </p>
+        <p>
+          A blind AI reviewer judged completeness, concision and whether each reply ID identified the right
+          point. Passing requires all three. Round 03 used a first holdout. Round 04 replayed those same cases
+          after a wording change. Round 05 used fresh verification cases. Round 06 replayed them. Round 07
+          tested the last revision on a third fresh set. Round 08 checked that revision against the original
+          development cases. Compare prompts within the same model, round, and case set.
+        </p>
+      </section>
+      <section id="evidence" class="logs">
+        <h2 class="section-title">Response ledger</h2>
+        <p>Open a run, then a case to inspect its request, replies, and recorded misses.</p>
+        @@LEDGER@@
+      </section>
+      <footer class="source">
+        Source data and reproduction instructions are alongside this file.
+        <a href="PROTOCOL.md">Protocol</a> · <a href="rounds/NOTES.md">Run notes and model verification</a> ·
+        <a href="PILOT.md">Earlier GPT-5.5 pilot</a>
+      </footer>
+    </main>
+  </body>
+</html>

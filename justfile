@@ -133,3 +133,7 @@ reply-eval *args:
 # Check the reply graders offline
 reply-eval-test:
     uv run --no-project python -B -m unittest discover -s docs/internal/references/reply-eval -p 'test_*.py'
+
+# Render all recorded reply trials as an offline HTML report
+reply-eval-report:
+    uv run --no-project python docs/internal/references/reply-eval/render_report.py

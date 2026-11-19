@@ -1,0 +1,29 @@
+[
+  {
+    "name": "parcel-shelf",
+    "prompt": "A notice tells me folded posters are on the top shelf, rolled posters on the bottom shelf and tubes on the middle shelf. Where should I look for a rolled poster?",
+    "concepts": ["bottom|lowest|lower"],
+    "omit": ["folded", "tube"],
+    "max_words": 20,
+    "max_labels": 1
+  },
+  {
+    "name": "counter-reset",
+    "prompt": "The counter showed 12 entries before it was reset and 5 afterward. It counted every entry over the shift. We didn't record anyone's identity. What can I report about the total entries and the number of distinct visitors?",
+    "concepts": ["17|seventeen", "visitor|people|person|individual|unique|distinct|identit", "can.t|cannot|couldn.t|unknown|unclear|insufficient|undetermined|unable|impossible|no way|not (?:tell|know|determin|identif|record|show|track)|doesn.t|at (?:least|most)|between"],
+    "max_words": 65
+  },
+  {
+    "name": "programme-change",
+    "prompt": "Our programme listed the talk in Room Grey, which you flagged under **f8**. Staff verified it has been corrected to Room Lime. You also just learned the interpreter will join by video. Please send me a status update I can refer to by item.",
+    "concepts": ["lime", "interpret", "video|remote|virtual|online"],
+    "labels": ["f8", "f9"],
+    "max_labels": 2,
+    "max_words": 65
+  },
+  {
+    "name": "sign-copy",
+    "prompt": "Draft a small sign for visitors returning borrowed bags. They should empty the bag first so staff don’t find loose items, then hang it on a hook so the aisle stays clear. Give me the wording I can print.",
+    "concepts": ["empt|remove|take out|check", "item|belonging|content|nothing|left|loose", "hook|hang", "aisle|walkway|passage|path|floor"]
+  }
+]

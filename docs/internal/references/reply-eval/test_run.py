@@ -1,9 +1,18 @@
 import json
+import subprocess
+import tempfile
 import unittest
+from pathlib import Path
+from threading import Barrier
+from types import SimpleNamespace
+from unittest.mock import patch
 
-from run import HERE, failures
+from run import HERE, failures, generate_round, lock_output
 
-CASES = {case["name"]: case for case in json.loads((HERE / "cases.json").read_text())}
+CASES = {
+    case["name"]: case
+    for case in json.loads((HERE / "cases.json").read_text(encoding="utf-8"))
+}
 
 
 class ReplyChecks(unittest.TestCase):
@@ -68,6 +77,110 @@ class ReplyChecks(unittest.TestCase):
             ),
             [],
         )
+
+
+class ParallelRoundChecks(unittest.TestCase):
+    def setUp(self):
+        workspace = tempfile.TemporaryDirectory()
+        self.addCleanup(workspace.cleanup)
+        self.path = Path(workspace.name) / "run.jsonl"
+        self.options = SimpleNamespace(
+            output=self.path,
+            model="fixture",
+            effort="medium",
+            provider="claude",
+            repeat=1,
+            jobs=2,
+            resume=False,
+        )
+        self.suite = json.dumps(
+            [{"name": "sample", "prompt": "Ask", "concepts": ["yes"]}]
+        )
+        self.prompts = {"baseline": "first", "candidate": "second"}
+
+    def run_round(self):
+        return generate_round(self.options, self.prompts, self.suite)
+
+    def test_resume_only_missing_trials_after_concurrent_failure(self):
+        # Both calls must be in flight before either can finish.
+        barrier = Barrier(2)
+
+        def generate_pair(args, system, prompt):
+            barrier.wait(timeout=3)
+            if system == "first":
+                raise RuntimeError("fixture failure")
+            return "yes", ["fixture"]
+
+        with (
+            patch("run.generate", side_effect=generate_pair),
+            self.assertRaisesRegex(RuntimeError, "fixture failure"),
+        ):
+            self.run_round()
+        header, candidate = [
+            json.loads(line)
+            for line in self.path.read_text(encoding="utf-8").splitlines()
+        ]
+        self.assertEqual(candidate["arm"], "candidate")
+        self.assertEqual(header["jobs_at_start"], 2)
+        self.options.resume = True
+        self.options.jobs = 1
+        with patch("run.generate", return_value=("yes", ["fixture"])) as generate:
+            self.assertEqual(self.run_round(), ({"baseline": 1, "candidate": 1}, 1))
+            generate.assert_called_once_with(self.options, "first", "Ask")
+            self.run_round()
+            self.assertEqual(generate.call_count, 1)
+        rows = [
+            json.loads(line)
+            for line in self.path.read_text(encoding="utf-8").splitlines()
+        ]
+        self.assertEqual(rows[:2], [header, candidate])
+        self.assertEqual(rows[2]["jobs"], 1)
+
+    def test_timeout_reports_trial_without_private_arguments(self):
+        timeout = subprocess.TimeoutExpired(
+            ["provider", "--system-prompt", "private"], 180
+        )
+        with (
+            patch("run.subprocess.run", side_effect=timeout),
+            self.assertRaises(RuntimeError) as caught,
+        ):
+            self.run_round()
+        self.assertIn("sample", str(caught.exception))
+        self.assertIn("claude timed out after 180s", str(caught.exception))
+        self.assertNotIn("private", str(caught.exception))
+
+    def test_resume_rejects_different_inputs_duplicate_or_live_writer(self):
+        with patch("run.generate", return_value=("yes", ["fixture"])):
+            self.run_round()
+        saved = self.path.read_bytes()
+        self.options.resume = True
+        with patch("run.generate") as generate:
+            for key, value in (
+                ("repeat", 2),
+                ("provider", "codex"),
+                ("effort", "low"),
+                ("model", "different"),
+            ):
+                with (
+                    self.subTest(option=key),
+                    patch.object(self.options, key, value),
+                    self.assertRaisesRegex(ValueError, "Resume mismatch"),
+                ):
+                    self.run_round()
+            with self.assertRaisesRegex(ValueError, "suite_sha256"):
+                generate_round(self.options, self.prompts, self.suite + "\n")
+            with self.assertRaisesRegex(ValueError, "prompt_sha256"):
+                generate_round(self.options, {"baseline": "other"}, self.suite)
+            with self.path.open("r+") as locked:
+                lock_output(locked)
+                with self.assertRaisesRegex(ValueError, "Another evaluation"):
+                    self.run_round()
+            self.assertEqual(self.path.read_bytes(), saved)
+            with self.path.open("ab") as log:
+                log.write(saved.splitlines(keepends=True)[1])
+            with self.assertRaisesRegex(ValueError, "Duplicate"):
+                self.run_round()
+            generate.assert_not_called()
 
 
 if __name__ == "__main__":

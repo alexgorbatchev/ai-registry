@@ -1,3 +1,4 @@
+import hashlib
 import json
 import subprocess
 import tempfile
@@ -109,7 +110,7 @@ class ParallelRoundChecks(unittest.TestCase):
             barrier.wait(timeout=3)
             if system == "first":
                 raise RuntimeError("fixture failure")
-            return "yes", ["fixture"]
+            return "yes", ["fixture"], {}
 
         with (
             patch("run.generate", side_effect=generate_pair),
@@ -124,7 +125,7 @@ class ParallelRoundChecks(unittest.TestCase):
         self.assertEqual(header["jobs_at_start"], 2)
         self.options.resume = True
         self.options.jobs = 1
-        with patch("run.generate", return_value=("yes", ["fixture"])) as generate:
+        with patch("run.generate", return_value=("yes", ["fixture"], {})) as generate:
             self.assertEqual(self.run_round(), ({"baseline": 1, "candidate": 1}, 1))
             generate.assert_called_once_with(self.options, "first", "Ask")
             self.run_round()
@@ -135,6 +136,78 @@ class ParallelRoundChecks(unittest.TestCase):
         ]
         self.assertEqual(rows[:2], [header, candidate])
         self.assertEqual(rows[2]["jobs"], 1)
+
+    def test_edit_pairs_exact_draft_and_resumes_without_resampling(self):
+        self.options.repeat = 2
+        with patch(
+            "run.generate",
+            side_effect=[(f"draft {i}", ["fixture"], {}) for i in range(4)],
+        ):
+            self.run_round()
+        source_rows = [
+            json.loads(line) for line in self.path.read_bytes().splitlines()[1:]
+        ]
+        drafts = {
+            r["repetition"]: r["reply"] for r in source_rows if r["arm"] == "baseline"
+        }
+        self.options.edit_source = self.path
+        self.options.output = self.path.with_name("edits.jsonl")
+        self.prompts = {"baseline": "", "candidate": "edit rules"}
+        with patch("run.generate", return_value=("yes", ["fixture"], {})) as edit:
+            self.run_round()
+            self.assertEqual(edit.call_count, 2)
+            self.assertCountEqual(
+                [json.loads(c.args[2]) for c in edit.call_args_list],
+                [{"request": "Ask", "draft": text} for text in drafts.values()],
+            )
+            self.assertTrue(all(c.args[1] == "edit rules" for c in edit.call_args_list))
+            header, *rows = map(
+                json.loads, self.options.output.read_bytes().splitlines()
+            )
+            self.assertEqual(header["source_file"], self.path.name)
+            for row in rows:
+                draft = drafts[row["repetition"]]
+                self.assertEqual(
+                    row["draft_sha256"], hashlib.sha256(draft.encode()).hexdigest()
+                )
+                if row["arm"] == "baseline":
+                    self.assertEqual(row["reply"], draft)
+            self.options.resume = True
+            self.run_round()
+            self.assertEqual(edit.call_count, 2)
+            # Same parsed source, different bytes: source identity still changes.
+            self.path.write_bytes(self.path.read_bytes().replace(b"{", b"{ ", 1))
+            with self.assertRaisesRegex(ValueError, "source_sha256"):
+                self.run_round()
+            self.assertEqual(edit.call_count, 2)
+
+    def test_cross_model_edit_requires_exact_source_and_preserves_both_models(self):
+        with patch("run.generate", return_value=("yes", ["fixture"], {})):
+            self.run_round()
+        self.options.edit_source = self.path
+        self.options.output = self.path.with_name("cross.jsonl")
+        self.options.provider = "codex"
+        self.options.model = "editor"
+        with patch("run.generate", return_value=("edited", ["editor"], {})) as edit:
+            with self.assertRaisesRegex(ValueError, "Source mismatch: provider"):
+                self.run_round()
+            self.options.source_provider = "claude"
+            self.options.source_model = "wrong"
+            with self.assertRaisesRegex(ValueError, "Source mismatch: model"):
+                self.run_round()
+            edit.assert_not_called()
+            self.options.source_model = "fixture"
+            self.run_round()
+            edit.assert_called_once()
+            header, *rows = map(
+                json.loads, self.options.output.read_bytes().splitlines()
+            )
+            self.assertEqual(header["source_model"], "fixture")
+            self.assertEqual(header["model"], "editor")
+            self.assertEqual(
+                {row["arm"]: row["models"] for row in rows},
+                {"baseline": ["fixture"], "candidate": ["editor"]},
+            )
 
     def test_timeout_reports_trial_without_private_arguments(self):
         timeout = subprocess.TimeoutExpired(
@@ -150,7 +223,7 @@ class ParallelRoundChecks(unittest.TestCase):
         self.assertNotIn("private", str(caught.exception))
 
     def test_resume_rejects_different_inputs_duplicate_or_live_writer(self):
-        with patch("run.generate", return_value=("yes", ["fixture"])):
+        with patch("run.generate", return_value=("yes", ["fixture"], {})):
             self.run_round()
         saved = self.path.read_bytes()
         self.options.resume = True

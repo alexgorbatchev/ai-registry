@@ -97,7 +97,7 @@ def generate(args, system, prompt):
                     raise RuntimeError(f"Codex did not confirm {key} {expected}")
             if proc.returncode or not output.exists():
                 raise RuntimeError(f"Codex generation failed (exit {proc.returncode})")
-            return output.read_text(encoding="utf-8").strip(), [args.model]
+            return output.read_text(encoding="utf-8").strip(), [args.model], {}
     if args.provider == "claude":
         command = [
             os.environ.get("REPLY_EVAL_CLAUDE_BIN", "claude"),
@@ -134,7 +134,10 @@ def generate(args, system, prompt):
         models = list(data["modelUsage"])
         if args.model not in models:
             raise RuntimeError(f"Claude did not report usage for {args.model}")
-        return data["result"], models
+        metrics = (
+            {"cost_usd": data["total_cost_usd"]} if "total_cost_usd" in data else {}
+        )
+        return data["result"], models, metrics
     body = {
         "model": args.model,
         "messages": [
@@ -156,7 +159,7 @@ def generate(args, system, prompt):
     choice = data["choices"][0]
     if choice["finish_reason"] != "stop":
         raise RuntimeError(f"Incomplete response: {choice['finish_reason']}")
-    return choice["message"]["content"], [data["model"]]
+    return choice["message"]["content"], [data["model"]], {}
 
 
 def regrade(path, suite=HERE / "cases.json"):
@@ -197,10 +200,66 @@ def scheduled_trials(cases, arms, repeat):
                 yield (arm, case["name"], rep + 1), case
 
 
+def pair_source_drafts(path, identity, trials, source_provider=None, source_model=None):
+    """Bind every edited trial to its previously generated baseline response."""
+    raw = path.read_bytes()
+    header, *rows = map(json.loads, raw.splitlines())
+    if bool(source_provider) != bool(source_model):
+        raise ValueError("Specify both source provider and model")
+    source_identity = dict(identity)
+    if source_provider:
+        source_identity.update(provider=source_provider, model=source_model)
+        identity.update(
+            source_provider=source_provider,
+            source_model=source_model,
+            source_effort_requested=header["effort_requested"],
+        )
+    for key in ("provider", "model", "effort_requested", "suite_sha256", "repeat"):
+        if header[key] != source_identity[key]:
+            raise ValueError(f"Source mismatch: {key}")
+    expected = set(trials)
+    for row in rows:
+        key = row["arm"], row["case"], row["repetition"]
+        if key not in expected:
+            raise ValueError(f"Duplicate or unexpected source trial: {key}")
+        expected.remove(key)
+        if row["arm"] == "baseline":
+            if (
+                not row["reply"].strip()
+                or source_identity["model"] not in row["models"]
+            ):
+                raise ValueError(f"Invalid source draft: {key}")
+            provenance = {
+                "source_file": path.name,
+                "draft_sha256": hashlib.sha256(row["reply"].encode()).hexdigest(),
+            }
+            for arm in ("baseline", "candidate"):
+                trial = arm, row["case"], row["repetition"]
+                trials[trial] = dict(trials[trial], draft=row, provenance=provenance)
+    if expected:
+        raise ValueError(f"Incomplete source: missing {len(expected)} responses")
+    identity.update(
+        mode="edit",
+        source_file=path.name,
+        source_sha256=hashlib.sha256(raw).hexdigest(),
+    )
+    identity["prompt_sha256"]["baseline"] = header["prompt_sha256"]["baseline"]
+
+
 def evaluate(args, prompts, trial, case):
     arm, name, repetition = trial
+    prompt = case["prompt"]
+    provenance = case.get("provenance", {})
+    if "draft" in case:
+        draft = case["draft"]
+        if arm == "baseline":
+            return dict(draft, **provenance, failed=failures(case, draft["reply"]))
+        prompt = json.dumps(
+            {"request": prompt, "draft": draft["reply"]}, ensure_ascii=False
+        )
+    started = time.monotonic()
     try:
-        reply, models = generate(args, prompts[arm], case["prompt"])
+        reply, models, metrics = generate(args, prompts[arm], prompt)
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError(f"{args.provider} timed out after {exc.timeout}s") from None
     if not reply or not reply.strip():
@@ -214,6 +273,9 @@ def evaluate(args, prompts, trial, case):
         "reply": reply,
         "failed": failures(case, reply),
         "jobs": args.jobs,
+        "elapsed_seconds": round(time.monotonic() - started, 3),
+        **provenance,
+        **metrics,
     }
 
 
@@ -284,6 +346,14 @@ def generate_round(args, prompts, cases_text):
             for arm, prompt in prompts.items()
         },
     }
+    if getattr(args, "edit_source", None):
+        pair_source_drafts(
+            args.edit_source,
+            identity,
+            trials,
+            getattr(args, "source_provider", None),
+            getattr(args, "source_model", None),
+        )
     with args.output.open("r+" if args.resume else "x+", encoding="utf-8") as log:
         lock_output(log)
         if args.resume:
@@ -291,6 +361,16 @@ def generate_round(args, prompts, cases_text):
             if not header_line.endswith("\n"):
                 raise ValueError("Incomplete JSONL header; inspect the saved file")
             header = json.loads(header_line)
+            if (
+                header.get("mode"),
+                header.get("source_model"),
+                header.get("source_provider"),
+            ) != (
+                identity.get("mode"),
+                identity.get("source_model"),
+                identity.get("source_provider"),
+            ):
+                raise ValueError("Resume mismatch: mode")
             for key, value in identity.items():
                 if header.get(key) != value:
                     raise ValueError(f"Resume mismatch: {key}")
@@ -306,6 +386,15 @@ def generate_round(args, prompts, cases_text):
                     raise ValueError(f"Duplicate or unexpected saved trial: {trial}")
                 if not isinstance(row["reply"], str) or not row["reply"].strip():
                     raise ValueError(f"Empty saved reply: {trial}")
+                if "draft" in case:
+                    for key, value in case["provenance"].items():
+                        if row.get(key) != value:
+                            raise ValueError(f"Resume mismatch: {key}")
+                    if (
+                        row["arm"] == "baseline"
+                        and row["reply"] != case["draft"]["reply"]
+                    ):
+                        raise ValueError("Saved baseline differs from source draft")
                 passed[row["arm"]] += int(not failures(case, row["reply"]))
             log.seek(0, os.SEEK_END)
         else:
@@ -340,8 +429,22 @@ def main():
     parser.add_argument(
         "--regrade", type=Path, help="score a complete saved run offline"
     )
-    parser.add_argument("--baseline", type=Path, default=SOURCE)
+    parser.add_argument("--baseline", type=Path)
     parser.add_argument("--candidate", type=Path, help="full replacement prompt")
+    parser.add_argument(
+        "--edit-source", type=Path, help="paired run whose baseline drafts to edit"
+    )
+    parser.add_argument(
+        "--editor", type=Path, help="system prompt for the editing pass"
+    )
+    parser.add_argument(
+        "--source-provider",
+        choices=["claude", "codex", "chat"],
+        help="expected original provider for cross-model editing",
+    )
+    parser.add_argument(
+        "--source-model", help="expected original model for cross-model editing"
+    )
     parser.add_argument("--repeat", type=int, default=2)
     parser.add_argument("--output", type=Path, help="new JSONL file")
     parser.add_argument(
@@ -363,9 +466,18 @@ def main():
         return
     if not args.model or not args.output:
         parser.error("generation requires --model and --output")
-    prompts = {"baseline": args.baseline.read_text(encoding="utf-8")}
-    if args.candidate:
-        prompts["candidate"] = args.candidate.read_text(encoding="utf-8")
+    if (args.source_model or args.source_provider) and not args.edit_source:
+        parser.error("source model and provider apply only to editing")
+    if args.edit_source or args.editor:
+        if not (args.edit_source and args.editor) or args.baseline or args.candidate:
+            parser.error(
+                "use --edit-source and --editor together, without --baseline or --candidate"
+            )
+        prompts = {"baseline": "", "candidate": args.editor.read_text(encoding="utf-8")}
+    else:
+        prompts = {"baseline": (args.baseline or SOURCE).read_text(encoding="utf-8")}
+        if args.candidate:
+            prompts["candidate"] = args.candidate.read_text(encoding="utf-8")
     cases_text = args.suite.read_text(encoding="utf-8")
     started = time.monotonic()
     passed, total = generate_round(args, prompts, cases_text)

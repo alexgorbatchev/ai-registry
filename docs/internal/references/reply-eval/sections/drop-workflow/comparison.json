@@ -1,0 +1,7 @@
+{
+  "label": "All eight minus five work sections",
+  "baseline": "all",
+  "candidate": "communication-only",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

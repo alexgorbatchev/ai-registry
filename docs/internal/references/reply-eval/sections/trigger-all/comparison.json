@@ -1,5 +1,5 @@
 {
-  "label": "Add All eight blocks",
+  "label": "Add all eight blocks",
   "baseline": "v3",
   "candidate": "all",
   "suite": "sections/triggers.json",

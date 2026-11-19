@@ -1,0 +1,7 @@
+{
+  "label": "Deployed minus Personality",
+  "baseline": "deployed",
+  "candidate": "deployed-without-personality",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

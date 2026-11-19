@@ -1,0 +1,431 @@
+[
+  {
+    "case": "parser-handoff",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "ef140bdf4693296ebb80cad28e38ca55a97c12d12132fec87977456231a4899d",
+    "judge_log_id": "d70e8b2a-58c5-45d6-b7e8-902715330a16",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a6 reports empty-comment support and the passing test. a7 separately offers the whitespace-only check.",
+        "reply_sha256": "39fdfafbb43c391f4761b99f58812ec991dec952114b15e2ff0bdea72b320afe",
+        "graded_trials": [
+          "3f21f753-542e-42e5-bb0f-450dcc16a84c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a6 reports that the parser accepts an empty comments field and that the test passed. a7 offers the requested next check.",
+        "reply_sha256": "98c0578145e472f4f08519cc323da362d4aad9b5de077ce56c935cfb59460718",
+        "graded_trials": [
+          "47729df0-74d3-472b-92d9-79dc7673575c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a6 reports the completed change and passing test. a7 offers to check how the parser handles whitespace-only comments.",
+        "reply_sha256": "68883c3eb7a50693d55651c347200a188d574f744be862d1a6db5ac3a7d21556",
+        "graded_trials": [
+          "acb05629-2a67-454e-ad52-0a0f7b737cd9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a6 reports the change and passing test. The comparison in a7 clearly asks whether whitespace-only comments receive the same treatment as empty comments.",
+        "reply_sha256": "5dcc946270143b63613a7c50dbf016bea87ba8261396dee7969c01312483be96",
+        "graded_trials": [
+          "80920715-c5b0-4419-860f-3511b37e2fa9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a6 reports the completed change and passing test. The brief a7 offer identifies exactly what to check next.",
+        "reply_sha256": "fc0ad0571f46ce3c78f26c3b3ae9c1e86f5fb897f68f36b8a475e4752110e5a4",
+        "graded_trials": [
+          "e09f4067-52d6-4f50-b874-dd0991eb0375",
+          "19aae4d6-30c7-4deb-b1a9-156f5681566c",
+          "382d4563-bfda-40fe-b4f9-d1d01c330a22",
+          "b025a70a-60c0-4f0f-b07d-d5888d9b9800"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "publish-manifest",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "056843c9c98b02eb808bac7132e3855d06585d5ec5bf54ce2e98126ce94e1543",
+    "judge_log_id": "a442d920-c8a4-4b99-b49f-f7069a9e41fe",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both release reasons are correct. The claim that a pending upload would return a 404 or a partial file assumes server behavior the request does not establish. The retry and rollback instructions are unsolicited.",
+        "reply_sha256": "93e43d618044b8651639375271cf6af65bdde314fcb8dd2b24bb309410f540ba",
+        "graded_trials": [
+          "0f24a24f-45d6-4a6b-8348-7ef2797b8f60"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains why a pending upload can cause a 404 and why an on-demand request from an older manifest still needs its original URL.",
+        "reply_sha256": "6c5d4ccc7386e83c09502bc08c2caa5d2086c5f3ab4d9252de9504eacb33274e",
+        "graded_trials": [
+          "1829a498-a396-41b0-9aa5-0093a271783c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Connects upload order to file availability and uses a delayed script request to explain why old filenames must keep working.",
+        "reply_sha256": "49f384781e892ad83033fcfd014ce3dbbd03d7f134d47046d8e3b607a6e53995",
+        "graded_trials": [
+          "7c6cf196-6701-416f-a208-87ef23b8832e"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both reasons are present, but the process does not guarantee that users never see mixed versions or that caches can never serve stale files. The rollback procedure is unsolicited, and the closing paragraph repeats the upload rationale.",
+        "reply_sha256": "abff9af8898a835ed611296f5308d9fbbf118ef94a8f87d98805c82b168c3e7b",
+        "graded_trials": [
+          "78814b35-9028-4c0e-8116-57ac14a1e43e"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The claim that visitors see the new release after the switch overlooks the stated exception for browsers holding the previous manifest. The final paragraph adds an unsolicited rollback procedure.",
+        "reply_sha256": "a7571e48b34e124722de533aa9e24f8b5506aa53167fc6bd98e5ecb8ed06963d",
+        "graded_trials": [
+          "28371971-a32f-4d5c-8be1-dbf4344b49e7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains both timing requirements directly. New URLs must work when the new manifest appears, and old URLs must still work for later requests.",
+        "reply_sha256": "2ae7dec6060141f40bcd407e0e2b80db898e9e1fb1f02c585dbd677b033b6255",
+        "graded_trials": [
+          "46af6722-5460-4866-b376-da646731d652"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains when a new manifest can expose a pending upload and how a browser using the previous manifest can request an old script after the switch.",
+        "reply_sha256": "587be9ff5bdcd50ba654b323fc6bb7fe044d7a234ce8c3ffd615f00df75f3150",
+        "graded_trials": [
+          "93daa8ae-90fc-429c-b350-6c01f5739137"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both reasons are present, but the single-write implementation, all-at-once rollout, and absolute cache guarantee are unsupported. The rollback instructions and closing checklist add unsolicited procedures, including a verification requirement.",
+        "reply_sha256": "86536897a81ee8c9a3bdbe26d36b3b6cb1fd0df32a6e30938a27d0885dbfebdb",
+        "graded_trials": [
+          "1f7be279-aefe-4f8e-85ea-81c855367d60"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "queue-drain",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "2251289eb1e74fffeae25e99f793591cb083c7bf45ec24b86fb0584b2c2e8bc4",
+    "judge_log_id": "0a0e03b4-5cba-463f-9ea3-c62d270d3a4b",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": false,
+        "reason": "**f1** groups two distinct findings under one ID: backlog clearance and normal processing of new jobs.",
+        "reply_sha256": "6345897c5507786437f4fb2ac3baf9ab59e70b7db5c204a97400e2e14fd9ca58",
+        "graded_trials": [
+          "a28adaf7-33cf-46b4-80bc-7348d8acbc5f",
+          "15b8909a-e372-419d-ba74-565c6b923da9"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "The cause is unknown, but the request does not establish that an investigation is ongoing.",
+        "reply_sha256": "bccc90f9997b18b1832ca253b453cb809b7ca92ee3da61a76d8720055b3a4e41",
+        "graded_trials": [
+          "0a4bc7e0-beb2-4b0a-95f3-5de21b6dc588"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The reply asserts an ongoing investigation without evidence and adds an unsolicited promise to post an update. That offer lacks its own bold ID.",
+        "reply_sha256": "2c2991f098313f86a0ce5bc2bfb9d89d168a41013565e6820eeef6b9226ddd9f",
+        "graded_trials": [
+          "1c746801-d549-4900-abd7-1d62a844c48f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply accurately reports job status and the unknown cause, but the ongoing investigation is unconfirmed.",
+        "reply_sha256": "ae4a0f3feef407305f6049443ce25ec662caae1d6f845666c2a495c8b17c641a",
+        "graded_trials": [
+          "b2c01f0c-3902-4d42-9aec-cd9a5128a004"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The ongoing investigation is unconfirmed. The reply states backlog clearance twice and adds an unsolicited promise to update the lead without giving that offer its own bold ID.",
+        "reply_sha256": "0cb7ac3e19d2822e68277ee37c2e0fafa8714522c263117eb6a99d086e3e2e60",
+        "graded_trials": [
+          "34b4428c-0289-4fea-b42a-e654dee112dd"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": false,
+        "reason": "The two sentences under **f1** report distinct findings about delayed jobs and new jobs. Each needs its own ID.",
+        "reply_sha256": "619a8690a00b9f9f541ab18a89f2c6ddd13b3e17507b99765e6d14d37d367fcf",
+        "graded_trials": [
+          "dd2cd1be-4486-4e0d-a4da-9a4a0fb9fa39"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The update gives each of the three supplied facts its own bold ID and adds no unsupported claims or commitments.",
+        "reply_sha256": "c5b899be70b3f9a3f44409c4d454578905c07c6c94c6fef221cc867c690c2c43",
+        "graded_trials": [
+          "619c8bf0-ead4-461d-90b4-49e0e13ab50f"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "read-only-role",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "9218b0e86514ccb5bdda5dce8236528b8f903dd47829276f6d0f5426733bedcc",
+    "judge_log_id": "2369a9f4-585b-4c88-9fcb-b5528426d260",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Scout is the role the guide identifies for viewing runs. The one-word answer directly resolves the question and needs no bold ID.",
+        "reply_sha256": "709d5d4697374cc111edee516850e20c08fd9cf88b082dbc9310d58c6f9b883f",
+        "graded_trials": [
+          "47cc3572-7836-44a4-b9a4-242f4115efd0",
+          "85f1e417-29b0-431d-9603-db162c5c8485",
+          "b2215e6f-c9e1-46cf-877c-7123552ef071",
+          "95a2a97c-63bc-471f-960d-e4eea14d335a",
+          "a94fd308-4fa1-478b-adaf-736e0b247e00",
+          "7588a276-9958-4e04-936a-b7de88e909c2",
+          "bf7fb408-e91b-49f1-82a3-93e2983986dc",
+          "a87114f1-8c06-4064-96e0-c54848136876"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "restore-preview",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "892b37eefd37f4b47e206b799395ac295e6378943b1d948ad5cb3991193c1505",
+    "judge_log_id": "0f4f9a11-ae25-4872-8a53-54c5c4a3e96e",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The advice to check the list and save edited files adds an unsolicited procedure.",
+        "reply_sha256": "e6e5780c406f96ab52dfcaaba055f8ea75eae81f0f646b488861e1d682ccc2e0",
+        "graded_trials": [
+          "795d4a68-e20d-4525-ae4e-cf78653ae221"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It explains that preview leaves disk unchanged and restore replaces even newer local versions.",
+        "reply_sha256": "d4358541e675877162178d110dafae216c3b9090216435ecb241c62253855127",
+        "graded_trials": [
+          "592336bf-8337-4ac0-bda3-2e9a294b889c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It covers both operations and explains the loss of unbacked-up edits.",
+        "reply_sha256": "6ee3f381cfdf53a82c3e257589483a1d2a787bc7f0fc9803e7c255f08d3bc415",
+        "graded_trials": [
+          "cf87cace-7892-4039-8cf8-d4ce683c8f93"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The instruction to check the preview list for edits adds an unsolicited step.",
+        "reply_sha256": "20718f3a93dacd240058ca0c142bcf41eac02c5cbc24becf733c9f3a72faec54",
+        "graded_trials": [
+          "dc039d32-c09f-47aa-8df2-9093822e0969"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It covers the unchanged disk during preview and the loss of newer edits during restore.",
+        "reply_sha256": "6d663ca2eb8003ce808d1fa37aa30771335d479be5693c751b25b4cd277d94e3",
+        "graded_trials": [
+          "df8ad11b-3933-4662-b6f1-6c376b69aa7c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It directly states both effects and explicitly covers newer local versions.",
+        "reply_sha256": "9241bc54f22e86fe06ed8b7ef35f71ad20b1ae8521f483f80e817e0c033375dc",
+        "graded_trials": [
+          "7a84e413-2448-4b1e-b434-f13ee900f89e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It explains what preview lists, what restore replaces, and what happens to newer edits.",
+        "reply_sha256": "2c49d5a29ce7fec223ecdba76ac8e3eb46e59ef92d2e901b92b11fc0c2bbbbda",
+        "graded_trials": [
+          "dd1b7373-4abc-4850-a83a-2303b570f3dd"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It covers both effects. The conditional about a separate copy qualifies when newer changes are lost.",
+        "reply_sha256": "93e715fc1b34c84a62dde5388e0c480890f825652b67d2922570bcacef185408",
+        "graded_trials": [
+          "d7229c00-97fd-4a7b-828d-7e0ddac4bd5b"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "unlabelled-exit",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "a11b68ad4c2eb575d663eed658d9a21b39e2e41ce2f1527009c38aefb14b4fab",
+    "judge_log_id": "23d47100-abc8-41d7-9874-fd4df87278f5",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States the exact count and the limit on identification.",
+        "reply_sha256": "6c429979e0fbf10b227147b79fd0436d4cd7b2ba7f6923394211a8d7bdc631ea",
+        "graded_trials": [
+          "1bffdc03-54e5-4241-ab49-89c91d5debe7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Identifies both possible workers and states that exactly one exit was recorded.",
+        "reply_sha256": "63ca8b7b2f7c2598ccb550fb3c94ae03fca5ddfe104fc52832dc0016c8ff6f1f",
+        "graded_trials": [
+          "c8895556-1a50-435d-9f6f-04d28aeefff4"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The other worker could have exited between logging and reading. The prompt also does not say the record lacks a timestamp. The discussion of timing and clean shutdown is unnecessary.",
+        "reply_sha256": "e74d41bdda8d5f0f0edd2644f8719cbc38396cbca98800ce25920bfd6ed9a739",
+        "graded_trials": [
+          "67b97655-2631-47cf-be0c-b4375364030c"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It states the exact recorded count but makes the exact actual count conditional. The discussion of monitor coverage is unnecessary under the supplied premise.",
+        "reply_sha256": "1e39c57001dd108ccb94d8aa7c58107101e6f354d4529a5bf549443ad3cd6c3b",
+        "graded_trials": [
+          "d15630d8-c9df-4845-8819-1b3dff1a93a5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States that exactly one worker exited and its identity is unknown.",
+        "reply_sha256": "a35c389c9a8697cbbf4513a6ca9c6ff8fe3468812d171eeb9e8d0f7ca8367195",
+        "graded_trials": [
+          "417f2dcb-142f-4f6b-bf69-6430646a965c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly answers the identity question and states the certain count.",
+        "reply_sha256": "c8dd354caf50c53afd91360f3bc5075c1e1182e0bb68ddd03b4d894e1522d1c6",
+        "graded_trials": [
+          "e8242843-76a7-46ba-9c28-76c502f2c874"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The missed-exit scenario weakens the accepted conclusion from exactly one exit to at least one and introduces an unnecessary alternative.",
+        "reply_sha256": "4e1d79a900f7a15da2cc0c27fcc167ccbe935632b0c903917504ab7f0ffefe0d",
+        "graded_trials": [
+          "96eef0ff-f292-401c-aaad-f6be82b2a088"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It makes the exact exit count conditional on monitor coverage. That qualification is unnecessary, although it correctly leaves identity, current status, and cause unknown.",
+        "reply_sha256": "cafa8ac5c7537a50d251c6c53f01e5e596dc0bb9ffc88a0c523255b1fd19c331",
+        "graded_trials": [
+          "74a7b83c-191b-4549-94ab-4dab4e81c8d8"
+        ]
+      }
+    ]
+  }
+]

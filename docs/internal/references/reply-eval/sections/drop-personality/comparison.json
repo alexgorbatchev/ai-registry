@@ -1,0 +1,7 @@
+{
+  "label": "All eight minus Personality",
+  "baseline": "all",
+  "candidate": "without-personality",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

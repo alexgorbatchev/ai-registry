@@ -1,0 +1,7 @@
+{
+  "label": "Add Implementation integrity",
+  "baseline": "v3",
+  "candidate": "integrity",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

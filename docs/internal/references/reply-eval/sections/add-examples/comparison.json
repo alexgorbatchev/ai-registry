@@ -1,0 +1,7 @@
+{
+  "label": "Add Closing examples",
+  "baseline": "v3",
+  "candidate": "examples",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

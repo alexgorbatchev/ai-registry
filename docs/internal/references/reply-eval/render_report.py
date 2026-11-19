@@ -300,7 +300,7 @@ def candidate_wording(patch, label):
     )
 
 
-def ledger(run, judgments, source_directory="rounds"):
+def ledger(run, judgments, source_directory="rounds", title=None, anchor=None):
     header = run["header"]
     rows = run["rows"]
     entries = []
@@ -330,17 +330,133 @@ def ledger(run, judgments, source_directory="rounds"):
             f'<details class="case"><summary>{escape(case["name"].replace("-", " ").title())}</summary>'
             f'<p class="prompt">{escape(case["prompt"])}</p>{"".join(replies) or "<p>No replies recorded.</p>"}</details>'
         )
-    title = f"Round {run['file'].split('-')[0]} · {model_label(run['file'].split('-')[0], header['model'])}"
+    title = title or f"Round {run['file'].split('-')[0]} · {model_label(run['file'].split('-')[0], header['model'])}"
+    anchor_attr = f' id="{escape(anchor, quote=True)}"' if anchor else ""
     hashes = " · ".join(
         f"{escape(arm)} <code>{escape(digest)}</code>"
         for arm, digest in header["prompt_sha256"].items()
     )
     return (
-        f'<details class="record"><summary>{escape(title)} · {len(rows)}/{run["planned"]} replies</summary>'
+        f'<details class="record"{anchor_attr}><summary>{escape(title)} · {len(rows)}/{run["planned"]} replies</summary>'
         f'<p class="refs"><a href="{source_directory}/{escape(run["file"], quote=True)}">Scored JSONL</a> · '
         f"{escape(header['started_utc'])} · requested {escape(header['model'])}</p>"
         f'<div class="cases">{"".join(entries)}</div><p class="refs">Prompt SHA-256 · {hashes}</p></details>'
     )
+
+
+def system_section():
+    rows = []
+    examples = []
+    handoff = ""
+    total = 0
+    for path in sorted((HERE / "sections").glob("*/comparison.json")):
+        comparison = json.loads(path.read_text())
+        directory = path.parent
+        prefix = f"sections/{directory.name}"
+        reviews = json.loads((directory / "judgments.json").read_text())
+        grades = {
+            trial: grade
+            for review in reviews
+            for grade in review["judgments"]
+            for trial in grade["graded_trials"]
+        }
+        cells = []
+        for model in ("astra", "opus"):
+            filename = f"{directory.name}-{model}.jsonl"
+            header, *answers = map(
+                json.loads, (directory / filename).read_text().splitlines()
+            )
+            anchor = f"answers-{directory.name}-{model}"
+            assessments = {}
+            for r in answers:
+                grade = grades.pop(r["raw_log_id"])
+                key = (filename, r["case"], r["arm"], r["repetition"])
+                assessments[key] = {
+                    "pass": all(
+                        grade[k]
+                        for k in ("completeness", "concision", "addressability")
+                    ),
+                    "reason": grade["reason"],
+                }
+            if directory.name == "trigger-operating" and model == "opus":
+                sample = {
+                    r["arm"]: escape(r["reply"])
+                    for r in answers
+                    if r["case"] == "queue-ticket" and r["repetition"] == 1
+                }
+                handoff = (
+                    "<div class='review'><h4>Same receipt handoff · Opus 5.5</h4>"
+                    f"<p><b>Isolated rules</b> · {sample['baseline']}</p>"
+                    f"<p><b>With Operating Instructions</b> · {sample['candidate']}</p></div>"
+                )
+            cases = json.loads((HERE / comparison["suite"]).read_text())
+            title = f"{comparison['label']} · {comparison['suite_label']} · {MODELS[header['model']]}"
+            run = {
+                "header": header,
+                "file": filename,
+                "rows": answers,
+                "cases": cases,
+                "planned": len(cases) * header["repeat"] * 2,
+            }
+            examples.append(ledger(run, assessments, prefix, title, anchor))
+            id_cases = {c["name"] for c in cases if "labels" in c}
+            by_arm = []
+            for arm in ("baseline", "candidate"):
+                arm_rows = [r for r in answers if r["arm"] == arm]
+                passes = sum(
+                    assessments[(filename, r["case"], arm, r["repetition"])]["pass"]
+                    for r in arm_rows
+                )
+                explicit = [r for r in arm_rows if r["case"] in id_cases]
+                id_pass = sum(
+                    not any(
+                        issue.startswith(
+                            (
+                                "missing item prefix",
+                                "too many labeled items",
+                                "unlabeled opening",
+                            )
+                        )
+                        for issue in r["failed"]
+                    )
+                    for r in explicit
+                )
+                by_arm.append((passes, mean(r["words"] for r in arm_rows), id_pass))
+            (old, old_words, old_ids), (new, new_words, new_ids) = by_arm
+            cells.extend(
+                [
+                    f"<td><a href='#{anchor}'>{old} → {new}</a></td>",
+                    f"<td>{old_words:.1f} → {new_words:.1f}</td>",
+                    f"<td>{old_ids} → {new_ids} / {len(id_cases) * header['repeat']}</td>",
+                ]
+            )
+            total += len(answers)
+        if grades:
+            raise ValueError(f"Unmatched grades in {directory}")
+        rows.append(
+            f"<tr><th>{escape(comparison['label'])}</th><td>{escape(comparison['suite_label'])}</td>"
+            + "".join(cells)
+            + f"<td><a href='{prefix}/judgments.json'>Grades</a> · "
+            f"<a href='{prefix}/raw-index.json'>Logs¹</a></td></tr>"
+        )
+    if not rows:
+        return "", 0
+    html = (
+        "<section class='logs' id='system-sections'><h2 class='section-title'>Which system instructions affect replies?</h2>"
+        "<p>Operating Instructions added redundant handoff text. Personality added asides. Removing either recovered at most one Opus pass in a full prompt. All 336 replies with explicit ID pairs kept the expected numbers. Each arrow compares two prompts on the same six requests. Each model wrote two replies per request in each arm. "
+        "Scores are passes out of 12 for completeness, concision and addressability together. ID counts check required prefixes on requests that specify them. Select a score to read the replies.</p>"
+        + handoff
+        + "<div class='review replay-table'><table><thead><tr><th rowspan='2'>Comparison</th>"
+        "<th rowspan='2'>Suite</th><th colspan='3'>Astra 6.2</th><th colspan='3'>Opus 5.5</th>"
+        "<th rowspan='2'>Evidence</th></tr><tr><th>Passes</th><th>Mean words</th><th>IDs</th><th>Passes</th><th>Mean words</th><th>IDs</th></tr>"
+        "</thead><tbody>" + "".join(rows) + "</tbody></table></div>"
+        "<p class='refs'>¹ The index fingerprints the privately retained native logs. "
+        "<a href='sections/README.md'>Findings, prompt construction and reproduction</a></p>"
+        "<details class='record'><summary>Browse prompts, answers and judgments</summary>"
+        + "".join(examples)
+        + "</details></section>"
+    )
+    return html, total
 
 
 def tuning_section():
@@ -753,14 +869,16 @@ def render():
             f'<div class="models">{"".join(outcomes)}</div></section>'
         )
     replay_headline, replay_count, replay_html = replay_section(rounds)
+    sections_html, section_count = system_section()
     values = {
-        "REPLAY": tuning_section() + ablation_section() + replay_html,
+        "REPLAY": sections_html + tuning_section() + ablation_section() + replay_html,
         "ARCHIVE": highlight,
-        "HIGHLIGHT": replay_headline if replay_count else highlight,
+        "HIGHLIGHT": ("<h2>System section comparisons</h2><p class='verdict'>Opus averaged 45 words with the isolated rules and 83 with the deployed prompt on the same transfer cases.</p>"
+                      "<p><a href='#system-sections'>Compare passes, reply lengths and the original answers.</a></p>") if section_count else (replay_headline if replay_count else highlight),
         "COMPARISONS": comparisons,
         "WORDING": f'<section class="wording"><h2 class="section-title">Prompt wording</h2>{wording}'
         '<p><a href="../../../../system/system.md">Full shared prompt</a></p></section>',
-        "COUNT": str(replay_count),
+        "COUNT": str(section_count or replay_count),
         "REUSED": f"The ledger contains {total + reused} comparison rows, including {reused} reused baseline entries. The historical ledger counts each generation once after removing those copies."
         if reused
         else "",

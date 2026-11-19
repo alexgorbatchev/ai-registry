@@ -1,0 +1,7 @@
+{
+  "label": "All eight minus three communication blocks",
+  "baseline": "all",
+  "candidate": "workflow-only",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

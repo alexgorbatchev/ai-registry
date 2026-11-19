@@ -1,0 +1,7 @@
+{
+  "label": "Old reply rules and examples",
+  "baseline": "v3",
+  "candidate": "old-rules",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

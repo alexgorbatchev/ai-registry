@@ -1,0 +1,42 @@
+[
+  {
+    "name": "receipt-copy",
+    "prompt": "The intake sheet lists Amber for the original receipt, Cobalt for the duplicate and Moss for packing slips. Where should I put the duplicate?",
+    "concepts": ["cobalt"], "omit": ["Amber", "Moss"], "max_words": 14
+  },
+  {
+    "name": "inventory-boundary",
+    "prompt": "A crate has exactly eight red mugs and four blue ones. The register gives exactly one chipped mug and leaves its colour blank. What can I tell the shop about the count and colour of chipped mugs?",
+    "concepts": ["one|1", "chip", "unknown|unclear|unspecified|unrecorded|can.t|cannot|doesn.t|not|no |which"], "max_words": 55
+  },
+  {
+    "name": "reader-update",
+    "prompt": "Write the one-paragraph notice that riders will see. The north lift is back in service. The south lift is still closed. There is no reopening estimate for it. The technician's lunch arrived at noon.",
+    "concepts": ["north", "south", "closed|unavailable|out of service", "estimate|unknown|know|time|date|scheduled"], "omit": ["lunch"], "max_words": 50, "max_labels": 0
+  },
+  {
+    "name": "versioned-labels",
+    "prompt": "Explain both decisions to a new lab assistant. We print the lot number on the replacement label before peeling the old label off the vial. We keep the peeled label with the paper record until the supervisor signs. That way the vial can always be identified, and the supervisor can compare the two numbers. Why do we use that order and keep the peeled label?",
+    "concepts": ["(identif|trace|unlabel|unmark|lose track|mix.up|which lot)", "(compar|match|cross.check|verif|check).*(lot|number|label)|numbers? match", "supervisor"]
+  },
+  {
+    "name": "postcode-offer",
+    "prompt": "Earlier **a4** meant accepting a blank postcode, and **a5** meant retiring the old import. The postcode change now works on a blank-postcode sample. Give me the completion update and separately offer to check postcodes containing only spaces. The import is parked.",
+    "concepts": ["blank|empty", "sample|test|verified|check", "spaces|whitespace"], "omit": ["retiring", "parked"], "labels": ["a4", "a6|q1"], "max_labels": 2
+  },
+  {
+    "name": "duplicate-stamp",
+    "prompt": "Earlier **f2** was duplicate stamps on delivery notes and **f3** was margins on invoices. A second delivery note confirms the duplicate stamp. You also found that refunds print without a date. Update the stamp finding and report the new finding.",
+    "concepts": ["stamp", "second|another", "refund", "date"], "omit": ["margins"], "labels": ["f2", "f4"], "max_labels": 2
+  },
+  {
+    "name": "return-table",
+    "prompt": "Update my findings table. Keep the ID in the first column and give just the two requested rows. **f5** was a suspected missed bell on the return desk. A staffed trial confirmed the bell stays silent. **f6** is already taken by a sign issue. A separate new finding is that tickets print twice.",
+    "concepts": ["bell", "silent|sound|ring", "ticket", "twice|duplic|double"], "labels": ["f5","f7"], "max_labels": 2
+  },
+  {
+    "name": "nested-shifts",
+    "prompt": "Payment timing was **q2**, with nested option IDs **q2a1** for Friday and **q2a2** for Monday. For our decision log, restate just those two options with their original nested IDs. Friday adds a fee of £8. Monday costs nothing extra.",
+    "concepts": ["Friday", "Monday", "8", "nothing|free|no |zero|£0|without"], "labels": ["q2a1","q2a2"], "max_labels": 2
+  }
+]

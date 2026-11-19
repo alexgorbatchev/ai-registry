@@ -1,0 +1,10 @@
+{
+  "study": "evidence-study",
+  "label": "Fresh requests",
+  "baseline": "evidence-control",
+  "candidate": "evidence-ending",
+  "suite": "sections/evidence-fresh.json",
+  "suite_label": "Fresh",
+  "rubric": "sections/mode-rubric.json",
+  "rubric_sha256": "493b0498c7bac43ddc257dfddfa0a7f81c50820fec391bf16a6b1f1166db1c91"
+}

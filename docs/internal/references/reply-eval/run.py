@@ -119,6 +119,69 @@ def start_attempt(args, system, prompt):
     return attempt
 
 
+def native_command(args, system, attempt, home, sessions):
+    """Configure a fresh native home and return its launch environment and command."""
+    editing = bool(getattr(args, "edit_source", None))
+    env = os.environ.copy()
+    if args.provider == "codex":
+        original = Path(env.get("CODEX_HOME", Path.home() / ".codex"))
+        for name in ("auth.json", "models_cache.json"):
+            if (original / name).is_file():
+                shutil.copyfile(original / name, home / name)
+        env["CODEX_HOME"] = str(home)
+        (home / "sessions").symlink_to(sessions.resolve(), target_is_directory=True)
+        instructions = home / ("editor.md" if editing else "AGENTS.md")
+        instructions.write_text(system)
+        output = attempt / "reply.txt"
+        command = [
+            "codex",
+            "exec",
+            "--ignore-user-config",
+            "--disable",
+            "shell_tool",
+            "--skip-git-repo-check",
+            "-s",
+            "read-only",
+            "-m",
+            args.model,
+            "-c",
+            "project_doc_max_bytes=0",
+            "-c",
+            f"model_reasoning_effort={json.dumps(args.effort)}",
+        ]
+        if editing:
+            command.extend(
+                ["-c", f"model_instructions_file={json.dumps(str(instructions))}"]
+            )
+        command.extend(["-o", str(output.resolve()), "-"])
+    else:
+        env["CLAUDE_CONFIG_DIR"] = str(home)
+        (home / "projects").symlink_to(sessions.resolve(), target_is_directory=True)
+        command = [
+            os.environ.get("REPLY_EVAL_CLAUDE_BIN", "claude"),
+            "-p",
+            "--strict-mcp-config",
+            "--tools",
+            "",
+            "--disable-slash-commands",
+            "--setting-sources",
+            "user",
+            "--output-format",
+            "json",
+            "--model",
+            args.model,
+            "--effort",
+            args.effort,
+            "--debug-file",
+            str((attempt / "debug.log").resolve()),
+        ]
+        if editing:
+            command.extend(["--system-prompt", system])
+        else:
+            (home / "CLAUDE.md").write_text(system)
+    return env, command
+
+
 def generate_cli(args, system, prompt):
     attempt = start_attempt(args, system, prompt)
     sessions = attempt / "sessions"
@@ -129,63 +192,7 @@ def generate_cli(args, system, prompt):
         home = Path(scratch) / "home"
         work.mkdir()
         home.mkdir()
-        env = os.environ.copy()
-        if args.provider == "codex":
-            original = Path(env.get("CODEX_HOME", Path.home() / ".codex"))
-            for name in ("auth.json", "models_cache.json"):
-                if (original / name).is_file():
-                    shutil.copyfile(original / name, home / name)
-            env["CODEX_HOME"] = str(home)
-            (home / "sessions").symlink_to(sessions.resolve(), target_is_directory=True)
-            instructions = home / ("editor.md" if editing else "AGENTS.md")
-            instructions.write_text(system)
-            output = attempt / "reply.txt"
-            command = [
-                "codex",
-                "exec",
-                "--ignore-user-config",
-                "--disable",
-                "shell_tool",
-                "--skip-git-repo-check",
-                "-s",
-                "read-only",
-                "-m",
-                args.model,
-                "-c",
-                "project_doc_max_bytes=0",
-                "-c",
-                f"model_reasoning_effort={json.dumps(args.effort)}",
-            ]
-            if editing:
-                command.extend(
-                    ["-c", f"model_instructions_file={json.dumps(str(instructions))}"]
-                )
-            command.extend(["-o", str(output.resolve()), "-"])
-        else:
-            env["CLAUDE_CONFIG_DIR"] = str(home)
-            (home / "projects").symlink_to(sessions.resolve(), target_is_directory=True)
-            command = [
-                os.environ.get("REPLY_EVAL_CLAUDE_BIN", "claude"),
-                "-p",
-                "--strict-mcp-config",
-                "--tools",
-                "",
-                "--disable-slash-commands",
-                "--setting-sources",
-                "user",
-                "--output-format",
-                "json",
-                "--model",
-                args.model,
-                "--effort",
-                args.effort,
-                "--debug-file",
-                str((attempt / "debug.log").resolve()),
-            ]
-            if editing:
-                command.extend(["--system-prompt", system])
-            else:
-                (home / "CLAUDE.md").write_text(system)
+        env, command = native_command(args, system, attempt, home, sessions)
         with (
             (attempt / "stdout").open("wb") as stdout,
             (attempt / "stderr").open("wb") as stderr,
@@ -225,7 +232,7 @@ def generate_cli(args, system, prompt):
             ):
                 if f"{key}: {expected}" not in banner:
                     raise RuntimeError(f"Codex did not confirm {key} {expected}")
-            return output.read_text().strip(), [args.model], metrics
+            return (attempt / "reply.txt").read_text().strip(), [args.model], metrics
         data = json.loads((attempt / "stdout").read_bytes())
         if (
             data.get("is_error")
@@ -376,7 +383,7 @@ def evaluate(args, prompts, trial, case):
     started = time.monotonic()
     try:
         call_args = argparse.Namespace(**vars(args))
-        call_args.trial_metadata = dict(arm=arm, case=name, repetition=repetition)
+        call_args.trial_metadata = {"arm": arm, "case": name, "repetition": repetition}
         reply, models, metrics = generate(call_args, prompts[arm], prompt)
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError(f"{args.provider} timed out after {exc.timeout}s") from None

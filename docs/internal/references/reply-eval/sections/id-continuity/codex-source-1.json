@@ -1,0 +1,47 @@
+{
+  "provider": "codex",
+  "model": "gpt-6.2-astra",
+  "effort": "medium",
+  "arm": "source",
+  "repetition": 1,
+  "prompt_sha256": "51fa4db6bba94e6a392413b230a53f49ce3e74de9db4766aa8aee17512d36776",
+  "raw_log_id": "f0f0d98e-5096-4e55-aa4c-8856936ee358",
+  "replies": [
+    "**f1** The east cabinet has a sticky latch.\n\n**f2** The west cabinet has a bent hinge.",
+    "3 mm.",
+    "**f1** The east cabinet latch sticks only below 5 degrees.\n\n**f3** The new inspection found a torn seal on the south cabinet.",
+    "**f2** The west cabinet has a bent hinge.\n\n**f3** The south cabinet has a torn seal."
+  ],
+  "scores": {
+    "initial": true,
+    "lookup": true,
+    "update": true,
+    "recall": true,
+    "continuity": true,
+    "all_turns": true
+  },
+  "files": {
+    "1/ancestors.json": "90d7fd63f8afaccf6ebaafac68f868351be0550f84349b7b080923754bbe6c58",
+    "1/exit-code": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "1/reply.txt": "6b104ea77aa8ebe607cf903f8dd958caa0c59d4c0e25326e67e850c0b06733e9",
+    "1/stderr": "db11595913524cd1b004f6a6de4658317233db6fbc7174ca5dcfdf717347479c",
+    "1/stdout": "ef3ce09a8fc122f8e2d967613b6b6e4f257d38a78211e9a2dfe189fc5fcbe8ee",
+    "2/ancestors.json": "90d7fd63f8afaccf6ebaafac68f868351be0550f84349b7b080923754bbe6c58",
+    "2/exit-code": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "2/reply.txt": "7847ab3638156483810d4430f63cb5a79d4a0c57e0c88c7ae5962ed3189efc41",
+    "2/stderr": "ffb6210d4fcd21711f099fefaba8dbb36d2f4b21d09c7f079bc35cd0bc253dcb",
+    "2/stdout": "932811ce867eb60961b7f6c8c6de9c6d49a735dac0025162ed2596d178dbed4f",
+    "3/ancestors.json": "90d7fd63f8afaccf6ebaafac68f868351be0550f84349b7b080923754bbe6c58",
+    "3/exit-code": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "3/reply.txt": "0f5095e4a2affe244d39b3f314eca3ee5dcae1bb0cec35576e4d8ef22e53a3b5",
+    "3/stderr": "0abb6d922065b150ee53648f62033d2cb4c12abd50a23e0cb67877a58ec7bd2c",
+    "3/stdout": "26f4be3df95e2144771372f145e074330737e7d5402642cf4dc75c90ce090ace",
+    "4/ancestors.json": "90d7fd63f8afaccf6ebaafac68f868351be0550f84349b7b080923754bbe6c58",
+    "4/exit-code": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "4/reply.txt": "7a26fa2bb75892ea18cda0f8185c4bb740569e91112606d9da59fd8d7531c69b",
+    "4/stderr": "7d08602d3c8784864e3b42dfa6c13173e64436fb7614581edde64b6f758e77e8",
+    "4/stdout": "d106d4c791b5174b4af1b53ffd29e5b816234a46122e8526b494d2a17a843c51",
+    "request.json": "2397c89da5a496fd7200abadc997c95aec0fdb91cffe9eb02875042ae846aa87",
+    "sessions/2026/11/19/rollout-2026-11-19T14-42-27-01a1f5f9-aef9-7ca0-96d5-38c5333360d7.jsonl": "d778a184748c318f1e3f1c1fb41ad88f05f8e69ee54b88e9e9133cc4641c6ee0"
+  }
+}

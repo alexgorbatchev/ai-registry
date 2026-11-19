@@ -343,6 +343,85 @@ def ledger(run, judgments):
     )
 
 
+def replay_section():
+    sections = []
+    count = 0
+    latest = ""
+    for directory in sorted((HERE / "replay").glob("*")):
+        number = directory.name
+        prefix = f"replay/{number}"
+        reviews = json.loads((directory / "judgments.json").read_text())
+        grades = {
+            trial: judgment
+            for case in reviews
+            for judgment in case["judgments"]
+            for trial in judgment["graded_trials"]
+        }
+        pairs = []
+        rows_html = []
+        for alias in ("astra", "opus"):
+            filename = f"{number}-{alias}.jsonl"
+            header, *rows = map(
+                json.loads, (directory / filename).read_text().splitlines()
+            )
+            model = MODELS[header["model"]]
+            count += len(rows)
+            scores = []
+            for arm in ("baseline", "candidate"):
+                subset = [r for r in rows if r["arm"] == arm]
+                judgments = [grades.pop(r["raw_log_id"]) for r in subset]
+                passed = sum(
+                    all(j[k] for k in ("concision", "completeness", "addressability"))
+                    for j in judgments
+                )
+                scores.append((passed, len(subset)))
+                cells = [
+                    f"{passed}/{len(subset)}",
+                    str(sum(not r["failed"] for r in subset)),
+                    f"{mean(r['words'] for r in subset):.1f}",
+                ]
+                cells.extend(
+                    str(sum(j[k] for j in judgments))
+                    for k in ("completeness", "concision", "addressability")
+                )
+                rows_html.append(
+                    f"<tr><th>{model}</th><td>{arm.title()}</td>"
+                    + "".join(f"<td>{v}</td>" for v in cells)
+                    + "</tr>"
+                )
+            pairs.append(f"{model} {scores[0][0]}/{scores[0][1]} → {scores[1][0]}/{scores[1][1]}")
+        if grades:
+            raise ValueError(f"Unmatched judgments in replay {number}")
+        latest = " · ".join(pairs)
+        sections.append(
+            f"<details class='record'><summary>Round {number} · {latest}</summary>"
+            "<div class='review replay-table'><table><thead><tr><th>Model</th><th>Arm</th><th>Review passes</th>"
+            "<th>Automatic passes</th><th>Mean words</th><th>Complete</th><th>Concise</th><th>IDs</th>"
+            f"</tr></thead><tbody>{''.join(rows_html)}</tbody></table></div><p class='refs'>"
+            f'<a href="{prefix}/{number}-astra.jsonl">Astra replies</a> · '
+            f'<a href="{prefix}/{number}-opus.jsonl">Opus replies</a> · '
+            f'<a href="{prefix}/judgments.json">Judgments by reply</a> · '
+            f'<a href="{prefix}/raw-index.json">Native transcript fingerprints</a></p></details>'
+        )
+    headline = (
+        f"<h2>Isolated single-pass replay</h2><p class='verdict'>Latest comparison · {latest}</p>"
+        "<p>Each scored reply has a retained native transcript confirming the intended instruction file. "
+        "Passes require completeness, concision and correct reply IDs.</p>"
+    )
+    return (
+        headline,
+        count,
+        (
+            "<section class='logs'><h2 class='section-title'>Verified rounds</h2>"
+            "<p>Baseline → candidate on the same cases. Each case ran twice per arm. "
+            "One Astra 6.2 reviewer saw shuffled answers without model or arm labels. The mechanical checks and reviewer can disagree. "
+            "For example, in round 01 the reviewer accepted a completion update listing passing checks that the fixture explicitly excludes.</p>"
+            + "".join(sections)
+            + "</section>"
+        ),
+    )
+
+
 def render():
     rounds = load_runs()
     reviews = load_reviews()
@@ -543,13 +622,16 @@ def render():
             '<section class="wording"><h2 class="section-title">Single-pass wording trials</h2>'
             f'<div class="models">{"".join(outcomes)}</div></section>'
         )
+    replay_headline, replay_count, replay_html = replay_section()
     values = {
-        "HIGHLIGHT": highlight,
+        "REPLAY": replay_html,
+        "ARCHIVE": highlight,
+        "HIGHLIGHT": replay_headline if replay_count else highlight,
         "COMPARISONS": comparisons,
         "WORDING": f'<section class="wording"><h2 class="section-title">Prompt wording</h2>{wording}'
         '<p><a href="../../../../system/system.md">Full shared prompt</a></p></section>',
-        "COUNT": str(total),
-        "REUSED": f"The ledger contains {total + reused} comparison rows, including {reused} reused baseline entries. The headline counts each generation once."
+        "COUNT": str(replay_count),
+        "REUSED": f"The ledger contains {total + reused} comparison rows, including {reused} reused baseline entries. The historical ledger counts each generation once after removing those copies."
         if reused
         else "",
         "ROUNDS": "\n".join(cards),

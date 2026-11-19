@@ -455,6 +455,7 @@
       .assessment {
         font-size: 0.88rem;
       }
+      .replay-table { overflow-x: auto; }
       .review table {
         font-size: 0.84rem;
         border-collapse: collapse;
@@ -528,7 +529,12 @@
       </section>
       <section class="overview" aria-label="Featured comparison">
         <div>@@HIGHLIGHT@@</div>
-        <div class="stat"><strong>@@COUNT@@</strong><span>generated replies</span></div>
+        <div class="stat"><strong>@@COUNT@@</strong><span>verified replies</span></div>
+      </section>
+      @@REPLAY@@
+      <section class="wording"><h2 class="section-title">Historical runs</h2>
+        <p>The original CLI trials discarded native transcripts. The Codex harness could load installed instructions alongside each test prompt. These results cannot isolate the effect of the selected prompt on Codex. The Claude runs used a different loading path.</p>
+        <details><summary>Historical editor comparison</summary>@@ARCHIVE@@</details>
       </section>
       @@COMPARISONS@@
       @@WORDING@@

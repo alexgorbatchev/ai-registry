@@ -455,6 +455,7 @@
       .assessment {
         font-size: 0.88rem;
       }
+      .replay-table { overflow-x: auto; }
       .review table {
         font-size: 0.84rem;
         border-collapse: collapse;
@@ -527,8 +528,13 @@
         </div>
       </section>
       <section class="overview" aria-label="Featured comparison">
-        <div><h2>Does a low-effort editing pass help?</h2><div class='review'><table><thead><tr><th>Draft model</th><th>Raw</th><th>Luna 6 edit</th><th>Haiku 5.5 edit</th></tr></thead><tbody><tr><th scope='row'>Opus 5.5</th><td>6/24</td><td>20/24</td><td>5/24</td></tr><tr><th scope='row'>Astra 6.2</th><td>21/24</td><td>19/24</td><td>10/24</td></tr></tbody></table></div><p>Each row uses the same drafts in all three columns. Counts show replies passing completeness, concision and ID review across 12 prompts repeated twice. Both editors used low effort. Editing runs only in this experiment.</p></div>
-        <div class="stat"><strong>712</strong><span>generated replies</span></div>
+        <div><h2>Isolated single-pass replay</h2><p class='verdict'>Latest comparison · Astra 6.2 12/12 → 12/12 · Opus 5.5 0/12 → 0/12</p><p>Each scored reply has a retained native transcript confirming the intended instruction file. Passes require completeness, concision and correct reply IDs.</p></div>
+        <div class="stat"><strong>48</strong><span>verified replies</span></div>
+      </section>
+      <section class='logs'><h2 class='section-title'>Verified rounds</h2><p>Baseline → candidate on the same cases. Each case ran twice per arm. One Astra 6.2 reviewer saw shuffled answers without model or arm labels. The mechanical checks and reviewer can disagree. For example, in round 01 the reviewer accepted a completion update listing passing checks that the fixture explicitly excludes.</p><details class='record'><summary>Round 01 · Astra 6.2 12/12 → 12/12 · Opus 5.5 0/12 → 0/12</summary><div class='review replay-table'><table><thead><tr><th>Model</th><th>Arm</th><th>Review passes</th><th>Automatic passes</th><th>Mean words</th><th>Complete</th><th>Concise</th><th>IDs</th></tr></thead><tbody><tr><th>Astra 6.2</th><td>Baseline</td><td>12/12</td><td>8</td><td>31.9</td><td>12</td><td>12</td><td>12</td></tr><tr><th>Astra 6.2</th><td>Candidate</td><td>12/12</td><td>6</td><td>30.6</td><td>12</td><td>12</td><td>12</td></tr><tr><th>Opus 5.5</th><td>Baseline</td><td>0/12</td><td>7</td><td>141.0</td><td>0</td><td>1</td><td>8</td></tr><tr><th>Opus 5.5</th><td>Candidate</td><td>0/12</td><td>4</td><td>128.9</td><td>1</td><td>0</td><td>10</td></tr></tbody></table></div><p class='refs'><a href="replay/01/01-astra.jsonl">Astra replies</a> · <a href="replay/01/01-opus.jsonl">Opus replies</a> · <a href="replay/01/judgments.json">Judgments by reply</a> · <a href="replay/01/raw-index.json">Native transcript fingerprints</a></p></details></section>
+      <section class="wording"><h2 class="section-title">Historical runs</h2>
+        <p>The original CLI trials discarded native transcripts. The Codex harness could load installed instructions alongside each test prompt. These results cannot isolate the effect of the selected prompt on Codex. The Claude runs used a different loading path.</p>
+        <details><summary>Historical editor comparison</summary><h2>Does a low-effort editing pass help?</h2><div class='review'><table><thead><tr><th>Draft model</th><th>Raw</th><th>Luna 6 edit</th><th>Haiku 5.5 edit</th></tr></thead><tbody><tr><th scope='row'>Opus 5.5</th><td>6/24</td><td>20/24</td><td>5/24</td></tr><tr><th scope='row'>Astra 6.2</th><td>21/24</td><td>19/24</td><td>10/24</td></tr></tbody></table></div><p>Each row uses the same drafts in all three columns. Counts show replies passing completeness, concision and ID review across 12 prompts repeated twice. Both editors used low effort. Editing runs only in this experiment.</p></details>
       </section>
       <section class="wording"><h2 class="section-title">Single-pass wording trials</h2><div class="models"><article class="model"><h4><a href="#round-10">Round 10 · Revision 09</a></h4><p class="meta">Revision 06 → candidate · blind passes</p><p>Opus 5.5 2/12 → 2/12 · Astra 6.2 9/12 → 11/12</p><p class="length">The candidate missed the promotion rule. Opus joint passes changed by +0, below the required gain of three. Opus 5.5 correctly addressed replies fell from 9 to 7.</p></article><article class="model"><h4><a href="#round-12">Round 12 · Revision 11</a></h4><p class="meta">Revision 06 → candidate · blind passes</p><p>Opus 5.5 4/12 → 7/12 · Astra 6.2 12/12 → 12/12</p><p class="length">The candidate met the numerical promotion rule.</p></article></div></section>
       <section class="wording"><h2 class="section-title">Prompt wording</h2><details><summary>Revision 06 · adopted in aa692f8</summary><pre>Use a dry, cynical, sarcastic tone, roughly Gilfoyle from Silicon Valley: technically sharp, understated, and unimpressed by bad engineering and human absurdity. Use wit, profanity and adult humor naturally when they sharpen a point the user needs. A plain factual answer already has the right tone. Never add a clause to perform the personality.
@@ -610,7 +616,7 @@ In conversation, begin each independent finding, action, decision, question or o
         <p>
           Each count shows replies passing every automatic check out of replies recorded. Each bar spans all
           planned replies. Hatching marks missing replies. Length is the mean whitespace word count. A brief
-          answer can still miss a required fact or put the wrong ID on a finding. The ledger contains 880 comparison rows, including 168 reused baseline entries. The headline counts each generation once.
+          answer can still miss a required fact or put the wrong ID on a finding. The ledger contains 880 comparison rows, including 168 reused baseline entries. The historical ledger counts each generation once after removing those copies.
         </p>
         <p>
           A blind AI reviewer judged completeness, concision and whether each reply ID identified the right

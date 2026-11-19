@@ -11,3 +11,9 @@ Independently test the original prompt and the replacement ending in four fresh 
 ## Separating the replacement text from its examples
 
 The initial full replacement improved the Opus operational score. Two additional operational rounds cross the old and new prose with the old and new example lists. Each uses its own fresh, unedited full-prompt control. This checks whether either half alone can produce the observed improvement. Compare the receipt handoff and the two-finding case as well as total passes. The strongest smaller candidate by Opus operational score (ties favor prose) gets a separate fresh head-to-head with the complete replacement on transfer.
+
+## Confirmation after the first fresh-suite miss
+
+The judge for the first fresh suite interpreted a second fleck as a new subject, contradicting the fixture’s required **f7** and **f9**. Retain the original blind grades. For a sensitivity check on that round only, replace just addressability on the glass case with its published structural ID check; keep completeness, concision and all other grades. Subsequent trials use the same rubric with explicit case interpretations for the two corroborating-sample requests.
+
+The [next ending](source-ending.md) asks the model to edit the supplied record, gives a complete two-person handoff, and explicitly defines how corroborating evidence attaches to a finding. Test it against the current full prompt on operations, transfer, the first fresh suite and [six further requests](source-fresh.json) frozen before scoring. Report every suite and both models. To qualify as a general repair, it must improve Opus joint passes on operations and both fresh suites, match or improve transfer, preserve the fresh suites’ explicit IDs, and match or improve Astra overall. Reusing a suite after examining its errors makes it development evidence. Only the six further requests are new to this test.

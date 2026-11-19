@@ -1,0 +1,13 @@
+{
+  "completeness": "Answer the request accurately with the necessary evidence, consequences or reasons. Reject invented facts, commitments and claims of unperformed work.",
+  "concision": "Dry humor and sarcastic asides in conversation are desired and are free on this criterion. Judge the substantive information: reject redundant status bookkeeping, unsolicited procedures, unsupported claims and irrelevant facts. A requested diagnostic procedure or full work handoff earns credit for its necessary detail. Respect the recipient's voice in a requested draft.",
+  "addressability": "Bind each independently addressable finding, action or offer to its own bold ID at the start. Preserve supplied IDs and use the next free one for a new point. Supporting evidence, asides and steps of a single requested explanation do not need new IDs. A direct answer or a requested draft can stand alone.",
+  "case_acceptance": {
+    "parked-repair": "The passing keyboard test is supplied evidence for the Save fix. Credit it under a2. The parked a3 review is separate. Require the touchscreen offer to have its own ID.",
+    "queue-ticket": "The receipt job is complete and its PDF opens. A second statement that no work remains repeats completion. Faithfully paraphrasing the observed result is acceptable; claiming the author performed the check is unsupported.",
+    "worker-evidence": "The worker stopped sending heartbeats at 14:05 and OOM is unconfirmed. The missing termination record explains the limit. A catalog of possible causes or diagnostic procedures is unrequested.",
+    "commit-permission": "Local commit, regression passed, publication on hold. Do not infer the push state or turn a release window into a promise.",
+    "glass-samples": "The fixture treats the second fleck as evidence for the existing fleck finding f7. The separate chipped vial takes f9; f8 is reserved. Preserve the uncertainty about the cause.",
+    "thread-sample": "The corroborating swatch stays with f4. The missing button is a separate finding f6; f5 remains reserved."
+  }
+}

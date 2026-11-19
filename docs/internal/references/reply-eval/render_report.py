@@ -379,7 +379,8 @@ def tuning_section():
     return (
         "<section class='logs'><h2 class='section-title'>Tuning TLDR and reply IDs</h2>"
         "<p>Each round compares fresh replies from the original isolated prompt and a revision. "
-        "Both models ran at medium effort. Open a round for scores and replies.</p>"
+        "On eight fresh cases, revision 3 passed 16/16 on Astra and 14/16 on Opus; the original passed 16/16 and 13/16. "
+        "Both models preserved the required IDs in all eight ID-focused replies per arm. Open a round for scores and replies.</p>"
         + "".join(reversed(rounds)) + "<p><a href='tuning/README.md'>Results, prompt text and reproduction</a></p></section>"
     )
 

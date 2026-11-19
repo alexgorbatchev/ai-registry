@@ -1,0 +1,535 @@
+[
+  {
+    "case": "duplicate-stamp",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "5010e534e09cf17d4c0e6158625db16af07cf8f89635363b1910d1dc7145695f",
+    "judge_log_id": "b93229c3-f321-46af-8d16-5aaf628a0f5f",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Updates **f2** with the second delivery note as evidence and reports the missing refund date under **f4**.",
+        "reply_sha256": "6fd9f4ebe35de75df5c3fa98b52f0606a3405496104289aa0aaa9700ffed2f3e",
+        "graded_trials": [
+          "898649c5-02c3-450a-8354-b743172457fe"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The second delivery note supports the conclusion that **f2** occurred more than once. **f4** separately identifies the missing refund date.",
+        "reply_sha256": "abcab09cabaf473ec323e35f32712579acaa37f196b7f525ed47a64d23a10c09",
+        "graded_trials": [
+          "f0d24f99-bedb-4377-aa70-3e575ad6c4b8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The **f2** update identifies both the duplicate stamp and the confirming document. **f4** reports the missing refund date.",
+        "reply_sha256": "0f62a4b92c40fae38f0fe0eae5d97d8e675eef78efda3d0a4bd69158d86c8182",
+        "graded_trials": [
+          "b3e416b0-3170-4f67-938d-a2f5bee86bbe",
+          "91765085-773a-4eea-aff4-0cc736206fea",
+          "05e129e8-4201-4f63-bcc8-ea64385c2412"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Confirms the duplicate stamp under **f2** with the second delivery note and assigns the new refund finding to **f4**.",
+        "reply_sha256": "93fd7c1011eaf913ce5bd92d00174745a925f977eed4393b2698012960921616",
+        "graded_trials": [
+          "bb7a38c3-77ca-475f-bfca-417b64cfcf64",
+          "2f62d8fc-e696-489f-bff1-f37c241ceac9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States what the second delivery note shows under **f2** and reports the missing refund date under **f4**.",
+        "reply_sha256": "2d6d5e2bc6bca0c24018a08107ac7a6eabbb3e7b8b064331a74fc7b8430eb404",
+        "graded_trials": [
+          "7b2f7799-97c5-4b4e-b191-02054ba58991"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "inventory-boundary",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "5f62f3f4e52550adf8f2415f086e5aaf500805b12d54bcb654db1a32689fd40f",
+    "judge_log_id": "6a63f797-50ac-4180-a13f-1f81dfcaa407",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The direct answer gives the exact count and explains that the register omits the colour.",
+        "reply_sha256": "b2b06b26acb718b522afe07db47832860439affb34b5cd84295d231d21b85f09",
+        "graded_trials": [
+          "fabe42f8-fbfc-4200-9a4e-1a6e2fd6d517"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Separate bold IDs identify the exact count and the two possible colours.",
+        "reply_sha256": "31045f661def7aae1c031ac61c351706ebd596ba39a0c6a4e4bf16b8a3c5ace5",
+        "graded_trials": [
+          "efaa4697-1ccb-4f2d-bdc1-0b85150a0f66"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "One ID covers a direct answer about the single chipped mug, including its count and unresolved colour.",
+        "reply_sha256": "e17bb5c69e67e4d58849b6a445ce9e01600d851ed80b93e67f055ae9bed4a4f6",
+        "graded_trials": [
+          "9fa5829d-865b-4048-ad52-845a4f83957d",
+          "aacfde08-a3fa-4a17-b3e0-85f94fc377ba"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each bold ID addresses one part of the question, and the inventory supports the stated colour possibilities.",
+        "reply_sha256": "beaf32a3063d7e1edd08064d10824714743e49eb6a7ba23d1fe135544119170b",
+        "graded_trials": [
+          "efed5210-3a5c-44c4-a71f-c7666e6ecc03"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The direct answer gives the count and uses the blank entry to explain why either colour is possible.",
+        "reply_sha256": "ee1d728c88e902a4d4f1c5f3d52af02a2c6cc80485ea91dbc779aa443dda5231",
+        "graded_trials": [
+          "493f5177-1c54-4622-9712-6fa64f5dc6a7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "A single factual answer gives the exact count and explains why the records cannot establish the colour.",
+        "reply_sha256": "67211a99e1ca89eeda50b24c8681a7fd054de43834d686f974bfbeb35b16d357",
+        "graded_trials": [
+          "82a73d0c-3aee-4ad9-8ca2-dc036d2952be"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two short sentences directly answer both parts. The user did not require an explanation.",
+        "reply_sha256": "6d223a7053fde96428cd37b955e4713defd8c34255d03e67befadc21e53320b2",
+        "graded_trials": [
+          "d17b7549-d6a7-476f-9012-88bc36ceffb0"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "nested-shifts",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "b08291e8e75b46cf6a9ff34fbb1b90add1b5c28346be32a2b142af95848b6487",
+    "judge_log_id": "da86fccc-3e9f-49de-b41a-2606c8253637",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both options have the correct bold nested IDs and costs, with no extra content.",
+        "reply_sha256": "62ff39ae8f83cbff6828ee2e20669e2a7cbcceb695acf1e8f8d0e751778cbf31",
+        "graded_trials": [
+          "313b0a85-e584-4c19-9204-3495368afe47"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both options have the correct bold nested IDs and costs, with no extra content.",
+        "reply_sha256": "2e7e343de6f19650fa787da165ccfd520aebe66a3662d739d8f45ee610387e4a",
+        "graded_trials": [
+          "b3cd9db3-b40d-4bcb-a86f-bdccd1fb0861"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both options have the correct bold nested IDs and costs, with no extra content.",
+        "reply_sha256": "ea72c749d8fd88cedfae85b43fecfbd3d434568fcffaf0812ee718f70d154cd8",
+        "graded_trials": [
+          "6420530c-1031-486d-a4d6-39bcac4394c3",
+          "c29ba4ed-e6f4-43e9-bc57-e818b857aead",
+          "52edb638-ead6-48dd-ae1a-5e2cbe6229cf"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both options have the correct bold nested IDs and costs, with no extra content.",
+        "reply_sha256": "3189fdfca7288326be982f00c3cb70231526d2dea03b42a58f1fded75521438a",
+        "graded_trials": [
+          "4f738480-922a-4ed2-b571-e0d1412e3db1"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both options have the correct bold nested IDs and costs, with no extra content.",
+        "reply_sha256": "4bdf068d93b107042d1e73a897cbea04f9a57e90d269c62d01d6b46000c1eea4",
+        "graded_trials": [
+          "d53168c3-a9b5-451a-bd3a-24b0bc953240",
+          "5d0964be-bba9-4f5b-a79b-ba4c19415051"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "postcode-offer",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "ccd34827b139739654d494c7d102e49ebaf90c8c1a4bdb9dd778045cf74b040e",
+    "judge_log_id": "82e50fba-f268-4a59-9b68-036ba2541b11",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports completion with sample evidence under **a4** and separately offers the spaces-only check under **a6**.",
+        "reply_sha256": "eb7f676765d455a45f199c75849542c9667b62e12e175219bacd3f524f5797cd",
+        "graded_trials": [
+          "5639c0ae-46b1-4486-8921-ec2bffd3b39b",
+          "9d84313c-0523-4a08-aa29-1b2d82d2a097"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Supports the **a4** update with the successful sample and gives the requested offer its own **a6** ID.",
+        "reply_sha256": "1d765bb71ef15216c65ca93d991a92ce74c8c9d9153359d2ec78ac6b1f531aa3",
+        "graded_trials": [
+          "ab6d82d2-427c-4f61-acf7-456c9ef44b89"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the successful blank-postcode sample under **a4** and offers the spaces-only check under **a6**.",
+        "reply_sha256": "4f8546c63ea6b994e0ebdae17a81fa0e47e15c26e0fc0bb83c06de2b5b67f410",
+        "graded_trials": [
+          "78746e92-c259-4195-a9d4-95d28121c46a",
+          "9b8760dd-ad25-4904-ba13-535817928d2e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Keeps the **a4** result and its evidence together, then separately offers the spaces-only check under **a6**.",
+        "reply_sha256": "870db98d11a1b32533dc15bc493a1caecb7f897742fba15aaf447afd018db664",
+        "graded_trials": [
+          "d23ae051-62f4-49a5-a2a3-61d01851735d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Cites the passing sample under **a4** and uses **a6** to offer a check of whether spaces-only postcodes are accepted.",
+        "reply_sha256": "f182b040b1a6974272cfbb77e51f4bc2922eac3c2f0e4431a7a76f064dc5a128",
+        "graded_trials": [
+          "d741456d-e1da-40d9-bac9-6918bfd1648e",
+          "cc784b36-da85-4aab-bab4-126aaf18a930"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "reader-update",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "3f9dea6f60d38d12bcd798577f56e1438b2bad9c4d7f71803e3c1350baf0e5a4",
+    "judge_log_id": "4bbbfa5a-f297-4981-9462-ddc3b06979e5",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The notice gives riders both lift statuses and the lack of a reopening estimate in one paragraph.",
+        "reply_sha256": "6af702415102a5eca01efb3e2ec1dcba0e31f2dd8029597a7151b44533e214fc",
+        "graded_trials": [
+          "6d701e90-9d4f-4428-b28c-2994c3698ee5",
+          "b7083e09-c57b-46ab-99f5-fa61d16e897a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The notice states all three rider-relevant facts directly.",
+        "reply_sha256": "d1ced85c1b41891eafb9faea8b94d4354016d1f0341d41209dcd465fef35acd3",
+        "graded_trials": [
+          "697b8d29-79fa-4e1c-888e-808de554b3ad"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The promise to post an update adds an unsupported service commitment. “Available for use” repeats “back in service.”",
+        "reply_sha256": "3429645ec265bfe0877a53bbbdf3470738c2cb18c9b053d8367cd3b66518e5e2",
+        "graded_trials": [
+          "6df38613-fe2f-4e77-89b5-833394def86b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The notice includes all required facts, but “available for use” repeats “back in service.”",
+        "reply_sha256": "729254fcdbbc6ee48c39b0cc632436d1b365608ddcddb7baeb399898c052d271",
+        "graded_trials": [
+          "825a5fd1-c888-4d4f-a1c0-5b9d25f8955b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The notice gives both statuses and the lack of an estimate. The brief courtesy addresses affected riders.",
+        "reply_sha256": "c6e0d8dca816253ca5c2765a238ef6adfc820de92b37a8021f36dc44ec2323a5",
+        "graded_trials": [
+          "dc3d8139-32ec-4d67-bb66-139678aa093c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The notice includes all required facts and closes with a brief, relevant courtesy.",
+        "reply_sha256": "2655b76df2e32b158b5696b27d54c1a0cbfb1bca2372e685245dc9ee8130690f",
+        "graded_trials": [
+          "a7058e89-d5f9-4d6d-bf51-19aa384a50ba"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The notice directly states which lift is available, which remains closed, and that there is no reopening estimate.",
+        "reply_sha256": "bd9cb50ccab07f05c9639e12a75cb3d2ae40bd2e9c31dbd664137bcc864a3174",
+        "graded_trials": [
+          "d6d2e3bb-8b2a-4569-bef9-3bea9cc83239"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "receipt-copy",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "a807ec473dc82bfad3213ebfaaa38281fe07b464ff96b45d984fec5b90513f69",
+    "judge_log_id": "d9046a2a-6502-4932-ab45-78fd45961d8e",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Correctly identifies Cobalt as the destination. The direct answer needs no ID.",
+        "reply_sha256": "950432de63ef55b4165f947581f8cacce0069d695b02a5a4cf745f2abc2a73a6",
+        "graded_trials": [
+          "efcc2d2b-38bd-4934-a87e-011a02fe53bf"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Cobalt is correct and sufficient. The one-word answer needs no ID.",
+        "reply_sha256": "98ea7648a05b7df87f2eed9d014fdc4ba602afec902bfce946fbe5dba6ed4415",
+        "graded_trials": [
+          "baad4dca-a347-4e23-a686-c4f2907a50d2",
+          "2ef33ec7-2208-424c-9095-8b79e26c8ea5",
+          "6dd41860-010b-481d-948e-ab262c2aa317",
+          "92797d7f-94c1-48d4-8b77-af968e826968",
+          "74f4a38b-0484-46b6-a87d-412dc9ab187c",
+          "84888de1-a637-46f4-ab5a-3d8a9a2598e1",
+          "7a5d11ef-c122-4b31-abcf-5ec06a4cfd6e"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "return-table",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "aed8149d7cd131b6faad003099314c4b7c6824e41dcfde20248641780c5b518b",
+    "judge_log_id": "d181ee36-80bd-4c17-a822-2475f7ed0191",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both rows are accurate. The evidence column records the staffed trial for f5 and the new report for f7. Both bold IDs appear first.",
+        "reply_sha256": "41863aebb9506d7208d296c30bfb9c9714fac693e0decc12499ba7f31d542134",
+        "graded_trials": [
+          "a54f81a2-3999-4fda-a42f-f70ed0af0c41"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two rows directly report the trial confirmation under f5 and duplicate printing under f7, with bold IDs first.",
+        "reply_sha256": "4de596724ad9535add91da6ec50dbbe9e8aa8517ea38d73bcde97eb4a485e367",
+        "graded_trials": [
+          "aa2ebaf3-1bc8-4689-8545-34b0cd759ac5",
+          "8839d246-5b42-4e5c-be3e-0da27113e7d6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The second sentence supplies evidence for f5. The separate f7 row captures duplicate printing, and both bold IDs appear first.",
+        "reply_sha256": "16cda26e786b7780fc76a0c260c8639afe6cc17bf8c29e481d3ba1fe8c4598e3",
+        "graded_trials": [
+          "365bac23-9f2e-4d39-8e42-8e10ca33ce04"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The f5 row pairs the bell finding with its trial evidence. The f7 row reports duplicate printing. Both rows begin with the correct bold ID.",
+        "reply_sha256": "f087e794d4769595c31441751e19c72dc2ee6549c971942f3838ea017a2a53da",
+        "graded_trials": [
+          "5de54ef9-3d25-4f65-a378-70df77bdff55"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two rows concisely capture the silent bell, its trial confirmation, and duplicate printing under the correct bold IDs.",
+        "reply_sha256": "a4b79c9d8c2677ac1e571b90c4ba9c48155e9e5c5fd6868a5f461690f02d2ac3",
+        "graded_trials": [
+          "feebe6c5-7596-4652-afaf-8fa967d8c536",
+          "72ba1471-b36b-4f27-b418-934729f3ef7d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The observed silence during the staffed trial conveys confirmation for f5. Duplicate printing has its own f7 row, and both bold IDs appear first.",
+        "reply_sha256": "60210463e60ce36f541daa560c2ca59bb398e1525cb7d1a074b9a6d5df296d78",
+        "graded_trials": [
+          "a3edece0-3930-4d14-9ae8-c97dbedc3e18"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "versioned-labels",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "ba7ac3176e3729fc6af6b4a574e522d0a2a8e5ecbdf662856c3a3c2094c1cc8b",
+    "judge_log_id": "2cb36a82-21b7-4a14-80e9-087d6ec89061",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains how the order prevents a mix-up and how the supervisor checks the copied number before signing.",
+        "reply_sha256": "6dd4c1c403a7d252fd8e6aafdf54d5967a310f160aecc59feb1e4a72ca88525f",
+        "graded_trials": [
+          "c4f86a3c-2ea5-41a9-87db-c2ec986ecb07"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The request does not establish that the peeled label is the only independent evidence or that every copying error would go unnoticed. The answer repeats the identification risk and adds a pre-swap check.",
+        "reply_sha256": "29ee2ad87cdfed99081c9f373c8d7aabf90e2683acfa852cc8b653fb86710a6e",
+        "graded_trials": [
+          "92653c02-e825-47d9-b48f-f8681d6b5b10"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each ID gives one decision and its reason, including the supervisor’s comparison before signing.",
+        "reply_sha256": "472f6f306fd475ec92ff797397bca6b52502f0239b32b529b92a7725fab65498",
+        "graded_trials": [
+          "9b40cd6f-ef28-4449-8ad5-eaad0d3b8cd9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains continuous identification and verification against the original lot number under separate IDs.",
+        "reply_sha256": "31d281741b4aeaeeac004ce69cf39c1cd1d24d61c2f995f643be99e312c86438",
+        "graded_trials": [
+          "af62bd31-0888-4f45-8dd8-6dd4d1a46ecd"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Connects having the replacement ready to keeping the vial identifiable and explains what the supervisor verifies.",
+        "reply_sha256": "7e3e795272f3e2710e90cda54f5849ba068747cf99306a0b885db6757718790d",
+        "graded_trials": [
+          "6e2a8d37-0b66-4e54-9691-2b776d04c380"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives both reasons directly, with a distinct ID for each decision.",
+        "reply_sha256": "72957a548dac610bc4dc2e55d643bbee08e327caa2801a112db689bf3c545b4a",
+        "graded_trials": [
+          "aea38136-4550-4e02-a64d-3bdddcfd6550"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both explanations are relevant, but saying there would be nothing to check against assumes no other reference exists. Discarding the label would prevent comparison with the original label.",
+        "reply_sha256": "1b0bba6523b1b5ec0b2a380d66a658661b92750315d216725f36a1e774fb025d",
+        "graded_trials": [
+          "f712d956-885c-43d5-bc65-7ff66aac6609"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The request establishes retention through signing but does not establish that the old label has no later use. The answer repeats why the replacement must be ready and introduces a pre-swap check.",
+        "reply_sha256": "78d3fb2edd4a0bd6341de33eb012b642c5e9f1027b7e9e72aa0e96b3f87f5fe9",
+        "graded_trials": [
+          "8511445e-7d1a-4c69-a335-d4d0b0a596c2"
+        ]
+      }
+    ]
+  }
+]

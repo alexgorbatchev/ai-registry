@@ -344,14 +344,15 @@ def ledger(run, judgments, source_directory="rounds", title=None, anchor=None):
     )
 
 
-def system_section(mode_study=False):
+def system_section(study="system-sections"):
     rows = []
     examples = []
     handoff = ""
     total = 0
     for path in sorted((HERE / "sections").glob("*/comparison.json")):
         comparison = json.loads(path.read_text())
-        if ("rubric" in comparison) != mode_study:
+        group = comparison.get("study", "mode-study" if "rubric" in comparison else "system-sections")
+        if group != study:
             continue
         directory = path.parent
         prefix = f"sections/{directory.name}"
@@ -380,22 +381,21 @@ def system_section(mode_study=False):
                     ),
                     "reason": grade["reason"],
                 }
-            example_round = "mode-both" if mode_study else "trigger-operating"
+            example_round, baseline_label, candidate_label = {
+                "mode-study": ("mode-both", "Deployed", "Both sections edited"),
+                "system-sections": ("trigger-operating", "Isolated rules", "With Operating Instructions"),
+                "clean-path": ("clean-operational", "Isolated rules", "Full F16"),
+            }[study]
             if directory.name == example_round and model == "opus":
                 sample = {
                     r["arm"]: escape(r["reply"])
                     for r in answers
                     if r["case"] == "queue-ticket" and r["repetition"] == 1
                 }
-                labels = (
-                    ("Deployed", "Both sections edited")
-                    if mode_study
-                    else ("Isolated rules", "With Operating Instructions")
-                )
                 handoff = (
                     "<div class='review'><h4>Same receipt handoff · Opus 5.5</h4>"
-                    f"<p><b>{labels[0]}</b> · {sample['baseline']}</p>"
-                    f"<p><b>{labels[1]}</b> · {sample['candidate']}</p></div>"
+                    f"<p><b>{baseline_label}</b> · {sample['baseline']}</p>"
+                    f"<p><b>{candidate_label}</b> · {sample['candidate']}</p></div>"
                 )
             cases = json.loads((HERE / comparison["suite"]).read_text())
             title = f"{comparison['label']} · {comparison['suite_label']} · {MODELS[header['model']]}"
@@ -449,7 +449,15 @@ def system_section(mode_study=False):
         )
     if not rows:
         return "", 0
-    if mode_study:
+    if study == "clean-path":
+        source = "sections/clean-path.md"
+        intro = (
+            "<section class='logs' id='clean-path'><h2 class='section-title'>Do parent instruction files explain the gap?</h2>"
+            "<p>Each arrow compares the isolated TLDR and ID rules with full F16, under the same clean temporary root. "
+            "Each model wrote 12 replies per arm and suite at medium effort. The blind reviewer accepted sarcasm. "
+            "Passes require completeness, concision and correct IDs together.</p>"
+        )
+    elif study == "mode-study":
         source = "sections/mode-study.md"
         intro = (
             "<section class='logs' id='mode-study'><h2 class='section-title'>When should Opus switch into recovery mode?</h2>"
@@ -891,16 +899,17 @@ def render():
         )
     replay_headline, replay_count, replay_html = replay_section(rounds)
     sections_html, section_count = system_section()
-    mode_html, mode_count = system_section(mode_study=True)
+    mode_html, mode_count = system_section("mode-study")
+    clean_html, clean_count = system_section("clean-path")
     values = {
-        "REPLAY": mode_html + sections_html + tuning_section() + ablation_section() + replay_html,
+        "REPLAY": clean_html + mode_html + sections_html + tuning_section() + ablation_section() + replay_html,
         "ARCHIVE": highlight,
         "HIGHLIGHT": ("<h2>System section comparisons</h2><p class='verdict'>Opus averaged 45 words with the isolated rules and 83 with the deployed prompt on the same transfer cases.</p>"
                       "<p><a href='#system-sections'>Compare passes, reply lengths and the original answers.</a></p>") if section_count else (replay_headline if replay_count else highlight),
         "COMPARISONS": comparisons,
         "WORDING": f'<section class="wording"><h2 class="section-title">Prompt wording</h2>{wording}'
         '<p><a href="../../../../system/system.md">Full shared prompt</a></p></section>',
-        "COUNT": str(mode_count or section_count or replay_count),
+        "COUNT": str(clean_count or mode_count or section_count or replay_count),
         "REUSED": f"The ledger contains {total + reused} comparison rows, including {reused} reused baseline entries. The historical ledger counts each generation once after removing those copies."
         if reused
         else "",
@@ -912,6 +921,12 @@ def render():
             "<h2>Operating and recovery instructions</h2><p class='verdict'>"
             "None of the three edits improved Opus on six operational requests. Recovery wording alone shortened its replies by three words on average.</p>"
             "<p><a href='#mode-study'>Compare the wording trials and read the answers.</a></p>"
+        )
+    if clean_count:
+        values["HIGHLIGHT"] = (
+            "<h2>Clean-directory replay</h2><p class='verdict'>"
+            "Opus fell from 12 to 6 passes on operational requests and from 10 to 5 on transfer requests with full F16. All 108 launches had clean ancestor paths.</p>"
+            "<p><a href='#clean-path'>Compare scores, lengths and replies.</a></p>"
         )
     template = (HERE / "summary.template.html").read_text()
     (HERE / "summary.html").write_text(

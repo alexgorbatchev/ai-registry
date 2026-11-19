@@ -3,7 +3,7 @@
 import hashlib
 import json
 import unittest
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from review_replay import INSTRUCTION, review_input
 from run import failures
@@ -17,6 +17,35 @@ def digest(value):
 
 
 class SectionTrials(unittest.TestCase):
+    def test_clean_path_receipts(self):
+        for path in (HERE / "sections").glob("clean-*/comparison.json"):
+            directory = path.parent
+            with self.subTest(round=directory.name):
+                audit = json.loads((directory / "ancestor-audit.json").read_text())
+                receipts = json.loads((directory / "raw-index.json").read_text())
+                workdirs = audit["working_directory_by_raw_log_id"]
+                self.assertEqual(set(workdirs), {r["raw_log_id"] for r in receipts})
+                self.assertEqual(len(set(workdirs.values())), len(receipts))
+                self.assertEqual(audit["matched_files"], [])
+                self.assertTrue(
+                    {"AGENTS.md", "CLAUDE.md"} <= set(audit["filenames_checked"])
+                )
+                launcher = PurePosixPath(audit["launcher"])
+                self.assertTrue(launcher.is_absolute())
+                for receipt in receipts:
+                    cwd = PurePosixPath(workdirs[receipt["raw_log_id"]])
+                    self.assertEqual(cwd.parent.parent, launcher)
+                    self.assertEqual(cwd.name, "work")
+                    proof = {
+                        "cwd": str(cwd),
+                        "checked": {str(p): [] for p in (cwd, *cwd.parents)},
+                        "names": audit["filenames_checked"],
+                    }
+                    self.assertEqual(
+                        digest(json.dumps(proof)),
+                        receipt["files"]["ancestor-check.json"],
+                    )
+
     def test_rounds_reconstruct_from_source(self):
         prompts = build()
         comparisons = sorted((HERE / "sections").glob("*/comparison.json"))

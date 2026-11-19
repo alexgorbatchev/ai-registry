@@ -1,0 +1,415 @@
+[
+  {
+    "case": "archive-offer",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "6fe45663891297b47ab6f6a081e43404f28d1a63c87a50e60b3a45e06207a46e",
+    "judge_log_id": "58a70269-47db-43ac-9daf-33be132722e4",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The reply repeats the caption consequence, restates the parked slide job, and adds an unnecessary instruction to reply with a4.",
+        "reply_sha256": "db684b427bd037041669d94a6c0d4095955237e3524940af7bc991ecde49ce06",
+        "graded_trials": [
+          "dbd34f20-d6c1-489c-93f8-b2402de948ca"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It withdraws f6 on the reviewer’s evidence and offers the transcript check separately under a4.",
+        "reply_sha256": "7438c1a8417ae50559d81fe6f4abb3aef6b6320e3d475443d705ec0a4a0c250a",
+        "graded_trials": [
+          "59fdffc3-566b-40db-b5d6-fe71cb8dccae"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "The parked slide job needs no update. Its status appears inside the a4 offer, with a3 at the end instead of at the start of its own item.",
+        "reply_sha256": "eb3c8d63dd9aa24f92787c60bfe5991636bff25ba86978e6e1f91ce10f080db0",
+        "graded_trials": [
+          "dd0a502f-4171-4347-96a5-d48b25cf056d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It closes f6 with the reviewer’s verification and uses a4 for a focused transcript-check offer.",
+        "reply_sha256": "3f853d9b94a062c41c2ef93bbc94f4eebb6793aae179b69474b8c1978986c1d1",
+        "graded_trials": [
+          "6b4ff509-aaa1-41c9-9578-77f4d4b37ad6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The remark about auditing someone adds an irrelevant aside to an otherwise clear a4 offer.",
+        "reply_sha256": "251b0ab4589aacae79c1057160582aa9590d8748642630c27437454b43d1715a",
+        "graded_trials": [
+          "5e6da13d-e177-4863-a800-de1a5d283c42"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "The slide status is unnecessary and sits inside the a4 transcript offer instead of starting its own item with a3.",
+        "reply_sha256": "80d05cc5ae38899606486eaaad95defc704498544b870fddd2aef2d5a48e30ae",
+        "graded_trials": [
+          "f63055c2-39cd-4584-bfe7-264cbfcce7a3"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The a3 paragraph unnecessarily restates the parked slide job and repeats that its status is unchanged.",
+        "reply_sha256": "c694c4533e7b46818cf3cac0bffa9e4728e645f888cbc1b64465525d1dd153b5",
+        "graded_trials": [
+          "f0658cd8-12bf-4cfc-8fd0-0792df42c0fc"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The IDs are correctly assigned, but the separate a3 update adds no information needed for the caption correction or transcript offer.",
+        "reply_sha256": "4641201c5da94e0e6ed3969142e09c317596c4a2c733dea899445be55e221e04",
+        "graded_trials": [
+          "a421a5b9-b7c2-4640-bf3c-98e37f24112f"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "clock-question",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "da609083a10d7dbf760a9e5573f7ca89574f986158b8d4031ae8f06b40bc48dd",
+    "judge_log_id": "abb9a4d4-e17c-4032-9345-5851da01d438",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The time is correct, but the decoy claim and predicted finish time are unsupported. The praise and calendar instructions are unsolicited. The separate decoy claim has no bold ID.",
+        "reply_sha256": "def209acaf5aa9c2254598d8f83c8c1a66f8314854b61578b22f1f79973c90d8",
+        "graded_trials": [
+          "44c68a9a-bfcc-445a-8a64-5dd9a8719f5c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The direct answer gives the exact time and timezone.",
+        "reply_sha256": "36f158ddf3705f7041c92057bddf5e3abae57008b25c9ecb57235e61ed4b4cd7",
+        "graded_trials": [
+          "a9c88871-492f-4691-b775-027c1008d689"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single bold ID identifies the correct snapshot start time in UTC.",
+        "reply_sha256": "d1920145c9c1640e17a6389453ed60e6b352ed1fb096b4df0eeee53c38175c77",
+        "graded_trials": [
+          "6920b4ee-3b03-4463-ac4b-c8e8dcae112f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“Unless” incorrectly makes the snapshot time depend on the calendar’s timezone. The conversion instruction is unsolicited.",
+        "reply_sha256": "b63035900cde9f8827e6f52adcfe0bef0c4c21a1bb5ad8926a11067b52b2cee7",
+        "graded_trials": [
+          "fa4e6c2f-c444-46e6-8d61-eb3fd286d99a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The UTC time is clear. The timezone-setting advice and aside about guessing go beyond the lookup.",
+        "reply_sha256": "5ee31832312411fa531c9e482f02642cc263ebe2dee17f7dd594b636d542f65c",
+        "graded_trials": [
+          "d41e7701-9c33-45c5-85d6-cc1f7e0f4355"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single bold ID identifies the correct snapshot start time in UTC.",
+        "reply_sha256": "5bc46ef22d23fc1894737f6b69150c97b7ff1b686bbad78025b08a5f83cbe6b6",
+        "graded_trials": [
+          "60a7d43b-a3a9-4427-9588-f75a49512225",
+          "b11e5ea8-a542-4bee-b15e-68970f95a4e1"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The time is correct, but the reply invents a 3 a.m. alert. The other schedules and conversion advice are unnecessary, and the separate alert claim has no bold ID.",
+        "reply_sha256": "e73e3bc58850af3be94e51db7aa835e599146780d86c8498a577f49a7039a13a",
+        "graded_trials": [
+          "1475757e-0bd7-498f-a93c-20acfdc402b6"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "cutoff-caveat",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "2bd1adc4f31fb3c0bb4d85551b59a76301f8fb6c71a6d7e31872c6dd8f40641e",
+    "judge_log_id": "8e58ed79-5b48-4343-aab2-fae9b04940c9",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each mail outcome is accurate, concise, and separately labeled.",
+        "reply_sha256": "b757ffb15810971da02d1287c41eda28bab83bb5f7bf60da9c35e65f11b26b63",
+        "graded_trials": [
+          "e83d331b-c8cd-4a2c-a10b-22010db32223"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "It answers both outcomes but repeats the need for manual migration and digresses into retention and branding. That extra finding has no bold ID.",
+        "reply_sha256": "4234184f6a77d7f5a0cb2f9ec3ea49326fba593b8161a7759e5cb1c22ed049fe",
+        "graded_trials": [
+          "af8651a1-2c05-4140-9551-63b62866a6ee"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It states both outcomes directly under distinct bold IDs.",
+        "reply_sha256": "a9f2aa6e0817c3ea08cb39e8cb25fffafd42a324cedb2752acfae52ea6809aca",
+        "graded_trials": [
+          "479eba78-9a77-45c0-9cbe-640e25e38275"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It states when new mail forwards and briefly explains why existing mail requires a manual move.",
+        "reply_sha256": "023add583ae509f7e4284c1648aa7b5d52241ff85119f248079431f805279eb0",
+        "graded_trials": [
+          "2afb6b24-b4c7-4b90-b577-6ed75bca4891"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gives the timing for new mail and the condition for moving existing mail under separate IDs.",
+        "reply_sha256": "a773a8f0b794a9691e3d9be393432b9c7f893b5b5c8f6ec28b81f4e69b6b6d54",
+        "graded_trials": [
+          "8921d683-9452-4c09-a0e9-c39d22754d4e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "It gives both outcomes but repeats the old-mail finding and adds commentary about user expectations, retention, and branding. The old-mail finding appears both unlabeled and under f1.",
+        "reply_sha256": "f2c8056b2f6b9b37cd855031e8b2eb22eab2fbaf1155640d24296a482e90079c",
+        "graded_trials": [
+          "17fceee8-1b3d-4c5e-9a1a-50f119414afd"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two labeled points accurately explain immediate forwarding and the need to move existing mail manually.",
+        "reply_sha256": "04f4249a7e7640e7cbcef9046af9bf27ec7c018fb58f2dd5168530e5f653e1f8",
+        "graded_trials": [
+          "6d555a30-6065-4429-988a-e3f24784663f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It accurately states both outcomes under distinct bold IDs without extra material.",
+        "reply_sha256": "0d25cf2b77a676cbd3c35d19ac2cd9892511fa4267ae571d89ffee1fa6bc59d7",
+        "graded_trials": [
+          "472ab8ac-e131-4b5d-aa19-8dd5bb2ed11e"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "handover-detail",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "98c839fd0522e7ca0d2ade39952eaa5fee220cbd3b6314e1528fa722cdd6fd50",
+    "judge_log_id": "6478f838-16e6-4853-8075-067842239751",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both steps are correct, but the reply assumes the outgoing volunteer must explain a shortfall and treats the signature as confirming the checked set. The closing paragraph repeats the sequence, and the joke adds no instruction.",
+        "reply_sha256": "8ee148c47bf38732f57f5610fda1e9fc20d3c22ade3f2671776d917331432d9e",
+        "graded_trials": [
+          "c44f8c11-ffeb-42bf-84ea-80b4be6b1119"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled step gives the correct volunteer, action, and purpose in order.",
+        "reply_sha256": "a73525386aaf4c6e2e22fd5e577230304f0901de80e06e8e62baf12902bc0a82",
+        "graded_trials": [
+          "2d674284-9031-4019-b8a5-938f25da56d2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two labeled steps directly explain how the count catches missing keys and the signature records custody.",
+        "reply_sha256": "f4c6a6cd810ca5bf3de6d20216fb88dbb67837f603ed15ddd881874f806ac1bd",
+        "graded_trials": [
+          "e8ece4ce-ad15-4b18-b753-a7a5efe6e1d9"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Finding a gap does not establish which shift caused it or that the signer inherits it. The reply repeats the sequence and adds speculation, a joint count, and an extra signature. The finding and proposed change have separate IDs.",
+        "reply_sha256": "81b8d6311c820cace7f0f4828b25afcc360220c91918c8f5ba16331ee9702b1a",
+        "graded_trials": [
+          "f83be236-53ad-44f9-93ee-f6d0df43c9ce"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The reply invents an obligation to explain losses and contradicts its own account of what the signature records. It adds unsolicited counting procedures and an unsupported time estimate. The proposed fix shares f1 with the finding instead of having its own ID.",
+        "reply_sha256": "3c1a4d4a759a16b563b6213c734f34ef268938677a085294dffb2592f4f42716",
+        "graded_trials": [
+          "7731b156-ba20-4caa-9387-b7a76f161146"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled step identifies who acts, what they do, and why, in the requested order.",
+        "reply_sha256": "f020c2c182fda9f56d49d41ffeb3ebd256b7cd8b90cba8f519ce3f185f6942af",
+        "graded_trials": [
+          "b84bcbce-b3c2-4942-a403-5314ae45c364"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The count can reveal a missing key, but it cannot establish that the outgoing shift lost it. The final paragraph repeats the order and adds an aside about inheriting blame.",
+        "reply_sha256": "4ebd0750722aa02ce356b5bc259d2160fc0a096b6f780a6c18626cc04d108b71",
+        "graded_trials": [
+          "9e4768de-bee6-48ae-a3a7-8d79948fd61a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two labeled steps accurately explain the count and the custody record in sequence without adding obligations.",
+        "reply_sha256": "f162ba9a1e3d0d2ecf15b376c2bf4a8f70a863bf8798012636bd3af40cfa70a5",
+        "graded_trials": [
+          "f0183f13-b3c2-4485-96de-b61712127938"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "independent-discovery",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "90f775ce13d5c4764278acbb3a0f3d2dc8752d6927652258e6c93c968a452d02",
+    "judge_log_id": "d8e6df02-a5b3-4854-b438-63c69d9e5659",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both updates have distinct IDs. The finding concerns refunds issued on Sunday, but the reply extends it to refunds requested on Sunday and adds an unsupported wait-time bound and investigation status. “Done” repeats the status, and the Sabbath joke is unrelated.",
+        "reply_sha256": "4039d011ed39f793f9409e41df9173518f4b2a684d9ac66f301685d776a2e779",
+        "graded_trials": [
+          "cfb5c1f2-6e45-43fe-b545-cef268cc0216"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply keeps receipt enablement and verified arrival together under **a7** and gives the Sunday refund delay its own **f1**.",
+        "reply_sha256": "a058714fedd2a5c5f4ebc7a1c708c81f72769e495b7dd74fee6d4071a6820338",
+        "graded_trials": [
+          "d26eacf4-d99d-4b09-8aa4-f6d41720ed12",
+          "9134e9d0-a583-4d7f-ba0c-1feeb405852e"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both updates are correctly labeled, but a Monday delay does not establish an exact extra day until customers receive their money. The reply repeats completion and adds support-ticket speculation, a causal hypothesis, and an unsolicited tracing procedure.",
+        "reply_sha256": "ce0a7e85dc5d6ec73aac7337a46cd5c3e093b07f60da25dc27f6df7a105441bb",
+        "graded_trials": [
+          "d2840b7d-311a-45ac-b52f-60e7a40d4eb7"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The comparison with all other customers and the claim that no investigation was attempted lack support. The evidence bullet repeats the finding, and the diagnostic procedure goes beyond the request. The separate offer to trace the issue lacks its own bold ID.",
+        "reply_sha256": "e3c8e4bc55dc006f2babc2a525ee7660d3a8fdf3ec8bc67bcea473fbcf2879ac",
+        "graded_trials": [
+          "c73b6a60-0461-412f-985f-bc06b04ad3ce"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply reports enablement and the successful receipt check under **a7**, then states the refund delay under **f1**.",
+        "reply_sha256": "84f56a68b3c90f99f768685e5eb13bb35bec524ea417ba4ac1647af0e8b9d06d",
+        "graded_trials": [
+          "ec679760-5e78-423c-b7d6-05bb8b9f0983",
+          "f716c567-b57a-4656-a6b0-c906584ba3d7"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The reply correctly assigns both IDs, but the verified receipt was never identified as a test receipt. Monday processing does not establish an exact extra day until customers receive their money. The bug-versus-schedule speculation adds an unrequested diagnosis discussion.",
+        "reply_sha256": "f0a4616d1138edc5a79d6b64d80bb99438f114a564e758473b31f1a6d4c93c4c",
+        "graded_trials": [
+          "cea0a81c-69ff-4673-a83f-6a897f434246"
+        ]
+      }
+    ]
+  }
+]

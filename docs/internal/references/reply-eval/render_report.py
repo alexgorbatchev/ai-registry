@@ -357,6 +357,12 @@ def replay_section(historical):
             for judgment in case["judgments"]
             for trial in judgment["graded_trials"]
         }
+        receipts = json.loads((directory / "raw-index.json").read_text())
+        reviewed = set(grades) | {case["judge_log_id"] for case in reviews}
+        archived = {attempt["raw_log_id"] for attempt in receipts}
+        if not reviewed <= archived:
+            raise ValueError(f"Missing transcript receipts in replay {number}")
+        extra_attempts = len(archived - reviewed)
         pairs = []
         examples = []
         rows_html = []
@@ -415,6 +421,7 @@ def replay_section(historical):
             f'<a href="{prefix}/{number}-opus.jsonl">Opus replies</a> · '
             f'<a href="{prefix}/judgments.json">Judgments by reply</a> · '
             f'<a href="{prefix}/raw-index.json">Native transcript fingerprints</a></p>'
+            + f"<p class='refs'>{len(reviews)} reviewer calls · {extra_attempts} additional attempts outside the scores</p>"
             + "".join(examples)
             + '</details>'
         )

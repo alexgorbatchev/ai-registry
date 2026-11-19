@@ -1,0 +1,10 @@
+{
+  "study": "ops-removals",
+  "label": "6. Proportional investigation",
+  "baseline": "ops-05-interruption",
+  "candidate": "ops-06-investigation",
+  "suite": "sections/triggers.json",
+  "suite_label": "Operational",
+  "rubric": "sections/mode-rubric.json",
+  "rubric_sha256": "493b0498c7bac43ddc257dfddfa0a7f81c50820fec391bf16a6b1f1166db1c91"
+}

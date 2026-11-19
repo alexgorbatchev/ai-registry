@@ -1,0 +1,309 @@
+[
+  {
+    "case": "counter-reset",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "40c1f06a047c9f4642e86167f11258a19993c6d3c68d2370b770db30da687d0a",
+    "judge_log_id": "0c62da10-cb4c-4c40-acc2-4fcaa3c8cfc8",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the exact total of 17 and explains why repeat entries leave 1 to 17 distinct visitors possible.",
+        "reply_sha256": "23fa844d1848466001b8e5190e25cc30f2c03485a96f9628f81218144d061a27",
+        "graded_trials": [
+          "9a58a3c4-30bd-4ee2-a7c5-f9213d7d749d"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Treats 17 as a possible lower bound despite the stated full count. Repeats the reporting advice and adds an unnecessary reset check. Each finding and action has its own ID.",
+        "reply_sha256": "e9f4a1332f117db775a7784d9e0d0980e9948a7eadda46c2ddc684c6934fbc61",
+        "graded_trials": [
+          "ee353401-a6aa-4a12-8156-4614ed1c71e0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Gives 17 entries and correctly explains the visitor range. The reset caveat is redundant because the request already establishes that every entry was counted.",
+        "reply_sha256": "936ec62424b59e1ae00514b45dd1d540a7ff870af3bdbf880b91bd9be4b79f1f",
+        "graded_trials": [
+          "0902a926-ce6e-42e2-88ee-9e7b4f9bb525"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "Introduces an unsupported “at least 17” alternative, repeats the result, and adds unsolicited tracking procedures. The f3 item combines report wording with a separate recommendation about future tracking.",
+        "reply_sha256": "95f6db7cf8f588c35207e2a5f4a2074bf975a6b6b1114706c1bbf97dddc18862",
+        "graded_trials": [
+          "dc55d3cf-e6c2-4a60-8e8d-b5e12e54d26c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports 17 entries and explains both endpoints of the possible visitor range without claiming actual attendance.",
+        "reply_sha256": "556d39f82782896344e4e7d09b09bf11a2c7670e5fadf4c3dd61a8aaa32e194c",
+        "graded_trials": [
+          "97aaedf8-805d-4868-92e1-fa4fdd0c829a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports 17 entries. The range and explanation of repeat entries make clear that the exact visitor count is unknown.",
+        "reply_sha256": "9806f8af54ee60ed5240812cf19f777523215a457cb679b7ac71d55f84892ec4",
+        "graded_trials": [
+          "0ec67ae9-1849-49f5-98c9-dad3f705413d"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Incorrectly makes 17 conditional on nobody entering during a gap. An entry during that interval would matter only if it went uncounted. The reset conditions are unnecessary, and “up to 17” repeats the upper bound.",
+        "reply_sha256": "ffc473fe2fc5ec0680969f8dd7f8cd6944109e702cc5b2a417bfe844bf95eeff",
+        "graded_trials": [
+          "42241c51-0439-4efe-a3b9-0e2b7abda5c0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports 17 entries, states that the exact visitor count is unknown, and explains why both 1 and 17 visitors are possible.",
+        "reply_sha256": "6ac34fbb12ae16ecf31311038b9500ba5233f4c317a240254141176791efe3e5",
+        "graded_trials": [
+          "2d0d7de8-2f9b-4872-9147-9b3942cbc50f"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "parcel-shelf",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "7657fb8b9941cb4bc88c11b6255deb1dd710a1d19c4253849c725925848c4637",
+    "judge_log_id": "aa383870-bb49-4b4f-a62f-e4d6c07a8266",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The bottom shelf is correct, but the notice gives no basis for directing the reader to the middle shelf. The fallback and commentary about the signage and organizer are extraneous.",
+        "reply_sha256": "3c9aa74a7d8cce3075dd5bb4af4f959175c177f2a63f20c8ff18de89bb4b308b",
+        "graded_trials": [
+          "8d959b2d-fe3e-4801-9da7-146ffe4f57f8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The direct answer identifies the correct shelf and can stand alone.",
+        "reply_sha256": "debf806f7686004547132650ea8e8d102e72e8b3976eb7786d1cfe8af0b6ecdd",
+        "graded_trials": [
+          "7b428849-5384-4f60-b97a-0578179c9f91",
+          "c61a5a75-f11b-4471-90fe-2d8c6260c657",
+          "89d0f542-0bc2-43fc-b84b-8c080ee21720",
+          "93410a30-edee-469d-9e0c-5c55499e28a9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single bold ID labels an accurate, concise direction to the bottom shelf.",
+        "reply_sha256": "9ccce5a7fc62646f8bcd8374a7678a40225a9ebc0fa4ca0001368c48dbdc7d17",
+        "graded_trials": [
+          "39962695-35b1-4e74-b5cf-0b8030b201c3",
+          "bbb88f59-4d1e-4afc-8e0e-90a09b3b287f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The bottom shelf is correct, but the notice does not establish that a rolled poster in a tube is probably on the middle shelf. The documentation joke and repeated fallback advice are unnecessary.",
+        "reply_sha256": "179da8638ed8474d1f1962821f0111ab79ea3054672fbb26688021f50430213b",
+        "graded_trials": [
+          "37d709d8-2df7-45a5-90ee-0991706dec6c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "programme-change",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "e4248ce9dba109178acc4043414586e7654ee16c585289a92f250644cc383953",
+    "judge_log_id": "d2c02f8f-9225-4c80-9df9-2e10970c161c",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The attendee impact and single point of failure are unverified. The rehearsal, fallback procedures, and Agent page note go beyond the requested status update.",
+        "reply_sha256": "885da489cb0de9097e316d32d75b497b3b92d5300d903a6c2456b0910d2f77c6",
+        "graded_trials": [
+          "8e1c05df-f87a-4bb6-adda-a399c9544a87"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Calling the interpreter’s attendance a change implies a previous in-person arrangement. Only the video attendance is confirmed.",
+        "reply_sha256": "4131e475f11c9aa3d15623744772856498e03b2e3c818bfb81c90738a39b980b",
+        "graded_trials": [
+          "052ef114-cee2-499b-85d7-b41f2e58695a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The second sentence identifies the original Room Grey listing and explicitly closes f8. The video update has its own ID.",
+        "reply_sha256": "46c020fc42b93b24490ef24acf81bee40ec4ed97e2ad9c8d964812e7e3801b44",
+        "graded_trials": [
+          "a6736c2a-1386-4c21-b57e-f1d7a1517690"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two items accurately report the staff-verified Room Lime listing and the interpreter’s video attendance under the correct IDs.",
+        "reply_sha256": "9e78d03999aeb175bd1e7bef24a0651554985d1b8372c13dedb32015d20bac38",
+        "graded_trials": [
+          "e55e8662-cccb-4e7f-8277-eee7eea3bc3a",
+          "98f75411-edcb-4298-989e-4820d02f7204"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The reply claims nobody went to the wrong room and assumes a specific AV setup. The equipment checklist, test call, and screensaver remark go beyond the requested update.",
+        "reply_sha256": "9661c505ac5d6f39aaa6fc2991c73100ec262597368e73ac282793d970e3ccc3",
+        "graded_trials": [
+          "97550aac-6899-4033-a1d1-ffb2abd084c5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "f8 gives both room names and staff verification. f9 reports video attendance without inferring a change of plan.",
+        "reply_sha256": "543384dd4a80dd00b3090ac65d3aefa36657fc8c644d76b31304caf333a22b00",
+        "graded_trials": [
+          "e66641f3-10ff-4e53-8b8f-a30cd7db41f0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The opening sentence repeats both statuses. The detailed items use the correct IDs, and video attendance excludes physical attendance at the talk.",
+        "reply_sha256": "f3548b5f4dc54a747b2a448ad77caf5624fc2668c787346f2bdf1d2f1a08ffb4",
+        "graded_trials": [
+          "b21389b8-ac48-44d9-932c-d60eed405781"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "sign-copy",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "5ea44dd802c6a52bde1a27b69265c29949eff42510db0e50083c3e92c3911f42",
+    "judge_log_id": "38e609c8-ab8a-4881-b38d-88cedbe471c1",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The printable sign asks visitors to remove all items first, then hang the bag on a hook to keep the aisle clear.",
+        "reply_sha256": "b973c98a8026b43fa0912a142a7138bc491118b9ac3831e44224778678299db2",
+        "graded_trials": [
+          "3e73a1e1-0187-4c5a-8da7-e4ff51e2061d"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The sign covers both steps, but the preface invents a half-sandwich incident. The insult and unsolicited shorter version add material beyond the requested wording. The alternative has its own bold ID outside the sign.",
+        "reply_sha256": "7ca6ed9284905215f6f0e0757d1636e534c19e73307d6175c9a56da5ad9bf128",
+        "graded_trials": [
+          "099f66be-132f-4e25-a9fb-ba6a84be916c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The sign tells visitors to take loose items with them, then use a hook to keep the aisle clear. It can be printed as written.",
+        "reply_sha256": "f16934dc76e8238c5adf2d3b3441248d7a9c9b9523f4e4f856bd6a706387ca98",
+        "graded_trials": [
+          "4b8a1546-08be-43f5-87f7-0c46ffb7119b"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The main sign covers both steps, but the preface makes an unsupported claim about how often people ignore signs. The commentary and unsolicited second version are unnecessary. The alternative has its own bold ID outside the sign.",
+        "reply_sha256": "8556c1b98d106acadbb43acbd62918dc8a7124ffe6d9661b5d833e9bf9829e0a",
+        "graded_trials": [
+          "17a4ca7a-f1df-4fb3-8d5c-49f7ec059d88"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both instructions are ready to print. They explicitly address loose items, the order of the steps, and aisle clearance.",
+        "reply_sha256": "49df5c1d27a77817f647decc3da67056fc6fb8e68b08a26e5cf1c19ab446ef75",
+        "graded_trials": [
+          "aef0bcc0-95da-4941-96cd-bc3ed28dd303"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The sign directs visitors to remove all items before returning the bag and to hang it on a hook to keep the aisle clear.",
+        "reply_sha256": "99e1cc8090ef7fe288bd7b298315c402d3565d6cd3d01f790179481f4a2c8644",
+        "graded_trials": [
+          "6cd9b54b-ae5e-4c0b-b858-b7745db9e2c3"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "One printable sentence gives both steps in order. Emptying the bag completely covers loose items, and the hook instruction explains how to keep the aisle clear.",
+        "reply_sha256": "042ab84a15b55dc02c726bae59361d12241668d2b022b96e6d9f1a9ba7f0057f",
+        "graded_trials": [
+          "50588091-331d-4ca7-8983-ae81f735ed85"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The sign states the intended outcome of each step in visitor-facing language. Nothing is left inside, and the aisle stays clear.",
+        "reply_sha256": "0dda48afe8a868a160fb4943055c02542730c71cbc9103f9fab8fc23bb2135af",
+        "graded_trials": [
+          "925ae59f-f1d1-4cae-adaf-6e07a970b55a"
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,345 @@
+[
+  {
+    "case": "colour-proofs",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "394c89584c75f4c4212b8f5cb7868d71395ed3dab424f327b4ad85cc71abeaa9",
+    "judge_log_id": "17faa6b1-cadd-43bd-9c39-5c0bb0367241",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It explains both checks and their order, but claims every spelling fix requires another paper proof and that screen edits cost only a few minutes. The opening joke, repeated summary and formatting offer add unnecessary length.",
+        "reply_sha256": "9d6ec69c96be07667c752a0598ab15a3acf7374bd6ef1c66376112a7969626a1",
+        "graded_trials": [
+          "ee19611d-b71c-48e1-8d2f-f3d01ac975c2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled step gives the correct check, and the first explains why spelling is corrected before printing.",
+        "reply_sha256": "8d4cb1b0979e34fba7829ad0835268982065f3596f8dc78cb0cbd62c25a3fe7f",
+        "graded_trials": [
+          "bf939017-a785-4a41-b697-3e1b3a82a15c",
+          "329783f9-d78b-4415-a400-94d8943633f2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Two sentences explain both checks and their order. The requested explanation can stand alone without IDs.",
+        "reply_sha256": "8c0e5c5246c412224251ef327caf8e568649f8e1546234077b583b9b3d69a9ef",
+        "graded_trials": [
+          "d31ad03a-1455-463d-9e6d-409b9c128dd7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two labeled steps distinguish spelling from ink appearance and give a reasonable ordering rationale: catching a typo before it consumes time and stock.",
+        "reply_sha256": "f0c6b4f08fc67f86235373f7e312899857b272447d2c88c2ebc1211b44fd3925",
+        "graded_trials": [
+          "8d0f2650-f320-4e28-a616-8b02a67a6b4b"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It explains the checks but adds an unsupported claim that every job goes through approval for print. The closing bullets repeat both checks, and the joke about yelling is unrelated.",
+        "reply_sha256": "0f080f068259a7f4c6c896f3ee2224be7d012a965a9d7c5df6b4c88cbd289e57",
+        "graded_trials": [
+          "1bc8229f-adfd-4765-bfbc-bd48f8b951f7"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "It adds unrequested checks for factual details and fine-line sharpness, and claims screen proofs cost nothing. The checklists, repeated rationale, jokes and formatting offer exceed the brief. The offer’s bold ID appears mid-paragraph instead of at the start of its own item.",
+        "reply_sha256": "50a468418b6ff890706a71f89b4843526870b1a999f79056d747713944fe8877",
+        "graded_trials": [
+          "da43b798-dc39-44ad-907f-33c4927e4e42"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "It covers both checks and identifies avoiding reprints as an inference about the order. The opening aside and closing note about revising and laminating the explanation are unnecessary for the trainee.",
+        "reply_sha256": "799c23f5764126927cd8c0fc0b09f6bf604c5ef78336b30bc792e52f9de36b9b",
+        "graded_trials": [
+          "156bba82-6e78-4c11-82e0-7ff36400da87"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "meter-reading",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "0ceac2b041200de55d4469b26fec4c2593bd6aac737822680bd1c929484c8f80",
+    "judge_log_id": "af5d4c9e-ab96-433b-8768-2f9889cf652e",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The subtraction and combined-meter explanation answer both questions. The insult, attribution procedures, and discussion of pressure drift are unnecessary.",
+        "reply_sha256": "703434c8bf323eef8c0c5c052122e88cb7436d0169bed05b34ac9c3e2e61180f",
+        "graded_trials": [
+          "9603ead1-04a6-4b63-8494-8524d3cf37f5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gives the 8-litre difference and explains why different tap combinations produce the same reading. Each answer has its own ID.",
+        "reply_sha256": "e89d3f7820e09c0889ddb992008793de8285ee9d7fed0b0b7ec05ffc6ab22ca6",
+        "graded_trials": [
+          "77764185-7f2d-4013-88e1-afb6e55a565d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The calculation gives 8 litres. The one-tap and several-tap possibilities explain why the readings cannot identify the source.",
+        "reply_sha256": "f3d1b885bb833194774ed88772cbd6ec40918adb9706040ba147585a85769363",
+        "graded_trials": [
+          "64da4e4f-3d8f-4570-98c5-177657b700dc"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gives the correct difference and directly explains the attribution limit under a separate ID.",
+        "reply_sha256": "409ff74c44dd86856154a945be7e2d573e1f5957948596ce0055fb92e42d4ab4",
+        "graded_trials": [
+          "ad35f948-379c-415f-92dd-31c904ef07dd"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both core answers are correct, but the claim that an open/close log suffices for attribution is too strong. If two taps overlap, their timings alone cannot establish their individual volumes. The leak diagnosis, test procedure, and future monitoring options exceed the request.",
+        "reply_sha256": "8ef0d713f87cdfe1e2071d84cfdce3d385d447378183e21eef1d7384b68d5a8c",
+        "graded_trials": [
+          "db8d9297-6500-4978-9f63-2c017cf96ce0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gives the subtraction and explains that the total cannot identify the contributing taps. Both points are concise and separately labeled.",
+        "reply_sha256": "0d96998b544f5c2cadce52af4e3e105965e465a4658a349eabddb6e9690403cc",
+        "graded_trials": [
+          "a1db7a34-2130-45a5-a512-d9b5012aac75"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gives 8 litres and shows why attribution is impossible by describing two possibilities consistent with that total.",
+        "reply_sha256": "a51bfb97f2ea5d8d22e26c60f88959bad60e01e8215cc0ca05bbb5c3515003b0",
+        "graded_trials": [
+          "9a11cb36-c4ad-4b2c-bb45-bc3b541775d9"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "Both core answers are correct, but the claim that any listed method would establish attribution overstates what interval data or a bucket-filling recollection can show. The flow profiles, blame, and evidence-gathering options exceed the request. The fourth ID repeats the first ID’s reset and replacement caveat and also covers a distinct leak hypothesis.",
+        "reply_sha256": "18059e1b0932cf8df297dd0dd6966040c58d507514d09559802a2ca94fc1692a",
+        "graded_trials": [
+          "de564769-0ab0-4535-a446-4964796dd1ba"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "pickup-desk",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "933af7d6c225b72155bc96dd7df6d30df2be2c9162e18bed8b7f463744420670",
+    "judge_log_id": "035f3dfe-4eaa-4d70-b9eb-08114017fbd7",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly identifies the Cove desk.",
+        "reply_sha256": "32eea82d89e1cc85d9aa73807646f984f6d012d978f0da1299c92fed69564cc6",
+        "graded_trials": [
+          "09cce955-895d-4391-a4e8-11f1ae4632f3"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Names the Cove desk and ties it to badge collection.",
+        "reply_sha256": "74a4342b3baa73160039565dbcb395fae3cb7147fa4c3c95764527481ba9c134",
+        "graded_trials": [
+          "06d35e99-f6c5-4244-85d4-8cbbe2628dd3"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the correct desk with a brief reference to the guide.",
+        "reply_sha256": "372cd26f977514e93d5be14cdb40b688308aeba2d454a4ca85cb9a8a92dc95bb",
+        "graded_trials": [
+          "6b66fc1c-3a25-41f7-90f5-ca787d4f4045"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directs the user to the Cove desk.",
+        "reply_sha256": "d9993da73c6efc1ef5a42b31dd7caf52775cd5f28d631d6d7c64249ef2aa1172",
+        "graded_trials": [
+          "ca483afb-ca5a-4bb2-9599-69f2ec7ea754"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Identifies Cove as the desk the guide lists for badges.",
+        "reply_sha256": "2b99c6ede887abee0c885d121db244a41586f12c0159c70d5b4ca87ebb4acf94",
+        "graded_trials": [
+          "3f2dde08-e0f0-40dc-8a82-542642969c9d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Correctly names Cove, but the comments about wristbands and losing the badge are irrelevant.",
+        "reply_sha256": "027267a7ba1233245dead32e343d6f7df922e4a4b290a9c2a863a6f20867ebae",
+        "graded_trials": [
+          "21431999-462e-42c9-97a9-76778434bcd8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the correct destination for collecting the badge.",
+        "reply_sha256": "e69dca1d9ef5e1b7fc298d8a8db02d1c1db6ee2c2619ba93ee975dcb99e3f15f",
+        "graded_trials": [
+          "610e6b33-7d50-48d5-8936-61fda0c5f55f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Correctly names Cove, but the aside about wandering to Lantern adds unsolicited navigation commentary.",
+        "reply_sha256": "da6f40ab6f6b9d55793ea63d7def9d67584fae2cb9fe655830ea760cb48e0ed0",
+        "graded_trials": [
+          "42b4ca58-baf9-44c7-a825-ed1d2fdb6d38"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "tour-updates",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "d3fe51b2b8882036107a766bd586336fffb280bdc2ae6893f409ac6454c80982",
+    "judge_log_id": "01f82618-68f1-4cfa-9e1c-b6a9b673660a",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both IDs identify the correct status, including verification of the map fix and the permit blocking the shuttle stop.",
+        "reply_sha256": "7cab8855db3d9bed0f0b3456357a2fb51a34e5210bb664799d605df420b3501f",
+        "graded_trials": [
+          "892d5776-62d2-4d10-b841-f659f1555cac"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both statuses are accurate. The jokes, repeated permit blocker, and unsolicited build-and-verify instructions add unnecessary material.",
+        "reply_sha256": "441b068572134aa940b87a2bd4d4efe17c49ec89ebc9935483d05adcac12ceb2",
+        "graded_trials": [
+          "eadb7b83-d2b1-4aa1-b8dd-e40418edd6e3"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each ID gives the correct status and explains its practical consequence for directions or construction.",
+        "reply_sha256": "1886a7f7290b85fa8ddd5867d893e4a754d2f88334c79dd1fcf3593647bd89d7",
+        "graded_trials": [
+          "0f578878-931d-4a51-af06-8ba431eb527d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply directly reports the verified entrance correction and the approved installation awaiting a permit.",
+        "reply_sha256": "958c8cecdae7908e2cd623964bf19853cae9f042b4751263b28200c995996ebd",
+        "graded_trials": [
+          "7fe8854d-9991-40fe-be52-52f55544f08d"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both IDs are correct, but the request does not establish that permit issuance alone makes the stop ready to build. The reply also repeats the blocker and adds an unnecessary comment about who controls timing.",
+        "reply_sha256": "24b0887dbc5b5a1bc67fdfc6b27879ffd559c8884ce437ce323c34a25b3fa157",
+        "graded_trials": [
+          "fac3662d-7187-478b-a336-ac45362f21e0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply ties closure to the verified map fix and explains why the approved shuttle stop remains on hold.",
+        "reply_sha256": "b605ffe6bcdabd682c82f5797caf43894378a8dc7353c2f6548947c5ad09fff9",
+        "graded_trials": [
+          "4aefe0e5-45d2-4b88-8fa2-ca7ee9db3d7d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply identifies the map issue as verified and resolved and makes clear that the pending permit blocks implementation.",
+        "reply_sha256": "05018b1596fb46e75f330c86a4f2c53c9fb4ddf60bc6995c6fdedc9f2fc5f0f3",
+        "graded_trials": [
+          "2feb3bb2-ca86-4c8e-9c39-eb56801d6632"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply gives both requested statuses under their original IDs and distinguishes shuttle-stop approval from permit issuance.",
+        "reply_sha256": "47621e96dced93392ba389f71a5c6c7064800313aebc155b3e59151cfbf96c15",
+        "graded_trials": [
+          "99fd0ff6-df4a-4814-93c9-8fc6c62a6c44"
+        ]
+      }
+    ]
+  }
+]

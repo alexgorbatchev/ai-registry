@@ -1,0 +1,512 @@
+[
+  {
+    "case": "completion",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "50d9fa962c8287893b913b44a92970abb1a6b51e7eb35e89e8f40f9b1eef562a",
+    "judge_log_id": "bb3c1337-03b6-4446-aa19-44566cfdf1db",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports a4 as live and gives the observed result of the simultaneous-build test.",
+        "reply_sha256": "6d907d171bf169bb05762db8d30e3848c42d4585d62127578743ed8622959eb3",
+        "graded_trials": [
+          "2939f0c2-e87d-42ea-b17a-6399eba4bd3f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The test established that the second build waited. It did not establish the wait duration, prior output corruption, or closure of a corruption race. The commentary about the other checks is extraneous, and the claim that nothing remains open is unsupported.",
+        "reply_sha256": "8273438102a399feba58165623fc7baf61d68d9dd6100262bac05a67d7d8627e",
+        "graded_trials": [
+          "f327312e-1067-4482-ace7-0760bb54694f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Connects the live a4 change to the observed wait and accurately names the other passing checks.",
+        "reply_sha256": "fc471e0bbd1c0f2e6a7d9da0e51fe163ba500fca5999bc86fe8558dcfa5f6bca",
+        "graded_trials": [
+          "11afd897-a82a-424b-891b-8fe9eef70e5b"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The request says the other checks passed, without establishing they were required or that nothing remains open. The joke about engineers adds no evidence.",
+        "reply_sha256": "26138412200252f04e98f0b27e53e834711fc32ac821e5a58672057101738eb9",
+        "graded_trials": [
+          "5fbecd53-5e8c-4ddc-830c-58bcb17d1fb8"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "The test confirmed that the second build waited, but the supplied evidence does not say the wait lasted until the first build finished.",
+        "reply_sha256": "81aa3a941b23cfeeb27edc7726ede212a23eacfd3998e210b18d399c48436b61",
+        "graded_trials": [
+          "d8793f2e-a5bb-4d6b-811e-848c3ff0e968"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "The completion update identifies a4 correctly but overstates the observation by saying the second build waited until the first finished.",
+        "reply_sha256": "3e60ba7525597aafca0151849d153125f00ec4b1de8bce980072f143a150b7f5",
+        "graded_trials": [
+          "37d96d23-e5af-4712-8b5b-28012adca3a6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the live a4 change, the observed wait, and the three supporting checks.",
+        "reply_sha256": "f0bfa861c18a54b8316a8e879caf6c67f6148e4627bd72a2a770901ec28b4599",
+        "graded_trials": [
+          "ea31e6d7-8311-4355-81b3-937c89e9ba0f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Identifies a4 as live, gives the simultaneous-build test result, and briefly reports the other passing checks.",
+        "reply_sha256": "e145d103881fd8b3d4b704ecf3ff6459aaa92c6daeddd1372d77385cb35a6c90",
+        "graded_trials": [
+          "859a4222-cbfc-4247-9486-bb119502407e"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "detail-request",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "ee364ed858c842d1db8cc5ee1a60b0f2af7a0e9275b621937a710774770a10c0",
+    "judge_log_id": "934e908a-7214-4628-bf3a-025032c2b8ff",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled step explains its purpose and why it occurs at that point in the sequence.",
+        "reply_sha256": "47a4e61806ab394b4eab55f3048f902b6ab3917f272e6cd4467ed7167a03c709",
+        "graded_trials": [
+          "6745cb6d-b0d2-468b-94a0-13f84bbabffd"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It treats a torn snapshot as certain and assumes later work will operate on the journal’s volume. The opening repeats the steps, and the checksum and off-volume storage instructions expand the procedure.",
+        "reply_sha256": "f6baa55401d4f314c38e47746dcaab92a97f2d100e67151f3b1a2e5b8e7c1474",
+        "graded_trials": [
+          "9a3e3214-5aa2-4b86-be89-7fc949efd81e"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It guarantees that the copy contains every pre-pause commit, then says buffered commits may be missing. The flush and verification proposals expand the procedure, and the coffee anecdote adds no reasoning.",
+        "reply_sha256": "d3a17f7f90df3aec8850de44d8649fa232c44271bbcc2d99a3e80cd3444e5244",
+        "graded_trials": [
+          "a39b2af6-a018-425d-888b-fc14b5b38207"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The three labeled steps explain how pausing stabilizes the journal, copying preserves it, and resuming restores write service.",
+        "reply_sha256": "ee838dedcae590c62d84eb7428f54d7f7063f199fd79ee9c3d1b8b9f087e7086",
+        "graded_trials": [
+          "f7ef25da-d50f-4582-8616-8d2944954b63"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled step gives its consequence in order, including why later writes leave the saved recovery point intact.",
+        "reply_sha256": "8599c0b8dd680f42456bf3c892ace548e59d0877a2ad197b9fb0419e02bc3fb3",
+        "graded_trials": [
+          "8e56ee33-0c0a-493b-b457-b23232ac9a8a"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "It calls the captured state known-good without evidence and treats a disk flush as mandatory. The checksum instruction adds a procedure, and f1 gives a separate finding ID to ordering consequences already explained under the steps.",
+        "reply_sha256": "8708421f1765ccf96da091e5f6cb270d008cc2bb04e9056734d0bfbbcc056e5a",
+        "graded_trials": [
+          "a2e9cec7-1755-4e34-99c3-786d566f0542"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The three labeled steps explain why writes must stop, what the completed copy preserves, and when write service can resume.",
+        "reply_sha256": "4b422e0e2f96c759ec2453ecee57d24756b2ddf775cc19fb2281c2d4e7b19f9c",
+        "graded_trials": [
+          "1bb004a5-d45c-40a8-9172-c5ccbc581744"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It claims a concurrent copy always tears and that the journal records every committed change. Neither claim is established. The flush proposal, unconditional restart rule after failure, and pager anecdote go beyond the requested explanation.",
+        "reply_sha256": "445704efb2e4c99059e2056952ed4a27ea59dcdcd1c6ec11978160c2470d9477",
+        "graded_trials": [
+          "3c1840e3-5808-48ff-9206-3c7e7a614f3c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "independent-offer",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "df476be460591c0e57f0f94330c527e76c15a0e29fbd5115849debd959d3987f",
+    "judge_log_id": "fcff752d-a216-43a8-aeb5-98cce835ef29",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The IDs identify the confirmed finding and proposed archive check. The speculation about a “cursed sample” or “structural problem” adds an unnecessary diagnosis.",
+        "reply_sha256": "455a3eb0a84a1f68322344079d1316f6eb1e99744afaab973998905e1197c38a",
+        "graded_trials": [
+          "14b93168-a905-465f-92b0-c4c8f79d641d"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "“Its mixed manifests” assumes the archive contains mixed manifests. Their presence is still unknown.",
+        "reply_sha256": "c8b77cee3cee121b8894c4d1c9630ce274a146986c78c725dbef2d395847e00b",
+        "graded_trials": [
+          "a5922aed-aede-4125-ae11-3a639ad87df0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply records what the sample demonstrated under f2 and offers the same archive check under a1.",
+        "reply_sha256": "4d862af52384ebefd1c40628f399f542db80606d1202fb3a4cbac38d6c1d762b",
+        "graded_trials": [
+          "ec53e6c4-eb06-426b-bc8e-46d7995ff8a4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The finding identifies the confirming observation. The separately labeled offer explains what the archive check would report.",
+        "reply_sha256": "a4f2fa187120c082e733cdbd3111ea27d29da6799cdf8b029a917700f9dc591c",
+        "graded_trials": [
+          "57de5e9f-0033-414b-b269-1f3d606977e8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply preserves f2, adds the sample confirmation, and gives the archive offer its own ID.",
+        "reply_sha256": "0c141bc63b18479a17b99408134fe232701b1408c2dc1c58a2f1a25b42a54df1",
+        "graded_trials": [
+          "fcec9e90-1914-42d3-9f53-8ba3bfd17481"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "No command result establishes the claimed configuration problem. That extra finding lacks a bold ID, and the setup instructions and posting commentary distract from the requested update and offer.",
+        "reply_sha256": "cb008dcf66f4c02766656121b5b35b193c3c8312f441cac1fca43e818093fc5c",
+        "graded_trials": [
+          "9e23e584-06d8-4a40-83e0-707267e6c4a1"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The second sentence of f2 repeats what the sample acceptance already establishes.",
+        "reply_sha256": "0c43d938f79174df6bdc433446b7e907302c455ae38215fa76054d1e6094a89b",
+        "graded_trials": [
+          "de66640c-7a42-433f-9479-b1c52e6246ad"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The commands provide no results establishing that a page was delivered or a duplicate project was removed. Page administration and unsolicited scan options obscure the response. The embedded content omits f2 and gives the archive offer no bold ID.",
+        "reply_sha256": "5873bdd3f9ded898495038007e4daa4aafd6ad242cbbe66e92db24b64acd3406",
+        "graded_trials": [
+          "023d7548-1e12-4a22-b435-f575f88b0252"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "location",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "9e7034794812858191bc86fe242192a2d5b0bedd3afb37cc2f4f3ba5c7bc2eed",
+    "judge_log_id": "1d1f33c8-7cc1-4d4f-9e49-1bf4a9a15a45",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly identifies the location specified by the guide.",
+        "reply_sha256": "c2415a00ffc84e633eb2c043a61b20d51911c0141d3124e66093e63d5ad765c3",
+        "graded_trials": [
+          "a3d457c8-d9f6-49c7-9ad4-53b9b0056bf9",
+          "ae9b33c1-e538-4642-85e1-c5fbaf9b5ccb"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Identifies the right location, but claims without support that central settings will override service settings. It repeats the answer and adds unrequested commands and troubleshooting. The distinct findings have bold IDs.",
+        "reply_sha256": "0c93fafb76a4f1e4c507a457354cd5a630491ae8c7cd31f53c009267069064ad",
+        "graded_trials": [
+          "b8aa73ae-f817-4bdb-b3e5-53eeed44d1d0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the specified location and briefly distinguishes enabling locking from the other steps.",
+        "reply_sha256": "2c82cfdaa8f6ce85dcfbb20eaf6c11a8c5012da743fb0e9e93cb372e85302b21",
+        "graded_trials": [
+          "d235c3b8-9454-47a3-a683-5a72b57e320a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the specified location and relevant clarification. No prior ID or required ID prefix was supplied.",
+        "reply_sha256": "72bdc66b9d68cc0d35ba8b6b38fe9cbfb0782e558f9a4f05449c1a3e32163932",
+        "graded_trials": [
+          "4ab15b61-7c52-4290-8307-6a43bd7a805a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly identifies each service’s own build configuration.",
+        "reply_sha256": "c0d180080aa5a29495d7ac908eca459bb24ec698d0e94d08f75e3ce24d4d5625",
+        "graded_trials": [
+          "18d6e370-fad4-4da9-95f9-9a0ee61d9e64"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Answers the location question directly and clarifies what a shared setup would mean for placement.",
+        "reply_sha256": "b2947b2b7af753f7c99d51e0d9cc690322a5c9f61f49e6fdd470f82d9db54ca6",
+        "graded_trials": [
+          "2db02c4e-bea4-4c33-a75d-f749ff3c9999"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "Names the right location but presents an unsupported PR rejection rule as part of the CI check. The commands, convention-plugin recommendation, and follow-up offer exceed the question. The separate lockfile, verification, and CI findings and the closing offer lack bold IDs.",
+        "reply_sha256": "74f39a21eeb38440d08cddc416e1e9a27552be9b85b1f556ed6fd7dfb64321b0",
+        "graded_trials": [
+          "fd910fea-595d-484c-83a6-924f65e17e54"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "new-finding",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "53d916ad83fe1a919731309323a9fc82a4aa357e8bdf8bb6f8467db14ac3da4b",
+    "judge_log_id": "e186fb70-8808-4d36-816b-87a57949bd7b",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports only the cache fix and the new 500-row export limit under their correct IDs.",
+        "reply_sha256": "b8170173c4bbc642db2ebdd576526163c75547e8a790aa1c5cf88f4f010eaa9b",
+        "graded_trials": [
+          "a9be3ea4-f0ef-4616-8636-6698bcd137f5"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The request does not establish that truncation is silent or goes unnoticed. “One down,” the error comparison, and speculation about pagination add unrequested commentary.",
+        "reply_sha256": "11c4ffd0205feb51df61d574ef6b212bb263fe2652c0b2697d08d32c3a17bc20",
+        "graded_trials": [
+          "6a93a2ae-0c74-49ef-935e-d2f36e3985c5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports both changes accurately under distinct bold IDs and omits the unchanged index finding.",
+        "reply_sha256": "64e4c884b953bacdd3ad73f810e29e7eb14f4b095dfbdc8113421e3f44745efc",
+        "graded_trials": [
+          "c0e6f3ef-aeb3-4032-834e-21ba4314ad8c",
+          "6d435edd-f4e8-4fb9-a3bc-2ab7905b6f0c"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“Rows past that are silently dropped” repeats the cutoff and adds an unsupported claim about whether users receive a warning.",
+        "reply_sha256": "3434ad935b1b442a05acb0e4596ad78f1091b3ba52fbc817ec5c1466c4c73f7d",
+        "graded_trials": [
+          "6f8ef740-5874-4347-944f-55eb1f9b8f4b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports only the restored cache and the new export limit, preserving f2 and assigning f3 to exports.",
+        "reply_sha256": "ff91c28f41d77ee2f9b0db1b981a8e79703f05576bbde849c9c6dcaeb5eec1ba",
+        "graded_trials": [
+          "79f7bf42-5d6e-4c30-9463-83c6a15a379c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States both changed findings accurately and concisely, each with its own correct bold ID.",
+        "reply_sha256": "9727fdaaa4c94dd36be1c7db952b9253ae5f66c069064ac63591501a2e3d6ecf",
+        "graded_trials": [
+          "72ff4814-0383-4225-a0c1-357682c7adff"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Silent truncation and the claimed timing of user detection are unsupported. “One down,” the error comparison, and guesses about the cause go beyond the requested changes.",
+        "reply_sha256": "165eecba42e1f1d162054975ce316db42995c817f092c041e44e9cc45ea42e27",
+        "graded_trials": [
+          "fb8051f3-7a34-4d80-b47e-f084dd4bb92c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "progress-risk",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "743ed24ef61c12f15991aad88eb15f4d5353c65fde2872aa492dc62e5f36a0ca",
+    "judge_log_id": "20662086-7bb1-43ef-8c6d-c1f95fb350e6",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the processed count and identifies your token renewal as the step that unblocks the remaining 30. It preserves **f3**.",
+        "reply_sha256": "0f4421502cdf90efd0c8f9f8a317649512f799700b3c175311a4d44b1fe826ee",
+        "graded_trials": [
+          "902468a4-c521-4eec-bb43-d048145cbc9e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States the progress, blocker, and required action under the existing **f3** ID.",
+        "reply_sha256": "be8cd53167ea74ddecc8c7b96276597f3c3cfb1a760a01d0ae5f84806b683479",
+        "graded_trials": [
+          "93bf15da-6a40-482c-b22a-f5f32e3e5b01"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“Nothing else is on fire” gives unsupported reassurance. The notification and verification procedure goes beyond the status request. The separate offer has its own **a1** ID.",
+        "reply_sha256": "e5e9e193b564ea5a08ab44a72a44873e970d125c59d7d538d2eb616f3449124c",
+        "graded_trials": [
+          "945fac0e-426e-49fc-a74a-7be126cf8259"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Saying the remaining records “resume once you renew” implies processing will restart upon renewal. The evidence establishes only that renewal removes the blocker.",
+        "reply_sha256": "71befe6d0f0d8ca9e0d4567bf61aa3f9e74edbb0b3953c5201aadf4b2df61fab",
+        "graded_trials": [
+          "94441772-9136-493b-a3a4-770f2aa18738"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the paused count and makes clear that the remaining 30 depend on your token renewal. It preserves **f3**.",
+        "reply_sha256": "e8f0019906cf73538770aa823dfcc4cadebf7bf291fef96f1167cf2b41673ef4",
+        "graded_trials": [
+          "ee46f62e-8eba-42ee-a42c-53aa74adde92"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "The status is accurate. The unsolicited offer to resume processing adds a distinct commitment under **f3** without its own bold ID.",
+        "reply_sha256": "e327b3203a5540590ffca47cdcccae917642eb00ec27683d8ed7fd734ffc9b40",
+        "graded_trials": [
+          "b0159b30-4a1c-449a-8ccf-d6100f28dc68"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the exact counts, expired token, and renewal owner in a single **f3** update.",
+        "reply_sha256": "5512819dbddb8622f52c1a0a64662d6bf2e1afdbcfbfe0115a4446c0fbf7823d",
+        "graded_trials": [
+          "f756d2bc-d49c-497c-b920-cf000ed02924"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The processed count does not establish a restart point at record 71 or guarantee that earlier records will be skipped. The authentication aside and unsolicited restart procedure add unnecessary detail. The offer has its own **a1** ID.",
+        "reply_sha256": "cc67096bd8074ca4cc42de9c0419ba42bdfd872eec130e9fcfcc2cb88ab8dbc6",
+        "graded_trials": [
+          "31cc3267-75d9-4c81-9f16-cfdaa3680dc4"
+        ]
+      }
+    ]
+  }
+]

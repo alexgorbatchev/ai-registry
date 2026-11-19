@@ -1,0 +1,7 @@
+{
+  "label": "Add Agent Pages",
+  "baseline": "v3",
+  "candidate": "pages",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

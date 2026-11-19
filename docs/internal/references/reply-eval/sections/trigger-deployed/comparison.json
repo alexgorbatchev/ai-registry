@@ -1,0 +1,7 @@
+{
+  "label": "Deployed prompt",
+  "baseline": "v3",
+  "candidate": "deployed",
+  "suite": "sections/triggers.json",
+  "suite_label": "Operational"
+}

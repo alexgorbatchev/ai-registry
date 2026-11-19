@@ -1,0 +1,7 @@
+{
+  "label": "Add All eight blocks",
+  "baseline": "v3",
+  "candidate": "all",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

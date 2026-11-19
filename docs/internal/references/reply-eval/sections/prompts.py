@@ -35,7 +35,11 @@ def build():
     prompts = {"v3": rules, "deployed": deployed, "all": compose(BLOCKS),
                "examples": rules.rstrip() + "\n\n" + examples,
                "old-rules": legacy.strip() + "\n\n" + examples}
+    prompts["deployed-without-examples"] = deployed.removesuffix(examples)
     for name in BLOCKS:
+        text = blocks[name].strip()
+        assert deployed.count(text) == 1
+        prompts["deployed-without-" + name] = deployed.replace(text + "\n\n", "", 1)
         prompts[name] = compose([name])
         prompts["without-" + name] = compose(set(BLOCKS) - {name})
     return prompts

@@ -1,0 +1,7 @@
+{
+  "label": "Deployed prompt",
+  "baseline": "v3",
+  "candidate": "deployed",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

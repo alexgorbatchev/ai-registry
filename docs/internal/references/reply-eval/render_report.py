@@ -33,6 +33,8 @@ ROUND_NAMES = {
     "16": "Cross-model edit · transfer replay",
     "17": "Low-effort editors · challenge replay",
     "18": "Low-effort editors · transfer replay",
+    "19": "Low-effort edits of Astra drafts · challenge replay",
+    "20": "Low-effort edits of Astra drafts · transfer replay",
 }
 
 
@@ -85,7 +87,16 @@ def arm_stats(run, arm):
     return passed, len(rows), length
 
 
-EDIT_SOURCES = {"13": "10", "14": "12", "15": "10", "16": "12", "17": "10", "18": "12"}
+EDIT_SOURCES = {
+    "13": "10",
+    "14": "12",
+    "15": "10",
+    "16": "12",
+    "17": "10",
+    "18": "12",
+    "19": "10",
+    "20": "12",
+}
 
 
 def count_generations(rounds):
@@ -117,6 +128,8 @@ def count_generations(rounds):
 
 
 def model_label(number, model):
+    if number in ("19", "20"):
+        return f"Astra 6.2 draft → {MODELS[model]} edit"
     if number in ("15", "16", "17", "18"):
         return f"Opus 5.5 draft → {MODELS[model]} edit"
     return MODELS.get(model, model)
@@ -458,32 +471,30 @@ def render():
             "on separately generated replies. The test covered 12 distinct synthetic prompts, each repeated twice. "
             "One reviewer scored the replies and knew a cross-model edit was being tested.</p>"
         )
-    if {"17", "18"} <= reviews.keys():
-        lightweight_editors = []
-        for model in ("gpt-6-luna", "claude-haiku-5-5"):
-            edits = [
-                row
-                for number in ("17", "18")
-                for run in rounds[number]
-                if run["header"]["model"] == model
-                for row in run["rows"]
-                if row["arm"] == "candidate"
-            ]
-            passed = sum(
-                reviews[n]["summary"][model]["arms"]["candidate"]["pass"]
-                for n in ("17", "18")
-            )
-            lightweight_editors.append(
-                f"<strong>{MODELS[model]} {passed}/{len(edits)}</strong> "
-                f"({mean(row['words'] for row in edits):.0f} words per edit)"
-            )
+    editor_rows = []
+    for source, numbers in (("Opus 5.5", ("17", "18")), ("Astra 6.2", ("19", "20"))):
+        if not set(numbers) <= reviews.keys():
+            continue
+        cells = []
+        for model, arm in (
+            ("gpt-6-luna", "baseline"),
+            ("gpt-6-luna", "candidate"),
+            ("claude-haiku-5-5", "candidate"),
+        ):
+            scores = [reviews[n]["summary"][model]["arms"][arm] for n in numbers]
+            passed = sum(score["pass"] for score in scores)
+            total_scored = sum(score["responses"] for score in scores)
+            cells.append(f"<td>{passed}/{total_scored}</td>")
+        editor_rows.append(f"<tr><th scope='row'>{source}</th>{''.join(cells)}</tr>")
+    if editor_rows:
         highlight = (
-            "<h2>Low-effort editors on the same Opus drafts</h2>"
-            f"<p class='verdict'>{' · '.join(lightweight_editors)}. "
-            f"Raw drafts passed {raw}/{trials} and Astra at medium passed {cross}/{trials}.</p>"
-            "<p>One reviewer scored completeness, concision and IDs across 12 synthetic prompts, "
-            "each repeated twice. Model labels were hidden during scoring, but the reviewer had seen "
-            "interim automatic results. The editor runs only in this experiment.</p>"
+            "<h2>Does a low-effort editing pass help?</h2>"
+            "<div class='review'><table><thead><tr><th>Draft model</th><th>Raw</th>"
+            "<th>Luna 6 edit</th><th>Haiku 5.5 edit</th></tr></thead>"
+            f"<tbody>{''.join(editor_rows)}</tbody></table></div>"
+            "<p>Each row uses the same drafts in all three columns. Counts show replies passing "
+            "completeness, concision and ID review across 12 prompts repeated twice. "
+            "Both editors used low effort. Editing runs only in this experiment.</p>"
         )
     latest_patch = (
         by_digest.get(

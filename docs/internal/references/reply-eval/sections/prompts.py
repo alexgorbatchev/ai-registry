@@ -111,6 +111,16 @@ def build():
         (paragraph,) = [p for p in paragraphs if p.startswith(prefix)]
         candidate = candidate.replace(paragraph + "\n\n", "", 1)
         prompts[f"ops-{rank:02}-{name}"] = candidate
+    current = subprocess.check_output(
+        ["git", "show", "9999cae17a66ddcd24d425ec5252515b86d7585a:system/system.md"]
+    ).decode()
+    example = "Labels now print in colour. The sample label confirms it."
+    assert current.count(example) == 1
+    prompts["evidence-control"] = current
+    prompts["evidence-example"] = current.replace(example, "The sample label printed in colour.")
+    prompts["evidence-ending"] = (
+        current[:current.index("# Sending the reply")] + (HERE / "evidence-ending.md").read_text()
+    )
     return prompts
 
 

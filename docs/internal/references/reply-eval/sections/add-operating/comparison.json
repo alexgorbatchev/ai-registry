@@ -1,0 +1,7 @@
+{
+  "label": "Add Operating instructions",
+  "baseline": "v3",
+  "candidate": "operating",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

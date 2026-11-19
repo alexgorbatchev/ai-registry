@@ -1,0 +1,7 @@
+{
+  "label": "Add Failure investigation",
+  "baseline": "v3",
+  "candidate": "recovery",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

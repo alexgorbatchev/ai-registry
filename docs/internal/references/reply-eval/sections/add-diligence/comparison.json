@@ -1,0 +1,7 @@
+{
+  "label": "Add Due diligence",
+  "baseline": "v3",
+  "candidate": "diligence",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

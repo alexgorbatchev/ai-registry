@@ -1,0 +1,7 @@
+{
+  "label": "Add Failure investigation",
+  "baseline": "v3",
+  "candidate": "recovery",
+  "suite": "sections/triggers.json",
+  "suite_label": "Operational"
+}

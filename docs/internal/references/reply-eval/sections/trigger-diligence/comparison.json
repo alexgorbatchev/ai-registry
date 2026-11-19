@@ -1,0 +1,7 @@
+{
+  "label": "Add Due diligence",
+  "baseline": "v3",
+  "candidate": "diligence",
+  "suite": "sections/triggers.json",
+  "suite_label": "Operational"
+}

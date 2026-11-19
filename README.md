@@ -171,7 +171,7 @@ That command:
 - builds the generated outputs
 - verifies the previous generated-output manifest before overwriting managed generated paths in `.output/`
 - automatically recovers supported harness-written generated-file edits into their mapped source and regenerates outputs when the manifest baseline confirms that source changes will not be overwritten; conflicts, unsupported recovery, or save failures preserve both versions and suspend output application, including with `-y`
-- syncs harness settings files (Claude Code and Pi `settings.json`, Claude Code `keybindings.json`, OpenCode `opencode.jsonc` and `tui.json`, Codex `config.toml` and `hooks.json`) both ways instead of treating them as drift: changes the harness made are written back to `harnesses/<name>/` and committed when the file had no other uncommitted edits, and registry changes are applied to the live file
+- syncs harness settings files (Claude Code and Pi `settings.json`, Pi `mcp.json`, Claude Code `keybindings.json`, OpenCode `opencode.jsonc` and `tui.json`, Codex `config.toml` and `hooks.json`) both ways instead of treating them as drift: changes the harness made are written back to `harnesses/<name>/` and committed when the file had no other uncommitted edits, and registry changes are applied to the live file
 - links the managed entries of `.output/opencode` into the real `${XDG_CONFIG_HOME:-~/.config}/opencode` directory
 - links the managed entries of `.output/codex` into the real `${CODEX_HOME:-~/.codex}` directory
 - links the managed entries of `.output/pi` into the real `${PI_CODING_AGENT_DIR:-~/.pi/agent}` directory

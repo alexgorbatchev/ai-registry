@@ -85,9 +85,10 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 
 ## Pi
 
-- Keep shipped Pi files directly under `harnesses/pi/`: `settings.json`, `models.json`, `web-search.json`, `extensions/`, `prompts/`, `skills/`, and the `templates/` the helper scripts are generated from.
+- Keep shipped Pi files directly under `harnesses/pi/`: `settings.json`, `mcp.json`, `models.json`, `web-search.json`, `extensions/`, `prompts/`, `skills/`, and the `templates/` the helper scripts are generated from.
 - Keep the Pi unified-output plugin in `packages/registry-cli/src/harnesses/pi/build.ts`.
 - Map registry commands and `harnesses/pi/prompts/` to `prompts/`, copy `system/system.md` to `APPEND_SYSTEM.md`, and stage Pi-only skills under `skills/`; registry skills reach Pi through `~/.agents/skills`. Pi writes `sessions/` into the real `${PI_CODING_AGENT_DIR:-~/.pi/agent}` home.
+- Pi syncs `mcp.json` when supplied by the profile or an overlay. MCP server environment values and headers stay in the live profile.
 - `settings.json` is a synced settings file: model, theme, and thinking-level choices made in Pi flow back into `harnesses/pi/settings.json`. `lastChangelogVersion` and `extensionChangelogVersions` are live-only because Pi stamps them after Pi and extension updates.
 - `just bootstrap` applies `.output/pi/` to `${PI_CODING_AGENT_DIR:-~/.pi/agent}`.
 - Generate the `pi-install`, `pi-update`, and `pi-uninstall` helpers under `.output/bin/`. Do not generate a `pi` wrapper: the real `pi` binary already reads `${PI_CODING_AGENT_DIR:-~/.pi/agent}`, so nothing needs to shadow it.

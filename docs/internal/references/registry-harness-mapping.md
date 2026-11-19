@@ -18,7 +18,7 @@ Codex matches project trust by exact checkout path, so a trusted parent folder c
 
 ## Pi Harness Mapping
 
-The Pi harness writes `system/system.md` to `APPEND_SYSTEM.md`, maps registry commands plus `harnesses/pi/prompts/` to `prompts/` (a name collision fails the build), stages Pi-only skills under `skills/` (registry skills reach Pi through `~/.agents/skills`), copies `settings.json` as a synced settings file, and copies `models.json`, `web-search.json`, and `extensions/` when `harnesses/pi/` ships them. Bootstrap also links `web-search.json` to `~/.pi/web-search.json`. The output `bin/` directory contains the `pi-install`, `pi-update`, and `pi-uninstall` helpers. No `pi` wrapper is generated, because the real `pi` binary already reads `${PI_CODING_AGENT_DIR:-~/.pi/agent}`.
+The Pi harness writes `system/system.md` to `APPEND_SYSTEM.md`, maps registry commands plus `harnesses/pi/prompts/` to `prompts/` (a name collision fails the build), stages Pi-only skills under `skills/` (registry skills reach Pi through `~/.agents/skills`), syncs `settings.json` and optional `mcp.json` (MCP server environment values and headers stay local), and copies `models.json`, `web-search.json`, and `extensions/` when `harnesses/pi/` ships them. Bootstrap also links `web-search.json` to `~/.pi/web-search.json`. The output `bin/` directory contains the `pi-install`, `pi-update`, and `pi-uninstall` helpers. No `pi` wrapper is generated, because the real `pi` binary already reads `${PI_CODING_AGENT_DIR:-~/.pi/agent}`.
 
 ## Claude Code Harness Mapping
 

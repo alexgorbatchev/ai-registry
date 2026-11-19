@@ -50,6 +50,15 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   context.buildSupport.syncSettingsFile(settingsPath, {
     liveOnlyKeyPaths: [["lastChangelogVersion"], ["extensionChangelogVersions"]],
   });
+  if (existsSync(join(context.harnessDir, "mcp.json"))) {
+    await copyOptionalHarnessPath(context, piOutputDir, "mcp.json");
+    context.buildSupport.syncSettingsFile(join(piOutputDir, "mcp.json"), {
+      liveOnlyKeyPaths: [
+        ["mcpServers", "*", "env"],
+        ["mcpServers", "*", "headers"],
+      ],
+    });
+  }
   await copyOptionalHarnessPath(context, piOutputDir, "models.json");
   await copyOptionalHarnessPath(context, piOutputDir, "web-search.json");
   await copyOptionalHarnessPath(context, piOutputDir, "extensions");

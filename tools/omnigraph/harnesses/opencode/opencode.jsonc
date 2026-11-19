@@ -1,0 +1,16 @@
+{
+  "mcp": {
+    "omnigraph": {
+      "type": "local",
+      "command": [
+        "<%- env('HOME') %>/.local/bin/omnigraph",
+        "mcp",
+        "--target",
+        "local",
+        "--graph",
+        "workspace",
+        "--write"
+      ]
+    }
+  }
+}

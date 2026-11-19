@@ -135,6 +135,7 @@ describe("buildCommand settings sync", () => {
       "codex/hooks.json",
       "opencode/opencode.jsonc",
       "opencode/tui.json",
+      "pi/mcp.json",
       "pi/settings.json",
     ]);
     expect(getManagedEntryNames(manifest, registryPaths.output, join(registryPaths.output, "codex"))).toEqual([

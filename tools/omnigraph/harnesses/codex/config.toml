@@ -1,0 +1,3 @@
+[mcp_servers.omnigraph]
+command = "<%- env('HOME') %>/.local/bin/omnigraph"
+args = ["mcp", "--target", "local", "--graph", "workspace", "--write"]

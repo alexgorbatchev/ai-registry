@@ -151,10 +151,18 @@ describe("Pi harness build", () => {
     const repositoryRoot = await createOutputDirectory();
     await writeHarnessFixture(repositoryRoot);
 
+    await writeTestFile(repositoryRoot, "harnesses/pi/mcp.json", '{"mcpServers":{}}\n');
     const settingsSyncRegistry = createSettingsSyncRegistry(join(repositoryRoot, ".output"));
     await buildOutput(repositoryRoot, { settingsSyncRegistry });
 
     expect(settingsSyncRegistry.getSyncedSettingsFiles()).toEqual([
+      {
+        relativePath: "pi/mcp.json",
+        liveOnlyKeyPaths: [
+          ["mcpServers", "*", "env"],
+          ["mcpServers", "*", "headers"],
+        ],
+      },
       {
         relativePath: "pi/settings.json",
         liveOnlyKeyPaths: [["lastChangelogVersion"], ["extensionChangelogVersions"]],

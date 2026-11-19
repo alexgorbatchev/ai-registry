@@ -1,5 +1,7 @@
 # Which instructions change reply behavior?
 
+The [operations and recovery wording study](mode-study.md) compares scoped instructions inside the deployed prompt and explicitly credits conversational sarcasm.
+
 Freeze the [isolated TLDR and ID rules](../tuning/v3.md) and the [deployed system prompt](../../../../../system/system.md) at the commit recorded in [prompts.py](prompts.py). Every trial uses native instruction files, two fresh replies per case and arm, medium effort, and the established six-case [transfer suite](../transfer.json) unless indicated otherwise. Opus 5.5 runs through cl-envoy and Astra 6.2 through Codex. The existing blind Astra reviewer grades shuffled, deduplicated answers for completeness, concision and addressability. Joint passes require all three. Each round has its own contemporaneous control.
 
 ## Results

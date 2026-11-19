@@ -1,0 +1,476 @@
+[
+  {
+    "case": "cause-investigation",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "ee04e2f047f37b0d9fbdfa1b632c849dc5f0ad9ccf8fc9c052b154d866e3d414",
+    "judge_log_id": "e3f04211-7c6f-449a-8d0d-b9211b7d71aa",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Matches the exact worker attempt across records, distinguishes a stop request from its execution, and explains how to interpret an OOM during shutdown or an unattributed exit 137.",
+        "reply_sha256": "c7cf1e939dcb36e774a29b17fc5724c562010ad289ac53e749c40b2cccb44720",
+        "graded_trials": [
+          "1b6fcb00-bf97-4586-91aa-85d5f0cecaf3"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The claim that the first event killed the worker contradicts the OOM-during-drain example. Missing kernel logs or coarse metrics can still leave a decisive runtime record. The reply also speculates that the runtime record was probably deleted and repeats its unresolved verdict.",
+        "reply_sha256": "c6e7fd7530c1788c9881463926150c185bf3118d2df8d36058ab37726b024c2a",
+        "graded_trials": [
+          "25a4127e-d2da-471f-b2fa-90deb1f0d621"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains how to match a kernel victim despite PID reuse, verify execution of a stop request, and interpret a shared cgroup counter. It gives a clear verdict for both competing and insufficient records.",
+        "reply_sha256": "10cb0c2d52fa312d178272a6e71d15363c871315c76f7c840a9a991446c31ee2",
+        "graded_trials": [
+          "e1893efa-4880-4ad2-be7b-a8007496887e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Traces both causes to the exact worker attempt and explains why event order, victim identity, and the distinction between event time and ingestion time matter.",
+        "reply_sha256": "79a9c32b19c51b6e0c4f320a8fde7113c8ee46fb6267c5e63c56542aadefbc26",
+        "graded_trials": [
+          "f5624134-1df5-4528-b158-b53af995d7b1"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "A Kubernetes `Killing` event establishes a stop attempt, while a cgroup OOM event can concern another process. The reply misses the case where the worker dies from OOM during a rollout stop. It repeats the record checks, speculates about the missing record, and diverts to replacement registration.",
+        "reply_sha256": "016e3d06c7083cac0f5a2a42a031acc5a386f1c5b37fd8566889c4e3a9871418",
+        "graded_trials": [
+          "182a3262-a405-45a7-b985-d427ca976bf8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Identifies the records needed for each cause, qualifies cgroup-level evidence, and explains when independent records can resolve the cause despite the missing terminal record.",
+        "reply_sha256": "8fa1d58d3115f8e05ece5329ee8be234dd56e9fed755a1a05e70572a417e3156",
+        "graded_trials": [
+          "b9917427-a269-43cc-ba6b-a14d6f5c4d47"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "An earlier deletion event proves intent alone, and a cgroup match can identify the container without identifying the victim process. A retained runtime OOM reason can establish the cause after kernel logs are lost. The reply repeats the exit-137 explanation and gives an overbroad instruction to report any listed gap as unresolved.",
+        "reply_sha256": "bc264082b3c0a6f1165808ba97db320f75ebe7359ebf1b5e0c6fa4780724523c",
+        "graded_trials": [
+          "5d2bb145-5783-4f10-91c9-6a9b715ae645"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Replacement of the outgoing revision does not establish what killed the old worker. The reply discounts a matched runtime OOM reason as mere corroboration and lists an attributable OOM during shutdown under unresolved causes. The suggested infrastructure fixes and dashboard-registration detour add unnecessary material.",
+        "reply_sha256": "a9ec469161ab18e1cd150cf9db58710412c771ba6c03adac3f9d5fe16a5fb2af",
+        "graded_trials": [
+          "a3ea59f8-970d-460f-b6d4-6e811a86a658"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "cause-status",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "444b0edd40c68b8649ffbe9d28af9a0e38dfc4733d8ea198ad45ca31df7ea6e7",
+    "judge_log_id": "a525b2c4-55b3-41e1-83cb-0bb9e88a39b7",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It states the cause is undetermined and correctly leaves both termination and a memory kill unconfirmed.",
+        "reply_sha256": "a4e559dde80774fa59ad0dd766eefa97b810816383cf81fb69eba256e5d89095",
+        "graded_trials": [
+          "3ed4377d-d32e-4508-b37c-ee94893a7df0"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Dashboard disappearance does not establish that the worker stopped or stopped reporting. A missing record does not establish a retention failure. The two suggested phrasings repeat the findings.",
+        "reply_sha256": "10a4684fddaa3bc856af4ca5617106889c4b275fe0cb2401da6b94faeb3508a9",
+        "graded_trials": [
+          "ce156788-788e-4d7b-aafb-4a2c85f0d557"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gives a usable cause statement and distinguishes the dashboard observation from termination, a memory kill and rollout causation.",
+        "reply_sha256": "e9d718b67532fd2944d8b585e748308186916b70b47e9c6c1451596b1c7ac1f7",
+        "graded_trials": [
+          "f9ddaee7-b48b-43de-b9d5-6ac34e48eb8b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It reports the observed timing and accurately attributes the unverified memory-kill hypothesis to Operations.",
+        "reply_sha256": "62c584162d22d98923df269cfe38be0b60f8a2f556a1408c0bfff523a5508d43",
+        "graded_trials": [
+          "226b5932-fc6d-451a-94b3-4520174509a7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It answers directly and makes clear that neither termination, a memory kill nor a causal link to the rollout has been established.",
+        "reply_sha256": "922b92f71af5b3bf491468bb5c6cc1d6464d5dbf74a56352bbe4a17b4f90b9b9",
+        "graded_trials": [
+          "82027986-ab36-4ecb-9a3c-28cd2ef269bd"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The draft assumes reporting stopped, an investigation is active and the record was not retained. It also narrows Operations’ suggestion to a memory-limit breach without evidence. The repeated status and unsolicited diagnostic steps add unnecessary detail.",
+        "reply_sha256": "1a3bcbae574a7cdc4ca0a962b5b133757426cc4f7e5bc0a8cdeb08c0f9604ae1",
+        "graded_trials": [
+          "9c9ecd76-f904-41e1-88cf-bb9cd46464b1"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The draft asserts that the worker stopped and the record was never captured. Neither is established, and the basis for Operations’ hypothesis is unknown. The explanation repeats the timing caveat and the draft repeats the cause assessment.",
+        "reply_sha256": "0d8135458cc6fd11051bca9001d92993b202244cc725f915a9b72b63c2bd3573",
+        "graded_trials": [
+          "f4d74c36-4785-45d0-a870-a8908f393491"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The draft turns dashboard disappearance into a claim that the worker stopped reporting. The parenthetical also implies kernel or orchestrator evidence is missing, which the request does not establish. The preamble repeats the draft’s cause assessment.",
+        "reply_sha256": "458b13ff87e2acfb0e3f840ac02b7a5ba6430c86b825e4ab14d83bde22dcf5a7",
+        "graded_trials": [
+          "2361adf1-d728-491e-bd8d-22f84ab1727c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "import-findings",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "8313b57f1f4de4c61cc754c86e6f5c528b8a57d7fa9f0480028b09ba8efffbdb",
+    "judge_log_id": "442b0c19-55ee-4fa2-a228-7c5e5d057dd6",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Preserves f2, cites the second run, and assigns f4 to the missing filename. The consequence is scoped to the report alone.",
+        "reply_sha256": "1dd30720cde4ece4fef51636768bb5632fbd0558bf7ab8dccffab516e4903a91",
+        "graded_trials": [
+          "054fa19b-c047-40a8-973b-c313117509be",
+          "89ee7346-e374-4bb0-a099-e714f695c647"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports both findings under the correct IDs and explains why the missing filename matters.",
+        "reply_sha256": "dbd5370bea9822bc070f94c610758f04793c0e12526aed9afd69be75a15ed45c",
+        "graded_trials": [
+          "4f21e7c8-7fce-40e2-9060-aeb3900a6c38"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reproduction evidence clearly refers to f2. The filename omission and its consequence belong together under f4.",
+        "reply_sha256": "f181186530afc67a591b07e2ae6417f0b5b28878b3cbafd9b391e5b31b9636eb",
+        "graded_trials": [
+          "903c3ecf-d35c-4e0f-99d9-c1547715f156"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "“On both runs” captures the reproduction evidence. The filename omission is sufficient as a standalone finding, and both IDs are correct.",
+        "reply_sha256": "e0a301f074bf8d4b4c95c836d9b059346c8f7fb4698368040c0223d093a7ce89",
+        "graded_trials": [
+          "af02aa50-5ae0-4f6c-8be0-87f32fc999ea",
+          "c3fe3f99-d7a2-48c7-adcb-753844972a12",
+          "cf7527a9-707b-49df-80ec-9b10e60b32ea",
+          "a7d4232b-a7d8-4ace-b56b-3db149dfba3f"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "import-recovery",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "25e3c70e708e8b6895a942a2d9e474c7d5c7a2caee90b7a36380f8d7c7c90e95",
+    "judge_log_id": "391102d7-5418-482b-bd98-15ad9f9c0027",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It protects pages 1 and 2, branches on verified page 3 payments, and requires a timed-out write to finish and become visible before retrying.",
+        "reply_sha256": "85ef5374300158a68e7a0eeff180398dafb55a36fdede04f50948aaff83bf365",
+        "graded_trials": [
+          "de20d247-4fea-4a75-a0a3-c3578c99dd4e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It checks batch identity and individual payments, handles conflicting evidence, and keeps retries paused while the outcome remains uncertain.",
+        "reply_sha256": "9ba1a8001f90f800106e600ea56ab374f30b20433853275ddb76d9533a8b9023",
+        "graded_trials": [
+          "ee9f028d-d262-4f0f-b68c-c8fbd291250d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It permits a whole-page retry only after confirming that no payments landed and the prior attempt can no longer commit. Holding partial pages for reconciliation is a valid recovery action.",
+        "reply_sha256": "6371c4c47f731933c4e55ea35a6903653065d38479f0478769835b1144d57b2e",
+        "graded_trials": [
+          "9a5a4b06-697c-4352-9d2b-92a33989cfb4"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "A missing receipt does not establish why it is missing. The plan directs a reduced-page import without establishing that the importer supports it or that its receipt would cover the original page. The pages 1 and 2 audit and speculative deduplication branch add unnecessary work.",
+        "reply_sha256": "27a79ebee7bb2679a93827a0fdf8a60e4f9632a6734b8eb48feba4930cb8782c",
+        "graded_trials": [
+          "3ca6e206-dc1c-4c33-a1b4-9b3e6fc5e8ae"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The uncertain-write branch omits the possibility that all payments landed without a receipt. It also suggests reversals or manual entry without establishing a supported repair path. The earlier-page audit, two-failure rule, and importer redesign exceed the request. The redesign is a separate recommendation without a bold ID.",
+        "reply_sha256": "78c1f0c0f66816c3cf144d5e167e1a5415a3641618d654e16cff2c48f24ccac9",
+        "graded_trials": [
+          "c49cfa34-cc85-455c-b394-0f86098e99f4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It covers absent, partial, complete, and ambiguous payment states, limits repairs to supported paths, and verifies both the payments and the receipt.",
+        "reply_sha256": "7c53d144d11bd02242a563fb9d1aa477871a95d98baede4fa49da45bbf09a939",
+        "graded_trials": [
+          "814ce16a-967f-4964-ac8c-efeaf7aa248e"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "Case a3d checks for payments before confirming that the writer has stopped, then retries without rereading. A late commit could therefore be duplicated. The suggested reversals and manual receipt lack established support. The earlier-page bookkeeping and arbitrary retry limit add unnecessary detail. The independently labeled table actions use plain-text IDs.",
+        "reply_sha256": "71032ed5857a8cd48c001db6a9a1f817b60fd5b84354628eac66bc859edcdfe3",
+        "graded_trials": [
+          "8c8cf715-493b-4bec-b41d-7ec78e04a065"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The opening assumes the page 3 receipt is absent. The plan recommends reversing payments without establishing that reversal is supported or safe, and sends an all-applied page to that same branch. A table snapshot does not establish that payment effects can be rolled back. The earlier-page baselines and arbitrary two-attempt cutoff add unnecessary work.",
+        "reply_sha256": "80afdd9e9496fbd7a663dd706a369ce50db8c46f4e12c79caf72367ec506ee89",
+        "graded_trials": [
+          "b122a41a-db73-4d63-8690-ce89334e49fe"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "job-summary",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "8d81f46129213c15f15c9abafa3bcbbc49c09edcedef50eb9afce4e58005ea18",
+    "judge_log_id": "ac250d73-8394-4e92-9faf-02ddfa3cbcf9",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The update accurately reports completion and cites the successful sample scan as supporting evidence under one ID.",
+        "reply_sha256": "0b21a3484a516983140c1c6c5fec5ff56581fd6c3a8ddece53085b8dac43ec78",
+        "graded_trials": [
+          "77f70a54-99d4-4e13-8fe5-0e37d73f67f6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone draft gives the shift lead both requested facts and stays focused on the label job.",
+        "reply_sha256": "799b26a27000b906623cd1b2083835ad69d053f24c9bff5c4c1d57dfb0c34375",
+        "graded_trials": [
+          "4d913cb7-d0f9-46bb-a502-a13136c2eaff",
+          "dae74f6c-886d-429d-99eb-c844b9dd7008"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The draft states the outcome and the successful sample scan concisely. It can stand alone without an ID.",
+        "reply_sha256": "62155cb9d5f6ba41a7624d350615dae61fa2e78305ac8ddc0c51e1b56584fb61",
+        "graded_trials": [
+          "862b41de-52d4-4d89-ac89-48bd7f4f73b4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone sentence accurately combines job completion with the sample scan result.",
+        "reply_sha256": "c34da82bb1d93255c1c06cb77d29bd17cbd78e789e6bdda9497bd9250b2f452b",
+        "graded_trials": [
+          "bd9ccbcb-f2ba-43c6-a07f-1291993309d0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "One ID covers the completion finding and its supporting scan result. Both sentences are relevant and accurate.",
+        "reply_sha256": "c317d5c197377883f4b65181918915d25fa63709b44898dd977f77abed608cdf",
+        "graded_trials": [
+          "dc12e38f-d494-4b18-bca4-27782c084b23",
+          "b45108bf-5543-4a5c-86c4-d2245ec0f5e5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone draft accurately reports that the job finished and the sample scans correctly.",
+        "reply_sha256": "998d5b2568402f0549fcc4c51aaf62e3267f0d5b60114441a9c9914b9d35e484",
+        "graded_trials": [
+          "f25457cc-e568-4e40-a476-a47a52257cd4"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "shift-handoff",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "413aef0d385cb6624213946336a26244423f1130225057bfaf41eeeb9835eb4c",
+    "judge_log_id": "224009dd-fbf9-4184-b64f-a4fa6bc5a7a3",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "The status lines repeat the headings, and the closing warning repeats the approval dependency. Priya’s approval and Jules’s restart have bold owner names but lack separate bold IDs.",
+        "reply_sha256": "0e66b6a174e97273932d008bea312bd10545838e158e38515b67ee348242faa4",
+        "graded_trials": [
+          "c56be0bd-5aa7-47e1-87f4-8e1f8ce1d498"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "“Waiting. Not running.” repeats the blocked status, and the last bullet repeats the restart condition. The bold numbers identify jobs, leaving the two owners’ actions without separate bold IDs.",
+        "reply_sha256": "5417f55e71b7fcd7359656ebf2150573902f812982f07d48adf5897f208dccd7",
+        "graded_trials": [
+          "d711ce1d-0784-42a6-898c-b630629d2a1d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": false,
+        "reason": "The handoff gives both job states, the scan result, and the correct sequence. Priya’s approval and Jules’s restart share **a1**.",
+        "reply_sha256": "89305de750988b7de0e90837ba338cc59332f911549c698999b0f0eec43deeb0",
+        "graded_trials": [
+          "cca31f15-2e25-4f39-9035-88b3525eba89"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "The status lines repeat the job headings, and the closing sentence repeats Jules’s restart condition. The job IDs do not individually identify Priya’s and Jules’s actions.",
+        "reply_sha256": "458cc905dbf1b453b3cb37de8c9d6dc3be0170106c2c4a25bb715e716ea28a28",
+        "graded_trials": [
+          "c3ca2cc0-c25a-4158-8700-de46eea6a224"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The scan result supports label completion. Separate bold IDs identify Priya’s approval and Jules’s restart, and “once Priya approves” makes their order explicit.",
+        "reply_sha256": "4a20cf2d5fb51f34638bc007be023c77394a33d283068db26e358bdb9be2a7c0",
+        "graded_trials": [
+          "dec7563d-1e8f-4656-a9c4-0c03f68b71a8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The handoff covers both jobs and gives each owner’s action its own bold ID. “The next steps are ordered” repeats what the numbered list already shows.",
+        "reply_sha256": "a38045eb285d541d04b9ddb8ad6186c52d8a442879d969323f89ebec85864c07",
+        "graded_trials": [
+          "1ec3de13-8bb7-4d61-9a70-d193dcd31b33"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": false,
+        "reason": "Both statuses, owners, and the dependency are clear. **f2** groups the blocker, Priya’s approval, and Jules’s restart under one ID.",
+        "reply_sha256": "97ef55cfb8e75527439dbabc6f06abb48fec29f1eb7f11bd3dc77fe4be448572",
+        "graded_trials": [
+          "542d69b9-d7df-441d-a1b8-1b3c861d28a3"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "The catalog status, blocker, action list, and closing warning repeatedly state the same dependency. The two actions have bold owner names but lack separate bold IDs.",
+        "reply_sha256": "fcfef27267ff926f9f31cbea2e63458ec380201f55a1e98f0827effea734137f",
+        "graded_trials": [
+          "de310943-450e-4f1a-904d-0ef1553e728d"
+        ]
+      }
+    ]
+  }
+]

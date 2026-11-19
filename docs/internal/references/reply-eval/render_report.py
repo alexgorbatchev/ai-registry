@@ -344,13 +344,15 @@ def ledger(run, judgments, source_directory="rounds", title=None, anchor=None):
     )
 
 
-def system_section():
+def system_section(mode_study=False):
     rows = []
     examples = []
     handoff = ""
     total = 0
     for path in sorted((HERE / "sections").glob("*/comparison.json")):
         comparison = json.loads(path.read_text())
+        if ("rubric" in comparison) != mode_study:
+            continue
         directory = path.parent
         prefix = f"sections/{directory.name}"
         reviews = json.loads((directory / "judgments.json").read_text())
@@ -378,16 +380,22 @@ def system_section():
                     ),
                     "reason": grade["reason"],
                 }
-            if directory.name == "trigger-operating" and model == "opus":
+            example_round = "mode-both" if mode_study else "trigger-operating"
+            if directory.name == example_round and model == "opus":
                 sample = {
                     r["arm"]: escape(r["reply"])
                     for r in answers
                     if r["case"] == "queue-ticket" and r["repetition"] == 1
                 }
+                labels = (
+                    ("Deployed", "Both sections edited")
+                    if mode_study
+                    else ("Isolated rules", "With Operating Instructions")
+                )
                 handoff = (
                     "<div class='review'><h4>Same receipt handoff · Opus 5.5</h4>"
-                    f"<p><b>Isolated rules</b> · {sample['baseline']}</p>"
-                    f"<p><b>With Operating Instructions</b> · {sample['candidate']}</p></div>"
+                    f"<p><b>{labels[0]}</b> · {sample['baseline']}</p>"
+                    f"<p><b>{labels[1]}</b> · {sample['candidate']}</p></div>"
                 )
             cases = json.loads((HERE / comparison["suite"]).read_text())
             title = f"{comparison['label']} · {comparison['suite_label']} · {MODELS[header['model']]}"
@@ -441,17 +449,30 @@ def system_section():
         )
     if not rows:
         return "", 0
+    if mode_study:
+        source = "sections/mode-study.md"
+        intro = (
+            "<section class='logs' id='mode-study'><h2 class='section-title'>When should Opus switch into recovery mode?</h2>"
+            "<p>Each row compares the deployed prompt with one or two added paragraphs. Both models used medium effort. "
+            "The reviewer accepted sarcastic asides and checked for completeness, concision and correct IDs. "
+            "Scores show joint passes out of 12 per arm. Select a score to inspect the replies.</p>"
+        )
+    else:
+        source = "sections/README.md"
+        intro = (
+            "<section class='logs' id='system-sections'><h2 class='section-title'>Which system instructions affect replies?</h2>"
+            "<p>Operating Instructions added redundant handoff text. Personality added asides. Removing either recovered at most one Opus pass in a full prompt. All 336 replies with explicit ID pairs kept the expected numbers. Each arrow compares two prompts on the same six requests. Each model wrote two replies per request in each arm. "
+            "Scores are passes out of 12 for completeness, concision and addressability together. ID counts check required prefixes on requests that specify them. Select a score to read the replies.</p>"
+        )
     html = (
-        "<section class='logs' id='system-sections'><h2 class='section-title'>Which system instructions affect replies?</h2>"
-        "<p>Operating Instructions added redundant handoff text. Personality added asides. Removing either recovered at most one Opus pass in a full prompt. All 336 replies with explicit ID pairs kept the expected numbers. Each arrow compares two prompts on the same six requests. Each model wrote two replies per request in each arm. "
-        "Scores are passes out of 12 for completeness, concision and addressability together. ID counts check required prefixes on requests that specify them. Select a score to read the replies.</p>"
+        intro
         + handoff
         + "<div class='review replay-table'><table><thead><tr><th rowspan='2'>Comparison</th>"
         "<th rowspan='2'>Suite</th><th colspan='3'>Astra 6.2</th><th colspan='3'>Opus 5.5</th>"
         "<th rowspan='2'>Evidence</th></tr><tr><th>Passes</th><th>Mean words</th><th>IDs</th><th>Passes</th><th>Mean words</th><th>IDs</th></tr>"
         "</thead><tbody>" + "".join(rows) + "</tbody></table></div>"
         "<p class='refs'>¹ The index fingerprints the privately retained native logs. "
-        "<a href='sections/README.md'>Findings, prompt construction and reproduction</a></p>"
+        f"<a href='{source}'>Findings, prompt construction and reproduction</a></p>"
         "<details class='record'><summary>Browse prompts, answers and judgments</summary>"
         + "".join(examples)
         + "</details></section>"
@@ -870,21 +891,28 @@ def render():
         )
     replay_headline, replay_count, replay_html = replay_section(rounds)
     sections_html, section_count = system_section()
+    mode_html, mode_count = system_section(mode_study=True)
     values = {
-        "REPLAY": sections_html + tuning_section() + ablation_section() + replay_html,
+        "REPLAY": mode_html + sections_html + tuning_section() + ablation_section() + replay_html,
         "ARCHIVE": highlight,
         "HIGHLIGHT": ("<h2>System section comparisons</h2><p class='verdict'>Opus averaged 45 words with the isolated rules and 83 with the deployed prompt on the same transfer cases.</p>"
                       "<p><a href='#system-sections'>Compare passes, reply lengths and the original answers.</a></p>") if section_count else (replay_headline if replay_count else highlight),
         "COMPARISONS": comparisons,
         "WORDING": f'<section class="wording"><h2 class="section-title">Prompt wording</h2>{wording}'
         '<p><a href="../../../../system/system.md">Full shared prompt</a></p></section>',
-        "COUNT": str(section_count or replay_count),
+        "COUNT": str(mode_count or section_count or replay_count),
         "REUSED": f"The ledger contains {total + reused} comparison rows, including {reused} reused baseline entries. The historical ledger counts each generation once after removing those copies."
         if reused
         else "",
         "ROUNDS": "\n".join(cards),
         "LEDGER": "\n".join(entries),
     }
+    if mode_count:
+        values["HIGHLIGHT"] = (
+            "<h2>Operating and recovery instructions</h2><p class='verdict'>"
+            "None of the three edits improved Opus on six operational requests. Recovery wording alone shortened its replies by three words on average.</p>"
+            "<p><a href='#mode-study'>Compare the wording trials and read the answers.</a></p>"
+        )
     template = (HERE / "summary.template.html").read_text()
     (HERE / "summary.html").write_text(
         re.sub(r"@@([A-Z]+)@@", lambda match: values[match[1]], template)

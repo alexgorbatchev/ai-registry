@@ -18,10 +18,9 @@ Allow a direct status, lookup or requested explanation when the rubric permits.
 Do not infer a missing fact or give credit for a promised action as if performed."""
 
 
-def review_case(directory, case, rubric, records):
+def review_input(directory, case, rubric, records):
     # A stable shuffle permits exact reconstruction without showing the judge provenance.
     name = case["name"]
-    path = directory / f"review-{name}.json"
     groups = {}
     for row in records:
         if row["case"] == name:
@@ -37,6 +36,13 @@ def review_case(directory, case, rubric, records):
         },
         ensure_ascii=False,
     )
+    return groups, answers, prompt
+
+
+def review_case(directory, case, rubric, records):
+    name = case["name"]
+    path = directory / f"review-{name}.json"
+    groups, answers, prompt = review_input(directory, case, rubric, records)
     digest = hashlib.sha256((INSTRUCTION + prompt).encode()).hexdigest()
     if path.exists() and json.loads(path.read_text())["input_sha256"] == digest:
         return
@@ -60,13 +66,13 @@ def review_case(directory, case, rubric, records):
         answer = answers[item.pop("id")]
         item["reply_sha256"] = hashlib.sha256(answer.encode()).hexdigest()
         item["graded_trials"] = groups[answer]
-    result = dict(
-        case=name,
-        judge_model=args.model,
-        input_sha256=digest,
-        judge_log_id=metrics["raw_log_id"],
-        judgments=items,
-    )
+    result = {
+        "case": name,
+        "judge_model": args.model,
+        "input_sha256": digest,
+        "judge_log_id": metrics["raw_log_id"],
+        "judgments": items,
+    }
     path.write_text(json.dumps(result, indent=2) + "\n")
 
 
@@ -79,6 +85,11 @@ def main():
         nargs="+",
         type=Path,
         help="score these paired runs together with arm and model hidden",
+    )
+    parser.add_argument(
+        "--rubric",
+        type=Path,
+        help="use these complete criteria and case interpretations",
     )
     args = parser.parse_args()
     cases = json.loads(args.suite.read_text())
@@ -97,14 +108,19 @@ def main():
         ).hexdigest() or len(rows) != 2 * header["repeat"] * len(cases):
             raise ValueError("Review requires a complete round on the specified suite")
         records.extend(rows)
-    rubric = json.loads((HERE / "rounds/03-review.json").read_text())["rubric"].copy()
-    rubric["case_acceptance"] = {}
-    for name in ("03", "05", "07", "10", "12"):
-        rubric["case_acceptance"].update(
-            json.loads((HERE / f"rounds/{name}-review.json").read_text())["rubric"][
-                "case_acceptance"
-            ]
-        )
+    if args.rubric:
+        rubric = json.loads(args.rubric.read_text())
+    else:
+        rubric = json.loads((HERE / "rounds/03-review.json").read_text())[
+            "rubric"
+        ].copy()
+        rubric["case_acceptance"] = {}
+        for name in ("03", "05", "07", "10", "12"):
+            rubric["case_acceptance"].update(
+                json.loads((HERE / f"rounds/{name}-review.json").read_text())["rubric"][
+                    "case_acceptance"
+                ]
+            )
     with ThreadPoolExecutor(4) as pool:
         list(
             pool.map(

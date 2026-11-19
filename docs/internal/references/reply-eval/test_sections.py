@@ -5,6 +5,7 @@ import json
 import unittest
 from pathlib import Path
 
+from review_replay import INSTRUCTION, review_input
 from run import failures
 from sections.prompts import build
 
@@ -23,6 +24,11 @@ class SectionTrials(unittest.TestCase):
         for path in comparisons:
             with self.subTest(round=path.parent.name):
                 description = json.loads(path.read_text())
+                if "rubric" in description:
+                    self.assertEqual(
+                        description["rubric_sha256"],
+                        digest((HERE / description["rubric"]).read_text()),
+                    )
                 suite = (HERE / description["suite"]).read_text()
                 cases = {case["name"]: case for case in json.loads(suite)}
                 prompt_hashes = {
@@ -46,12 +52,14 @@ class SectionTrials(unittest.TestCase):
                     self.assertTrue(
                         receipts[review["judge_log_id"]]["native_transcripts"]
                     )
+                all_answers = []
                 for alias, model in (
                     ("astra", "gpt-6.2-astra"),
                     ("opus", "claude-opus-5-5"),
                 ):
                     log = directory / f"{directory.name}-{alias}.jsonl"
                     header, *rows = map(json.loads, log.read_text().splitlines())
+                    all_answers.extend(rows)
                     self.assertEqual(header["suite_sha256"], digest(suite))
                     self.assertEqual(header["prompt_sha256"], prompt_hashes)
                     self.assertEqual(
@@ -79,3 +87,12 @@ class SectionTrials(unittest.TestCase):
                             row["failed"], failures(cases[row["case"]], row["reply"])
                         )
                 self.assertFalse(grades)
+                if "rubric" in description:
+                    rubric = json.loads((HERE / description["rubric"]).read_text())
+                    for review in reviews:
+                        _, _, prompt = review_input(
+                            directory, cases[review["case"]], rubric, all_answers
+                        )
+                        self.assertEqual(
+                            review["input_sha256"], digest(INSTRUCTION + prompt)
+                        )

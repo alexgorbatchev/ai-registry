@@ -82,6 +82,18 @@ def build():
         prompts["deployed-without-" + name] = deployed.replace(text + "\n\n", "", 1)
         prompts[name] = compose([name])
         prompts["without-" + name] = compose(set(BLOCKS) - {name})
+    operating = "Apply this section when carrying out authorized work. For a question or a draft based on supplied facts, answer from that record. Keep work tracking in the task record; bring it into the reply when requested or when the user needs it to act."
+    recovery = "Use the investigation and retry procedure below when handling a failure in authorized work or when the user requests a diagnosis. For a status or evidence question, give the supported finding and any material limit. Include a diagnostic procedure when the user asks how to verify or recover."
+    for name, edits in (
+        ("scope-ops", [(HEADINGS[0], operating)]),
+        ("scope-failure", [(HEADINGS[2], recovery)]),
+        ("scope-both", [(HEADINGS[0], operating), (HEADINGS[2], recovery)]),
+    ):
+        candidate = deployed
+        for heading, boundary in edits:
+            marker = f"# {heading}\n\n"
+            candidate = candidate.replace(marker, marker + boundary + "\n\n", 1)
+        prompts[name] = candidate
     return prompts
 
 

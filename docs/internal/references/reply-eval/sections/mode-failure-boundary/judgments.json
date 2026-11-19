@@ -1,0 +1,476 @@
+[
+  {
+    "case": "cause-investigation",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "9fdd3fb51b59d9b2450b4227bad0b163ed0d7e863f8b732f3c07f909a136a2b8",
+    "judge_log_id": "ce9b9ca8-1a5a-4ab2-b8a1-35cc5b933af5",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "A cgroup OOM record can identify a killed child without explaining the worker’s exit. Exit 137 near the grace deadline also does not identify the sender. The suggestion that shutdown usually allocates heavily adds an unsupported diagnosis.",
+        "reply_sha256": "1b002d1bcac5890ba0f94a7e0afcfce1b663a2eaa910e34c4cffc7b3c6e7c345",
+        "graded_trials": [
+          "4f2ae090-3837-4a5e-bf0c-bb00ae0134e7"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The reply correctly checks which process died, but treats a shutdown message as proof of who sent the signal and exit 137 at the grace deadline as proof of a runtime kill. It also speculates that pod deletion likely explains the missing record.",
+        "reply_sha256": "b01b7d46d8b8a3d6715b455ba6c4894d34a6669f47aa740621ad8aa4d3b95d01",
+        "graded_trials": [
+          "81d1c9e2-a647-4f59-8ec6-945d6585840f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The claim that exit 137 without an OOM reason establishes grace-period expiry contradicts the reply’s own unresolved case. Calling the rollout the default suspect and the likely reason for the missing record adds speculation, and the verdict table repeats much of the evidence list.",
+        "reply_sha256": "b8afde07bb4a2f14ef0f0ba0efc1d7f732809b5c2f16be15c71def71b694ce70",
+        "graded_trials": [
+          "2f10b4fc-a49f-45af-bc83-8936adaca8b7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It traces the stop request to its outcome, matches an OOM victim to the worker exit, and explains why a delete request plus exit 137 leaves the cause open.",
+        "reply_sha256": "54f418fddda0ea7e77cf58b53f676eeea0bf20ee01cec9a3af83dc7315e51528",
+        "graded_trials": [
+          "92252065-9d00-4f18-8167-e1c39ae72632"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It identifies the exact attempt, distinguishes a requested stop from a recorded kill, and explains how missing, mismatched, or poorly ordered records limit attribution.",
+        "reply_sha256": "6b3904e178dd0e8cd9b700c87fd0e4a437b8c1cf35ceea64220dfff2683b0680",
+        "graded_trials": [
+          "42fa7032-915e-41cc-9f38-8204a93a8bd8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It matches records across the worker, runtime, and host, distinguishes memory-pressure eviction from an OOM kill, and explains how to report a stop request followed by a confirmed OOM kill.",
+        "reply_sha256": "acf6d5135d00892fb885271e6e295d2499f1f96d73b442454cd342727a7e4b6d",
+        "graded_trials": [
+          "d27a3710-b920-46eb-9cea-06732320c0d3"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "A replacement registration does not establish what happened to the old worker. The reply also classifies a confirmed OOM during shutdown as unresolved. It repeats the exit-137 caveat and adds unsupported expectations about memory levels. Reusing **i1** through **i4** across sections makes those references ambiguous.",
+        "reply_sha256": "c8b771c26dc595cba11f2208ff5cfb15685d014974bdc27220ec0fb85f81996e",
+        "graded_trials": [
+          "bd231c7b-cebc-44dc-95a4-f0c611ad7b0d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It distinguishes dashboard disappearance from process exit, matches each possible cause to the exact attempt, and explains why a cgroup counter or exit 137 alone cannot identify what killed the worker.",
+        "reply_sha256": "de0030a19d5b553fa73ec3c063596643e7bac596b655a6f263593b30e86daaa7",
+        "graded_trials": [
+          "62d9dcb7-e005-4713-8712-a336e4c859c6"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "cause-status",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "8c8a3c17ce0b96462d789c45d4f160ff17b37207b1f6dee381708de969962fdd",
+    "judge_log_id": "f992b4f2-c0ed-4e2a-9e99-56031b49ec7c",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Provides usable incident wording that distinguishes dashboard disappearance from confirmed termination and rollout timing from causation.",
+        "reply_sha256": "e507763ae68a8ec6b8d68edd44d174bfbb9e7d194e6beb3559516b5d63db0836",
+        "graded_trials": [
+          "463c15a1-b817-4938-adee-0b2b7c095d04"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the cause as undetermined and explains exactly what the dashboard observation, missing record and rollout timing establish.",
+        "reply_sha256": "31c688a83ff4fd287e7bb437cbd0b8029066dd948da109df3a4cabc8a397df8c",
+        "graded_trials": [
+          "40fd32dc-d527-4901-a3bc-4eac36d63ad6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the observed disappearance without asserting termination and correctly attributes the unverified memory-kill hypothesis to Operations.",
+        "reply_sha256": "fdc0da98b7a5dae0ed310da91a82f3cf804d6c719d855a1cc14fb4fafbd8b0eb",
+        "graded_trials": [
+          "ba276404-fd0e-4268-aaf9-236c40184907"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Rollout timing does not support a memory kill. The reply also implies that a kernel or orchestrator record is unavailable and that an investigation is underway, neither of which was supplied.",
+        "reply_sha256": "2ca6101d88ce242dc378361da91431a3586ba81bbc5cdb8e35620521ae58a166",
+        "graded_trials": [
+          "b1d106ee-c71e-4ce8-814d-9b1df527574d"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“Why it stopped” treats worker termination as established. The dashboard showed only that the worker disappeared from view, so the reply adds an unsupported claim.",
+        "reply_sha256": "2b46234f61531855ea840744cc0153021dff3ddac96c8f8b42422c7a66d99d4e",
+        "graded_trials": [
+          "1ab86ad0-c376-4218-a8ea-1b1a371d1d33"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States the supportable cause and explicitly distinguishes the observed disappearance from termination, a memory kill and rollout causation.",
+        "reply_sha256": "3859116e16c1180e5b9063b047197eecc27d9772d40bf02e20d49b2082edb8b8",
+        "graded_trials": [
+          "51f4c5ac-b599-45fa-9b1e-8268db782f51"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "In context, it identifies both proposed causes as unconfirmed, limits the observation to the dashboard and attributes the memory-kill hypothesis to Operations.",
+        "reply_sha256": "931e4e9a9e4a5cf7c6347f36d48b885205d695e2ecec41fc0d3247d046ca2d5e",
+        "graded_trials": [
+          "3c0aadb9-19fa-4868-ba6a-4e6884c46206"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The draft asserts that the worker stopped and that its record was not retained. Neither follows from a dashboard disappearance and a missing record. It also presents timing as support for a memory kill.",
+        "reply_sha256": "42e3ab807074e9f13e5473a9371a3f7ce8cbecb058930ab95acf540a9b003f5e",
+        "graded_trials": [
+          "a5c1524b-8be9-40dd-8c2a-b6631d637089"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "import-findings",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "4588ab31044166d398643934f89ebec5840c3f7fb744e56b967de56c7686e9d6",
+    "judge_log_id": "1f150993-6313-481f-8580-d1d630949632",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States both findings and captures the reproduction in “both runs.” Uses f2 and f4 correctly.",
+        "reply_sha256": "e0a301f074bf8d4b4c95c836d9b059346c8f7fb4698368040c0223d093a7ce89",
+        "graded_trials": [
+          "49ab6bd3-239e-49ea-a689-204f06ffa9e7",
+          "746f815a-1842-483a-aa2c-ea2a2f3efe4f",
+          "a8c871ac-3305-4374-a440-6f38879b6fac",
+          "3e5987ff-f7a3-4b5d-9976-d9f46f90ef1e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the same-row reproduction and the missing filename. The consequence is brief and scoped to the report. Both IDs are correct.",
+        "reply_sha256": "dbd5370bea9822bc070f94c610758f04793c0e12526aed9afd69be75a15ed45c",
+        "graded_trials": [
+          "4d11b609-27c8-4392-ab0c-011c2724b9c5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives both findings under the correct IDs and briefly explains why the missing filename matters.",
+        "reply_sha256": "f6511fde45aeef7dc5684290cd83ab4aa75d04c8e60b7e792a084b99579d71c3",
+        "graded_trials": [
+          "7422cf98-05f9-4fa1-a4f3-0acccc5f2f91"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Preserves the reproduction evidence and limits the traceability consequence to the report alone. Each finding has its correct ID.",
+        "reply_sha256": "1dd30720cde4ece4fef51636768bb5632fbd0558bf7ab8dccffab516e4903a91",
+        "graded_trials": [
+          "ccbbb3b2-c188-43e4-aa46-c2b2c60213a4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly reports the second-run confirmation and the filename omission under f2 and f4.",
+        "reply_sha256": "00c8effd1cceab8f24e89ff8869f22d318ef0da8dd1732580d068ac263fbed76",
+        "graded_trials": [
+          "7585bfa6-0554-4434-83b8-5e8b07fc7711"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "import-recovery",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "3d11c8a8b4798a36c9b636373764e19e60ffe26a63eec1f8590c254275f661d7",
+    "judge_log_id": "51d0cc53-4044-4fea-83ad-fe054f62fd88",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Requires an absent receipt, confirmed absence of every payment, and a stopped writer before replay. It covers partial recovery and verifies both payments and receipt afterward.",
+        "reply_sha256": "b3d11797ead072ddfc08417e1a25f80de48ec0f9cf90a3e95d3b204048fc971c",
+        "graded_trials": [
+          "f2fd3854-5492-481b-83b4-8eb43f91ce15"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "The zero-payment branch directs submission without requiring an absent receipt. If a matching receipt exists but the payment lookup finds nothing, the records conflict and the import should stay paused.",
+        "reply_sha256": "117d395adf1770c0707917ac692de0643b2a55b82808a193a826aaf922574a22",
+        "graded_trials": [
+          "4bb26af1-5512-4275-8670-9b8c6618a6be"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The retry check establishes that the process stopped but leaves committed-write visibility unverified. It also treats a count or total discrepancy as proof of duplicates or omissions. Capturing full output and repeating the same branches add unnecessary detail.",
+        "reply_sha256": "e48b927a3b5f328e479c718c60a22e00498aecf3f4ab1a293d32e4190f4aa532",
+        "graded_trials": [
+          "de7c1ebc-cbf7-4e95-bda3-70730d8044bf"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It recommends reversals and offers a stripped page without establishing support for either operation or its receipt handling. It also overstates what unchanged counts and totals prove and adds an arbitrary second-attempt cutoff.",
+        "reply_sha256": "f8d5b5e80a4f37e07e6a77a9930b08f77e34ee23acb65de0d46a7516cf3d2751",
+        "graded_trials": [
+          "c9229866-320e-466c-837b-d9e3c0604965"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It gates submission on confirmed zero application, keeps ambiguous cases paused, and checks individual payment details and the receipt after recovery.",
+        "reply_sha256": "e9109e750271e490ddfd0c5a68429e7ba2efc2e7d5a3aa58276ad09e33a607c6",
+        "graded_trials": [
+          "4c7fbcb6-033b-45c8-a6da-c093e34bc949"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It excludes the receipted pages, reconciles authoritative records before choosing a repair, and reuses that decision after an uncertain write. The final checks cover all three pages.",
+        "reply_sha256": "062a178f0492d7af36024aba4070d3f24a57b0665018050ac8deb394cb770c08",
+        "graded_trials": [
+          "64d10a1c-7931-48f5-ab66-8a718857e366"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It prescribes reversals, a modified page, and manual receipt entry without evidence those operations are supported. It also leaves ambiguous payment matches without a stop condition. The reversal bookkeeping depends on the same unsupported procedure.",
+        "reply_sha256": "6f3987750116e61573148e68479afb162c812d5f656076c5f26e5cd78d5af138",
+        "graded_trials": [
+          "5aed26c4-4601-4565-a9c5-028f3133c8fd"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It checks for payments before excluding active writers, including after a timeout. A write could commit between the lookup and the retry, so the zero-payment result is unsafe to reuse. The opening and f1 repeat the same receipt explanation.",
+        "reply_sha256": "8372f044a8b9910d842ae1933f5fd465265b2067916b5e1114e7a30f423c54dd",
+        "graded_trials": [
+          "0311557b-8746-471d-a599-a4fa386a86f9"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "job-summary",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "ea0a3c35c99bc1f46195a590eba05522491a83405257192072e0e0cb69a7949e",
+    "judge_log_id": "bc64b857-e48c-47ec-b2e8-ee6e3c87e7de",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports completion and the successful sample scan in one standalone update.",
+        "reply_sha256": "307a6fa74d742ba4078473ab9e594a9a32d982341101b4063e1d24626d23baa2",
+        "graded_trials": [
+          "ce275eb8-819d-4a91-b553-6aee7e07bff1",
+          "f1b385d2-11c2-4897-9170-4a87efe56950"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The short heading identifies the update. The draft gives both requested facts and stays on topic.",
+        "reply_sha256": "40dc74e80420f684acea77a1b2204fab0ba822e3c66acdddf3f3af45c4311450",
+        "graded_trials": [
+          "2b86d468-f48e-46ad-9635-b464132fad9c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Two brief sentences give the job status and its supporting scan result. The draft can stand alone.",
+        "reply_sha256": "6de93b6ad08391019f394a3072903082a4e0606e94588a0b464d909b3c283736",
+        "graded_trials": [
+          "760cccd7-45b0-4253-9a11-161a64a3bfa9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "One bold ID covers the completion finding and its supporting scan result. Both are accurate and concise.",
+        "reply_sha256": "c317d5c197377883f4b65181918915d25fa63709b44898dd977f77abed608cdf",
+        "graded_trials": [
+          "937dbc78-d5ef-4176-abae-1417cc27a039",
+          "8998a848-6bd0-4599-810e-4a249f5b7765",
+          "9e6caff0-f19a-44be-9e7f-ea9ee46aa412"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "One bold ID covers the entire update, which accurately reports completion and the successful sample scan.",
+        "reply_sha256": "597f6cc7c301812b5c52e662971a93d8b798935be1f5806c77c9d0b464f4705c",
+        "graded_trials": [
+          "2f968d7f-66bb-4d13-a7ea-ba7c2c0332fa"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "shift-handoff",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "c611636dbbbd0c645e51663c86b1f60153fa814e1dc26ec3ae20d4de061c3a69",
+    "judge_log_id": "22278059-9a88-4294-aa64-0fed9237fb29",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both jobs and owners are clear, but the catalog status and blocker repeat the approval dependency before the ordered steps state it again.",
+        "reply_sha256": "551ffa3417a8a9222616bba75d568371c9d77fa9c15ab9062134bd04a873d226",
+        "graded_trials": [
+          "eaf933c4-49dc-498c-83f4-10be57811b3b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two job IDs distinguish the verified label result from the catalog blocker and identify each owner in order.",
+        "reply_sha256": "1cfde4595ce5e14e529b8fba24a538e65ab414cfaaff0f9eb1fe5d5f146996a0",
+        "graded_trials": [
+          "358d93a4-e2fc-47cc-8461-c3b5a94975e5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The handoff reports the successful scan and makes Priya’s approval an explicit prerequisite for Jules’s restart.",
+        "reply_sha256": "a3cc72554c8783e07c5e7379d5d854e3177c5eb63bcd86c87c48120e22981a45",
+        "graded_trials": [
+          "54497cfe-9121-42a0-a47a-a2689628d65e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each job has a clear entry, and the catalog entry gives the blocker, both owners and their sequence.",
+        "reply_sha256": "df8a7f875ec61d07bfe24801c468aaa7320ccdebd83d4cfdeca97b9103937b81",
+        "graded_trials": [
+          "ed9322d4-8073-43d5-8e9a-b3c42814a060"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The draft covers both jobs and the ordered actions. The waiting status and final restart warning duplicate the stated approval dependency.",
+        "reply_sha256": "a7f2ef081ff0d373558d190e46b5308f89f4eb85fb590e42a4d21f35017af0ea",
+        "graded_trials": [
+          "24630dae-dce2-4f24-a0eb-1c4289508ade"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The job IDs and ordered action IDs make the scan result, blocker and each owner’s next step easy to locate.",
+        "reply_sha256": "f809c8254fe25cedd58561f35639e88c8f98c2f9e015864bfe746d144291afc4",
+        "graded_trials": [
+          "a200c820-e1f1-4ea3-ab60-8238a7d356cb"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The final sentence adds an unsupported instruction that the incoming shift has no action. Priya’s shift membership is unspecified, and the approval and restart steps already explain the dependency.",
+        "reply_sha256": "fa082fec022518c3c76e551ae120c3270b0d3036d9e0810ff6f2fef4c7113fd2",
+        "graded_trials": [
+          "6af96ede-14e0-40a6-8a18-129c8179b848"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The handoff gives the scan result, blocker and owners in order. The separate waiting status and closing warning repeat information already conveyed by the blocker and restart step.",
+        "reply_sha256": "d066fb01f8092d695e157fad245a43ac85f7f3741a6560d4a3b8874dd98b525d",
+        "graded_trials": [
+          "40a94b1d-1920-4318-87b4-ee13b056daf6"
+        ]
+      }
+    ]
+  }
+]

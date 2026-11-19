@@ -1,0 +1,32 @@
+[
+  {
+    "name": "job-summary",
+    "prompt": "The label job finished, and its sample label scans. The catalog job is waiting for Priya to approve the price list; Jules will restart that job once she approves. Write the label-job update for the shift lead.",
+    "concepts": ["label", "scan"], "omit": ["catalog", "Priya", "Jules"]
+  },
+  {
+    "name": "shift-handoff",
+    "prompt": "The label job finished, and its sample label scans. The catalog job is waiting for Priya to approve the price list; Jules will restart that job once she approves. Write the full two-job handoff for the incoming shift, including the blocker, the owner of each next step and the order.",
+    "concepts": ["label", "scan", "catalog", "Priya", "Jules", "approv", "restart|resume"]
+  },
+  {
+    "name": "cause-status",
+    "prompt": "The image worker disappeared from the dashboard just after a rollout. The worker’s terminal record is missing. Operations has suggested a memory kill. What cause can I put in the incident summary today?",
+    "concepts": ["unknown|unconfirmed|unverified|undetermined|unestablished|cannot|can't|not.*(?:known|establish|confirm)|no confirmed|no verified|not yet|unproven|unresolved"]
+  },
+  {
+    "name": "cause-investigation",
+    "prompt": "The image worker disappeared from the dashboard just after a rollout. The worker’s terminal record is missing. Operations has suggested a memory kill. Walk me through how to distinguish an orchestrator stop from a memory kill, including which records to match and what would leave the cause unresolved.",
+    "concepts": ["worker|container|process|instance", "kill|oom|memory", "orchestrat|scheduler|rollout|evict", "unknown|unresolved|inconclusive|unconfirmed|insufficient|unattributed|undetermined|cannot|can't"]
+  },
+  {
+    "name": "import-findings",
+    "prompt": "Earlier **f2** was the import stopping at row 30 and **f3** was a separate totals bug. A second run reproduced the stop at row 30. You also found that the error report omits the filename. Give me the two findings for the team thread.",
+    "concepts": ["30", "second|again|reproduc|repeat", "file"], "labels": ["f2","f4"], "max_labels": 2, "omit": ["totals"]
+  },
+  {
+    "name": "import-recovery",
+    "prompt": "An import stopped after page 2 of 3. The receipt ledger confirms pages 1 and 2 were applied. Reapplying them duplicates their payments. The importer accepts a single page, and its receipt is written only after every payment on that page has been applied. I want a recovery plan for page 3, including what to verify before and after and what to do if an attempted write has an uncertain outcome.",
+    "concepts": ["3|three|third|last|remaining", "receipt|ledger", "duplicat|double|reapply|replay", "verif|confirm|reconcil|check"]
+  }
+]

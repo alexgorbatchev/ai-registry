@@ -1,0 +1,467 @@
+[
+  {
+    "case": "baton-reason",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "eabb10a5a8d506f1148edbddcc1d5f19bb1fa7f1d54406116958c8d83d29f0b5",
+    "judge_log_id": "28a10749-22e2-4c2b-bdc4-96d981d177ec",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both reasons are clear, but the reply twice claims without evidence that the marks are the only record.",
+        "reply_sha256": "b4580608388d52301500ee0a7517e73ba13d5478c40c27ff3624f89f7e231c29",
+        "graded_trials": [
+          "1c545111-82f5-47e5-afb2-5bf78b2cbee0"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both reasons are present, but one mismatch does not establish a two-cable swap, and the reply assumes there is no other reference. The hypothetical delay, crew change and show effects add unnecessary detail.",
+        "reply_sha256": "b6d65706da50dc36a1290f666ed133974d2b3ed66c0ea7fb265cad52e65977c4",
+        "graded_trials": [
+          "07c02fcc-ae2d-4719-b941-0bf4929b96ea"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both reasons are present, but the claim that nothing else identifies the socket is unsupported and unnecessary.",
+        "reply_sha256": "b6c309ee93637aadd08a7d8dbe43f8864486e8c96083c8fc2f0a4d32e875cd97",
+        "graded_trials": [
+          "96b03197-1515-46dc-92c5-2c7b9731b148"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains how the mark guides reconnection and how checking it afterward catches swaps.",
+        "reply_sha256": "28410daba29c4c1951853b069779fc6c31cf00102b62b3775c259f80f4ef34c1",
+        "graded_trials": [
+          "d736e1a7-6136-4485-bbe1-9cd367e0abc2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains why the crew records the socket while the cable is connected and how the later comparison reveals a swap.",
+        "reply_sha256": "f6cd70b38d65675fb8b8fe0fdfa67590bd77f88a7b223f6651fdc34f24887a02",
+        "graded_trials": [
+          "fe6f16dc-c478-4e71-834a-659d5563fe6c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly connects each mark to its intended socket and explains the post-reconnection check. The requested explanation can stand alone.",
+        "reply_sha256": "10b24472f0a8ac120dc8fac67e0a28559cff2cb0bad9038c93cdd27e15f0a9c0",
+        "graded_trials": [
+          "c59a7d97-5811-4fd0-b069-2955f1ef2db5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Explains when to identify the socket, how the mark guides reconnection and what mismatch reveals a swap.",
+        "reply_sha256": "a6ed2ffffbf1b48cb1f16f9ffefea2d7dd3d9b3aaad086848ce0a34c0572417e",
+        "graded_trials": [
+          "20337a54-93df-4148-8697-7be798382860"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly explains both reasons and makes clear that the marks stay on through the check.",
+        "reply_sha256": "7d30795c920b9a7864c11e2abe5357cc8af1fe19c69415cc939558dcf93fcb80",
+        "graded_trials": [
+          "41bfdf76-d075-44e6-b081-67d898a628ce"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "caliper-offer",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "02da3768992a14917b07e732f4453c83a080c3c5eb8c22a83e213305a490dece",
+    "judge_log_id": "f9a093fc-346e-41a2-9642-1b6a8c0b98a6",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both checks support the calibration reported under a3. The separate recheck offer uses a5.",
+        "reply_sha256": "50523832f759a8167d68da857eae60b2793810818ec5fc541c4865b664622108",
+        "graded_trials": [
+          "eaaffb87-cb04-4cd3-9f46-018b82421ef4",
+          "9d82f5fd-056d-4d6d-bef3-0820cabd2659"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 reports completion with both checks. a5 offers a recheck after shipping.",
+        "reply_sha256": "0c3ce614882e39da484464669439ebd7ff55f2b25c03ed206e177b23f58e6879",
+        "graded_trials": [
+          "f2b96044-09d9-413d-a5de-e80e28ebf09a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 states the calibration result and its evidence. a5 separately offers the recheck.",
+        "reply_sha256": "1fbe5eec772713110edcd9bc03d6e8cb856167a616aac23c808b7b09184559e9",
+        "graded_trials": [
+          "9bfdbb27-9218-4121-ba5f-5f4212f33a61"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 reports the completed action and both checks. a5 gives the requested offer.",
+        "reply_sha256": "c2b91dcc980fd82c75ba786b8ae6fb586cd64b7e9f5f961b7eecc73a4a78ff99",
+        "graded_trials": [
+          "a800b78b-4ce0-4c30-8780-145bcbe04638"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "“I calibrated” adds an unsupported claim about who performed the work. The result and offer use the correct separate IDs.",
+        "reply_sha256": "fd84be583c0c17e2c4a4464cffbfa202fa6a501a0727de723785a9e89efcd922",
+        "graded_trials": [
+          "a11e11fc-d48c-4d7c-ad05-f81f3f81f1ee"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 reports completion and both checks concisely. a5 offers the post-shipping recheck.",
+        "reply_sha256": "d880849c9c037e96ccbe321529bc899682b612a34a152defd97fff33f6e9b86e",
+        "graded_trials": [
+          "076b8d16-548a-4c34-b555-223ee4d87a11"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a3 reports the completed calibration with both checks. a5 separately offers the recheck after shipping.",
+        "reply_sha256": "2a1b282e9b1ca8d3c591720eaa4b70ce0a089e377be9514815fbfd29866f1689",
+        "graded_trials": [
+          "f0dd0ac3-48f4-49a4-a9a1-571a88a0055b"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "chart-room",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "22a5452c00a3699caa2ed0980527f9745868c753f6a45685907f430dc9b148cf",
+    "judge_log_id": "1587a9f9-0d22-4d82-966b-bee6b988cfbb",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Addresses the next watch with both index facts and omits the separate loan. The draft can stand alone.",
+        "reply_sha256": "dcb46eb4752af941fb9184321d33807297513ec7ca7658f0a2c96178adccc36e",
+        "graded_trials": [
+          "56e5ea24-4929-4342-b1c8-04b35b35d382"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives both index facts under one bold ID for the single handoff and omits the separate loan.",
+        "reply_sha256": "5af740e7b2a13ac00b3840676ed7133dda843804a1bf898673df28772468bf77",
+        "graded_trials": [
+          "d4aa1db7-3b8c-4a3e-8aec-659f300d56a7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States both index facts concisely and omits the separate loan. The draft can stand alone.",
+        "reply_sha256": "f498ef7685146a59cdb2508418a58eb8329b7d0aa4f1c6d2580856e56b5bcd15",
+        "graded_trials": [
+          "4bf47394-7ad7-4d56-9e88-aa81f9773194",
+          "eb2a671a-68aa-41e5-ab0f-3b2eb9f82175",
+          "bcf014da-dfaa-4a19-8370-fd94446309ae",
+          "775a6d7e-f34a-4d90-80dd-57c44207d8ea",
+          "f4888fa1-361a-4c06-afb6-53ec0954fad8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The terse watch-handoff wording preserves both index facts and omits the separate loan. The draft can stand alone.",
+        "reply_sha256": "5cb2b22467636d30f3029541f7db6086a53e4bd44d42e198ca5533250c4c9e32",
+        "graded_trials": [
+          "4ed03728-4bda-49e7-8585-44698230de91"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "kiln-shift",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "8d1dc43751d8a74919814c76c5893b4f05e08510afd58c6aa349a7be7e1d8ccc",
+    "judge_log_id": "02b861b6-36f7-4049-8c2a-451ba4fcba68",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone handover states the kiln is idle and names the actor for each step in order.",
+        "reply_sha256": "f9d808d1cdfc2e4f494f2b7455df8720ca29bd9af940438518af7760c48ba42e",
+        "graded_trials": [
+          "eac0d6d1-4715-4780-bf0e-a218f14b49ce"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The handover gives the kiln status, makes marking a prerequisite for Arun’s removal, and places Mei’s loading last.",
+        "reply_sha256": "9bd3f5166b7d87d1c3a3a10fc9207be93ddb1c74376f59328b223e565c78a1d2",
+        "graded_trials": [
+          "ee5d99d8-bc7c-4711-9669-7cb955369bd7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone draft gives the idle status and explicitly ties each successive action to completion of the previous step.",
+        "reply_sha256": "c40bb5f306040c92a2cbdba753c5213ee8b9521992a4f933228fb0c9180d73dd",
+        "graded_trials": [
+          "aaf43837-a6ac-4f79-a440-5445f92daaf8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The idle status and numbered steps form a complete handover with clear assignments and dependencies.",
+        "reply_sha256": "247e4b007cd7ab02aac3ac5a153a336e80bf2cf87bc9cfd61481169fb68cc89e",
+        "graded_trials": [
+          "eaf1ca72-74c8-425e-acb4-50a3812a2452"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The draft states the kiln status and names who completes each prerequisite before the next person acts.",
+        "reply_sha256": "253fc548594d2bcdb2db258f2f7927b46f97b1cdab4f8e6f510418e5762190fc",
+        "graded_trials": [
+          "06d90fac-178e-4dfd-9f1b-78201158d34f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The numbered handover is complete, but the closing sentence repeats step 3’s instruction to load only after removal.",
+        "reply_sha256": "cfd10b76ddfbe9243cff3a753886c3ca7b82adf9d91a632fe961d4b47b872909",
+        "graded_trials": [
+          "f19537ef-08fa-4f1f-a9ab-2089514bfc1c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone handover states the idle status and correctly sequences Mei’s marking, Arun’s removal, and Mei’s loading.",
+        "reply_sha256": "56f0ef9e97f7c505844182839dcc7cceb11ed6437c4e691ea26a6e362d185f5f",
+        "graded_trials": [
+          "97c69279-7528-4d11-aa17-3196502e2817"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "“First,” “Then,” and “After that” establish the required order. The draft includes the idle status and names each actor.",
+        "reply_sha256": "d4202a463a36b61486071d6a66e283be6b4d4bb87f46354b31f63b1405587afe",
+        "graded_trials": [
+          "c28d349c-30b8-425d-b987-5e0afb13f52f"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "meter-reading",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "20814c8f7e26a1e1971f3bedb4e7c89e3cd7d89cda3be01d6630fbacf8adaebe",
+    "judge_log_id": "1857a8d3-0484-4a54-a3e6-11da1d8146bb",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States the inclusive range and explains why the exact amount is unknown.",
+        "reply_sha256": "b15c3dc9a078d49912d3ed6089b352c55aca2298e42065ece5e6c2b3b673ef82",
+        "graded_trials": [
+          "82d78d74-2958-4a54-abcb-4a0dc9b404b7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the range and its basis in a single direct answer, which needs no ID.",
+        "reply_sha256": "6bc8283cfaa87985bb1acba509ad021b58a9056e18e1bd496b05612135145c51",
+        "graded_trials": [
+          "af868d0a-4dd9-465b-950d-915481a0ffb4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "Gives the correct range, then repeats the upper bound and adds unsolicited measurement advice. The separate recommendation lacks its own bold ID.",
+        "reply_sha256": "4ce447a0a77e9ba1f6774463cdf33f76ba489992ee387cb167c9774aaf667571",
+        "graded_trials": [
+          "45cc3cd4-0b00-4d85-93ab-3014e8569032"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the range and explains the uncertainty under one bold ID.",
+        "reply_sha256": "f08f3224a92eb19e880d58aca926d2e2854eacb4d2185e1f2bb001cf6bfe4c9f",
+        "graded_trials": [
+          "1f62a8b2-b051-47d4-8d25-f7afb1c68938"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly ties the range to the unknown split under one bold ID.",
+        "reply_sha256": "dd8799d9991374ffb274526417097a708fec040cda7a6cfc67880b17ae8fdb8b",
+        "graded_trials": [
+          "4ec7dcff-1049-46d5-87e2-384e6fb57209"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "States both endpoints explicitly and explains the limit of the meter reading.",
+        "reply_sha256": "96b5480fef153977a8416d8564694ad2d6d0a598f874c634599fa0d09b945dcf",
+        "graded_trials": [
+          "7499dc5c-8842-4579-8ff9-59c6fc730e8d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Correctly explains that the meter constrains only the sum. The list of additional data sources is unnecessary, though it supports the same point and needs no separate ID.",
+        "reply_sha256": "69fd91a6dd67852feb1faed4745b5a92b4d1a2146830e17cfb5bed7924e6969d",
+        "graded_trials": [
+          "d7f0b999-1985-4db1-abf9-237ca763c74b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the inclusive range and the reason an exact figure is unavailable under one bold ID.",
+        "reply_sha256": "67fa5522405aa9db47e921a4e1aec1279fa7cfe21e630ef063f94873b118543f",
+        "graded_trials": [
+          "57fdb44f-ad07-469a-b79a-a55496be2998"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "thread-sample",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "f1e3485edd23755e8f33685b6c063cbd695c0638135ed8322a1e396040ea553b",
+    "judge_log_id": "54c0a06b-5a2f-47f2-8c04-6c3f49bd63f1",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Swatch corroboration stays with **f4**, and the missing button has its own **f6** entry.",
+        "reply_sha256": "b9c1593b74bac3e810e40617743571f0ed6bba9a0837b687e566205d2f4920f8",
+        "graded_trials": [
+          "5f650d44-731f-4010-825f-d177c539a9db",
+          "7d4ef0ea-603c-4ec6-8a2f-3a3198cc16f6",
+          "487601e9-c907-44af-bf0b-db2dd30120e9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both findings are accurate and concise, with the swatch under **f4** and the missing button under **f6**.",
+        "reply_sha256": "90d230e9df953b130e5e8e15a50d61a442bf83cea27ae9cc79ccbe8d2310ea50",
+        "graded_trials": [
+          "7f211129-63f8-4ff2-acb9-a388f18359d0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "“Also showed loose threads” conveys corroboration under **f4**, and **f6** records the missing cuff button.",
+        "reply_sha256": "50baaff5555173ea083ff51d038e7ca0c4315fb4c316b06e4133df0a4f26d545",
+        "graded_trials": [
+          "fd2ccc64-df6d-415f-a534-89d64ed3882f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**f4** pairs the finding with its evidence, and **f6** separately records the missing button without extra detail.",
+        "reply_sha256": "fce22ad80a3bb71176733c07447180ea3a0aae29ec55e678c795998b6ac57d60",
+        "graded_trials": [
+          "6618bfc1-fc78-4868-ae7b-26007b53d66c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "“Also had loose threads” conveys the supporting observation under **f4**, and the missing button is logged separately under **f6**.",
+        "reply_sha256": "6905d5b37e52bbf71f23ae55684495c5b38e7862d5f25d9b29f3243f060d040d",
+        "graded_trials": [
+          "92081fca-11dc-44e4-bd90-44fdf945ba25"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two concise entries retain the swatch as evidence for **f4** and assign the missing button to **f6**.",
+        "reply_sha256": "aaba23f3aa45b0d47c0f271e12d9a58860e446a466cdc051b6b43d31dbfebcdc",
+        "graded_trials": [
+          "01a5b980-6099-4c35-91f7-e7c821050bb5"
+        ]
+      }
+    ]
+  }
+]

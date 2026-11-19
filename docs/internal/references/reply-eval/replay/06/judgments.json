@@ -1,0 +1,318 @@
+[
+  {
+    "case": "colour-proofs",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "27e3f7fbe3843904befbb6a87d418a6c96b6a54827803ee7377a0c557e9da5ca",
+    "judge_log_id": "ef983289-5146-43ce-b474-ea3a4d5259d7",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It explains both checks in order, but claims screen edits are free and introduces a text-approval step. The final section repeats why spelling is checked first.",
+        "reply_sha256": "b849e52623b3222674a06fceb5426e7df04dd5e6f08fc554f914ec33a9bafd81",
+        "graded_trials": [
+          "2ee0b5ad-23e5-4010-a566-ce45a3a8e32b"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled check has a clear purpose, and saving ink and paper explains the order.",
+        "reply_sha256": "2683700f2c3b6ee51079f315ab8224b40f0d0e8741d6db0d5602195241877706",
+        "graded_trials": [
+          "2ac1eba8-c4a1-4e00-b40e-31c6f8a1d2a7"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "It adds unrequested checks for names, dates, and customer color expectations. The reading instructions and closing commentary distract from the explanation, and the file offer has no bold ID.",
+        "reply_sha256": "a27e0cdff83fed17a2e9c3703a0d975415433015652099751a1cf983db1a3fdb",
+        "graded_trials": [
+          "331928b0-9c94-460e-a0fe-e621693a8632"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "It adds a wrong-name check and claims text errors are easiest to spot on screen and cost nothing to fix. The preface, repeated rationale, and closing offers add length. Saving a file and creating a checklist share one ID.",
+        "reply_sha256": "ea93b57d71bf05666cf6433d24cfca152f45a0cd9368636e29568892be4525d0",
+        "graded_trials": [
+          "f143bf9c-cc4c-438e-ac62-f3e537f38eb4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It ties the spelling check to avoiding an erroneous printout, then identifies the ink-on-stock check under its own ID.",
+        "reply_sha256": "f8f16fd9bdfe26fe33c4b7855014dc3af20ee5d4e2c9881585146b25695eb616",
+        "graded_trials": [
+          "d1bc7c7a-28f8-4dc3-bb89-8535f9068f4f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It explains how checking spelling first avoids a reprint and why the actual stock is needed to judge the ink. Each check has its own ID.",
+        "reply_sha256": "c4f985945d4e29e65acfa73f078fdc678eeb53ef8ac74bf9a554b871ff129029",
+        "graded_trials": [
+          "1d3d0c82-fd4f-4372-ba63-87e6e0877e80"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It gives both checks and their rationale, but promises immediate production of a corrected screen proof without evidence about turnaround. The closing paragraph repeats the ease of editing on screen and the purpose of the paper proof.",
+        "reply_sha256": "daf91bb22b4920c4a2c2f7e46151c63fcbc9d8c3ba08eb675224cdf727666f03",
+        "graded_trials": [
+          "697634f9-aa82-4470-b5b0-fc780eba7ad0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It explains why catching a typo first saves ink and stock and why printing on the actual stock matters. The two steps are brief and individually labeled.",
+        "reply_sha256": "c08db35e6cc8295d3b28a577cd2075a97bc9b6b4b8e83a973e286b3bbe53e419",
+        "graded_trials": [
+          "3f254ea0-9f78-4118-9a60-b17b4167b5fc"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "meter-reading",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "f17804a8e7c03841e390086d97cc6b4370aace544d1084d1f125f4fb1d76b7ec",
+    "judge_log_id": "5f8e56eb-610a-466c-9fe8-2dcb55072388",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The subtraction and combined-total explanation answer both questions. The recording advice and the jab about recordkeeping are unsolicited.",
+        "reply_sha256": "0097fef08b4ea93820203c734e0868a98db3530e955b029a3223e97dbad1abec",
+        "graded_trials": [
+          "cd3f33eb-5463-413d-afef-2e3f00e28a18"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The two labeled findings give the 8-litre difference and explain why combined flow cannot identify a tap.",
+        "reply_sha256": "d54ec9396c06283985a9799f4180c8fa79c510ec2a84029aa58724aba7a6031d",
+        "graded_trials": [
+          "5511a72f-11c3-4005-85cd-fc2f9a6ee3d4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The calculation is correct, and the second finding explains why the total cannot identify a tap or combination of taps.",
+        "reply_sha256": "0fc5824598dc4c7c130548c7f19ab4957f48060288babdf7c89bec4ec19a14d1",
+        "graded_trials": [
+          "c1e5fef3-dd90-423f-8328-500adeb81a73"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each question has a concise, separately labeled answer supported by the calculation or the limitation of the readings.",
+        "reply_sha256": "3872bfdcd38d5b7e23537696483cbcf0e75e88fa81ed038907047b3256be061f",
+        "graded_trials": [
+          "5e8dc412-f45b-4ac9-9dc5-afe0e0729f1b"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both core answers are correct, but the readings do not establish a two-digit rollover ceiling. The leak diagnosis, testing procedures, and billing speculation exceed the request.",
+        "reply_sha256": "55b14333fc3a8689c6be98eaeff679e7c78d3bb271ca4cb137c4ac8ebaa058be",
+        "graded_trials": [
+          "c0fde4e2-9e02-4b3d-be40-302e68cd5de5"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both core answers are correct, but opening and closing timestamps alone would not yield per-tap volumes. The retrospective investigation, future metering advice, and comments about colleagues are unsolicited.",
+        "reply_sha256": "ae96950bbf1c449f754df2d8915466d2225c7c3ba622fe2a95dac8cdb5a2de9c",
+        "graded_trials": [
+          "7d0222a2-228b-461e-be2c-9c1346224a5c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The calculation gives 8 litres, and the one-tap versus several-tap example directly explains why attribution is impossible from the readings.",
+        "reply_sha256": "9567137a6afb1462b146de0fa664e17beafe4566e2f48c33100f6b9969f89fd2",
+        "graded_trials": [
+          "7580520c-bd87-48ce-bbf4-ee5d8f03fefc"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The labeled findings correctly give 8 litres and explain the attribution limit. The closing list of ways to obtain more evidence is unsolicited.",
+        "reply_sha256": "f75e42d2bb881d19873300570b6cee1c873bb8d4a09cff03463b0d79dd77ae75",
+        "graded_trials": [
+          "c9a0491a-401e-4c18-b635-457a59060d24"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "pickup-desk",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "df7e9a94ddfa6c8473da9cd6e1d687546a88b38dd0c8019362ec9dcdecd3bb0a",
+    "judge_log_id": "1b2e7053-92d9-47f9-9586-33528b48d11c",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It directly names the Cove desk and uses a single bold ID.",
+        "reply_sha256": "74a4342b3baa73160039565dbcb395fae3cb7147fa4c3c95764527481ba9c134",
+        "graded_trials": [
+          "61499d00-40c9-4216-9743-27842fb61165",
+          "8098a372-6802-488f-b56e-8a06b2a2528a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The desk name fully answers the question and can stand alone.",
+        "reply_sha256": "11448446ae28b6ccca0e009d1e7263bc678a187bb26c0591a43bf83f65c85a52",
+        "graded_trials": [
+          "3aedbd29-2365-40ff-a509-35c200b5f9b7",
+          "0acebaa0-51a0-45d7-ac7d-4847b34c56b5",
+          "39bff628-36f1-4860-a750-53c2bcf40da1",
+          "b03c3143-7339-4b97-b59b-8566a47bbab2"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "It names the Cove desk, but the speculation about a sign and the joke about wristband staff are irrelevant.",
+        "reply_sha256": "817fc1e7444ae85b6190069b8d3ce8212dae5ab85001d8ec31a941c9361b25f0",
+        "graded_trials": [
+          "9fc36f4b-87c9-4528-b709-d6c3881a3613"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "It names the Cove desk, but the comments about Lantern, Meadow, and lost phones are unnecessary.",
+        "reply_sha256": "433f39f7f7161a67e7b1d77661c71ab61ca0b431443bb32e8e10f28a4a80ac07",
+        "graded_trials": [
+          "0a4ea612-5610-43c7-bdc7-05c3f9c4a427"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "tour-updates",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "0193b09a335c7a2d5a2d9b900cfce015449aad3e01f42badf6516c45cc71544e",
+    "judge_log_id": "14da4434-40bb-43e2-b57e-ec1a354a1477",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both IDs identify the correct items. The map fix is verified and resolved, and the approved stop awaits its permit.",
+        "reply_sha256": "9cc5d757fc2478d5088662b80a809b90a252a3aa20089c0c3037acec4bc7b856",
+        "graded_trials": [
+          "35fab1e9-e863-47c4-b7c1-e53a0b8d9fd6"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both statuses are correctly labeled, but “nothing can proceed” goes beyond the evidence. The pending permit blocks installation, while the status of preparatory work is unknown.",
+        "reply_sha256": "b49925e28038cf43295319ff573a20466626026f389a765904cb4025c795e256",
+        "graded_trials": [
+          "90eccfea-bc30-48df-a028-a926780ee04f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": false,
+        "reason": "The reply assumes all work is blocked and presents a future map update as an established next step. The joke and unsolicited build-out plan distract from the status, and the shuttle paragraph reuses the bold f4 ID.",
+        "reply_sha256": "be85095e6bafd06ed69cd4b3e82d3ea64733a14d452648505dde99aef57facf9",
+        "graded_trials": [
+          "f2e92ace-78f8-477c-99fd-c46e05fad88c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply ties closure of f4 to verification and explains that a9 is approved with installation on hold pending the permit.",
+        "reply_sha256": "3aeeebd9c043f952cd8011be172e3513adf6c2eeac6f521bfac3640a585f35c0",
+        "graded_trials": [
+          "910617fd-ef95-41d1-b5af-904f66851734"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each bold ID leads its own status. Verification resolves f4, and the pending permit explains why a9 remains incomplete.",
+        "reply_sha256": "41f39434951a65fcf182ec8a1f506a040347785065158f6f3e56671b117142b9",
+        "graded_trials": [
+          "774fd12f-79f9-44a9-bc03-aae7cf32cf12"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply directly reports the verified entrance correction and distinguishes shuttle approval from permit issuance under the correct IDs.",
+        "reply_sha256": "f7272d319ee80da75fb70717314ae46c5843e2547fab80fb32017f9a3f3d106a",
+        "graded_trials": [
+          "8fd5aed1-a852-449a-a743-bf96c3e6fd64"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The reply accurately identifies the verified map correction and makes clear that shuttle installation awaits the permit.",
+        "reply_sha256": "ebacf1749568d787efff341d0f2db116cbc31915522b8b2a5e07f528d58a65df",
+        "graded_trials": [
+          "9c4252af-fd7e-4c7d-bb24-ac0a9429aed7"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The IDs are correct, but the evidence establishes neither that all work is blocked nor that build-out needs no further sign-off. The tourist joke and prediction about future approvals are extraneous.",
+        "reply_sha256": "bc93ffa883c42d7b464bb7f90bf95adc5e26d74253ec03e022fd3ce77e4f4fde",
+        "graded_trials": [
+          "6a518216-5cc9-45fd-8db4-316aa1ff6e84"
+        ]
+      }
+    ]
+  }
+]

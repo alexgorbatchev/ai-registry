@@ -1,0 +1,7 @@
+{
+  "label": "Add Git authorization",
+  "baseline": "v3",
+  "candidate": "git",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

@@ -1,0 +1,431 @@
+[
+  {
+    "case": "parser-handoff",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "aa8a0471641f19ab0a423e6f9b6f9caefb8ad571466920e9d8902be888c0ce7d",
+    "judge_log_id": "9e0db1de-b1f8-4bb7-9945-92099e6e6acf",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**a6** reports empty-comment support and the passing test. **a7** separately offers the whitespace-only check.",
+        "reply_sha256": "dbc393e2d8435912b55efbec6a028cadcccaa088a85f5eccff6cad4d844a9028",
+        "graded_trials": [
+          "30ba72f7-6ec6-4f1d-9476-c9999a03fbf9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**a6** reports the completed parser change and passing test. **a7** separately offers the requested follow-up.",
+        "reply_sha256": "68883c3eb7a50693d55651c347200a188d574f744be862d1a6db5ac3a7d21556",
+        "graded_trials": [
+          "b2b7796a-e6a5-41b1-936c-62291e9ca15d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "**a6** confirms empty-comment support and the passing test. **a7** concisely offers to check whitespace-only comments.",
+        "reply_sha256": "fc0ad0571f46ce3c78f26c3b3ae9c1e86f5fb897f68f36b8a475e4752110e5a4",
+        "graded_trials": [
+          "d57f8b38-fb34-4aa8-8284-c0258a9def41",
+          "a388b4cc-f8ab-4d73-b054-07e2534574bb",
+          "40c1ffa9-dbe7-4090-993d-f88396b8988f",
+          "95b4d737-85da-4a96-80b0-4cb61e6f69dc",
+          "7aa17fab-0995-40c5-8f24-93904a87b715",
+          "4aa7f14b-4067-44a6-9061-ba06c52093ce"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "publish-manifest",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "11613b9b81c1b6f7f1d56a12b112d4258ee2d6654ebb22add58580f32fc61496",
+    "judge_log_id": "ac183f45-a762-4534-ae43-f442a418edb5",
+    "judgments": [
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It explains both reasons, but claims every new visitor immediately uses the new manifest. The process only establishes what happens when a browser fetches it. The closing sentence repeats the visitor claim.",
+        "reply_sha256": "620d83d5336aee8aa008af69a2f4ae8c9b87203f580a79be9b78dabcdcea595e",
+        "graded_trials": [
+          "5ae3a0e2-ffcd-411d-b6a1-5f6fcee992b0"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The possible 404 explains the upload order, and the delayed request under the old name explains retention.",
+        "reply_sha256": "65e72da2d4422cd40874483a32010544d369a4251180af9ec3d4fc15f775e510",
+        "graded_trials": [
+          "615b976b-938a-4f33-819d-bcbccf9a74a5"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The lazy-loading example explains why old files matter. The final sentence repeats both reasons and turns protection against release-order failures into a guarantee that no client ever encounters a manifest pointing to a missing file.",
+        "reply_sha256": "45fa2ab65461d65b19d44197a910b35dbc96b3c04f6fc35923c7a1e0f592721c",
+        "graded_trials": [
+          "9ee9563b-40fc-4892-9af3-1c6c66ea4baf"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Both reasons are present, but saying new sessions load the new version assumes which manifest they receive. The last paragraph repeats the first step’s explanation that versioned names prevent overwrites.",
+        "reply_sha256": "2fe8d321db62bd5709e5927dd38a8f3478f6aa91ba1628aec1f83a1d1e331117",
+        "graded_trials": [
+          "fbe6d9d5-2977-4231-b7c6-9ff24a4d99a7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It defines the manifest for a new teammate and explains why filenames in either manifest must still resolve when requested.",
+        "reply_sha256": "2b5eb228c3e0b6e6a9d283924bbd2b9d22979d125b580b49a7ecebb4065d6c4f",
+        "graded_trials": [
+          "9ba2fb4c-4070-4f67-aa4d-bf04078789f1"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It explains how switching early could expose an unfinished upload and why a browser may still need the original URL.",
+        "reply_sha256": "ee2add51002aefe66d60b05aadef9b8070a09bd7177e55b837e2ce7016ab77f7",
+        "graded_trials": [
+          "dce0dcaa-ff4a-4ddb-b902-1612230b3c53"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It ties new-file availability to fetching the new manifest and shows how an old-manifest fetch and its asset request can fall on opposite sides of the switch.",
+        "reply_sha256": "c53d8cd2a1d7d565ad8823f097d463dfc5cf847b302add4bf224fca13665e8cf",
+        "graded_trials": [
+          "5f32733c-f27a-49d7-a807-fbf5795fcf21"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "It explains both reasons, but claims browsers immediately request the listed files and new visitors receive the new version. Neither timing guarantee follows from the process. It also explains twice that versioned uploads leave live files undisturbed.",
+        "reply_sha256": "8e0c8dbe8fb6e898a8030a399a6ec137d13898ccb6fc2dfdeebf8b51c8db733e",
+        "graded_trials": [
+          "f6c88720-b871-42d0-9d17-ad943e779b93"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "queue-drain",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "ab4b7ea61ff2c84fc682639af0e174b4b4f84153fbc9d7118cc44a00dbc73592",
+    "judge_log_id": "c9a4c49d-a8de-4f04-93e8-641dbf313e73",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the cleared backlog, normal processing of new jobs, and unknown root cause. The direct chat update needs no IDs and omits unrelated details.",
+        "reply_sha256": "95cff27ddb6af5cf192c7cbe5fe0d3fe6c8ef85fff5875ffc0fb5198d5654625",
+        "graded_trials": [
+          "bf4fee59-f64f-4818-9132-9659fccd9c4c",
+          "19debb14-001b-4545-825f-1c2edd0a6fc8",
+          "dcc5fc4e-7472-4c81-b70a-a8fe7f89d14c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Reports the cleared backlog, normal processing of new jobs, and unknown root cause. The direct chat update needs no IDs and omits unrelated details.",
+        "reply_sha256": "711b264908af57cf4273d9d3395d5a5a45ee926159e128dc1ff2292a25894277",
+        "graded_trials": [
+          "50665b13-b211-41bf-955b-f6584dafca65",
+          "33982b5e-c3aa-4b18-b2e7-e7825a746a99",
+          "4def34cb-326d-43ad-b23f-832daa57a5d2",
+          "1fb9a22a-92a6-4ae1-b869-1801cc2e66e8",
+          "4f030640-1dd0-4ee1-807a-a00bf5d587d9"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "read-only-role",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "e1fc2e3c1ff693b71ea4299bb75815f0d3cb29317f442c0036ddd8a3a97b2b13",
+    "judge_log_id": "00b288fe-4f92-4508-a538-3c97a0eea858",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Names Scout and ties it directly to viewing runs.",
+        "reply_sha256": "e7eacd070eb966f2a1a8df822111443a443a1cf5c080e0aa2b1b3a9298621ed6",
+        "graded_trials": [
+          "a93dc74a-74c5-41f7-b7d6-992d48613f13"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Names Scout, but the guide does not establish a privilege ranking. Comparing Maker and Steward is unnecessary.",
+        "reply_sha256": "07f2c7ebae19988c7303cc4e4db255871ef126761d37b24f3541dee940c72a2f",
+        "graded_trials": [
+          "c3013e88-971f-4af8-9bd7-53b644fd8420"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly names the role to request.",
+        "reply_sha256": "bc96a912f0633dd463f963158d5c0aea2949c6a1bb4ac8281f6ba19ca344c244",
+        "graded_trials": [
+          "3c791123-8c7d-4ee4-9162-6fcf57d17694"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Names Scout, but “anything higher” assumes an undocumented role hierarchy and adds an unnecessary comparison.",
+        "reply_sha256": "66f42e1f15446480e860693b392bf5733d4ccfb6324b736bf197c262a4f05867",
+        "graded_trials": [
+          "bae0cbff-5185-4e23-9084-d0626f07c6b6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Scout alone answers the lookup.",
+        "reply_sha256": "709d5d4697374cc111edee516850e20c08fd9cf88b082dbc9310d58c6f9b883f",
+        "graded_trials": [
+          "3a51ae8f-1e3a-4e01-a963-4fa525158d3e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Names Scout correctly. The joke adds nothing to the answer.",
+        "reply_sha256": "bc354d80472d957b4581eef4486f26f33b46c8cf535077b0da58682d2c3486a0",
+        "graded_trials": [
+          "8af3ee86-5c5c-4e6a-a201-c14f6869e7c6"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": true,
+        "addressability": true,
+        "reason": "The guide confirms Scout can view runs but does not say viewing is its only permission.",
+        "reply_sha256": "10696a276794117fb04130b20030256a4e31c1adae3ffdc1baf3e036a4b48b38",
+        "graded_trials": [
+          "217a0d01-78eb-43d4-93c3-09893d919f4c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Names Scout and accurately confirms the requested permission.",
+        "reply_sha256": "1a09f292177d6822cf529203be873832a53eca4413b7efd5755fb9117140b89a",
+        "graded_trials": [
+          "78139eb9-08ea-4afa-bcc4-c8730391e65e"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "restore-preview",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "bfe1211d525ce349c84e3c04602163f35ba201f5123f61a0710015011302fd73",
+    "judge_log_id": "e1a3553b-aec9-4f6e-99f8-4c9ad1863c55",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly explains that preview lists replacements without changing disk and that restore overwrites newer local edits.",
+        "reply_sha256": "11410b1bdd62a5ba0541a906ad413cc6a10ee4dc934b9ecf761efcd708400aa2",
+        "graded_trials": [
+          "a6f65f3f-2e49-4e85-9f70-8d384649fd63"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly covers both operations, including what happens when a local copy is newer.",
+        "reply_sha256": "d008b312e9d4015058b2bbc588d5dcd21697ece50c345c3c838f3b56fca6a594",
+        "graded_trials": [
+          "d4c629e0-914e-43d1-9cfa-1e5dedc2d856"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Accurately explains that preview leaves files untouched and restore overwrites listed files even after local updates.",
+        "reply_sha256": "dc840eb2ebdf3c89b0e25c7e08d5ab597cbdfc48598effe729530030a9266978",
+        "graded_trials": [
+          "fbf3018a-134c-4972-9a89-b9cf9de7c153"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Answers both questions accurately. The instruction to check the list for recently edited files is unsolicited.",
+        "reply_sha256": "7b888ab51fb58c9b9fcbe4c3f956202e527258468a68605a3b97095d70985512",
+        "graded_trials": [
+          "6166e965-6972-4bfd-82d8-d227af6a3a8d"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Answers both questions accurately, but repeats that preview changes nothing and adds an unsolicited procedure for checking and copying files.",
+        "reply_sha256": "fb885aad15c1e39ee72ea135e602ce08ca9c0042061f317a49ceec1dc279cdd6",
+        "graded_trials": [
+          "2ef0dabd-2f9a-41f8-922d-08a22f6010e4"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "Answers both questions accurately. The final sentence repeats the overwrite consequence and adds unsolicited advice to save files.",
+        "reply_sha256": "c8f4ae2755387b5fc362ada8016dfe2c7bf952ce748b198385f1510c5b9a9d15",
+        "graded_trials": [
+          "b69f954c-8428-464b-90cb-5ef1a4fb9287"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly explains that preview leaves the listed files untouched and restore replaces even newer local versions.",
+        "reply_sha256": "f9d4c844c64c4ba3d4bc8334015ab10725b02e42ff6732411bd1d9e59d36827b",
+        "graded_trials": [
+          "fb7d7976-d442-4c1f-b204-dd53c840abed"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly states what preview lists, that disk stays untouched, and that restore overwrites newer local versions.",
+        "reply_sha256": "80c585590e45d36e94521208a6189c06f00cfafa029c1d8122e04d990208a919",
+        "graded_trials": [
+          "7ca658c8-680d-4108-9217-a8286c018553"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "unlabelled-exit",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "2c5674d04629a14806930220caa6081f3967cf43c1288e9bb4a372a800b99bc7",
+    "judge_log_id": "aa1cf58a-dedb-43a3-9dc4-e1e81551acaa",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The answer gives the count and the identity limit, then adds unrequested steps for identifying the worker.",
+        "reply_sha256": "27591491cacc6921fc95a900bda87c8a7597f9f0a611cafa83f4a29ec418f053",
+        "graded_trials": [
+          "d03a7d3e-7c3c-4be3-afe0-fc45d498f448"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It directly states that exactly one worker exited and the log does not identify which.",
+        "reply_sha256": "b40365fe98790f35a4a099418c554e9f656c4535a38d372a0ef4b0e24c591b64",
+        "graded_trials": [
+          "6a1b2249-e50d-4207-ba4f-f794a579e671"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The symmetry explanation supports the answer, but the reply repeats both the identity limit and the recorded count.",
+        "reply_sha256": "19d2f8e22350bcc931293d8e0c8b4c6c396cc1142c8a4f11e963952ddfdd7c0c",
+        "graded_trials": [
+          "77628ca2-29bd-4171-aae1-662febfdeddb"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "One bold ID introduces a concise answer covering the exact count and unknown identity.",
+        "reply_sha256": "ad4cbdd958f6e3944d60513b28cc6c04cf57b4a4a6aa1485e2a26743170ce271",
+        "graded_trials": [
+          "12202248-2db8-4e43-9ea1-6e07cc9f826f"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The answer states what happened during the monitored period, then adds an unrequested procedure for identifying the worker.",
+        "reply_sha256": "26f072a91426dcf9abe843cceff889d7e977f078a0754630723a08ff7953d77a",
+        "graded_trials": [
+          "eee48d0e-b7f3-4eb3-b0b6-e9c9404a6ca1"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "It answers both questions directly without inferring which worker exited.",
+        "reply_sha256": "57e8a014e3ff9c318d2d6e8542decdb6841d1742a58ec397b8f87a2e600366bc",
+        "graded_trials": [
+          "b5739e55-714e-4b84-8b84-1f68a47a2d9e"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": true,
+        "reason": "The opening gives the count and identity limit. The reply then restates the count and repeats that the record limits the conclusion.",
+        "reply_sha256": "66fe8618c355596f2bd19b6261709e31a1bfc6e3efa4fbe6bfc1d3c2e40bba93",
+        "graded_trials": [
+          "755c6747-47fa-4cd6-9613-158e542cad55"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single labeled statement gives the exact count and makes clear that the worker cannot be identified from the log.",
+        "reply_sha256": "6b43074432d8161026490c679e8798b474e3f3bc9c2d79a9493547a4881ff32c",
+        "graded_trials": [
+          "7deee772-2183-48da-8f78-7b85d960eb59"
+        ]
+      }
+    ]
+  }
+]

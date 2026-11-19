@@ -1,0 +1,7 @@
+{
+  "label": "All eight minus Failure investigation",
+  "baseline": "all",
+  "candidate": "without-recovery",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

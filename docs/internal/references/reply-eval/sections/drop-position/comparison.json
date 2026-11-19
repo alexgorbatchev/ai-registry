@@ -1,0 +1,7 @@
+{
+  "label": "Move reply rules to the end",
+  "baseline": "all",
+  "candidate": "rules-last",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

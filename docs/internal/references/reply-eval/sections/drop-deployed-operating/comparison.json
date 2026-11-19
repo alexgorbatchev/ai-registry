@@ -1,0 +1,7 @@
+{
+  "label": "Deployed minus Operating instructions",
+  "baseline": "deployed",
+  "candidate": "deployed-without-operating",
+  "suite": "sections/triggers.json",
+  "suite_label": "Operational"
+}

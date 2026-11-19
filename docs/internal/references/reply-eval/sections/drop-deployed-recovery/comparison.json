@@ -1,0 +1,7 @@
+{
+  "label": "Deployed minus Failure investigation",
+  "baseline": "deployed",
+  "candidate": "deployed-without-recovery",
+  "suite": "sections/triggers.json",
+  "suite_label": "Operational"
+}

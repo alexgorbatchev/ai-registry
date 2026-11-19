@@ -1,0 +1,7 @@
+{
+  "label": "All eight minus Operating instructions",
+  "baseline": "all",
+  "candidate": "without-operating",
+  "suite": "sections/triggers.json",
+  "suite_label": "Operational"
+}

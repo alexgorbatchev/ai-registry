@@ -1,0 +1,7 @@
+{
+  "label": "Add Personality",
+  "baseline": "v3",
+  "candidate": "personality",
+  "suite": "transfer.json",
+  "suite_label": "Transfer"
+}

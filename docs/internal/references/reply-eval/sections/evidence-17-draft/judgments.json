@@ -1,0 +1,503 @@
+[
+  {
+    "case": "binding-offer",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "2686e0b530076ce66e2f4e45cf468da836f0262d8eb38405225d7c769b4e5eb9",
+    "judge_log_id": "3f07e7cd-ba39-4205-9571-b4b3ad2d30e4",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a8 reports both repair observations. a10 separately offers the spine inspection next month.",
+        "reply_sha256": "b901b306f22d48f43a6f42aafe74edf92f576214e21a7c52f1b61fd8af8b5341",
+        "graded_trials": [
+          "e37d3f18-70a2-4b76-8b6b-1cc97a07aab1"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both sentences under a8 support the same binding result. a10 correctly labels the separate offer for next month.",
+        "reply_sha256": "4a99bc161c96a3e77f668c32c46804427190219fc8a6f6edf6e8f7d982991681",
+        "graded_trials": [
+          "f452fb74-985a-4525-8b57-62ebaa66d1db"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both observations support the conclusion that the repair held under a8. a10 offers the requested inspection.",
+        "reply_sha256": "8c8d1be7bea10923f45c1af133945614b4a157b92b127869220ad79a5a37942c",
+        "graded_trials": [
+          "5a3ef666-7542-4d99-8961-e79700ade511"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a8 gives the result and its evidence in one sentence. a10 separately offers to inspect the spine next month.",
+        "reply_sha256": "e2264bc6b3f3d2fc39ad8773cc518d35f1e185b9abdbe9d46fca8d76bd6bffd2",
+        "graded_trials": [
+          "6d7ee11f-88c0-43b6-8977-f55cd79b5e72"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a8 supports the repair result with the flat atlas and all pages surviving the test. a10 gives the requested offer.",
+        "reply_sha256": "5a0d7bdc9b3aca73ec050f4ccb8c0f79c27b5109d978530cb3948e80d2aacbfd",
+        "graded_trials": [
+          "d5858a0a-97fd-4459-9c69-4642063f3f56"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a8 reports the result directly through both observations. a10 offers the spine inspection for next month.",
+        "reply_sha256": "c5ed7925db687812d61a6391123e93ce8acdc9afa0fcb811b17d5d5312caba6b",
+        "graded_trials": [
+          "9b2534cd-253f-4aa1-a590-f084fca40669",
+          "f38dc530-e9a2-48dc-9df0-df0dcbc6e570"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "a8 concisely states the result and both supporting observations. a10 correctly labels the separate inspection offer.",
+        "reply_sha256": "be51b909d1e96b6be366db78855f20af78b3ecedb0d614aa89d3c52172e98489",
+        "graded_trials": [
+          "fbcdc511-fdcb-4e0b-9de3-c9cb23a17439"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "glass-samples",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "e1825d95c080f0bda4e12d1204a7e44407d8ba6f85f1d1825aaf2b9cbb8cf5ae",
+    "judge_log_id": "a6a69050-770f-4774-a3fb-bbaabd6a61eb",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both findings are concise, the fleck’s cause remains unknown, and f7 and f9 are assigned correctly.",
+        "reply_sha256": "c13e0b94d0bccfb872eb6fe846d3b326f716d60442dde1b467f2d8fc90c4412c",
+        "graded_trials": [
+          "fc1ca16f-3eeb-4b5b-a74c-07fc9ced8851"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": false,
+        "reason": "The second fleck belongs under f7. The chipped vial takes f9 because f8 is reserved.",
+        "reply_sha256": "dd052d63752119ddfe193a172734ee92cf92bf2c3ead19d3e970c30d2fa22907",
+        "graded_trials": [
+          "d496d46c-3cca-4745-a27b-b059f8e291ed"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both findings are concise, the fleck’s cause remains unknown, and f7 and f9 are assigned correctly.",
+        "reply_sha256": "080301378f8cfb775ae378e976de9338327cb80c0ec994cb27818e2dfddcec98",
+        "graded_trials": [
+          "53efa531-ef69-4314-9a38-66cb89ad3127"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": false,
+        "reason": "The second fleck belongs under f7. The chipped vial takes f9 because f8 is reserved.",
+        "reply_sha256": "5a5110f7e5782defaeb9100054dc10edae039b4742dc6bfc6b924a75de306690",
+        "graded_trials": [
+          "18ddd765-4c26-4b2f-9ed7-c3bef5d045e8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": false,
+        "reason": "The second fleck belongs under f7. The chipped vial takes f9 because f8 is reserved.",
+        "reply_sha256": "cb23a24ab1dc74329ee717980524342a18dd2703455ec317d2170960af7b29d7",
+        "graded_trials": [
+          "fac5c8e5-ecdc-4fce-a35c-84e0f9d272ba"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both findings are concise, the fleck’s cause remains unknown, and f7 and f9 are assigned correctly.",
+        "reply_sha256": "b53ac5bfb1b344efb91375f7461e1e07a784400c67a2739e022624ab9515c786",
+        "graded_trials": [
+          "8b906d5e-645d-4e9b-a1ff-ebde6c0208a6"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both findings are concise, the fleck’s cause remains unknown, and f7 and f9 are assigned correctly.",
+        "reply_sha256": "297435b35363a8140557f97556eb315a5a87955d34b61ae7c9563a13dfcb5f55",
+        "graded_trials": [
+          "82033570-c230-411d-a41d-6bfcdb1d2417"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both findings are concise, the fleck’s cause remains unknown, and f7 and f9 are assigned correctly.",
+        "reply_sha256": "2a0e1bb0c41479b36c2cf32ca551527463e4ec258d517a040d1bf2c08c5c1cac",
+        "graded_trials": [
+          "52143960-232c-4b62-a48e-b92d0468e7ef"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "handover-sequence",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "1198b8725b8bca6a4bf6a7dbff282649974bffe352d40e6ff5031672671c0311",
+    "judge_log_id": "e0be0c5f-e5a2-40aa-8ab9-3c6ccf6572c6",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Names each owner and makes clear that Jo checks for leaks after reopening the valve. Each handover stage has its own ID.",
+        "reply_sha256": "62766eead9ab2f3ff2676abb50cc212b0a208c730ed99e27ca28bbc2f96555bc",
+        "graded_trials": [
+          "385d2ded-2440-42ed-ab58-e15859d971cf"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the offline status, owners and required sequence in distinct, labeled stages.",
+        "reply_sha256": "703b88763000efcdcb6114bc95e8c0ae3b412bd6bcb1ec03e98239bb7241c5ca",
+        "graded_trials": [
+          "67f0517a-0d43-4913-81dc-c98a2a2c999f"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Invents a start-of-shift deadline, attributes the outage to the hose and adds refitting and return-to-service requirements. The repeated completion conditions, signature fields and offer to add clock times are unnecessary. The table identifies each stage, and the separate offer has a bold ID.",
+        "reply_sha256": "41679dd8e8b464269335799d5da4cc36fc0783ba1e92cb525f4395d859d799af",
+        "graded_trials": [
+          "51c5ddce-b773-4052-b33d-c4a16a955ec5"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Assigns every action in order. The two brief notifications tell the next owner when to start, and each stage has a bold ID.",
+        "reply_sha256": "03df80d02f7c992f385d45eb56a0acad6071daffbc46c0293c13c5e6459b952e",
+        "graded_trials": [
+          "eb022e6b-764e-424d-8944-7656065fcd39"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone handover gives the status, owners and timing in four sentences. A requested draft can stand without IDs.",
+        "reply_sha256": "c258cd6b15389ee8b25b02e88f466a969160ba3deca9fbdd4378c35d7761795a",
+        "graded_trials": [
+          "328b1b91-0e7b-4c5e-88ad-8eb06289059c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled stage identifies its owner, and the handoff confirmations establish when Kit and Jo can begin their respective steps.",
+        "reply_sha256": "1c16d017f8a281c334b5833da8e8d54ffc4ef3361d39e726c0a57830707043ad",
+        "graded_trials": [
+          "abf0fc3e-659a-4891-a9e7-f51a71cdaeed"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Adds an unsupported start-of-shift time and a requirement to notify Kit before anyone leaves the area. The handoff script repeats the table, and the sign-off fields and closing note add bookkeeping. The numbered table makes the draft's steps individually identifiable.",
+        "reply_sha256": "1e98663b3b867faa3a4194c1155e7dfd45f32cde871d7c8af4258c06e32b5140",
+        "graded_trials": [
+          "2d680f0d-3dcd-46a2-b275-db66a0b46378"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone draft states the offline status and assigns every action in the requested order without extra procedure.",
+        "reply_sha256": "2cd29a77e4ccf79d99d387dea06866e86967e274d5a9108b9b6b3d787acab1f8",
+        "graded_trials": [
+          "0f98aabe-7d09-4f63-abe9-a4c1453723d6"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "loan-explanation",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "a54e62cc9e251d12bd572dd8576bfc9d03271658b5aaf6ca7c0b07dfead10888",
+    "judge_log_id": "eb731f12-faaf-4720-b51e-e5c73731fb1a",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly explains how the borrower uses the date and how the desk uses the stub.",
+        "reply_sha256": "7e1f3c0a312a8685cfb1e5fdb4fc05573642b858d0aadf5211511b2a5d0cadb1",
+        "graded_trials": [
+          "ab964959-43b0-4cd6-b112-dae04b0ef4e7"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The request establishes that the borrower checks the slip, but gives no evidence that it is the only place to check. The unstamped-slip sentence repeats that assumption, and closing the loan adds an unsolicited step.",
+        "reply_sha256": "c99e8c6bb43b6c89bd34a10bdb800c39d908f452a59333d35da33628a86ccee1",
+        "graded_trials": [
+          "12bf26cc-e795-4109-a579-6fbb00a5e93a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives both reasons in a concise, direct explanation.",
+        "reply_sha256": "bba6f872e65988ce627e736574d18a647ba68baa1193853967827d0102e0dcc6",
+        "graded_trials": [
+          "bf1917ae-6120-4c7a-a963-623214005f8a"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Each labeled instruction gives the requested reason accurately and briefly.",
+        "reply_sha256": "4cf67f20665339f64758c60dca1733df95908bf09bcc54f0f8c440068730d834",
+        "graded_trials": [
+          "6e854fdf-8c82-4f4f-86b7-5e7503d8f7b3"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly connects stamping to the borrower’s return date and keeping the stub to matching the return.",
+        "reply_sha256": "3c25bb35934ab8f504ecd94b2da679c2688a8a6eeedc3f98fbcc995353c92097",
+        "graded_trials": [
+          "f070bae4-4611-4885-b986-0a781b20bbc7"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Accurately describes the slip as a written reminder and the stub as a way to identify the loan, with an ID for each point.",
+        "reply_sha256": "b14055b53b7070ee616f366fdb23cbbb88f3dc675bb5c40785218e782b0454ed",
+        "graded_trials": [
+          "f70ffcf3-4872-4867-b5ec-0f7810c28659"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Both labeled points explain the purpose of the corresponding action without adding unnecessary detail.",
+        "reply_sha256": "46b846f15f89a19777b95cdbaf8cc2a1f6bbbbd2eb0bdfa13ef71002554ce09e",
+        "graded_trials": [
+          "280f03d2-0478-445e-bdd3-f9b112845944"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The claim that the slip is the borrower’s only record is unsupported. The guessing aside repeats that assumption, and closing the loan adds an unsolicited step.",
+        "reply_sha256": "a800452d9e3d88224153fb5b197ba37e2a5bb4eac6f00396d95145a6279ce4ff",
+        "graded_trials": [
+          "380eeafa-7470-4441-a5c6-871b9e021121"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "lobby-count",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "5e7d08aaf79f6c5db9737eb793eec38529f7c248df9e1a76b7cc6c861ed5c391",
+    "judge_log_id": "605657d1-8de4-4ea4-a97a-b6a4a3bf6506",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the full range and explains why the feed cannot narrow it.",
+        "reply_sha256": "95542f8d1351f106da85350575dad1bfc829767180de23dde686a7d9deec861d",
+        "graded_trials": [
+          "1795510f-be46-468f-bba8-ffe379b9ecb8"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "Gives the correct range, then adds an unsolicited, separately addressable suggestion about other data sources without a bold ID.",
+        "reply_sha256": "47f8a7221dbffe1f2ec5f8422dcf526d62767ce17206badb7295c7463968179f",
+        "graded_trials": [
+          "3576c1b4-1848-4e91-b8b6-94acb5f3e13c"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Labels one finding and states both the range and its implication for whether anyone used the door.",
+        "reply_sha256": "99ae7b28d05af8dad612c6a22acdbab67fba1a0a604598d5b925ef694050b26a",
+        "graded_trials": [
+          "6073c507-e889-47e3-bca7-013270493080"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": false,
+        "addressability": false,
+        "reason": "Gives the correct range, repeats it, and adds an unsolicited suggestion about other data sources. The finding and suggestion lack separate bold IDs.",
+        "reply_sha256": "2b278867f0c6ca7f2dcd9fba2f7529bf6f829ec67061d4fc40c516c5e906275a",
+        "graded_trials": [
+          "218d2759-e476-4c3e-a2e2-cbc82151f8bb"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly gives the range and explains that west-door use is uncertain.",
+        "reply_sha256": "2416f1d47c9d9d605e4140e2890965f62b21ca21004823fd5385ababcc4d6575",
+        "graded_trials": [
+          "6247a074-1dfc-4544-b14c-7ed0812925f9"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Directly gives the range and explains that even one west-door entry is uncertain.",
+        "reply_sha256": "1e32bef769ee041f1cbd8809c0c5aeb83353b0c4880551b61f6f0ce00740a1b8",
+        "graded_trials": [
+          "749511f0-d0a6-4aaf-a707-9ba203d8a4ac"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single labeled finding gives the full range of possible west-door counts.",
+        "reply_sha256": "1dc6daf4da03c7753c765c7b3cc21b3dc231771c810ceede2e26918936823bf8",
+        "graded_trials": [
+          "1f082b30-bb50-4c30-9f16-21685e171e17"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "Gives the full range and ties it to the missing door identifier.",
+        "reply_sha256": "0e805c5184765b7db5e5dc06b17d1e3823ebeaedff900754212c13a8ca75fe70",
+        "graded_trials": [
+          "76b3760d-647e-42ca-9bf0-c3d58fe1ad4c"
+        ]
+      }
+    ]
+  },
+  {
+    "case": "shed-handoff",
+    "judge_model": "gpt-6.2-astra",
+    "input_sha256": "b27b59e57247734c74e39604c342aafbc970d8cd9265d66a43c21c5fed6177a6",
+    "judge_log_id": "0fecd018-3dfb-4aee-9499-14ffcaadd5f7",
+    "judgments": [
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The standalone handoff states both supplied inventory facts.",
+        "reply_sha256": "6654773cf98de2306c831c5419d349ca9b6fe9bb9dfd9e8d3502854610ed7d8b",
+        "graded_trials": [
+          "f376c410-d9a9-4cb4-80a2-ab25b4300e39",
+          "0f15f6e3-8c51-4061-8a6c-34d7cc622a97"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single labeled point tells the caretaker the inventory is complete and how to access the sheet.",
+        "reply_sha256": "85c1d8148458c11611378f2b1eba2cdd6888ee7b3538799a556076a663047124",
+        "graded_trials": [
+          "b59c220a-dafd-4afe-8241-df9c1a1f7624"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The labeled handoff accurately states completion and tablet access.",
+        "reply_sha256": "7e5e605a5527bf9a28a458e4d51bec3eca99ef428bbc0d983aabc6a3dcecfdfb",
+        "graded_trials": [
+          "b7b43d1e-95d0-4afe-a51a-ee5dfc35af9f",
+          "89c987c3-8186-46cc-b1b9-dd017f9a8c22"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "Saying the sheet is on the tablet adds an unsupported location claim. The request establishes only that the sheet opens there.",
+        "reply_sha256": "4d701ceb1262dccc95e9bdbca9f18608c01509392fb989cc7120e50772dba899",
+        "graded_trials": [
+          "3ffbb8de-aee7-46de-85f0-190b27ef2d78"
+        ]
+      },
+      {
+        "completeness": false,
+        "concision": false,
+        "addressability": true,
+        "reason": "The draft adds an unsupported claim about the sheet’s location. Tablet access is confirmed, but storage location is unspecified.",
+        "reply_sha256": "1483f18b88fcff897a453d64d28b1fffd4d1e5e2a66fbfeebc269c8510b85bb2",
+        "graded_trials": [
+          "ff86ec9d-457c-4c19-9d8d-719045252796"
+        ]
+      },
+      {
+        "completeness": true,
+        "concision": true,
+        "addressability": true,
+        "reason": "The single labeled handoff confirms completion and directs the caretaker to open the count sheet on the tablet.",
+        "reply_sha256": "18c52d1634a80b3b624d112d5cdd46d23f090e2bea90b569044841fb94b0f2bf",
+        "graded_trials": [
+          "2fa41b39-58f8-4606-9d1c-0dc9cffa7544"
+        ]
+      }
+    ]
+  }
+]

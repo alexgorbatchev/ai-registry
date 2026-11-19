@@ -6,12 +6,15 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import time
+import uuid
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 HERE = Path(__file__).resolve().parent
@@ -52,17 +55,84 @@ class NoRedirect(HTTPRedirectHandler):
         return None
 
 
-def generate(args, system, prompt):
-    if args.provider == "codex":
-        with tempfile.TemporaryDirectory(prefix="reply-eval-") as scratch:
-            instruction_file = Path(scratch) / "system.md"
-            instruction_file.write_text(system, encoding="utf-8")
-            output = Path(scratch) / "reply.txt"
+def verify_instructions(provider, logs, system):
+    expected = system.strip()
+    received = []
+    for log in logs:
+        with log.open() as events:
+            for line in events:
+                event = json.loads(line)
+                if provider == "claude":
+                    attachment = event.get("attachment", {})
+                    if attachment.get("type") == "instructions":
+                        received.extend(
+                            file["content"].strip() for file in attachment["files"]
+                        )
+                else:
+                    message = event.get("payload", {})
+                    if (
+                        event["type"] == "response_item"
+                        and message.get("role") == "user"
+                    ):
+                        for item in message.get("content", []):
+                            received.extend(
+                                re.findall(
+                                    r"<INSTRUCTIONS>\n(.*?)\n</INSTRUCTIONS>",
+                                    item.get("text", ""),
+                                    re.DOTALL,
+                                )
+                            )
+    if received != [expected]:
+        raise RuntimeError(
+            "Native transcript did not confirm the isolated instruction file"
+        )
+
+
+def start_attempt(args, system, prompt):
+    # Raw transcripts may contain local instructions and provider metadata.
+    raw_root = getattr(args, "raw_root", HERE.parents[3] / ".state/reply-eval/raw")
+    raw_root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    attempt = raw_root / str(uuid.uuid4())
+    attempt.mkdir(mode=0o700)
+    metadata = dict(
+        args.trial_metadata,
+        provider=args.provider,
+        model=args.model,
+        effort=args.effort,
+        output=args.output.name,
+    )
+    (attempt / "request.json").write_text(
+        json.dumps(dict(metadata, instruction=system, prompt=prompt))
+    )
+    print(f"Raw attempt {attempt.name}: {metadata}", flush=True)
+    return attempt
+
+
+def generate_cli(args, system, prompt):
+    attempt = start_attempt(args, system, prompt)
+    sessions = attempt / "sessions"
+    sessions.mkdir()
+    editing = bool(getattr(args, "edit_source", None))
+    with tempfile.TemporaryDirectory(prefix="reply-eval-") as scratch:
+        work = Path(scratch) / "work"
+        home = Path(scratch) / "home"
+        work.mkdir()
+        home.mkdir()
+        env = os.environ.copy()
+        if args.provider == "codex":
+            original = Path(env.get("CODEX_HOME", Path.home() / ".codex"))
+            for name in ("auth.json", "models_cache.json"):
+                if (original / name).is_file():
+                    shutil.copyfile(original / name, home / name)
+            env["CODEX_HOME"] = str(home)
+            (home / "sessions").symlink_to(sessions.resolve(), target_is_directory=True)
+            instructions = home / ("editor.md" if editing else "AGENTS.md")
+            instructions.write_text(system)
+            output = attempt / "reply.txt"
             command = [
                 "codex",
                 "exec",
                 "--ignore-user-config",
-                "--ephemeral",
                 "--disable",
                 "shell_tool",
                 "--skip-git-repo-check",
@@ -74,70 +144,92 @@ def generate(args, system, prompt):
                 "project_doc_max_bytes=0",
                 "-c",
                 f"model_reasoning_effort={json.dumps(args.effort)}",
-                "-c",
-                f"model_instructions_file={json.dumps(str(instruction_file))}",
-                "-o",
-                str(output),
-                "-",
             ]
-            proc = subprocess.run(
-                command,
-                input=prompt,
-                text=True,
-                cwd=scratch,
-                capture_output=True,
-                timeout=180,
-                check=False,
+            if editing:
+                command.extend(
+                    ["-c", f"model_instructions_file={json.dumps(str(instructions))}"]
+                )
+            command.extend(["-o", str(output.resolve()), "-"])
+        else:
+            env["CLAUDE_CONFIG_DIR"] = str(home)
+            (home / "projects").symlink_to(sessions.resolve(), target_is_directory=True)
+            command = [
+                os.environ.get("REPLY_EVAL_CLAUDE_BIN", "claude"),
+                "-p",
+                "--strict-mcp-config",
+                "--tools",
+                "",
+                "--disable-slash-commands",
+                "--setting-sources",
+                "user",
+                "--output-format",
+                "json",
+                "--model",
+                args.model,
+                "--effort",
+                args.effort,
+                "--debug-file",
+                str((attempt / "debug.log").resolve()),
+            ]
+            if editing:
+                command.extend(["--system-prompt", system])
+            else:
+                (home / "CLAUDE.md").write_text(system)
+        with (
+            (attempt / "stdout").open("wb") as stdout,
+            (attempt / "stderr").open("wb") as stderr,
+        ):
+            try:
+                proc = subprocess.run(
+                    command,
+                    input=prompt.encode(),
+                    stdout=stdout,
+                    stderr=stderr,
+                    cwd=work,
+                    env=env,
+                    timeout=180,
+                    check=False,
+                )
+            except subprocess.TimeoutExpired as exc:
+                (attempt / "failure.json").write_text(
+                    json.dumps({"timeout_seconds": exc.timeout})
+                )
+                raise
+        (attempt / "exit-code").write_text(str(proc.returncode))
+        if proc.returncode:
+            raise RuntimeError(
+                f"{args.provider} exited {proc.returncode}; raw attempt {attempt.name}"
             )
+        logs = list(sessions.rglob("*.jsonl"))
+        if not logs:
+            raise RuntimeError(f"No native transcript in raw attempt {attempt.name}")
+        if not editing:
+            verify_instructions(args.provider, logs, system)
+        metrics = {"raw_log_id": attempt.name}
+        if args.provider == "codex":
+            banner = (attempt / "stderr").read_text().splitlines()
             for key, expected in (
                 ("model", args.model),
                 ("reasoning effort", args.effort),
             ):
-                if f"{key}: {expected}" not in proc.stderr.splitlines():
+                if f"{key}: {expected}" not in banner:
                     raise RuntimeError(f"Codex did not confirm {key} {expected}")
-            if proc.returncode or not output.exists():
-                raise RuntimeError(f"Codex generation failed (exit {proc.returncode})")
-            return output.read_text(encoding="utf-8").strip(), [args.model], {}
-    if args.provider == "claude":
-        command = [
-            os.environ.get("REPLY_EVAL_CLAUDE_BIN", "claude"),
-            "-p",
-            "--safe-mode",
-            "--strict-mcp-config",
-            "--tools",
-            "",
-            "--no-session-persistence",
-            "--output-format",
-            "json",
-            "--model",
-            args.model,
-            "--effort",
-            args.effort,
-            "--system-prompt",
-            system,
-        ]
-        result = subprocess.run(
-            command,
-            input=prompt,
-            text=True,
-            capture_output=True,
-            timeout=180,
-            check=False,
-        )
-        if not result.stdout.strip():
-            raise RuntimeError(
-                result.stderr.strip()[:400] or "Claude returned no result"
-            )
-        data = json.loads(result.stdout)
-        if result.returncode or data.get("is_error") or data["subtype"] != "success":
-            raise RuntimeError(data.get("result") or "Claude generation failed")
-        models = list(data["modelUsage"])
-        if args.model not in models:
-            raise RuntimeError(f"Claude did not report usage for {args.model}")
-        metrics = (
-            {"cost_usd": data["total_cost_usd"]} if "total_cost_usd" in data else {}
-        )
-        return data["result"], models, metrics
+            return output.read_text().strip(), [args.model], metrics
+        data = json.loads((attempt / "stdout").read_bytes())
+        if (
+            data.get("is_error")
+            or data["subtype"] != "success"
+            or args.model not in data["modelUsage"]
+        ):
+            raise RuntimeError(f"Claude generation failed; raw attempt {attempt.name}")
+        if "total_cost_usd" in data:
+            metrics["cost_usd"] = data["total_cost_usd"]
+        return data["result"], list(data["modelUsage"]), metrics
+
+
+def generate(args, system, prompt):
+    if args.provider in ("claude", "codex"):
+        return generate_cli(args, system, prompt)
     body = {
         "model": args.model,
         "messages": [
@@ -154,12 +246,21 @@ def generate(args, system, prompt):
             "User-Agent": "reply-eval/1.0",
         },
     )
-    with build_opener(NoRedirect()).open(request, timeout=180) as response:
-        data = json.load(response)
+    attempt = start_attempt(args, system, prompt)
+    (attempt / "body.json").write_bytes(request.data)
+    try:
+        with build_opener(NoRedirect()).open(request, timeout=180) as response:
+            payload = response.read()
+    except HTTPError as error:
+        (attempt / "response").write_bytes(error.read())
+        (attempt / "http-status").write_text(str(error.code))
+        raise
+    (attempt / "response").write_bytes(payload)
+    data = json.loads(payload)
     choice = data["choices"][0]
     if choice["finish_reason"] != "stop":
         raise RuntimeError(f"Incomplete response: {choice['finish_reason']}")
-    return choice["message"]["content"], [data["model"]], {}
+    return choice["message"]["content"], [data["model"]], {"raw_log_id": attempt.name}
 
 
 def regrade(path, suite=HERE / "cases.json"):
@@ -263,7 +364,9 @@ def evaluate(args, prompts, trial, case):
         )
     started = time.monotonic()
     try:
-        reply, models, metrics = generate(args, prompts[arm], prompt)
+        call_args = argparse.Namespace(**vars(args))
+        call_args.trial_metadata = dict(arm=arm, case=name, repetition=repetition)
+        reply, models, metrics = generate(call_args, prompts[arm], prompt)
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError(f"{args.provider} timed out after {exc.timeout}s") from None
     if not reply or not reply.strip():
@@ -358,6 +461,8 @@ def generate_round(args, prompts, cases_text):
             getattr(args, "source_provider", None),
             getattr(args, "source_model", None),
         )
+    if args.provider in ("claude", "codex"):
+        identity["transport"] = "isolated-native-session-v1"
     with args.output.open("r+" if args.resume else "x+", encoding="utf-8") as log:
         lock_output(log)
         if args.resume:

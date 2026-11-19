@@ -8,7 +8,7 @@ from threading import Barrier
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from run import HERE, failures, generate_round, lock_output
+from run import HERE, failures, generate_round, lock_output, verify_instructions
 
 CASES = {
     case["name"]: case
@@ -80,6 +80,43 @@ class ReplyChecks(unittest.TestCase):
         )
 
 
+class TranscriptChecks(unittest.TestCase):
+    def test_both_providers_reject_missing_or_extra_instructions(self):
+        with tempfile.TemporaryDirectory() as root:
+            log = Path(root) / "session.jsonl"
+            for provider in ("codex", "claude"):
+
+                def event(text):
+                    if provider == "codex":
+                        return {
+                            "type": "response_item",
+                            "payload": {
+                                "role": "user",
+                                "content": [
+                                    {"text": f"<INSTRUCTIONS>\n{text}\n</INSTRUCTIONS>"}
+                                ],
+                            },
+                        }
+                    return {
+                        "type": "attachment",
+                        "attachment": {
+                            "type": "instructions",
+                            "files": [{"content": text}],
+                        },
+                    }
+
+                log.write_text(json.dumps(event("candidate")) + "\n")
+                verify_instructions(provider, [log], "candidate")
+                for rows in (
+                    [],
+                    [event("installed")],
+                    [event("installed"), event("candidate")],
+                ):
+                    log.write_text("".join(json.dumps(row) + "\n" for row in rows))
+                    with self.assertRaisesRegex(RuntimeError, "Native transcript"):
+                        verify_instructions(provider, [log], "candidate")
+
+
 class ParallelRoundChecks(unittest.TestCase):
     def setUp(self):
         workspace = tempfile.TemporaryDirectory()
@@ -87,6 +124,7 @@ class ParallelRoundChecks(unittest.TestCase):
         self.path = Path(workspace.name) / "run.jsonl"
         self.options = SimpleNamespace(
             output=self.path,
+            raw_root=self.path.parent / "raw",
             model="fixture",
             effort="medium",
             provider="claude",
@@ -127,7 +165,13 @@ class ParallelRoundChecks(unittest.TestCase):
         self.options.jobs = 1
         with patch("run.generate", return_value=("yes", ["fixture"], {})) as generate:
             self.assertEqual(self.run_round(), ({"baseline": 1, "candidate": 1}, 1))
-            generate.assert_called_once_with(self.options, "first", "Ask")
+            generate.assert_called_once()
+            options, instruction, prompt = generate.call_args.args
+            self.assertEqual((instruction, prompt), ("first", "Ask"))
+            self.assertEqual(
+                options.trial_metadata,
+                dict(arm="baseline", case="sample", repetition=1),
+            )
             self.run_round()
             self.assertEqual(generate.call_count, 1)
         rows = [
@@ -224,6 +268,14 @@ class ParallelRoundChecks(unittest.TestCase):
         self.assertIn("sample", str(caught.exception))
         self.assertIn("claude timed out after 180s", str(caught.exception))
         self.assertNotIn("private", str(caught.exception))
+        for attempt in self.options.raw_root.iterdir():
+            self.assertEqual(
+                json.loads((attempt / "failure.json").read_text()),
+                {"timeout_seconds": 180},
+            )
+            self.assertTrue((attempt / "request.json").is_file())
+            self.assertTrue((attempt / "stdout").is_file())
+            self.assertTrue((attempt / "stderr").is_file())
 
     def test_resume_rejects_different_inputs_duplicate_or_live_writer(self):
         with patch("run.generate", return_value=("yes", ["fixture"], {})):

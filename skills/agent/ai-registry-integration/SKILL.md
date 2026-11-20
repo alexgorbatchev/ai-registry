@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-17 15:34
+  last_modified: 2026-11-20 07:06
   status: current
 ---
 
@@ -34,6 +34,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Keep instruction-maintenance tasks, including their commits and merges, within their authorized scope. Record newly specified but unimplemented enforcement as follow-up work rather than making its implementation a prerequisite. Run existing checks applicable to the actual changes, preserve existing gates and behavior-change testing requirements, and report missing enforcement without claiming compliance. A user-deferred generation or application step suspends only that step and its actual dependents; continue independent validation and authorized source integration.
 - For executable behavior changes, add or update meaningful behavioral tests and follow the root `AGENTS.md` testing and coverage policy beneath the repo_root token: at least 90% line and 90% function coverage across each affected first-party package's non-test source, including unexecuted files and excluding `scripts/` directories. Document and configure the command, source scope, metrics, and exclusions; reproduce blocking baseline failures on the untouched base and make the smallest necessary prerequisite repair. Do not weaken gates or make token test edits.
 - Preserve other actors' changes, index state, locks, and refs. Suspend only conflicting operations; continue independent authorized work in an owned, isolated worktree when safe. Staged-file age does not authorize takeover or a whole-worker halt.
+- Uncommitted edits to synced harness settings files, the paths under `syncedFilePaths` in `manifest.json` beneath the output_dir token with their source under `harnesses/` or an overlay's `harnesses/`, are the owner's harness selections, such as model or effort, written back by settings sync. When the diff changes only harness-written settings, commit it on its own with a message naming the setting before building or rebasing; never revert it or ask about it. Follow root `AGENTS.md` beneath the repo_root token for details; other uncommitted changes keep the rule above.
 - Permit routine branch and path-scoped index operations needed for authorized tasks in owned worktrees after ownership and state checks. Keep destructive Git operations subject to explicit authorization and executable guards. Command permissions do not establish ownership; do not bypass restrictions through equivalent syntax.
 - Keep new content anonymized and reusable. Do not introduce private company names, internal URLs, secrets, or personal details.
 - Use `prompt-writer` whenever generating, writing, or revising AI agent instructions in any artifact. `skill-writer` adds skill-bundle conventions and validation; `docs-writer` owns project documentation structure, maintenance, and ticket content; it does not own ticket storage or lifecycle. Keep shared execution policy in `system/system.md`, engineering delivery and cleanup in `programming`, and task lifecycle in the externally maintained `issue-tracker` skill. Active queue mandates and checkpoints belong in durable task records.

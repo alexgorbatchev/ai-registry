@@ -59,6 +59,44 @@ export interface ScreenSnapshot {
     borders: Rgb[];
   }[];
   overflowing: { selector: string; text: string; rect: Box }[];
+  /** The content area density is measured in, outside persistent chrome. */
+  content: {
+    /** The `content` option's element, else the visible `main`, else the body without its landmarks. */
+    root: { selector: string; rect: Box };
+    /** The first control or heading in the root, with its top measured from the top of the page. */
+    first: { selector: string; label: string; top: number } | null;
+    /** Horizontal [left, right] extents of the text, media, controls and painted boxes in the root. */
+    extents: [number, number][];
+  };
+}
+
+/** An empty vertical band in the content root: a margin at its edge or a gutter between occupied columns. */
+export interface Gap {
+  kind: "margin-left" | "gutter" | "margin-right";
+  left: number;
+  right: number;
+  width: number;
+}
+
+export interface Band {
+  left: number;
+  right: number;
+  width: number;
+  /** Width as a share of the viewport, 0 to 1. */
+  share: number;
+}
+
+export interface Density {
+  /** The content root measured: its selector, left edge and width. */
+  root: { selector: string; left: number; width: number };
+  /** Height from the top of the page to the first control or heading of the content; null when it has none. */
+  firstContent: { top: number; selector: string; label: string } | null;
+  /** The occupied extent of the content, and its width as a share of the viewport (0 to 1). */
+  column: Band | null;
+  /** The occupied columns between the gaps, left to right, each with its share of the viewport. */
+  columns: Band[];
+  /** Every margin and gutter, left to right. */
+  gaps: Gap[];
 }
 
 interface ControlRef {
@@ -92,6 +130,10 @@ export interface AuditReport {
   overflow: { scrollWidth: number; clientWidth: number; elements: ScreenSnapshot["overflowing"] };
   touchTargets: (ControlRef & { width: number; height: number })[];
   alignment: AlignmentIssue[];
+  /** Whitespace measurements for the density checklist item. Not a failure. */
+  density: Density;
+  /** Margins and gutters wider than the gap limit: check each is not wider than its content needs. Not a failure. */
+  wideGaps: Gap[];
   /** Buttons with text, no icon, and no border or fill distinct from their surroundings: they read as plain text. */
   borderlessText: ControlRef[];
   /** Borderless buttons that draw an icon: check the icon is a conventional one. Not a failure. */
@@ -101,6 +143,9 @@ export interface AuditReport {
 }
 
 const round = (value: number): number => Math.round(value * 100) / 100;
+
+/** Margins and gutters wider than this many CSS px are listed for the density check. */
+export const DEFAULT_GAP_LIMIT = 32;
 
 export function hex(color: Rgb): string {
   return `#${color.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
@@ -291,11 +336,54 @@ function alignmentIssues(snapshot: ScreenSnapshot, tolerance: number): Alignment
   return issues;
 }
 
-export function analyzeScreen(snapshot: ScreenSnapshot, tolerance = 1): AuditReport {
+/**
+ * Measures the content's whitespace: where its first control or heading starts, how much of the viewport its occupied
+ * extent spans, and the empty vertical bands (margins at the root's edges, gutters between occupied columns) found by
+ * merging the horizontal extents of everything it paints.
+ */
+export function measureDensity(snapshot: ScreenSnapshot): Density {
+  const { root, first, extents } = snapshot.content;
+  const left = root.rect.x;
+  const right = root.rect.x + root.rect.width;
+  const merged: [number, number][] = [];
+  for (const [start, end] of extents
+    .map(([start, end]): [number, number] => [Math.max(start, left), Math.min(end, right)])
+    .filter(([start, end]) => end > start)
+    .sort((a, b) => a[0] - b[0])) {
+    const last = merged.at(-1);
+    if (last && start <= last[1] + 1) last[1] = Math.max(last[1], end);
+    else merged.push([start, end]);
+  }
+  const gaps: Gap[] = [];
+  const gap = (kind: Gap["kind"], from: number, to: number) => {
+    if (to - from >= 1) gaps.push({ kind, left: round(from), right: round(to), width: round(to - from) });
+  };
+  if (merged.length > 0) {
+    gap("margin-left", left, merged[0][0]);
+    for (let i = 1; i < merged.length; i++) gap("gutter", merged[i - 1][1], merged[i][0]);
+    gap("margin-right", merged[merged.length - 1][1], right);
+  }
+  const band = (from: number, to: number): Band => ({
+    left: round(from),
+    right: round(to),
+    width: round(to - from),
+    share: round((to - from) / snapshot.viewport.width),
+  });
+  return {
+    root: { selector: root.selector, left: round(left), width: round(root.rect.width) },
+    firstContent: first ? { top: first.top, selector: first.selector, label: first.label } : null,
+    column: merged.length > 0 ? band(merged[0][0], merged[merged.length - 1][1]) : null,
+    columns: merged.map(([from, to]) => band(from, to)),
+    gaps,
+  };
+}
+
+export function analyzeScreen(snapshot: ScreenSnapshot, tolerance = 1, gapLimit = DEFAULT_GAP_LIMIT): AuditReport {
   const { textContrast, unresolved } = textContrastIssues(snapshot);
   const { controlBoundary, borderlessText, borderlessIcon } = boundaryIssues(snapshot);
   const touchTargets = touchTargetIssues(snapshot);
   const alignment = alignmentIssues(snapshot, tolerance);
+  const density = measureDensity(snapshot);
   const pageOverflows = snapshot.page.scrollWidth > snapshot.page.clientWidth + 1;
   const overflow = {
     scrollWidth: snapshot.page.scrollWidth,
@@ -319,6 +407,8 @@ export function analyzeScreen(snapshot: ScreenSnapshot, tolerance = 1): AuditRep
     overflow,
     touchTargets,
     alignment,
+    density,
+    wideGaps: density.gaps.filter((item) => item.width > gapLimit),
     borderlessText,
     borderlessIcon,
     unresolved,
@@ -356,6 +446,10 @@ export interface AuditOptions {
   ignore?: string[];
   /** Pixels two aligned edges or sizes may differ by. */
   tolerance?: number;
+  /** Selector of the content area density is measured in; defaults to the visible `main`, else the body without its landmarks. */
+  content?: string;
+  /** Margins and gutters wider than this many CSS px are listed in `wideGaps`. */
+  gapLimit?: number;
   /**
    * Save viewport frames of every audited cell at its scroll stops (top, one per screenful, bottom) as
    * `<dir>/<state>-<phase>-<width>-<theme>-<NN>of<NN>.png`; with `fullPage`, also the whole page with sticky and fixed
@@ -381,6 +475,8 @@ function isSnapshot(value: unknown): value is ScreenSnapshot {
     Array.isArray(value.texts) &&
     Array.isArray(value.controls) &&
     Array.isArray(value.overflowing) &&
+    isRecord(value.content) &&
+    Array.isArray(value.content.extents) &&
     isRecord(value.page) &&
     isRecord(value.viewport)
   );
@@ -468,10 +564,10 @@ const COLLECTOR = readFileSync(join(import.meta.dir, "collectScreen.js"), "utf8"
 const DEFAULT_OPTIONS_CALL = "})({ ignore: [] });";
 
 /** The collector with its default options replaced by these. */
-export function collectorScript(ignore: string[], collector = COLLECTOR): string {
+export function collectorScript(ignore: string[], collector = COLLECTOR, content?: string): string {
   const at = collector.lastIndexOf(DEFAULT_OPTIONS_CALL);
   if (at < 0) throw new Error(`collector does not end with ${DEFAULT_OPTIONS_CALL}`);
-  return `${collector.slice(0, at)}})(${JSON.stringify({ ignore })});\n`;
+  return `${collector.slice(0, at)}})(${JSON.stringify({ ignore, content })});\n`;
 }
 
 /** Hides development overlays so screenshots show only product UI. */
@@ -525,7 +621,7 @@ export async function auditScreen(options: AuditOptions): Promise<AuditReport[]>
   const session = options.session ?? `audit-screen-${process.pid}-${Date.now()}`;
   const at = ["--session", session];
   const ignore = options.ignore ?? [];
-  const script = collectorScript(ignore);
+  const script = collectorScript(ignore, COLLECTOR, options.content);
   const reports: AuditReport[] = [];
   let opened = !options.url;
   if (options.shots) mkdirSync(options.shots.dir, { recursive: true });
@@ -543,7 +639,7 @@ export async function auditScreen(options: AuditOptions): Promise<AuditReport[]>
         const output: unknown = JSON.parse(await run([...at, "--json", "eval", "--stdin"], script));
         const snapshot = snapshotOf(output);
         if (!snapshot) throw new Error(`page evaluation failed: ${JSON.stringify(output).slice(0, 500)}`);
-        reports.push(analyzeScreen(snapshot, options.tolerance));
+        reports.push(analyzeScreen(snapshot, options.tolerance, options.gapLimit));
         if (options.shots) {
           if (ignore.length > 0) await run([...at, "eval", "--stdin"], hideScript(ignore));
           await captureFrames(run, at, ignore, options.shots, viewport.width, scheme);

@@ -6,6 +6,8 @@ import {
   auditScreen,
   collectorScript,
   contrast,
+  DEFAULT_GAP_LIMIT,
+  measureDensity,
   failed,
   hex,
   hideScript,
@@ -19,7 +21,7 @@ import {
   type ScreenSnapshot,
 } from "../lib/auditScreen";
 import { QA_THEMES, QA_VIEWPORTS } from "../lib/matrix";
-import { AUDIT_FIXTURE_PAGE, PINNED_BARS_PAGE, PINNED_PAGE } from "./auditScreenPage";
+import { AUDIT_FIXTURE_PAGE, DENSITY_PAGE, PINNED_BARS_PAGE, PINNED_PAGE, WIDE_GUTTER_PAGE } from "./auditScreenPage";
 import { factory_testDirectory, SCRIPTS } from "./fixtures";
 import { readPng, rowsOfColor } from "./png";
 
@@ -56,8 +58,14 @@ function snapshot(overrides: Partial<ScreenSnapshot> = {}): ScreenSnapshot {
     texts: [],
     controls: [],
     overflowing: [],
+    content: { root: { selector: "body", rect: { x: 0, y: 0, width: 390, height: 800 } }, first: null, extents: [] },
     ...overrides,
   };
+}
+
+/** A content root 1000 px wide from x 200, holding the given extents. */
+function content(extents: [number, number][], first: ScreenSnapshot["content"]["first"] = null) {
+  return { root: { selector: "main", rect: { x: 200, y: 0, width: 1000, height: 900 } }, first, extents };
 }
 
 describe("contrast math", () => {
@@ -203,6 +211,68 @@ describe("analyzeScreen", () => {
     );
     expect(report.overflow).toEqual({ scrollWidth: 900, clientWidth: 390, elements: [element, element] });
     expect(report.summary.overflow).toBe(2);
+  });
+});
+
+describe("measureDensity", () => {
+  test("merges extents into columns and reports margins and gutters, listing wide ones without failing", () => {
+    const first = { selector: "main > h1", label: "Choose a direction", top: 190 };
+    // A 600 px column of overlapping and touching blocks, a 40 px badge, and extents spilling past the root.
+    const snap = snapshot({
+      viewport: { width: 1440, height: 900 },
+      content: content(
+        [
+          [260, 500],
+          [480, 700],
+          [700.5, 860],
+          [1100, 1140],
+          [150, 180],
+          [1250, 1300],
+        ],
+        first,
+      ),
+    });
+    const density = measureDensity(snap);
+    expect(density).toEqual({
+      root: { selector: "main", left: 200, width: 1000 },
+      firstContent: { top: 190, selector: "main > h1", label: "Choose a direction" },
+      column: { left: 260, right: 1140, width: 880, share: 0.61 },
+      columns: [
+        { left: 260, right: 860, width: 600, share: 0.42 },
+        { left: 1100, right: 1140, width: 40, share: 0.03 },
+      ],
+      gaps: [
+        { kind: "margin-left", left: 200, right: 260, width: 60 },
+        { kind: "gutter", left: 860, right: 1100, width: 240 },
+        { kind: "margin-right", left: 1140, right: 1200, width: 60 },
+      ],
+    });
+    const report = analyzeScreen(snap);
+    expect(report.density).toEqual(density);
+    expect(report.wideGaps.map((gap) => gap.kind)).toEqual(["margin-left", "gutter", "margin-right"]);
+    expect(analyzeScreen(snap, 1, 100).wideGaps.map((gap) => gap.width)).toEqual([240]);
+    expect(failed(report)).toBe(false);
+    expect(DEFAULT_GAP_LIMIT).toBe(32);
+  });
+
+  test("reports nothing to measure for an empty root and leaves out sub-pixel gaps", () => {
+    expect(measureDensity(snapshot())).toEqual({
+      root: { selector: "body", left: 0, width: 390 },
+      firstContent: null,
+      column: null,
+      columns: [],
+      gaps: [],
+    });
+    const flush = measureDensity(
+      snapshot({
+        content: content([
+          [200, 700],
+          [700.5, 1200],
+        ]),
+      }),
+    );
+    expect(flush.gaps).toEqual([]);
+    expect(flush.column).toMatchObject({ left: 200, right: 1200, width: 1000 });
   });
 });
 
@@ -367,6 +437,21 @@ describe("auditScreen browser steps", () => {
     expect(() => collectorScript([], "(() => 1)();")).toThrow("does not end with");
   });
 
+  test("passes the content selector to the collector and the gap limit to the analysis", async () => {
+    const wide = snapshot({ content: content([[260, 500]]) });
+    const browser = recorder(JSON.stringify({ success: true, data: { result: wide } }));
+    const [report] = await auditScreen({
+      session: "s",
+      viewports: [{ width: 390, height: 800 }],
+      colorSchemes: ["light"],
+      content: "main.app",
+      gapLimit: 100,
+      run: browser.run,
+    });
+    expect(browser.scripts[0]).toEndWith('})({"ignore":[],"content":"main.app"});\n');
+    expect(report.wideGaps).toEqual([{ kind: "margin-right", left: 500, right: 1200, width: 700 }]);
+  });
+
   test("audits an existing session in place and leaves it open", async () => {
     const browser = recorder();
     await auditScreen({
@@ -416,6 +501,9 @@ test("the CLI rejects bad usage", async () => {
   expect((await cli("--session", "s", "--viewport", "390x800", "--color-scheme", "sepia")).code).toBe(2);
   expect((await cli("--session", "s", "--viewport", "390x800", "--tolerance=-1")).code).toBe(2);
   expect((await cli("--session", "s", "--viewport", "390x800", "--unknown")).code).toBe(2);
+  expect((await cli("--session", "s", "--viewport", "390x800", "--gap-limit=-1")).code).toBe(2);
+  expect((await cli("--session", "s", "--viewport", "390x800", "--gap-limit", "wide")).code).toBe(2);
+  expect((await cli("--session", "s", "--viewport", "390x800", "--content=")).code).toBe(2);
   expect((await cli("--session", "s", "--shots", "/tmp/x")).code).toBe(2);
   expect((await cli("--session", "s", "--shots", "/tmp/x", "--state", "Bad State")).code).toBe(2);
   expect((await cli("--session", "s", "--state", "home")).code).toBe(2);
@@ -433,10 +521,12 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
     server = Bun.serve({
       hostname: "127.0.0.1",
       port: 0,
-      fetch: (request) =>
-        new Response(new URL(request.url).pathname === "/pinned" ? PINNED_BARS_PAGE : AUDIT_FIXTURE_PAGE, {
-          headers: { "Content-Type": "text/html; charset=utf-8" },
-        }),
+      fetch: (request) => {
+        const path = new URL(request.url).pathname;
+        const page =
+          path === "/pinned" ? PINNED_BARS_PAGE : path === "/density" ? WIDE_GUTTER_PAGE : AUDIT_FIXTURE_PAGE;
+        return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+      },
     });
   });
 
@@ -537,6 +627,45 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
     near(rowsOfColor(full, MAGENTA)?.last, 1);
     near(rowsOfColor(full, CYAN)?.first, (height - footer - end) / height);
     near(rowsOfColor(full, BLUE)?.last, (2 * header) / height);
+  }, 120000);
+
+  // main spans 240-1440 with 24 px padding: the column takes 264-864 and the badge 1376-1416, leaving a 512 px gutter.
+  test("the CLI reports the density of the content, flagging a wide empty gutter beside a narrow column", async () => {
+    const { nav, padding, column, columnTop, badge } = DENSITY_PAGE;
+    const url = new URL("/density", server.url).href;
+    const args = ["--url", url, "--viewport", "1440x900", "--color-scheme", "light"];
+    const run = await cli(...args);
+    expect(run.stderr).toBe("");
+    expect(run.code).toBe(0);
+    const report = JSON.parse(run.stdout).screens[0];
+    const columnLeft = nav + padding;
+    const badgeLeft = 1440 - padding - badge;
+    expect(report.density).toEqual({
+      root: { selector: "html > body > main", left: nav, width: 1440 - nav },
+      firstContent: { top: padding + 1 + columnTop, selector: "#column > h1", label: "Choose a direction" },
+      column: { left: columnLeft, right: 1440 - padding, width: 1440 - padding - columnLeft, share: 0.8 },
+      columns: [
+        { left: columnLeft, right: columnLeft + column, width: column, share: 0.42 },
+        { left: badgeLeft, right: badgeLeft + badge, width: badge, share: 0.03 },
+      ],
+      gaps: [
+        { kind: "margin-left", left: nav, right: columnLeft, width: padding },
+        { kind: "gutter", left: columnLeft + column, right: badgeLeft, width: badgeLeft - columnLeft - column },
+        { kind: "margin-right", left: 1440 - padding, right: 1440, width: padding },
+      ],
+    });
+    expect(report.wideGaps).toEqual([{ kind: "gutter", left: columnLeft + column, right: badgeLeft, width: 512 }]);
+
+    // Measured inside the column instead, the border and padding make its margins.
+    const inside = JSON.parse((await cli(...args, "--content", "#column", "--gap-limit", "16")).stdout).screens[0];
+    expect(inside.density.root).toEqual({ selector: "#column", left: columnLeft, width: column });
+    expect(inside.density.gaps[0]).toEqual({
+      kind: "margin-left",
+      left: columnLeft,
+      right: columnLeft + 17,
+      width: 17,
+    });
+    expect(inside.wideGaps.map((gap: { kind: string }) => gap.kind)).toEqual(["margin-left", "margin-right"]);
   }, 120000);
 
   test("the CLI reports a browser failure with exit 3", async () => {

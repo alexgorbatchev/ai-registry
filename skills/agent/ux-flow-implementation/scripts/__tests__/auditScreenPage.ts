@@ -40,6 +40,39 @@ export const AUDIT_FIXTURE_PAGE = `<!doctype html>
 </body>
 </html>`;
 
+/** Widths and offsets in CSS px of the density page's parts. */
+export const DENSITY_PAGE = { nav: 240, padding: 24, column: 600, columnTop: 120, badge: 40 } as const;
+
+/**
+ * A 1440 px wide page with a navigation sidebar and a main area holding a bordered 600 px column, a wide empty gutter
+ * and a 40 px comment badge pinned to the far edge: the badge reserves a gutter far wider than it needs. A fixed toast
+ * floats over the gutter without filling it.
+ */
+export const WIDE_GUTTER_PAGE = `<!doctype html>
+<html>
+<head>
+<style>
+  body { margin: 0; display: flex; font: 16px sans-serif; background: #fff; color: #111; }
+  nav { width: ${DENSITY_PAGE.nav}px; flex: none; }
+  main { flex: 1; display: flex; align-items: flex-start; padding: ${DENSITY_PAGE.padding}px; }
+  #column { width: ${DENSITY_PAGE.column}px; flex: none; box-sizing: border-box; border: 1px solid #333; padding: ${DENSITY_PAGE.columnTop}px 16px 16px; }
+  h1 { margin: 0; font-size: 24px; }
+  .gutter { flex: 1; }
+  .badge { width: ${DENSITY_PAGE.badge}px; height: 28px; margin-top: 300px; border: 1px solid #333; background: #fff; color: #111; padding: 0; }
+  .toast { position: fixed; right: 24px; bottom: 24px; width: 600px; background: #eee; }
+</style>
+</head>
+<body>
+  <nav><a href="#home">Home</a></nav>
+  <main>
+    <div id="column"><h1>Choose a direction</h1><p>Short copy.</p></div>
+    <div class="gutter"></div>
+    <button class="badge" aria-label="2 comments">2</button>
+    <div class="toast">Saved</div>
+  </main>
+</body>
+</html>`;
+
 /** Heights in CSS px of the pinned-bars page's parts. */
 export const PINNED_PAGE = { header: 48, content: 2100, end: 40, footer: 64 } as const;
 

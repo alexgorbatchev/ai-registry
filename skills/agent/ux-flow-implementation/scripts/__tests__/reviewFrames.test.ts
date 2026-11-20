@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { frameName, isStateSlug, MAX_STOPS, parseFrameName, QA_THEMES, QA_VIEWPORTS, scrollStops } from "../lib/matrix";
-import { buildManifest, checkReview, CHECKLIST, type Manifest } from "../lib/reviewFrames";
+import { buildManifest, checkReview, CHECKLIST, DESIGN_ITEMS, type Manifest } from "../lib/reviewFrames";
 import { factory_cli, factory_file, factory_testDirectory } from "./fixtures";
 
 const ONE = { index: 1, count: 1 };
@@ -16,7 +16,17 @@ function writeState(dir: string, state: string, phase: "before" | "after", skip?
     }
 }
 
-const NOTES = Object.fromEntries(CHECKLIST.map((item) => [item, `checked ${item} across the whole frame`]));
+const DENSITY_NOTE = "first heading 72 px from the top; column 88% of the viewport; margins 16 px";
+const NOTES = {
+  ...Object.fromEntries(CHECKLIST.map((item) => [item, `checked ${item} across the whole frame`])),
+  density: DENSITY_NOTE,
+};
+/** The design-item notes a frame with findings gives for the items no finding cites. */
+const CHECKED = {
+  redundancy: "one control per outcome in the header and the panel",
+  density: DENSITY_NOTE,
+  hidden: "replies and answers show without expanding anything",
+};
 
 function manifest(count: number): Manifest {
   return {
@@ -144,6 +154,7 @@ describe("checkReview", () => {
           findings: [
             { where: "panel header", problem: "three rows of mismatched buttons", rule: "alignment", severity: "P1" },
           ],
+          checked: CHECKED,
         },
         F2: { clean: NOTES },
       },
@@ -164,6 +175,7 @@ describe("checkReview", () => {
       "F9: not in the manifest",
       "F1: a clean frame needs a note of at least 15 characters for contrast",
       "F2: give either a non-empty findings list or a clean justification, not both or neither",
+      "F3: cite redundancy, density, hidden in a finding's rule or give a checked note of at least 15 characters for each",
       "F3 finding 1: missing problem",
       "F3 finding 1: missing rule",
       "F3 finding 1: severity must be P0-P3",
@@ -189,6 +201,7 @@ describe("checkReview", () => {
             { ...finding, disposition: "ignored" },
             { ...finding, disposition: "duplicate", ref: "3409" },
           ],
+          checked: CHECKED,
         },
       },
     };
@@ -200,10 +213,110 @@ describe("checkReview", () => {
     ]);
     expect(result.untriaged).toBe(3);
     expect(checkReview(manifest(1), review, false).problems).toEqual([]);
-    const ticketless = { frames: { F1: { findings: [{ ...finding, disposition: "ticket" }] } } };
+    const ticketless = { frames: { F1: { findings: [{ ...finding, disposition: "ticket" }], checked: CHECKED } } };
     expect(checkReview(manifest(1), ticketless, true).problems).toEqual([
       "F1 finding 1: ref must hold the ticket number",
     ]);
+  });
+
+  test("makes every frame account for the design items, even one with other findings", () => {
+    const contrast = { where: "panel border", problem: "1.2:1 against the panel", rule: "contrast", severity: "P1" };
+    const redundant = {
+      where: "comment panel actions",
+      problem: "three buttons start a comment: whole page, target picker and region",
+      rule: "redundancy",
+      severity: "P2",
+    };
+    const review = {
+      frames: {
+        // Only contrast was looked at: the design items are unaccounted for.
+        F1: { findings: [contrast] },
+        // A redundancy finding covers that item; the other two need notes, and a thin one fails.
+        F2: { findings: [redundant], checked: { density: DENSITY_NOTE, hidden: "fine" } },
+        F3: { findings: [contrast, redundant], checked: { density: DENSITY_NOTE, hidden: CHECKED.hidden } },
+      },
+    };
+    expect(checkReview(manifest(3), review).problems).toEqual([
+      "F1: cite redundancy, density, hidden in a finding's rule or give a checked note of at least 15 characters for each",
+      "F2: cite hidden in a finding's rule or give a checked note of at least 15 characters for each",
+    ]);
+    expect(DESIGN_ITEMS.every((item) => CHECKLIST.includes(item))).toBe(true);
+    const unchecked = { frames: { F1: { clean: { ...NOTES, hidden: undefined } } } };
+    expect(checkReview(manifest(1), unchecked).problems).toEqual([
+      "F1: a clean frame needs a note of at least 15 characters for hidden",
+    ]);
+  });
+
+  test("requires measurements in density notes and findings", () => {
+    const vague = "spacing looks generous but fine";
+    const review = {
+      frames: {
+        F1: { clean: { ...NOTES, density: vague } },
+        F2: {
+          findings: [{ where: "w", problem: "p", rule: "alignment", severity: "P2" }],
+          checked: { ...CHECKED, density: vague },
+        },
+        F3: {
+          findings: [
+            { where: "comment badge gutter", problem: "a wide empty gutter", rule: "density", severity: "P3" },
+          ],
+          checked: CHECKED,
+        },
+        F4: {
+          findings: [
+            {
+              where: "comment badge gutter",
+              problem: "gutter 120 px wide for a 32 px badge",
+              rule: "density",
+              severity: "P3",
+            },
+          ],
+          checked: { redundancy: CHECKED.redundancy, hidden: CHECKED.hidden },
+        },
+      },
+    };
+    expect(checkReview(manifest(4), review).problems).toEqual([
+      "F1: the density note must give measurements in px or %",
+      "F2: the density note must give measurements in px or %",
+      "F3 finding 1: a density finding must give measurements in px or %",
+    ]);
+  });
+
+  test("checks rule challenges and routes them to a ticket or duplicate against the rule", () => {
+    const finding = {
+      where: "comment thread",
+      problem: "replies sit behind a collapsed '1 reply' row",
+      rule: "hidden",
+      severity: "P2",
+      challenge: {
+        rule: "threads collapse after the first comment",
+        change: "show every reply in full; drop the collapse",
+      },
+    };
+    const frame = (findings: unknown[]) => ({ F1: { findings, checked: CHECKED } });
+    expect(checkReview(manifest(1), { frames: frame([finding]) }).problems).toEqual([]);
+    const incomplete = [
+      { ...finding, challenge: { rule: "threads collapse" } },
+      { ...finding, challenge: { change: "show every reply in full" } },
+      { ...finding, challenge: "the rule is wrong" },
+    ];
+    expect(checkReview(manifest(1), { frames: frame(incomplete) }).problems).toEqual([
+      "F1 finding 1: challenge must name the design rule and the proposed change (at least 15 characters)",
+      "F1 finding 2: challenge must name the design rule and the proposed change (at least 15 characters)",
+      "F1 finding 3: challenge must name the design rule and the proposed change (at least 15 characters)",
+    ]);
+    const triaged = [
+      { ...finding, disposition: "ticket", ref: "3500" },
+      { ...finding, disposition: "duplicate", ref: "3501" },
+      { ...finding, disposition: "rejected", ref: "the design rules require collapsed threads" },
+      { ...finding, disposition: "fixed", ref: "abc1234" },
+    ];
+    const result = checkReview(manifest(1), { frames: frame(triaged) }, true);
+    expect(result.problems).toEqual([
+      "F1 finding 3: a rule challenge needs a ticket or duplicate against the rule's owner, not rejected",
+      "F1 finding 4: a rule challenge needs a ticket or duplicate against the rule's owner, not fixed",
+    ]);
+    expect(result.untriaged).toBe(2);
   });
 });
 

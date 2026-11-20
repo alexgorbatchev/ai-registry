@@ -6,7 +6,9 @@
 // stops, top first) or <state>-after-<width>-<theme>-full-static.png in the directories, with neutral IDs, and exits 1
 // when a captured state lacks a cell of the 320/390/1440 x light/dark matrix or a scroll stop of a cell (the manifest
 // is still written). check exits 1 unless the review accounts for every frame, each with findings or a note per checklist
-// item, and with --triaged unless every finding has a disposition. Exit 2 on bad usage.
+// item, every frame covers the redundancy, density and hidden items with a finding or a note, density carries
+// measurements, and rule challenges are complete; with --triaged, also unless every finding has a disposition and every
+// challenge a ticket or duplicate. Exit 2 on bad usage.
 import { readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { buildManifest, checkReview, type Manifest } from "./lib/reviewFrames";

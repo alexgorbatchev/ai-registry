@@ -4,6 +4,7 @@
 // and every alpha value composites the way the browser paints it, against the page's real backdrop.
 ((options) => {
   const ignore = options.ignore ?? [];
+  const contentSelector = options.content ?? null;
   const canvas = document.createElement("canvas");
   canvas.width = 1;
   canvas.height = 1;
@@ -260,6 +261,74 @@
     overflowing.push({ selector: selectorOf(element), text: clip(element.textContent ?? ""), rect: box(rect) });
   }
 
+  // Density: the content root (the content option's element, else main, else the body without its landmarks), the
+  // first control or heading in it, and the horizontal extents of everything it paints, so empty bands can be measured.
+  const CHROME =
+    'header, nav, aside, footer, [role="banner"], [role="navigation"], [role="complementary"], [role="contentinfo"]';
+  const root =
+    (contentSelector && document.querySelector(contentSelector)) ||
+    [...document.querySelectorAll('main, [role="main"]')].find((element) => visible(element)) ||
+    document.body;
+  const rootRect = root.getBoundingClientRect();
+  // Fixed elements (toasts, floating dev tools, dialogs) float over the layout instead of taking space in it.
+  const floats = (element) => {
+    for (let current = element; current && current !== root; current = current.parentElement)
+      if (styleOf(current).position === "fixed") return true;
+    return false;
+  };
+  const inRoot = elements.filter(
+    (element) =>
+      element !== root &&
+      root.contains(element) &&
+      (root !== document.body || !element.closest(CHROME)) &&
+      !floats(element),
+  );
+  const controlSet = new Set(controls);
+  const HEADING = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+  let first = null;
+  for (const element of inRoot) {
+    if (!(element.matches(HEADING) || controlSet.has(element)) || !visible(element)) continue;
+    const top = element.getBoundingClientRect().top + scrollY;
+    if (!first || top < first.top) first = { element, top };
+  }
+  const MEDIA = 'img, svg, video, canvas, picture, iframe, [role="img"]';
+  const extents = [];
+  const range = document.createRange();
+  for (const element of inRoot) {
+    if (!visible(element)) continue;
+    const style = styleOf(element);
+    const rect = element.getBoundingClientRect();
+    const paintsBox =
+      alphaOf(style.backgroundColor) > 0 ||
+      SIDES.some(
+        (side) =>
+          Number.parseFloat(style[`border${side}Width`]) > 0 &&
+          !["none", "hidden"].includes(style[`border${side}Style`]),
+      );
+    if (element.matches(MEDIA) || controlSet.has(element) || (paintsBox && rect.width < rootRect.width * 0.95)) {
+      extents.push([rect.left, rect.right]);
+      continue;
+    }
+    for (const node of element.childNodes) {
+      if (node.nodeType !== 3 || !node.textContent.trim()) continue;
+      range.selectNodeContents(node);
+      const ink = range.getBoundingClientRect();
+      if (ink.width > 0 && ink.height > 0) extents.push([ink.left, ink.right]);
+    }
+  }
+  const tenth = (value) => Math.round(value * 10) / 10;
+  const content = {
+    root: { selector: root === document.body ? "body" : selectorOf(root), rect: box(rootRect) },
+    first: first
+      ? {
+          selector: selectorOf(first.element),
+          label: clip(first.element.getAttribute("aria-label") || first.element.textContent || ""),
+          top: tenth(first.top),
+        }
+      : null,
+    extents: extents.map(([left, right]) => [tenth(left), tenth(right)]),
+  };
+
   return {
     url: location.href,
     viewport: { width: innerWidth, height: innerHeight },
@@ -268,5 +337,6 @@
     texts,
     controls: controlRecords,
     overflowing,
+    content,
   };
 })({ ignore: [] });

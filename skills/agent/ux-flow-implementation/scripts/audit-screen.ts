@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 // Audits one rendered screen in a real browser through agent-browser, across the QA matrix. Usage:
 //   bun audit-screen.ts (--url <url> | --session <name>) [--viewport <width>x<height>]...
-//     [--color-scheme light|dark|both] [--ignore <selector>]... [--tolerance <px>]
+//     [--color-scheme light|dark|both] [--ignore <selector>]... [--tolerance <px>] [--content <selector>]
+//     [--gap-limit <px>]
 //     [--shots <dir> --state <slug> [--phase before|after] [--full-page]]
 // Without --viewport it audits 320x640, 390x844 and 1440x900; --color-scheme defaults to both. --url opens the page
 // in a disposable session and closes it; --session audits that session's current page and leaves it open, at the
@@ -12,14 +13,17 @@
 // animation or transition is running, so theme switches are not read mid-transition. Prints JSON with one report per cell:
 // text contrast (4.5:1, 3:1 large), control boundary contrast (3:1), text-only buttons with no boundary, horizontal
 // overflow, touch targets under 24 px, and sibling controls whose heights, centres, left edges or widths differ.
-// Exits 1 when any cell has any of those, 2 on bad usage, 3 when the browser step fails.
+// Each report also measures the content's density (inside --content, else the visible main, else the body without its
+// landmarks): the top of its first control or heading, its occupied width as a share of the viewport, and every empty
+// margin and gutter, listing those wider than --gap-limit px (default 32) in wideGaps. Density is not a failure.
+// Exits 1 when any cell has any of the failures above, 2 on bad usage, 3 when the browser step fails.
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { auditScreen, failed } from "./lib/auditScreen";
+import { auditScreen, DEFAULT_GAP_LIMIT, failed } from "./lib/auditScreen";
 import { isStateSlug, QA_THEMES, type Theme } from "./lib/matrix";
 
 const USAGE =
-  "usage: bun audit-screen.ts (--url <url> | --session <name>) [--viewport <width>x<height>]... [--color-scheme light|dark|both] [--ignore <selector>]... [--tolerance <px>] [--shots <dir> --state <slug> [--phase before|after] [--full-page]]";
+  "usage: bun audit-screen.ts (--url <url> | --session <name>) [--viewport <width>x<height>]... [--color-scheme light|dark|both] [--ignore <selector>]... [--tolerance <px>] [--content <selector>] [--gap-limit <px>] [--shots <dir> --state <slug> [--phase before|after] [--full-page]]";
 
 function parse() {
   try {
@@ -32,6 +36,8 @@ function parse() {
         "color-scheme": { type: "string", default: "both" },
         ignore: { type: "string", multiple: true, default: [] },
         tolerance: { type: "string", default: "1" },
+        content: { type: "string" },
+        "gap-limit": { type: "string", default: String(DEFAULT_GAP_LIMIT) },
         shots: { type: "string" },
         state: { type: "string" },
         phase: { type: "string", default: "after" },
@@ -52,6 +58,7 @@ const scheme = values["color-scheme"];
 const colorSchemes: Theme[] | undefined =
   scheme === "both" ? [...QA_THEMES] : scheme === "light" || scheme === "dark" ? [scheme] : undefined;
 const tolerance = Number(values.tolerance);
+const gapLimit = Number(values["gap-limit"]);
 const phase = values.phase === "before" || values.phase === "after" ? values.phase : undefined;
 const shotsValid =
   values.shots === undefined
@@ -64,6 +71,9 @@ if (
   colorSchemes === undefined ||
   !Number.isFinite(tolerance) ||
   tolerance < 0 ||
+  !Number.isFinite(gapLimit) ||
+  gapLimit < 0 ||
+  values.content === "" ||
   phase === undefined ||
   !shotsValid
 ) {
@@ -81,6 +91,8 @@ try {
     colorSchemes,
     ignore: values.ignore,
     tolerance,
+    content: values.content,
+    gapLimit,
     shots:
       values.shots && values.state
         ? { dir: resolve(values.shots), state: values.state, phase, fullPage: values["full-page"] }

@@ -2,9 +2,25 @@ import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseFrameName, QA_THEMES, QA_VIEWPORTS, stopLabel } from "./matrix";
 
+/**
+ * The design items: whether the design itself is right, which conformance to the design rules cannot show. Every
+ * frame accounts for them, with a finding citing the item or a note, even a frame whose other findings fail it.
+ */
+export const DESIGN_ITEMS = ["redundancy", "density", "hidden"] as const;
 /** The whole-frame checklist items a reviewer must account for before passing a frame with no findings. */
-export const CHECKLIST = ["affordance", "alignment", "sizing", "space", "clipping", "wording", "contrast"] as const;
+export const CHECKLIST = [
+  "affordance",
+  "alignment",
+  "sizing",
+  "space",
+  "clipping",
+  "wording",
+  "contrast",
+  ...DESIGN_ITEMS,
+] as const;
 const MIN_NOTE = 15;
+/** A density note or finding carries a measurement: a number of CSS px or a percentage. */
+const MEASURED = /\d\s*(px|%)/;
 
 export interface ManifestFrame {
   id: string;
@@ -103,8 +119,11 @@ export interface CheckResult {
 
 /**
  * Checks a reviewer's file against the manifest: every frame is accounted for, each with findings or with a note per
- * checklist item saying what was checked; with `triaged`, every finding also carries its disposition (fixed with the
- * revision, ticket or duplicate with the ticket number, or rejected with the reason).
+ * checklist item saying what was checked. A frame with findings still accounts for each design item, with a finding
+ * citing it or a `checked` note; density notes and findings carry measurements. A finding's rule `challenge` names the
+ * design rule and the proposed change. With `triaged`, every finding also carries its disposition (fixed with the
+ * revision, ticket or duplicate with the ticket number, or rejected with the reason); a challenge only ticket or
+ * duplicate, because the rule's owner must change, not only the screen.
  */
 export function checkReview(manifest: Manifest, review: unknown, triaged = false): CheckResult {
   const problems: string[] = [];
@@ -133,8 +152,21 @@ export function checkReview(manifest: Manifest, review: unknown, triaged = false
       const thin = CHECKLIST.filter((item) => !isRecord(clean) || !text(clean[item], MIN_NOTE));
       if (thin.length > 0)
         problems.push(`${id}: a clean frame needs a note of at least ${MIN_NOTE} characters for ${thin.join(", ")}`);
+      else if (isRecord(clean) && !MEASURED.test(String(clean.density)))
+        problems.push(`${id}: the density note must give measurements in px or %`);
       continue;
     }
+    const cited = new Set(list.map((finding: unknown) => (isRecord(finding) ? finding.rule : undefined)));
+    const checked = entry.checked;
+    const unchecked = DESIGN_ITEMS.filter(
+      (item) => !cited.has(item) && (!isRecord(checked) || !text(checked[item], MIN_NOTE)),
+    );
+    if (unchecked.length > 0)
+      problems.push(
+        `${id}: cite ${unchecked.join(", ")} in a finding's rule or give a checked note of at least ${MIN_NOTE} characters for each`,
+      );
+    else if (!cited.has("density") && isRecord(checked) && !MEASURED.test(String(checked.density)))
+      problems.push(`${id}: the density note must give measurements in px or %`);
     list.forEach((finding: unknown, i: number) => {
       findings++;
       const at = `${id} finding ${i + 1}`;
@@ -146,11 +178,24 @@ export function checkReview(manifest: Manifest, review: unknown, triaged = false
         if (!text(finding[field])) problems.push(`${at}: missing ${field}`);
       if (typeof finding.severity !== "string" || !/^P[0-3]$/.test(finding.severity))
         problems.push(`${at}: severity must be P0-P3`);
+      if (finding.rule === "density" && !MEASURED.test(String(finding.problem)))
+        problems.push(`${at}: a density finding must give measurements in px or %`);
+      const challenge = finding.challenge;
+      const challenged = challenge !== undefined;
+      if (challenged && (!isRecord(challenge) || !text(challenge.rule) || !text(challenge.change, MIN_NOTE)))
+        problems.push(
+          `${at}: challenge must name the design rule and the proposed change (at least ${MIN_NOTE} characters)`,
+        );
       if (!triaged) return;
       const disposition = finding.disposition;
       if (typeof disposition !== "string" || !DISPOSITIONS.has(disposition)) {
         untriaged++;
         problems.push(`${at}: disposition must be fixed, ticket, duplicate or rejected`);
+      } else if (challenged && disposition !== "ticket" && disposition !== "duplicate") {
+        untriaged++;
+        problems.push(
+          `${at}: a rule challenge needs a ticket or duplicate against the rule's owner, not ${disposition}`,
+        );
       } else if (!text(finding.ref, disposition === "rejected" ? MIN_NOTE : 1)) {
         untriaged++;
         problems.push(

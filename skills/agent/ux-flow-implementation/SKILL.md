@@ -59,8 +59,8 @@ Run them with Bun as `bun <skill>/scripts/<name>.ts`, where `<skill>` is this sk
 | `render-brief.ts --config <config> [--unit <key>] <ticket>...`; `--check` | Print a unit's brief from [the template](assets/unit-brief.md) and the config; validate the config |
 | `file-slices.ts --config <config> [--apply]` | List the slice tickets the plan and proposals describe; with `--apply`, create the epic once and file unfiled slices in dependency order, recording each in `slices.json` |
 | `capacity.ts --path <dir> [--floor-gib <n>] [--memory-floor <percent>]` | Measure load, memory, swap and free disk; exit 1 when another heavy unit would break a limit |
-| `audit-screen.ts (--url <url>\|--session <name>) [--viewport <w>x<h>]... [--color-scheme light\|dark\|both] [--ignore <selector>]... [--shots <dir> --state <slug> [--phase before\|after] [--full-page]]` | Audit a screen across the matrix and save its viewport frames at scroll stops ([captures](references/visual-qa.md#captures)); exits 1 on any failure ([measuring](references/visual-qa.md#measuring)) |
-| `review-frames.ts manifest --out <file> <dir>...`; `review-frames.ts check <manifest> <review> [--triaged]` | Build a blind review's frame manifest; check that a review accounts for every frame and, triaged, every finding |
+| `audit-screen.ts (--url <url>\|--session <name>) [--viewport <w>x<h>]... [--color-scheme light\|dark\|both] [--ignore <selector>]... [--content <selector>] [--gap-limit <px>] [--shots <dir> --state <slug> [--phase before\|after] [--full-page]]` | Audit a screen across the matrix and save its viewport frames at scroll stops ([captures](references/visual-qa.md#captures)); report its density measurements; exits 1 on any failure ([measuring](references/visual-qa.md#measuring)) |
+| `review-frames.ts manifest --out <file> <dir>...`; `review-frames.ts check <manifest> <review> [--triaged]` | Build a blind review's frame manifest; check that a review accounts for every frame and every design item and, triaged, every finding and rule challenge |
 
 ## Report
 

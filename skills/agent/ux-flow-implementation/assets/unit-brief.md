@@ -29,10 +29,10 @@ Your checkpoint is `{{checkpoint}}`. Read it first and continue from the first s
 
 ## Evidence
 
-11. Capture before screenshots from `{{remote}}/{{targetBranch}}` and after screenshots from your build, for each state the ticket changes, from the real app with seeded data. Capture and audit each state in one command per phase, which covers 320, 390 and 1440 px in both themes and names the files the way the orchestrator's blind review expects:
+11. Capture before screenshots from `{{remote}}/{{targetBranch}}` and after screenshots from your build, for each state the ticket changes, from the real app with seeded data. Capture and audit each state in one command per phase, which covers 320, 390 and 1440 px in both themes and names the files the way the orchestrator's blind review expects, and keep its output, which the blind review reads:
 
     ```bash
-    bun {{skill}}/scripts/audit-screen.ts --session {{unit}}-<phase> --shots {{shots}} --state <state> --phase <before|after>{{#ignoreFlags}}{{ignoreFlags}}{{/ignoreFlags}}
+    bun {{skill}}/scripts/audit-screen.ts --session {{unit}}-<phase> --shots {{shots}} --state <state> --phase <before|after>{{#ignoreFlags}}{{ignoreFlags}}{{/ignoreFlags}} > {{shots}}/<state>-<phase>-audit.json
     ```
 
     After each rebuild or restart of the app, close your browser session and open a fresh one before capturing; a session that lived through the rebuild can keep serving stale modules.

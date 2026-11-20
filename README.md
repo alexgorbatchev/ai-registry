@@ -99,7 +99,7 @@ Claude Code reads user-scope MCP servers only from its global `.claude.json`. De
 
 ### Tool Overlays
 
-Try a third-party tool's configuration without mixing it into the shared sources: put it in `tools/<name>/` and delete that directory to remove it.
+Try a third-party tool's configuration, or a self-contained harness policy such as a hook, without mixing it into the shared sources: put it in `tools/<name>/` and delete that directory to remove it.
 
 ```text
 tools/example-tool/

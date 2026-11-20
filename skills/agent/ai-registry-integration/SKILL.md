@@ -73,7 +73,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 ## Tool Overlays
 
-- Put configuration for a third-party tool on trial in `tools/<name>/` beneath the repo_root token, using the private overlay structure: `skills/`, `commands/`, `harnesses/<target>/skills/` for skills only some harnesses receive, and `harnesses/<path>` files that layer synced settings files. Deleting the directory removes everything it contributed on the next build.
+- Put configuration for a third-party tool on trial, or a self-contained harness policy such as a hook that should be removable as a unit, in `tools/<name>/` beneath the repo_root token, using the private overlay structure: `skills/`, `commands/`, `harnesses/<target>/skills/` for skills only some harnesses receive, and `harnesses/<path>` files that layer synced settings files. Deleting the directory removes everything it contributed on the next build.
 - Put only the tool's own entries in its settings layers, such as its hook entries under the hook events it uses; lists append, so they join the registry's entries for the same event.
 - Tool overlays layer after the public sources and before private overlays. They own harness edits only inside keys only they define or values carrying their `owns` markers; other added list items go to another layer.
 - List text identifying the tool's own settings values, such as its install directory, under `owns` in `tools/<name>/tool.json`. Settings sync routes added entries and changed values containing it into the tool's overlay, creating missing settings files, so the tool's installer and updates edit its overlay once for every machine. Without `owns`, installer edits go to the public source.
@@ -209,7 +209,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Add a vendored third-party code package for a harness under `vendor/<name>/` beneath the repo_root token.
 - Add shared system guidance under `system/` beneath the repo_root token; `system/system.md` is the system prompt every harness ships.
 - Add shared harness guidance under `harnesses/AGENTS.md` beneath the repo_root token.
-- Add a third-party tool's trial configuration under `tools/<name>/` beneath the repo_root token.
+- Add a third-party tool's trial configuration, or a removable harness policy, under `tools/<name>/` beneath the repo_root token.
 - Add or update a vendored third-party skill under the skills_dir token plus `skills-lock.json` beneath the repo_root token.
 - OpenCode configuration lives in `harnesses/opencode/opencode.jsonc` beneath the repo_root token.
 - Codex docs snapshots, build logic, and Codex-only shipped skills live under `harnesses/codex/` beneath the repo_root token.

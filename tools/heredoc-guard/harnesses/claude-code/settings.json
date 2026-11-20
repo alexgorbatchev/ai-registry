@@ -4,7 +4,7 @@
       {
         "hooks": [
           {
-            "command": "IFS= read -r p; case $p in *[!\\<]'<<'[-A-Za-z_\\\\\\']*'\\n'*|*[!\\<]'<< '[-A-Za-z_\\\\\\']*'\\n'*) printf '%s\\n' 'Blocked: heredocs are disabled. Write the content to a file with the Write tool (or Edit an existing file), then pass its path, for example git commit -F <file>, gh pr create --body-file <file>, or python3 <file>. Short commit messages can use repeated -m flags.' >&2; exit 2;; esac",
+            "command": "LC_ALL=C grep -qE '[^<]<<-? ?[A-Za-z_\\\"'\"'\"'].*[^\\]\\\\n' || exit 0; printf '%s\\n' 'Blocked: heredocs are disabled. Write the content to a file with the Write tool (or Edit an existing file), then pass its path, for example git commit -F <file>, gh pr create --body-file <file>, or python3 <file>. Short commit messages can use repeated -m flags.' >&2; exit 2",
             "timeout": 5,
             "type": "command"
           }

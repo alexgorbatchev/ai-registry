@@ -23,6 +23,8 @@ const blocked = [
   "git commit -m \"$(cat <<'EOF'\nsubject\n\nbody\nEOF\n)\"",
   "python3 - <<PY\nprint(1)\nPY",
   "<<_END cat\nx\n_END",
+  "cat <<\\EOF\nhello\nEOF",
+  "cat <<- EOF\n\thello\n\tEOF",
 ];
 const allowed = [
   "ls -la",
@@ -31,6 +33,7 @@ const allowed = [
   "echo $((1<<2))\necho done",
   "echo 'a << b'",
   "git status\ngit log --oneline -3",
+  `node -e 'console.log(["a"].join("\\n") + "  <<parent: x")'`,
 ];
 
 async function readCommand(file: string): Promise<string> {
@@ -61,6 +64,22 @@ describe.each(harnesses)("$name heredoc guard", ({ file, fileTool }) => {
       const result = runHook(shell, command, bashCommand);
       expect({ bashCommand, exitCode: result.exitCode }).toEqual({ bashCommand, exitCode: 2 });
       expect(result.stderr).toContain(fileTool);
+    }
+  });
+
+  // Shell glob matching backtracks quadratically on long lines full of "<<"; the hook must stay well inside its timeout.
+  it.each(shells)("decides 100 KB commands quickly under %s", async (shell) => {
+    const command = await readCommand(file);
+    const cases = [
+      { bashCommand: "x=$((a<<b)); ".repeat(8000), exitCode: 0 },
+      { bashCommand: "echo a\\\\nb << c; ".repeat(6000), exitCode: 0 },
+      { bashCommand: "echo hello;\n".repeat(9000), exitCode: 0 },
+      { bashCommand: "x=$((a<<b));\n".repeat(8000), exitCode: 2 },
+    ];
+    for (const { bashCommand, exitCode } of cases) {
+      const started = performance.now();
+      expect(runHook(shell, command, bashCommand).exitCode).toBe(exitCode);
+      expect(performance.now() - started).toBeLessThan(1500);
     }
   });
 

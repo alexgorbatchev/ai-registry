@@ -22,6 +22,12 @@ Choose the mode from the request and follow its reference.
 
 Every mode also applies [External Contributors](#external-contributors) whenever a PR is merged, closed, or replaced by another PR.
 
+## Start Required Review
+
+If you own delivery of a PR and the repository requires independent review, initiate it yourself using the repository's designated review workflow as soon as its prerequisites are met. Use the current head and its check results. A PR watch reports changes. It does not launch the reviewer, and an empty hosted checks list does not delay review when the repository accepts a passing local check record.
+
+If the head changes, initiate any required re-review on the new head once its prerequisites pass. If you cannot start the reviewer, record the specific blocker and keep the review gate open.
+
 ## Attachments
 
 Attach images and videos with `gh`'s `--attach <path>[#alt text]` flag on `gh pr create`, `gh pr edit`, and `gh pr comment`. It uploads the file and writes the GitHub-hosted URL into the posted body. Do not upload through a browser, paste local paths, or hand-write asset URLs. If `--help` for the command does not list `--attach`, report that the installed `gh` lacks attachment support instead of using another upload route.

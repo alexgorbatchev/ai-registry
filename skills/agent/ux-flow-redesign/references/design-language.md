@@ -349,9 +349,9 @@ The linter does not catch scripts, images, external resources, private hostnames
 Then check what the owner will see:
 
 1. Serve the docs (see [publishing](publishing.md)) and confirm the page returns HTTP 200.
-2. With a browser automation tool, take a full-page screenshot at 1440 px wide and another at 800 px wide. Open both and read them.
+2. Capture the page at 1440 and 800 px wide with the `ux-flow-implementation` skill's `audit-screen.ts --url <page-url> --viewport 1440x900 --viewport 800x900 --color-scheme light --shots <local>/shots/<unit-key> --state <page-slug> --full-page`. The key band and the pattern page's step column are sticky, so a plain full-page screenshot paints them at their first-viewport position over content further down; the scroll-stop frames and the static whole-page image avoid that (that skill's visual QA reference, Captures). Open every image and read it. The command exits 1 on its app accessibility checks; fix what step 3 lists and do not treat the rest as wireframe defects.
 3. Fix horizontal overflow, overlapping elements, clipped text, callout markers that do not sit next to what their captions describe, popovers away from or covering their triggers, and toasts covering a primary action.
 4. Scroll down one screen and confirm the key band stays pinned with its shadow, then follow one step link and confirm the step's heading lands below the band.
-5. Confirm positions such as caret offsets and popover placement with element-cropped screenshots of the window; a full-page screenshot is too small to judge a few pixels.
+5. Confirm positions such as caret offsets and popover placement with element-cropped screenshots of the window; a page frame is too small to judge a few pixels.
 
 Overlays injected by a dev server or the browser tool are not page content. After a stylesheet change, repeat the linter and the visual check for every page.

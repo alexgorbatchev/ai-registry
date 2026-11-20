@@ -116,9 +116,9 @@ Cards keep their titles and dot colours in every diagram, so all diagrams read a
 
 ## Rendering for inspection
 
-1. Open each render (its served docs URL, or its file URL with local file access allowed) in a browser automation session of your own, at a 1600×1000 viewport, and wait until the diagram has drawn.
-2. Hide floating viewer controls that cover labels, such as the viewer's navigation toolbar, then take a full-page screenshot to `<local>/shots/<key>/<key>-current.png` (or `-proposed.png`).
-3. Open the image and confirm that every label is legible and the whole diagram is in the frame. Retake with a larger viewport if anything is cut off. Close the session.
+1. Open each render (its served docs URL, or its file URL with local file access allowed) in an agent-browser session of your own and wait until the diagram has drawn.
+2. Capture it with the `ux-flow-implementation` skill's `audit-screen.ts --session <session> --viewport 1600x1000 --color-scheme light --shots <local>/shots/<key> --state <key>-current --full-page` (`<key>-proposed` for the proposed render), passing each floating viewer control that covers labels, such as the viewer's navigation toolbar, as `--ignore <selector>`. The viewer has fixed elements (a docked overview map, toasts, the presentation toolbar) that a plain full-page screenshot paints over the diagram partway down; the scroll-stop frames and the static whole-page image avoid that (that skill's visual QA reference, Captures). Its accessibility checks do not gate a diagram.
+3. Open the images and confirm that every label is legible and the whole diagram is in the static image. Retake with a larger viewport if anything is cut off. Close the session.
 4. Never commit the images.
 
 ## Regeneration recipe

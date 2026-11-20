@@ -31,6 +31,7 @@ Do these inline, in one context, before starting any parallel unit.
 
 - Partition the in-scope roster into areas, each a slice of roster features that one reviewer covers in about 30 minutes. Add 1–3 end-to-end journeys that cross areas, phrased as a user goal in the owner's words (illustrative: "a quarterly report is due tomorrow: gather the sources, clean them up, build the report, export and share it").
 - Every in-scope roster ID appears in at least one brief.
+- Add one `review-chrome` unit for the persistent chrome (headers, navigation, side panels, toolbars, dialog frames), briefed as the [fresh-eyes chrome review](visual-qa.md#fresh-eyes-chrome-review): its brief carries no roster IDs, flows, ticket digest or recent changes.
 - Each brief states:
   - the area key (kebab-case; it prefixes finding IDs);
   - the roster IDs and the flows to exercise, with "exercise every flow in this brief";
@@ -68,11 +69,11 @@ Every reviewer gets the same rules block, the product direction and owner rules 
 
    Labels state the problem ("Selection bar pushes the table down 52px"), not the element name. Boxes are fixed to the viewport: scroll first, then mark, and clear and mark again after any scroll. They attach to the topmost open `<dialog>`, so they render above modals.
 4. Save to an absolute path, `<local>/shots/<area>/NN-short-slug.png`; browser tools can ignore or misresolve relative paths.
-5. Open the saved image and confirm it shows the problem legibly with correctly placed boxes; recapture otherwise. Never cite an image you have not opened.
+5. Open the saved image and confirm it shows the problem legibly with correctly placed boxes; recapture otherwise. Never cite an image you have not opened. Check the whole frame under [visual QA](visual-qa.md), not only the boxed problem, and record what else it shows.
 6. Run `__uxr.clear()` before interacting again.
 
 - One focused image per problem; before and after pairs for interaction problems.
-- Default viewport 1600×1000; add 1280×800, 900×900, and light and dark themes where layout or contrast is part of the problem.
+- Default viewport 1600×1000; add 1280×800, 900×900, and light and dark themes where layout or contrast is part of the problem. Each screen the unit visits also gets the [visual QA](visual-qa.md#captures) pass at its widths and themes, with `audit-screen.ts`.
 - Each caption says what the numbered boxes show.
 
 ## Findings file

@@ -10,13 +10,18 @@ import {
   hex,
   hideScript,
   isLargeText,
+  pinScript,
+  scrollMetricsScript,
+  scrollToScript,
   SETTLED_EXPRESSION,
+  UNPIN_SCRIPT,
   type BrowserRunner,
   type ScreenSnapshot,
 } from "../lib/auditScreen";
 import { QA_THEMES, QA_VIEWPORTS } from "../lib/matrix";
-import { AUDIT_FIXTURE_PAGE } from "./auditScreenPage";
+import { AUDIT_FIXTURE_PAGE, PINNED_BARS_PAGE, PINNED_PAGE } from "./auditScreenPage";
 import { factory_testDirectory, SCRIPTS } from "./fixtures";
+import { readPng, rowsOfColor } from "./png";
 
 type Control = ScreenSnapshot["controls"][number];
 
@@ -203,8 +208,10 @@ describe("analyzeScreen", () => {
 
 describe("auditScreen browser steps", () => {
   const envelope = JSON.stringify({ success: true, data: { result: snapshot() } });
+  const page = { scrollHeight: 2000, viewportHeight: 844, topCover: 0, bottomCover: 64, scrollTop: 120 };
+  const metrics = JSON.stringify({ success: true, data: { result: page } });
 
-  function recorder(output = envelope): { calls: string[][]; scripts: string[]; run: BrowserRunner } {
+  function recorder(output = envelope, scroll = metrics): { calls: string[][]; scripts: string[]; run: BrowserRunner } {
     const calls: string[][] = [];
     const scripts: string[] = [];
     return {
@@ -213,7 +220,8 @@ describe("auditScreen browser steps", () => {
       run: async (args, stdin) => {
         calls.push(args);
         if (stdin !== undefined) scripts.push(stdin);
-        return args.includes("eval") ? output : "";
+        if (!args.includes("eval")) return "";
+        return stdin?.includes("bottomCover") ? scroll : output;
       },
     };
   }
@@ -270,34 +278,89 @@ describe("auditScreen browser steps", () => {
     expect(browser.calls.filter((args) => args[2] === "wait")).toHaveLength(6);
   });
 
-  test("saves one named screenshot per cell, with overlays hidden", async () => {
+  test("saves numbered viewport frames at each scroll stop, with overlays hidden, and restores the scroll", async () => {
     const dir = join(factory_testDirectory("audit-shots"), "unit");
     const browser = recorder();
+    const ignore = ["#dev-toolbar", ".badge"];
     await auditScreen({
       session: "impl-1-after",
       viewports: [{ width: 390, height: 844 }],
       colorSchemes: ["dark"],
-      ignore: ["#dev-toolbar", ".badge"],
+      ignore,
       shots: { dir, state: "comments-panel", phase: "after" },
       run: browser.run,
     });
     expect(existsSync(dir)).toBe(true);
-    expect(browser.calls.slice(-2)).toEqual([
-      ["--session", "impl-1-after", "eval", "--stdin"],
-      ["--session", "impl-1-after", "screenshot", "--full", join(dir, "comments-panel-after-390-dark.png")],
+    const frame = (stop: string) => join(dir, `comments-panel-after-390-dark-${stop}.png`);
+    // 2000 px tall, 844 visible with a 64 px bottom bar: steps of 780 to the bottom at 1156.
+    expect(browser.calls.slice(4).map((args) => args.slice(2))).toEqual([
+      ["eval", "--stdin"],
+      ["--json", "eval", "--stdin"],
+      ["eval", "--stdin"],
+      ["wait", "--fn", SETTLED_EXPRESSION],
+      ["screenshot", frame("01of03")],
+      ["eval", "--stdin"],
+      ["wait", "--fn", SETTLED_EXPRESSION],
+      ["screenshot", frame("02of03")],
+      ["eval", "--stdin"],
+      ["wait", "--fn", SETTLED_EXPRESSION],
+      ["screenshot", frame("03of03")],
+      ["eval", "--stdin"],
     ]);
-    expect(browser.scripts.at(-1)).toBe(hideScript(["#dev-toolbar", ".badge"]));
+    expect(browser.scripts.slice(1)).toEqual([
+      hideScript(ignore),
+      scrollMetricsScript(ignore),
+      scrollToScript(0),
+      scrollToScript(780),
+      scrollToScript(1156),
+      scrollToScript(120),
+    ]);
     expect(hideScript(["#a"])).toContain('document.querySelectorAll("#a")');
-    const plain = recorder();
+    expect(scrollMetricsScript(ignore)).toContain('element.closest("#dev-toolbar, .badge")');
+
+    const full = recorder(
+      envelope,
+      JSON.stringify({ success: true, data: { result: { ...page, scrollHeight: 500 } } }),
+    );
     await auditScreen({
       session: "s",
       viewports: [{ width: 390, height: 844 }],
       colorSchemes: ["light"],
-      shots: { dir, state: "home", phase: "before" },
-      run: plain.run,
+      shots: { dir, state: "home", phase: "before", fullPage: true },
+      run: full.run,
     });
-    expect(plain.calls.filter((args) => args.includes("eval"))).toHaveLength(1);
-    expect(plain.calls.at(-1)?.at(-1)).toBe(join(dir, "home-before-390-light.png"));
+    expect(full.calls.filter((args) => args.includes("screenshot")).map((args) => args.slice(3))).toEqual([
+      [join(dir, "home-before-390-light-01of01.png")],
+      ["--full", join(dir, "home-before-390-light-full-static.png")],
+    ]);
+    expect(full.scripts.slice(1)).toEqual([
+      scrollMetricsScript([]),
+      scrollToScript(0),
+      `${scrollToScript(0)}${pinScript([])}`,
+      UNPIN_SCRIPT,
+      scrollToScript(120),
+    ]);
+  });
+
+  test("unpins the page when the full-page screenshot fails, and rejects a failed scroll measurement", async () => {
+    const dir = factory_testDirectory("audit-shots-fail");
+    const shots = { dir, state: "home", phase: "after" as const, fullPage: true };
+    const viewports = [{ width: 390, height: 844 }];
+    const scripts: string[] = [];
+    const failing: BrowserRunner = async (args, stdin) => {
+      if (stdin !== undefined) scripts.push(stdin);
+      if (args.includes("--full")) throw new Error("screenshot failed");
+      if (!args.includes("eval")) return "";
+      return stdin?.includes("bottomCover") ? metrics : envelope;
+    };
+    await expect(
+      auditScreen({ session: "s", viewports, colorSchemes: ["light"], shots, run: failing }),
+    ).rejects.toThrow("screenshot failed");
+    expect(scripts.at(-1)).toBe(UNPIN_SCRIPT);
+    const unmeasured = recorder(envelope, JSON.stringify({ success: true, data: { result: { scrollHeight: "x" } } }));
+    await expect(
+      auditScreen({ session: "s", viewports, colorSchemes: ["light"], shots, run: unmeasured.run }),
+    ).rejects.toThrow("page scroll measurement failed");
   });
 
   test("refuses a collector whose options call was edited away", () => {
@@ -370,7 +433,10 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
     server = Bun.serve({
       hostname: "127.0.0.1",
       port: 0,
-      fetch: () => new Response(AUDIT_FIXTURE_PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } }),
+      fetch: (request) =>
+        new Response(new URL(request.url).pathname === "/pinned" ? PINNED_BARS_PAGE : AUDIT_FIXTURE_PAGE, {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        }),
     });
   });
 
@@ -397,7 +463,10 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
     expect(run.code).toBe(1);
     const output = JSON.parse(run.stdout);
     expect(output.failing).toBe(2);
-    expect(readdirSync(shots).sort()).toEqual(["fixture-after-390-dark.png", "fixture-after-390-light.png"]);
+    expect(readdirSync(shots).sort()).toEqual([
+      "fixture-after-390-dark-01of01.png",
+      "fixture-after-390-light-01of01.png",
+    ]);
     for (const [index, scheme] of ["light", "dark"].entries()) {
       const report = output.screens[index];
       expect(report.colorScheme).toBe(scheme);
@@ -416,6 +485,58 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
       expect(report.borderlessText.map((issue: { selector: string }) => issue.selector)).toEqual(["#ghost"]);
       expect(report.borderlessIcon.map((issue: { selector: string }) => issue.selector)).toEqual(["#close", "#masked"]);
     }
+  }, 120000);
+
+  // Viewport 390x844 over a page 48 + 2100 + 40 + 64 = 2252 px tall: the visible band between the 48 px header and
+  // the 64 px footer is 732 px, so the stops are 0, 732 and the bottom at 1408.
+  test("the CLI shows a sticky footer at the bottom of each viewport frame, reaches the page end only in the bottom frame, and lays it out at the end of the full-page image", async () => {
+    const shots = factory_testDirectory("audit-pinned");
+    const run = await cli(
+      "--url",
+      new URL("/pinned", server.url).href,
+      "--viewport",
+      "390x844",
+      "--color-scheme",
+      "light",
+      "--shots",
+      shots,
+      "--state",
+      "pinned",
+      "--full-page",
+    );
+    expect(run.stderr).toBe("");
+    expect(run.code).toBe(0);
+    const frames = ["01of03", "02of03", "03of03"].map((stop) => `pinned-after-390-light-${stop}.png`);
+    expect(readdirSync(shots).sort()).toEqual([...frames, "pinned-after-390-light-full-static.png"]);
+    const BLUE: [number, number, number] = [0, 0, 255];
+    const CYAN: [number, number, number] = [0, 255, 255];
+    const MAGENTA: [number, number, number] = [255, 0, 255];
+    const near = (actual: number | undefined, expected: number) => expect(actual).toBeCloseTo(expected, 2);
+    const { header, content, end, footer } = PINNED_PAGE;
+
+    for (const [index, name] of frames.entries()) {
+      const png = readPng(join(shots, name));
+      const bar = rowsOfColor(png, MAGENTA);
+      near(bar?.first, (844 - footer) / 844);
+      near(bar?.last, 1);
+      near(rowsOfColor(png, BLUE)?.first, 0);
+      near(rowsOfColor(png, BLUE)?.last, header / 844);
+      const pageEnd = rowsOfColor(png, CYAN);
+      if (index < 2) expect(pageEnd).toBeNull();
+      else {
+        near(pageEnd?.first, (844 - footer - end) / 844);
+        near(pageEnd?.last, (844 - footer) / 844);
+      }
+    }
+
+    // Laid out in place, the footer follows the page end instead of covering the content halfway down, and the
+    // header adds its height to the flow.
+    const full = readPng(join(shots, "pinned-after-390-light-full-static.png"));
+    const height = 2 * header + content + end + footer;
+    near(rowsOfColor(full, MAGENTA)?.first, (height - footer) / height);
+    near(rowsOfColor(full, MAGENTA)?.last, 1);
+    near(rowsOfColor(full, CYAN)?.first, (height - footer - end) / height);
+    near(rowsOfColor(full, BLUE)?.last, (2 * header) / height);
   }, 120000);
 
   test("the CLI reports a browser failure with exit 3", async () => {

@@ -2,9 +2,10 @@
 // Prepares and checks a blind screenshot review. Usage:
 //   bun review-frames.ts manifest --out <manifest.json> <shots-dir>...
 //   bun review-frames.ts check <manifest.json> <review.json> [--triaged]
-// manifest lists every after frame named <state>-after-<width>-<theme>.png in the directories, with neutral IDs,
-// and exits 1 when a captured state lacks a cell of the 320/390/1440 x light/dark matrix (the manifest is still
-// written). check exits 1 unless the review accounts for every frame, each with findings or a note per checklist
+// manifest lists every after frame named <state>-after-<width>-<theme>-<NN>of<NN>.png (viewport frames at scroll
+// stops, top first) or <state>-after-<width>-<theme>-full-static.png in the directories, with neutral IDs, and exits 1
+// when a captured state lacks a cell of the 320/390/1440 x light/dark matrix or a scroll stop of a cell (the manifest
+// is still written). check exits 1 unless the review accounts for every frame, each with findings or a note per checklist
 // item, and with --triaged unless every finding has a disposition. Exit 2 on bad usage.
 import { readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
@@ -47,7 +48,7 @@ try {
     const manifest = buildManifest(rest);
     writeFileSync(values.out ?? "", `${JSON.stringify(manifest, null, 2)}\n`);
     for (const path of manifest.unnamed)
-      console.log(`WARN: left out, not named <state>-<phase>-<width>-<theme>.png: ${path}`);
+      console.log(`WARN: left out, not named <state>-<phase>-<width>-<theme>-<stop>.png: ${path}`);
     for (const cell of manifest.missing) console.log(`ERR: missing frame: ${cell}`);
     console.log(`${manifest.missing.length ? "ERR" : "OK"}: ${manifest.frames.length} frames in ${values.out}`);
     process.exit(manifest.missing.length || manifest.frames.length === 0 ? 1 : 0);

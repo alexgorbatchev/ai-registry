@@ -1,6 +1,15 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { frameName, QA_THEMES, QA_VIEWPORTS, type Phase, type Theme } from "./matrix";
+import {
+  frameName,
+  QA_THEMES,
+  QA_VIEWPORTS,
+  scrollStops,
+  type Phase,
+  type ScrollMetrics,
+  type Stop,
+  type Theme,
+} from "./matrix";
 
 export type Rgb = [number, number, number];
 
@@ -347,8 +356,12 @@ export interface AuditOptions {
   ignore?: string[];
   /** Pixels two aligned edges or sizes may differ by. */
   tolerance?: number;
-  /** Save a full-page screenshot of every audited cell as `<dir>/<state>-<phase>-<width>-<theme>.png`. */
-  shots?: { dir: string; state: string; phase: Phase };
+  /**
+   * Save viewport frames of every audited cell at its scroll stops (top, one per screenful, bottom) as
+   * `<dir>/<state>-<phase>-<width>-<theme>-<NN>of<NN>.png`; with `fullPage`, also the whole page with sticky and fixed
+   * elements made static, as `...-full-static.png`.
+   */
+  shots?: { dir: string; state: string; phase: Phase; fullPage?: boolean };
   run?: BrowserRunner;
 }
 
@@ -373,12 +386,83 @@ function isSnapshot(value: unknown): value is ScreenSnapshot {
   );
 }
 
-/** Reads the snapshot out of agent-browser's `--json eval` envelope. */
+/** Reads the evaluated value out of agent-browser's `--json eval` envelope. */
+function resultOf(output: unknown): unknown {
+  return isRecord(output) && output.success === true && isRecord(output.data) ? output.data.result : undefined;
+}
+
 function snapshotOf(output: unknown): ScreenSnapshot | null {
-  if (!isRecord(output) || output.success !== true || !isRecord(output.data)) return null;
-  const result: unknown = output.data.result;
+  const result = resultOf(output);
   return isSnapshot(result) ? result : null;
 }
+
+interface PageScroll extends ScrollMetrics {
+  /** Where the page was scrolled before the frames, restored after them. */
+  scrollTop: number;
+}
+
+function scrollOf(output: unknown): PageScroll | null {
+  const result = resultOf(output);
+  if (!isRecord(result)) return null;
+  const fields = ["scrollHeight", "viewportHeight", "topCover", "bottomCover", "scrollTop"] as const;
+  if (!fields.every((field) => typeof result[field] === "number" && Number.isFinite(result[field]))) return null;
+  const [scrollHeight, viewportHeight, topCover, bottomCover, scrollTop] = fields.map((field) => Number(result[field]));
+  return { scrollHeight, viewportHeight, topCover, bottomCover, scrollTop };
+}
+
+/** In-page loop over visible fixed and sticky elements, skipping development overlays. */
+const pinnedLoop = (ignore: string[], body: string): string =>
+  `for (const element of document.querySelectorAll("body *")) {
+  const style = getComputedStyle(element);
+  if (style.position !== "fixed" && style.position !== "sticky") continue;
+  if (${JSON.stringify(ignore.join(", "))} && element.closest(${JSON.stringify(ignore.join(", "))})) continue;
+  ${body}
+}`;
+
+/**
+ * Measures the document's scroll height, the visible height, and the bands that bars stuck to the top and bottom
+ * edges cover. Elements taller than half the viewport (side panels, app shells) are not bars.
+ */
+export function scrollMetricsScript(ignore: string[]): string {
+  return `(() => {
+const root = document.scrollingElement ?? document.documentElement;
+const height = root.clientHeight;
+let topCover = 0;
+let bottomCover = 0;
+${pinnedLoop(
+  ignore,
+  `if (style.visibility === "hidden" || style.display === "none") continue;
+  const rect = element.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0 || rect.height > height / 2 || rect.bottom <= 0 || rect.top >= height) continue;
+  if (rect.top <= 1) topCover = Math.max(topCover, rect.bottom);
+  else if (rect.bottom >= height - 1) bottomCover = Math.max(bottomCover, height - rect.top);`,
+)}
+return { scrollHeight: root.scrollHeight, viewportHeight: height, topCover, bottomCover, scrollTop: root.scrollTop };
+})();
+`;
+}
+
+export function scrollToScript(top: number): string {
+  return `(document.scrollingElement ?? document.documentElement).scrollTo({ top: ${top}, left: 0, behavior: "instant" });\n`;
+}
+
+/** Lays fixed and sticky elements out in place, keeping their inline position for `unpinScript` to restore. */
+export function pinScript(ignore: string[]): string {
+  return `${pinnedLoop(
+    ignore,
+    `element.dataset.auditScreenPosition = element.style.getPropertyValue("position") + "|" + element.style.getPropertyPriority("position");
+  element.style.setProperty("position", "static", "important");`,
+  )}\n`;
+}
+
+/** Restores what `pinScript` changed. */
+export const UNPIN_SCRIPT = `for (const element of document.querySelectorAll("[data-audit-screen-position]")) {
+  const [value, priority] = element.dataset.auditScreenPosition.split("|");
+  if (value) element.style.setProperty("position", value, priority);
+  else element.style.removeProperty("position");
+  delete element.dataset.auditScreenPosition;
+}
+`;
 
 const COLLECTOR = readFileSync(join(import.meta.dir, "collectScreen.js"), "utf8");
 const DEFAULT_OPTIONS_CALL = "})({ ignore: [] });";
@@ -396,8 +480,44 @@ export function hideScript(selectors: string[]): string {
 }
 
 /**
+ * Saves one cell's frames: a viewport screenshot at each scroll stop, so sticky and fixed bars appear where a reader
+ * sees them, then optionally the full page with those bars laid out in place. A full-page screenshot of the live page
+ * would paint them at their first-viewport position, over unrelated content halfway down a tall page. Restores the
+ * page's scroll position afterwards.
+ */
+async function captureFrames(
+  run: BrowserRunner,
+  at: string[],
+  ignore: string[],
+  shots: NonNullable<AuditOptions["shots"]>,
+  width: number,
+  scheme: Theme,
+): Promise<void> {
+  const output: unknown = JSON.parse(await run([...at, "--json", "eval", "--stdin"], scrollMetricsScript(ignore)));
+  const page = scrollOf(output);
+  if (!page) throw new Error(`page scroll measurement failed: ${JSON.stringify(output).slice(0, 500)}`);
+  const stops = scrollStops(page);
+  const path = (stop: Stop) => join(shots.dir, frameName(shots.state, shots.phase, width, scheme, stop));
+  for (const [i, top] of stops.entries()) {
+    await run([...at, "eval", "--stdin"], scrollToScript(top));
+    await run([...at, "wait", "--fn", SETTLED_EXPRESSION]);
+    await run([...at, "screenshot", path({ index: i + 1, count: stops.length })]);
+  }
+  if (shots.fullPage) {
+    await run([...at, "eval", "--stdin"], `${scrollToScript(0)}${pinScript(ignore)}`);
+    await run([...at, "wait", "--fn", SETTLED_EXPRESSION]);
+    try {
+      await run([...at, "screenshot", "--full", path("full-static")]);
+    } finally {
+      await run([...at, "eval", "--stdin"], UNPIN_SCRIPT);
+    }
+  }
+  await run([...at, "eval", "--stdin"], scrollToScript(page.scrollTop));
+}
+
+/**
  * Audits the page at every viewport and color scheme: sets each, lets the layout settle, collects the page in the
- * browser and analyses it, saving a screenshot of each cell when asked. Returns one report per cell.
+ * browser and analyses it, saving each cell's frames when asked. Returns one report per cell.
  */
 export async function auditScreen(options: AuditOptions): Promise<AuditReport[]> {
   if (Boolean(options.url) === Boolean(options.session)) throw new Error("pass exactly one of url or session");
@@ -426,8 +546,7 @@ export async function auditScreen(options: AuditOptions): Promise<AuditReport[]>
         reports.push(analyzeScreen(snapshot, options.tolerance));
         if (options.shots) {
           if (ignore.length > 0) await run([...at, "eval", "--stdin"], hideScript(ignore));
-          const { dir, state, phase } = options.shots;
-          await run([...at, "screenshot", "--full", join(dir, frameName(state, phase, viewport.width, scheme))]);
+          await captureFrames(run, at, ignore, options.shots, viewport.width, scheme);
         }
       }
     }

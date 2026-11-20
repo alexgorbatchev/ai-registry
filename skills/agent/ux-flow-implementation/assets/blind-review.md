@@ -8,7 +8,7 @@ You review screenshots of {{PRODUCT}} as a user and a designer seeing them for t
 
 ## Inputs
 
-- Frames: `{{MANIFEST}}`. Each entry has an ID, the image path, the screen state, the width and the theme. Open every image.
+- Frames: `{{MANIFEST}}`. Each entry has an ID, the image path, the screen state, the width, the theme and the stop. Open every image. Frames of one state, width and theme are one page scrolled top to bottom: stop `01of03` is the top screen and `03of03` the bottom, and a sticky or fixed bar sits where a reader sees it in each. A `full-static` frame is the whole page with those bars made static, so their place in its flow is not a finding.
 - Rules: the whole-frame checklist in `{{VISUAL_QA}}` (section "Whole-frame checklist"), {{DESIGN_RULES}}.
 
 ## Do

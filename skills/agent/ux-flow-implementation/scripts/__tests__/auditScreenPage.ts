@@ -39,3 +39,30 @@ export const AUDIT_FIXTURE_PAGE = `<!doctype html>
   <div class="wide" id="wide"></div>
 </body>
 </html>`;
+
+/** Heights in CSS px of the pinned-bars page's parts. */
+export const PINNED_PAGE = { header: 48, content: 2100, end: 40, footer: 64 } as const;
+
+/**
+ * A page taller than two screens with a fixed header (blue), plain content, an end marker (cyan) and a sticky footer
+ * (magenta) like a hand-back bar. A full-page capture of the live page paints the footer at its first-viewport
+ * position, over the content halfway down.
+ */
+export const PINNED_BARS_PAGE = `<!doctype html>
+<html>
+<head>
+<style>
+  body { margin: 0; padding-top: ${PINNED_PAGE.header}px; background: #fff; }
+  header { position: fixed; top: 0; left: 0; right: 0; height: ${PINNED_PAGE.header}px; background: #0000ff; }
+  .content { height: ${PINNED_PAGE.content}px; background: #dddddd; }
+  .end { height: ${PINNED_PAGE.end}px; background: #00ffff; }
+  footer { position: sticky; bottom: 0; height: ${PINNED_PAGE.footer}px; background: #ff00ff; }
+</style>
+</head>
+<body>
+  <header></header>
+  <div class="content"></div>
+  <div class="end"></div>
+  <footer></footer>
+</body>
+</html>`;

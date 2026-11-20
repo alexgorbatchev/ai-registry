@@ -4,7 +4,7 @@ description: If workflow-authoring skill is used, this skill must be used as wel
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-14 08:44
-  last_modified: 2026-11-15 08:52
+  last_modified: 2026-11-20 06:58
   status: current
 ---
 
@@ -50,4 +50,4 @@ Claims carry no worker identity, and every session claims as the same account. F
 
 ## Sizing
 
-- Keep concurrent heavy agents moderate, about 8 to 12. Log any coverage the workflow drops or caps.
+- Run agents under the lane rule in the shared instructions: one agent at a time doing heavy work (builds, test suites, browsers, dev servers), and at most one other agent beside it doing only basic work such as reading or editing text. Log any coverage the workflow drops or caps.

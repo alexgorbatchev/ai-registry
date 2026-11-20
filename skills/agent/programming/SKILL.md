@@ -4,7 +4,7 @@ description: Use when designing, implementing, debugging, refactoring, testing, 
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-11 09:14
+  last_modified: 2026-11-20 06:58
   status: current
 ---
 
@@ -76,8 +76,9 @@ For every UI-related change, including CLI output, TUIs, desktop GUIs, web, and 
 1. Capture the actual interface before editing and again from the final implementation, covering the affected states and acceptance criteria. Use comparable inputs, viewport or terminal dimensions, device configuration, and theme; label intentional differences. For new UI, capture the existing entry point or empty state. Never fabricate a before image when no prior interface exists; explicitly identify that absence and show the actual new UI.
 2. Use real rendered captures from the browser, terminal, desktop, or mobile device/emulator. Load applicable capture skills for tool mechanics. Text dumps, mockups, generated images, and test results do not substitute for screenshots. For behavior that stills cannot demonstrate, add a recording or interaction check alongside the screenshots.
 3. Open and inspect the captured images before presenting them for acceptance or declaring completion. Compare the before/after pair against the requested outcome and applicable layout, content, readability, and interaction criteria. Repair discovered defects, rerun affected checks, and recapture until the evidence represents the accepted final implementation. File creation or automated checks alone do not establish visual acceptance.
-4. Present clearly labeled **Before** and **After** images to the user, inline when supported or through accessible image attachments/links, with the acceptance result and any limitations. Saving files or mentioning their paths without making the images viewable does not fulfill delivery. Retain evidence under **Development artifacts** so cleanup does not break delivered links; use `github-pr` attachment guidance when publishing it on a PR.
-5. If capture or inspection fails, attempt recovery under **Verify and report**; recover a missed baseline from the pre-change revision in an isolated environment without disturbing current work. Report the exact remaining blocker and missing evidence, continue independent work, and do not claim UI acceptance while required evidence is unavailable or unreviewed.
+4. Get a blind review of the final screenshots before acceptance: give a reviewer, such as a subagent or another session, only the screenshots and the applicable design rules, with no ticket, diff or statement of intent, because a reviewer who knows the intended change checks only that change. The reviewer examines the whole frame, including persistent chrome such as headers, sidebars and toolbars. Nobody signs off their own screenshots. Fix findings inside the change and recapture; file findings outside it as tickets under **Work tracking**.
+5. Present clearly labeled **Before** and **After** images to the user, inline when supported or through accessible image attachments/links, with the acceptance result and any limitations. Saving files or mentioning their paths without making the images viewable does not fulfill delivery. Retain evidence under **Development artifacts** so cleanup does not break delivered links; use `github-pr` attachment guidance when publishing it on a PR.
+6. If capture, inspection or blind review fails, attempt recovery under **Verify and report**; recover a missed baseline from the pre-change revision in an isolated environment without disturbing current work. Report the exact remaining blocker and missing evidence, continue independent work, and do not claim UI acceptance while required evidence is unavailable or unreviewed.
 
 ## Development artifacts
 

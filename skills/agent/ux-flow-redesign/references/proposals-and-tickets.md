@@ -86,7 +86,7 @@ Use P0–P3. Write the proposal's **Recommended priority** in this order:
 2. The realistic trigger and its consequence: what ordinary use hits it and what it costs ("Enter starts a 30-item export that overwrites files already in the folder").
 3. Recoverability: an intended, undoable write ranks lower than silent loss.
 4. Frequency relative to sibling flows ("less frequent than single-report export, which is P0").
-5. The delivery order: the smallest independent high-value slice first (often a UI-only slice with no backend dependency, or the in-place write → re-read → result → undo loop), then the rest. Order slices so no intermediate release breaks an owner rule: when a backend fix would change outcomes before the rule that governs them exists, the rule ships first.
+5. The delivery order: the smallest independent high-value slice first (often a UI-only slice with no backend dependency, or the in-place write → re-read → result → undo loop), then the rest. Order slices so no intermediate release breaks an owner rule: when a backend fix would change outcomes before the rule that governs them exists, the rule ships first. Write it as a numbered list, one slice per item in the form `<n>. **<Slice name> (<library or backend work it needs>).** <what ships>. Resolves <findings>.`, then one paragraph starting `Seams:` naming what each slice takes from or waits for in other flows. Implementation files one ticket per item from this list.
 
 The level is the redesign's priority under [Tracker restructure](#tracker-restructure); use the reasoning above to explain it and to order the slices.
 

@@ -1,25 +1,25 @@
 ---
 name: ux-flow-redesign
-description: Use when reviewing an application's user experience across many features or flows, filing UX findings with annotated screenshots, redesigning whole user flows instead of patching individual issues, or producing current and proposed flow diagrams, written flow proposals, low-fidelity HTML wireframes, redesign tickets, or a shared UX pattern reference that keeps flow designs consistent, and when implementing filed redesign tickets in parallel units or reviewing UI screenshots for visual defects such as contrast, alignment, overflow and touch-target size.
+description: Use when reviewing an application's user experience across many features or flows, filing UX findings with annotated screenshots, redesigning whole user flows instead of patching individual issues, or producing current and proposed flow diagrams, written flow proposals, low-fidelity HTML wireframes, redesign tickets, or a shared UX pattern reference that keeps flow designs consistent.
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-15 07:14
-  last_modified: 2026-11-20 14:30
+  last_modified: 2026-11-20 07:04
   status: current
 ---
 
 ## Execute the task
 
-1. Identify the phases and flows the request covers. A full effort runs Phases 1 to 9 in order for every flow in scope; Phase 10 runs only when the owner asks for implementation. A narrower request ("review the UX and file tickets", "draw wireframes for these flows", "write a pattern reference") runs only the requested phases for the named flows, plus the earlier phases those flows lack. Inspect existing artifacts first and reuse valid ones; never redo a delivered unit.
+1. Identify the phases and flows the request covers. A full effort runs Phases 1 to 9 in order for every flow in scope; implementing the filed redesigns follows **Handoff**. A narrower request ("review the UX and file tickets", "draw wireframes for these flows", "write a pattern reference") runs only the requested phases for the named flows, plus the earlier phases those flows lack. Inspect existing artifacts first and reuse valid ones; never redo a delivered unit.
 2. When a missing prerequisite would expand the work substantially (for example a full live review before drawing five wireframes), offer the owner ID'd options: run the prerequisites for the named flows only, work in provisional mode, or run the full effort. Meanwhile do the work that needs no decision. **Provisional mode:** the proposal and wireframe are drawn from existing evidence (code, open tickets, the owner's notes) without a live review or a pattern reference; each carries the status line "Provisional: drawn from existing evidence, without a live review or the pattern reference"; the current flow may be a step table rendered into `<key>-current.html` ([diagrams](references/diagrams.md) "Without Archify") citing evidence instead of findings; nothing is filed; the Phase 4 citation rule does not apply; Phase 8 conforms these flows once a reference exists.
 3. Establish the inputs under **Setup**.
-4. Read [orchestration](references/orchestration.md) before the first unit of any phase, parallel or not; it owns unit keys, checkpoints, per-unit delivery and resume. Read [publishing](references/publishing.md) before the first docs write, commit or publication in any phase; it owns where artifacts live, formatting and commit mechanics, serving, the docs-site tests and the privacy scan. Read [visual QA](references/visual-qa.md) before capturing or reviewing the first screenshot in any phase, including screenshots units return; every frame gets the whole-frame checklist, not only the part a change or finding touched.
+4. Read [orchestration](references/orchestration.md) before the first unit of any phase, parallel or not; it owns unit keys, checkpoints, per-unit delivery and resume. Read [publishing](references/publishing.md) before the first docs write, commit or publication in any phase; it owns where artifacts live, formatting and commit mechanics, serving, the docs-site tests and the privacy scan. Before capturing or reviewing the first app screenshot in any phase, load the `ux-flow-implementation` skill and read its visual QA reference (`references/visual-qa.md`): every frame, including frames units return, gets its whole-frame checklist, not only the part a finding touched, and Phase 2 runs its blind and chrome reviews ([review](references/review.md#blind-review)).
 5. Run the phases. Gates apply per unit (one flow, area, dimension or lens): a failed or blocked unit blocks only the units that depend on it. Record its blocker and unblock condition in its checkpoint, continue the others, and report it; the effort is not complete while any unit is blocked.
 6. Deliver under **Report to the owner**.
 
 Scope boundaries:
 
-- Phases 1 to 9 design and specify. Phase 10 implements only the tickets the owner authorizes, under the project's engineering workflow; this skill adds its unit structure, evidence and wave rules.
+- This skill designs and specifies; it implements no redesign ticket (see **Handoff**).
 - A review-only request produces findings and tickets, not redesigns. A design-only request files no tickets unless asked. "Tickets in scope" elsewhere in this skill means this rule allows them.
 - Product calls that evidence cannot settle go to the owner as decisions (Phase 7), never resolved silently.
 - Commit and push design artifacts only through the project's Git workflow and its authorization. Units do not commit; the orchestrator publishes their files serially, except Phase 8's delivery stage, which commits only its flow's files on the run branch and never pushes it. The orchestrator also commits `<state>` with every publish and at every phase gate, so the records in Git never lag the published docs; a public project keeps it uncommitted (**Setup**). Publish a flow's docs before filing a ticket that links them; when publishing is not authorized, write "not published yet" in place of each repository link and list those tickets in the report.
@@ -78,7 +78,7 @@ Add the diagram tool's delivery receipts (`<docs>/ux-flows/*.delivery.json`) to 
 | Feature | the roster's own IDs | project roster or Phase 1 inventory |
 | Finding | `<area>-NN` | Phase 2; its ticket ID, as issue-tracker reports it, is recorded in the unit checkpoint's `tickets` map once filed |
 | Flow key | kebab-case | Phase 1 |
-| Unit key | `review-<area>` (Phase 2 review, verify, deliver; `review-chrome` is the fresh-eyes chrome review), `verify-<ticket>` (re-verifying a filed ticket), `flow-<key>` (Phases 4 and 6), `audit-<dimension>`, `critique-<lens>`, `reference` (Phase 5), `reconcile-<key>` (Phase 8), `integrate`, `critic`, `impl-<ticket>` (Phase 10) | when a unit starts; a skip list holds unit keys whose last stage is done |
+| Unit key | `review-<area>` (Phase 2 review, blind, verify, deliver; `review-chrome` is the chrome review), `verify-<ticket>` (re-verifying a filed ticket), `flow-<key>` (Phases 4 and 6), `audit-<dimension>`, `critique-<lens>`, `reference` (Phase 5), `reconcile-<key>` (Phase 8), `integrate`, `critic` | when a unit starts; a skip list holds unit keys whose last stage is done |
 | Pattern rule | `<PREFIX>-n`, for example `SEL-1`, `MENU-2`, `REV-1`; an inserted rule takes a letter suffix (`REV-1a`); a withdrawn rule keeps its number | pattern reference section 2 |
 | Audit decision | `<dimension>-NN`, for example `selection-01` | Phase 5 audits, kept in the decision log |
 | Contract change | `CC-n` | pattern reference section 2.14 |
@@ -105,9 +105,9 @@ Proposals, wireframes, tickets and tests cite rule IDs. Never renumber or reuse 
 Read [review](references/review.md) before starting.
 
 - **Inputs:** the flow table, the evidence environment, a digest of open tickets.
-- **Do:** Split the review into units of one area (a slice of roster features) or one end-to-end journey. Each unit exercises every flow in its brief in the running app against disposable data, captures annotated screenshots with `assets/annotate.js`, grounds each problem in code, applies [visual QA](references/visual-qa.md) with `scripts/audit-screen.ts` to every screen it visits, and writes a findings file checked by `scripts/validate-handoff.ts findings`. A `review-chrome` unit reviews the persistent chrome with no flow context. An independent verifier tries to refute each unit's findings and reproduces every P0 and P1. When tickets are in scope, each unit files its findings as soon as they are verified. A completeness pass then looks for uncovered surfaces and runs them as new units.
+- **Do:** Split the review into units of one area (a slice of roster features) or one end-to-end journey. Each unit exercises every flow in its brief in the running app against disposable data, captures annotated screenshots with `assets/annotate.js`, grounds each problem in code, captures and audits every screen it visits across the QA matrix, and writes a findings file checked by `scripts/validate-handoff.ts findings`. A fresh reviewer then reviews the unit's matrix frames blind, and the orchestrator triages its findings into the unit's findings. A `review-chrome` unit reviews the persistent chrome with no flow context. An independent verifier tries to refute each unit's findings and reproduces every P0 and P1. When tickets are in scope, each unit files its findings as soon as they are verified. A completeness pass then looks for uncovered surfaces and runs them as new units.
 - **Output:** validated findings and verdicts; when tickets are in scope, finding tickets carrying annotated screenshots and reproduction steps; a coverage list per unit.
-- **Gate (per unit):** a validated findings file, a verdicts file and, when tickets are in scope, each filed finding's ticket ID in the unit checkpoint. **Phase gate:** the completeness pass found nothing new, or its gap units passed.
+- **Gate (per unit):** a validated findings file, a blind review that passes `review-frames.ts check --triaged`, a verdicts file and, when tickets are in scope, each filed finding's ticket ID in the unit checkpoint. **Phase gate:** the completeness pass found nothing new, or its gap units passed.
 
 ### Phase 3: Decide what to redesign
 
@@ -172,14 +172,9 @@ Read [orchestration](references/orchestration.md) (shape D), [pattern reference]
 - **Output:** a served site where every page is linked and reachable, plus the verification record `<state>/verification.md` (check summary lines, privacy-scan review, inspected screenshots).
 - **Gate:** the linter reports no errors; the crawl reports no broken links, missing fragments or unlinked files; the docs-site tests (or the direct checks that replace them) pass, including a 200 `text/css` response for `wireframe.css`; the privacy scan has no unreviewed hits; no delivery receipt is tracked; the screenshots were inspected; the owner preview serves the current docs, or the report names its blocker. Any run that wrote docs pages, review-only runs included, runs the crawl before reporting.
 
-### Phase 10: Implement redesign tickets
+## Handoff
 
-Read [implementation](references/implementation.md) and [visual QA](references/visual-qa.md) before briefing the first unit.
-
-- **Inputs:** the authorized slice or redesign tickets, the landed proposals, wireframes and pattern reference, the project's engineering, integration and deployment workflows.
-- **Do:** Run each ticket as an `impl-<ticket>` unit from the implementation brief: an isolated worktree, its own preview host and browser sessions, shared-library changes first, before and after evidence checked whole-frame in both themes at the QA widths, the project's verification, landing, and a ticket comment. Start units only within measured load and disk limits. The orchestrator reviews every returned frame, deploys landed tickets in waves when the project's policy allows, verifies production, closes verified tickets, and runs the fresh-eyes chrome review after each wave.
-- **Output:** landed revisions, ticket comments with before and after images, deployed waves, closed tickets, and tickets filed for defects found outside each change.
-- **Gate (per ticket):** landed with its before and after pairs reviewed; then verified in production and closed, or, when deployment is not authorized, reported as landed and awaiting deployment; or its blocker and unblock condition recorded on the ticket. **Phase gate:** the last wave's chrome review filed what it found.
+When the owner authorizes implementing the redesigns, load the `ux-flow-implementation` skill; it files the slice tickets and delivers them. It reads from this run: `<state>`, the landed proposals with their numbered delivery slices ([priority](references/proposals-and-tickets.md#priority)), the wireframes, the pattern reference and the redesign tickets.
 
 ## Scripts
 
@@ -192,7 +187,6 @@ Run them with Bun from the project root as `bun <skill>/scripts/<name>.ts`, wher
 | `lint-wireframes.ts [--stylesheet wireframe.css] [--site-root <docs>] [--json] <docs>/ux-flows/wireframes` | Check pages against the design language (rules in [design language](references/design-language.md)); exits 1 on errors |
 | `crawl-site.ts <url> [--root-dir <docs>] [--ignore <regex>] [--insecure] [--external] [--json]` | Report broken links, missing fragments and files no page links; run as `bun --use-system-ca …` when the local site uses a locally trusted certificate |
 | `ticket-criteria.ts print <proposal.md>`; `ticket-criteria.ts check <proposal.md> <ticket-body.md\|->`; `ticket-criteria.ts fixes <wireframe.html> <ticket-body.md\|->` | Print a proposal's acceptance criteria to paste into its redesign ticket; check a ticket body (a file, or `-` for standard input) carries them verbatim and in order, ignoring line wrapping and ticked boxes ([acceptance criteria](references/proposals-and-tickets.md#acceptance-criteria)); check a wireframe's Fixes lines cite exactly the findings under the ticket's `Resolves:` ([steps and callouts](references/design-language.md#steps-and-callouts)). Exits 1 on any difference |
-| `audit-screen.ts (--url <url>\|--session <name>) --viewport <w>x<h> [--color-scheme light\|dark] [--ignore <selector>]... [--tolerance <px>]` | Measure one rendered screen through `agent-browser` and print JSON: text and control-boundary contrast, horizontal overflow, touch targets under 24 px, misaligned or mismatched sibling controls; exits 1 when it finds any. Interpretation in [visual QA](references/visual-qa.md#measuring) |
 | `validate-handoff.ts <findings\|verdicts\|audit\|critique> <file> [--feature-pattern <regex>]` | Validate a unit's handoff file. Fix and rerun at most three times; if it still fails because of the environment (for example screenshots cannot be captured), return the validator output as an environment issue and mark the unit failed for re-queue |
 
 ## Adapting
@@ -205,7 +199,7 @@ Run them with Bun from the project root as `bun <skill>/scripts/<name>.ts`, wher
 
 ## Report to the owner
 
-- What was delivered: tickets created (from unit checkpoints), tickets landed, deployed and closed in Phase 10 with their revisions, flows whose redesign ticket is not filed and why, commits made and files left uncommitted, pages and their owner preview URLs (when pages were produced), the file layout, how to open pages offline, and how to restart the docs server.
+- What was delivered: tickets created (from unit checkpoints), flows whose redesign ticket is not filed and why, commits made and files left uncommitted, pages and their owner preview URLs (when pages were produced), the file layout, how to open pages offline, and how to restart the docs server.
 - Coverage: units reviewed, areas with no findings, coverage you capped or dropped and why, environment issues.
 - What is not done: failed or blocked units with their unblock condition and next action, owner decisions still awaited, and work held behind them.
 - Open questions and decisions as ID-addressable items, each in the order Evidence, Question, Answers, with the recommendation carried only by the recommended answer and its reason, and written for an owner who has not read the run's records: say what a rule, finding, flow section or ticket states, and leave its ID off the owner's page. When an item comes back later, re-read the state first, then restate its background, what changed since it was asked and its options as nested IDs, so the owner can answer it cold.

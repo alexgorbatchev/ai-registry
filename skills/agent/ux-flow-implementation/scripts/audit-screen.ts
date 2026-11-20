@@ -1,17 +1,23 @@
 #!/usr/bin/env bun
-// Audits one rendered screen in a real browser through agent-browser. Usage:
-//   bun audit-screen.ts (--url <url> | --session <name>) --viewport <width>x<height>
-//     [--color-scheme light|dark] [--ignore <selector>]... [--tolerance <px>]
-// --url opens the page in a disposable session and closes it; --session audits that session's current page and
-// leaves it open (it keeps the viewport and color scheme set here). Prints a JSON report: text contrast
-// (4.5:1, 3:1 large), control boundary contrast (3:1), horizontal overflow, touch targets under 24 px, and
-// sibling controls whose heights, centres, left edges or widths differ. Exits 1 when any of those is found,
-// 2 on bad usage, 3 when the browser step fails.
+// Audits one rendered screen in a real browser through agent-browser, across the QA matrix. Usage:
+//   bun audit-screen.ts (--url <url> | --session <name>) [--viewport <width>x<height>]...
+//     [--color-scheme light|dark|both] [--ignore <selector>]... [--tolerance <px>]
+//     [--shots <dir> --state <slug> [--phase before|after]]
+// Without --viewport it audits 320x640, 390x844 and 1440x900; --color-scheme defaults to both. --url opens the page
+// in a disposable session and closes it; --session audits that session's current page and leaves it open, at the
+// last viewport and color scheme audited. --shots also saves a full-page screenshot of every cell as
+// <dir>/<state>-<phase>-<width>-<theme>.png, with the --ignore elements hidden. Each cell is measured once no finite
+// animation or transition is running, so theme switches are not read mid-transition. Prints JSON with one report per cell:
+// text contrast (4.5:1, 3:1 large), control boundary contrast (3:1), text-only buttons with no boundary, horizontal
+// overflow, touch targets under 24 px, and sibling controls whose heights, centres, left edges or widths differ.
+// Exits 1 when any cell has any of those, 2 on bad usage, 3 when the browser step fails.
+import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { auditScreen } from "./lib/auditScreen";
+import { auditScreen, failed } from "./lib/auditScreen";
+import { isStateSlug, QA_THEMES, type Theme } from "./lib/matrix";
 
 const USAGE =
-  "usage: bun audit-screen.ts (--url <url> | --session <name>) --viewport <width>x<height> [--color-scheme light|dark] [--ignore <selector>]... [--tolerance <px>]";
+  "usage: bun audit-screen.ts (--url <url> | --session <name>) [--viewport <width>x<height>]... [--color-scheme light|dark|both] [--ignore <selector>]... [--tolerance <px>] [--shots <dir> --state <slug> [--phase before|after]]";
 
 function parse() {
   try {
@@ -20,10 +26,13 @@ function parse() {
       options: {
         url: { type: "string" },
         session: { type: "string" },
-        viewport: { type: "string" },
-        "color-scheme": { type: "string" },
+        viewport: { type: "string", multiple: true, default: [] },
+        "color-scheme": { type: "string", default: "both" },
         ignore: { type: "string", multiple: true, default: [] },
         tolerance: { type: "string", default: "1" },
+        shots: { type: "string" },
+        state: { type: "string" },
+        phase: { type: "string", default: "after" },
         help: { type: "boolean", short: "h", default: false },
       },
     }).values;
@@ -35,33 +44,43 @@ function parse() {
 
 const values = parse();
 
-const viewport = /^(\d+)x(\d+)$/.exec(values.viewport ?? "");
+const viewports = values.viewport.map((value) => /^(\d+)x(\d+)$/.exec(value));
 const scheme = values["color-scheme"];
-const colorScheme = scheme === "light" || scheme === "dark" ? scheme : undefined;
+const colorSchemes: Theme[] | undefined =
+  scheme === "both" ? [...QA_THEMES] : scheme === "light" || scheme === "dark" ? [scheme] : undefined;
 const tolerance = Number(values.tolerance);
+const phase = values.phase === "before" || values.phase === "after" ? values.phase : undefined;
+const shotsValid =
+  values.shots === undefined ? values.state === undefined : values.state !== undefined && isStateSlug(values.state);
 if (
   values.help ||
-  !viewport ||
+  viewports.some((match) => match === null) ||
   Boolean(values.url) === Boolean(values.session) ||
-  (scheme !== undefined && colorScheme === undefined) ||
+  colorSchemes === undefined ||
   !Number.isFinite(tolerance) ||
-  tolerance < 0
+  tolerance < 0 ||
+  phase === undefined ||
+  !shotsValid
 ) {
   console.log(USAGE);
   process.exit(values.help ? 0 : 2);
 }
 
 try {
-  const report = await auditScreen({
+  const reports = await auditScreen({
     url: values.url,
     session: values.session,
-    viewport: { width: Number(viewport[1]), height: Number(viewport[2]) },
-    colorScheme,
+    viewports: viewports.length
+      ? viewports.map((match) => ({ width: Number(match?.[1]), height: Number(match?.[2]) }))
+      : undefined,
+    colorSchemes,
     ignore: values.ignore,
     tolerance,
+    shots: values.shots && values.state ? { dir: resolve(values.shots), state: values.state, phase } : undefined,
   });
-  console.log(JSON.stringify(report, null, 2));
-  process.exit(Object.values(report.summary).some((count) => count > 0) ? 1 : 0);
+  const failing = reports.filter(failed).length;
+  console.log(JSON.stringify({ failing, screens: reports }, null, 2));
+  process.exit(failing > 0 ? 1 : 0);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(3);

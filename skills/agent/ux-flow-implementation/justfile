@@ -1,0 +1,33 @@
+# Development recipes for this skill's bundled scripts. Generated skill copies omit this file and the tests
+# (see .registry-ignore). Formatting and lint reuse the registry-cli package's installed tools and settings;
+# root `just typecheck` covers the scripts' types.
+tools := "../../../packages/registry-cli/node_modules/.bin"
+settings := "../../../packages/registry-cli"
+sources := "scripts"
+
+# Tests spawn the bundled CLIs and local HTTP servers; the timeout only catches hung tests.
+test_timeout := "60000"
+
+# Apply formatting
+fmt:
+    {{ tools }}/oxfmt -c {{ settings }}/.oxfmtrc.json {{ sources }}
+
+# Fail on unformatted files without rewriting them
+fmt-check:
+    {{ tools }}/oxfmt -c {{ settings }}/.oxfmtrc.json --check {{ sources }}
+
+# Lint
+lint:
+    {{ tools }}/oxlint -c {{ settings }}/.oxlintrc.json --deny-warnings {{ sources }}
+
+# Apply lint fixes and formatting
+fix:
+    {{ tools }}/oxlint -c {{ settings }}/.oxlintrc.json --fix {{ sources }}
+    {{ tools }}/oxfmt -c {{ settings }}/.oxfmtrc.json {{ sources }}
+
+# Run the bundled scripts' tests
+test:
+    bash ../../../packages/registry-cli/src/bin/run-tests.sh bun test --timeout={{ test_timeout }} scripts/__tests__
+
+# Validate without modifying source files
+check: fmt-check lint test

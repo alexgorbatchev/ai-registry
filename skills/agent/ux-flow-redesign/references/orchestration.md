@@ -24,7 +24,7 @@ Make each unit one of:
 
 | Phase | Unit key | Unit | Handoff |
 | --- | --- | --- | --- |
-| 2 | `review-<area>` | one review area (a slice of roster features) or one end-to-end journey, with `review`, `verify` and `deliver` stages | `findings/<area>.json`, then `findings/<area>.verdicts.json` from its verifier |
+| 2 | `review-<area>` | one review area (a slice of roster features) or one end-to-end journey, with `review`, `blind`, `verify` and `deliver` stages | `findings/<area>.json`, `findings/<area>.blind.json` from its blind reviewer, then `findings/<area>.verdicts.json` from its verifier |
 | 4 and 6 | `flow-<key>` | one flow, as a sequence of stages | the flow's checkpoint plus its artifacts |
 | 5 | `audit-<dimension>`; `critique-<lens>`; `reference` | one audit dimension; one critique lens; the author's synthesis and revision | `patterns/audit-<dimension>.json`; `patterns/critique-<lens>.json`; `patterns.md` |
 | 8 | `reconcile-<key>`; `integrate`; `critic` | one flow brought into line with the reference; the integration step; the completeness critic | conformed artifacts and the flow's conformance items done; the landed revision; a verdict per flow |
@@ -86,7 +86,7 @@ Handoff fields are owned by each kind's reference and enforced by the validator'
 
 Give every unit one durable checkpoint, `<state>/units/<unit-key>.json`, with a `status` of `pending`, `in-progress`, `done`, `blocked` or `failed`, and its drafts in `<state>/units/<unit-key>/`. A blocked or failed unit also records `blocker` and `unblock` (see **Failures**). A `committed` field holds the commit that published a stage's repository edits (the orchestrator's, except in shape D's deliver stage), or why they stay uncommitted when the project's Git workflow does not authorize the commit; a stage that edited repository files is done only once it is set.
 
-- A review unit (`review-<area>`) records the status of its `review`, `verify` and `deliver` stages; their work lives in the findings file, the verdicts file and the checkpoint's `tickets` map (finding ID to ticket ID; a merged finding maps to its survivor's ticket), each rewritten after every finding, verdict or filed ticket.
+- A review unit (`review-<area>`) records the status of its `review`, `blind`, `verify` and `deliver` stages; their work lives in the findings file, the blind review file, the verdicts file and the checkpoint's `tickets` map (finding ID to ticket ID; a merged finding maps to its survivor's ticket), each rewritten after every finding, verdict or filed ticket.
 - An audit or critique unit keeps its work in its handoff file, rewritten after each decision or issue; its checkpoint holds the status.
 - A flow (`flow-<key>`) records its stages:
 
@@ -139,6 +139,7 @@ Use for Phase 2. Each unit's verifier starts as soon as its review returns, with
 units = review-<area> for each roster slice and end-to-end journey - skip
 pool(units, n, unit =>
   review(unit)  -> <state>/findings/<area>.json            # checkpointed; validate findings
+  blind(unit)   -> <state>/findings/<area>.blind.json      # fresh reviewer, matrix frames only; triaged into the findings file
   if no findings: return {unit, count: 0, coverage}
   verify(unit)  -> <state>/findings/<area>.verdicts.json   # reproduces every P0 and P1; validate verdicts
   deliver(unit) -> tickets through issue-tracker; IDs in units/review-<area>.json)
@@ -252,7 +253,7 @@ pool(verify-<ticket> for delivered P0 tickets - skip, n, ticket =>
 
 ## Sizing
 
-- Run heavy units (an app instance with a browser, a diagram render, an implementation worktree) one at a time, under the lane rule in the shared instructions; at most one other unit runs beside it, and only basic work such as reading files, reviewing finished screenshots or editing text. Before each heavy start, require the 1-minute load average below the CPU core count, memory not under pressure, and free disk above the floor in [implementation](implementation.md#units-and-concurrency). When a check fails, start nothing until the running unit finishes and the checks pass.
+- Run heavy units (an app instance with a browser, a diagram render) one at a time, under the lane rule in the shared instructions; at most one other unit runs beside it, and only basic work such as reading files, reviewing finished screenshots or editing text. Before each heavy start, require the 1-minute load average below the CPU core count, memory not under pressure, and at least 8 GiB of free disk, raised to the heavy unit's measured footprint. When a check fails, start nothing until the running unit finishes and the checks pass.
 - Log every coverage cut (a capped unit list, a dropped dimension, a skipped journey) in the run's output and in the owner report.
 - Use one author for synthesis and revision so the result reads as one system. Parallelize only independent reads: reviews, audits, critiques, skeptics and verifiers.
 

@@ -163,6 +163,17 @@
     return "other";
   };
   const SIDES = ["Top", "Right", "Bottom", "Left"];
+  // An icon drawn by an element (svg, img) or by a pseudo-element's background or mask image.
+  const pseudoIcon = (element, which) => {
+    const style = getComputedStyle(element, which);
+    if (style.content === "none" || style.content === "normal") return false;
+    return [style.backgroundImage, style.maskImage, style.webkitMaskImage].some((image) => image && image !== "none");
+  };
+  const hasIcon = (element) =>
+    Boolean(element.querySelector('svg, img, picture, canvas, [role="img"]')) ||
+    [element, ...element.querySelectorAll("*")].some(
+      (node) => pseudoIcon(node, "::before") || pseudoIcon(node, "::after"),
+    );
 
   const found = elements.filter((element) => element.matches(CONTROL) && visible(element));
   // A focusable container (a listbox, a scrolling region) is not a control when it holds controls.
@@ -218,6 +229,8 @@
       disabled: disabled(element),
       inlineText: style.display === "inline" && parentText > (element.textContent?.trim().length ?? 0),
       nativeAppearance: element.tagName === "INPUT" && kind === "toggle" && style.appearance !== "none",
+      hasText: String(element.innerText || element.value || "").trim() !== "",
+      hasIcon: hasIcon(element),
       outside: outsideStack.unresolved ? null : outside,
       fill,
       borders,

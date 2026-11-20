@@ -1,17 +1,22 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
   analyzeScreen,
   auditScreen,
   collectorScript,
   contrast,
+  failed,
   hex,
+  hideScript,
   isLargeText,
+  SETTLED_EXPRESSION,
   type BrowserRunner,
   type ScreenSnapshot,
 } from "../lib/auditScreen";
+import { QA_THEMES, QA_VIEWPORTS } from "../lib/matrix";
 import { AUDIT_FIXTURE_PAGE } from "./auditScreenPage";
-import { SCRIPTS } from "./fixtures";
+import { factory_testDirectory, SCRIPTS } from "./fixtures";
 
 type Control = ScreenSnapshot["controls"][number];
 
@@ -28,6 +33,8 @@ function control(selector: string, overrides: Partial<Control> = {}): Control {
     disabled: false,
     inlineText: false,
     nativeAppearance: false,
+    hasText: true,
+    hasIcon: false,
     outside: WHITE,
     fill: null,
     borders: [[118, 118, 118]],
@@ -103,6 +110,8 @@ describe("analyzeScreen", () => {
           control("#faint-border-solid-fill", { borders: [faint], fill: [40, 40, 40] }),
           control("#faint-fill", { borders: [], fill: faint }),
           control("#same-fill", { borders: [], fill: WHITE }),
+          control("#close-icon", { borders: [], hasText: false, hasIcon: true }),
+          control("#icon-and-text", { borders: [], hasIcon: true }),
           control("#ghost-link", { kind: "link", borders: [] }),
           control("#disabled", { borders: [faint], disabled: true }),
           control("#native-checkbox", { kind: "toggle", borders: [faint], nativeAppearance: true }),
@@ -116,7 +125,10 @@ describe("analyzeScreen", () => {
       ["#faint-fill", "fill"],
     ]);
     expect(report.controlBoundary[0]).toMatchObject({ kind: "field", ratio: 1.25, outside: "#ffffff" });
-    expect(report.unboundedActions).toEqual([{ selector: "#same-fill", label: "#same-fill" }]);
+    expect(report.borderlessText).toEqual([{ selector: "#same-fill", label: "#same-fill" }]);
+    expect(report.borderlessIcon.map((item) => item.selector)).toEqual(["#close-icon", "#icon-and-text"]);
+    expect(report.summary.borderlessText).toBe(1);
+    expect(failed(report)).toBe(true);
   });
 
   test("reports undersized targets unless spacing or running text exempts them", () => {
@@ -170,7 +182,15 @@ describe("analyzeScreen", () => {
 
   test("counts page overflow even when no single element is found", () => {
     const clean = analyzeScreen(snapshot());
-    expect(clean.summary).toEqual({ textContrast: 0, controlBoundary: 0, overflow: 0, touchTargets: 0, alignment: 0 });
+    expect(clean.summary).toEqual({
+      textContrast: 0,
+      controlBoundary: 0,
+      borderlessText: 0,
+      overflow: 0,
+      touchTargets: 0,
+      alignment: 0,
+    });
+    expect(failed(clean)).toBe(false);
     expect(analyzeScreen(snapshot({ page: { scrollWidth: 420, clientWidth: 390 } })).summary.overflow).toBe(1);
     const element = { selector: "#wide", text: "", rect: { x: 0, y: 0, width: 900, height: 10 } };
     const report = analyzeScreen(
@@ -198,23 +218,27 @@ describe("auditScreen browser steps", () => {
     };
   }
 
-  test("opens a URL in its own session, evaluates the collector and closes only that session", async () => {
+  test("opens a URL once in its own session, audits each cell and closes only that session", async () => {
     const browser = recorder();
-    const report = await auditScreen({
+    const reports = await auditScreen({
       url: "http://127.0.0.1:1/",
-      viewport: { width: 320, height: 640 },
-      colorScheme: "dark",
+      viewports: [{ width: 320, height: 640 }],
       ignore: [".dev-toolbar"],
       run: browser.run,
     });
-    expect(report.summary.textContrast).toBe(0);
+    expect(reports).toHaveLength(2);
     const session = browser.calls[0][1];
     expect(session).toMatch(/^audit-screen-\d+-\d+$/);
     expect(browser.calls.map((args) => args.slice(2))).toEqual([
       ["set", "viewport", "320", "640"],
-      ["set", "media", "dark"],
+      ["set", "media", "light"],
       ["open", "http://127.0.0.1:1/"],
       ["wait", "--load", "networkidle"],
+      ["wait", "--fn", SETTLED_EXPRESSION],
+      ["--json", "eval", "--stdin"],
+      ["set", "viewport", "320", "640"],
+      ["set", "media", "dark"],
+      ["wait", "--fn", SETTLED_EXPRESSION],
       ["--json", "eval", "--stdin"],
       ["close"],
     ]);
@@ -224,30 +248,91 @@ describe("auditScreen browser steps", () => {
     expect(browser.scripts[0]).not.toContain("{ ignore: [] }");
   });
 
+  test("defaults to the whole QA matrix", async () => {
+    const browser = recorder();
+    const reports = await auditScreen({ session: "s", run: browser.run });
+    expect(reports).toHaveLength(QA_VIEWPORTS.length * QA_THEMES.length);
+    const cells = browser.calls.filter((args) => args[2] === "set").map((args) => args.slice(4).join(" "));
+    expect(cells).toEqual([
+      "320 640",
+      "light",
+      "320 640",
+      "dark",
+      "390 844",
+      "light",
+      "390 844",
+      "dark",
+      "1440 900",
+      "light",
+      "1440 900",
+      "dark",
+    ]);
+    expect(browser.calls.filter((args) => args[2] === "wait")).toHaveLength(6);
+  });
+
+  test("saves one named screenshot per cell, with overlays hidden", async () => {
+    const dir = join(factory_testDirectory("audit-shots"), "unit");
+    const browser = recorder();
+    await auditScreen({
+      session: "impl-1-after",
+      viewports: [{ width: 390, height: 844 }],
+      colorSchemes: ["dark"],
+      ignore: ["#dev-toolbar", ".badge"],
+      shots: { dir, state: "comments-panel", phase: "after" },
+      run: browser.run,
+    });
+    expect(existsSync(dir)).toBe(true);
+    expect(browser.calls.slice(-2)).toEqual([
+      ["--session", "impl-1-after", "eval", "--stdin"],
+      ["--session", "impl-1-after", "screenshot", "--full", join(dir, "comments-panel-after-390-dark.png")],
+    ]);
+    expect(browser.scripts.at(-1)).toBe(hideScript(["#dev-toolbar", ".badge"]));
+    expect(hideScript(["#a"])).toContain('document.querySelectorAll("#a")');
+    const plain = recorder();
+    await auditScreen({
+      session: "s",
+      viewports: [{ width: 390, height: 844 }],
+      colorSchemes: ["light"],
+      shots: { dir, state: "home", phase: "before" },
+      run: plain.run,
+    });
+    expect(plain.calls.filter((args) => args.includes("eval"))).toHaveLength(1);
+    expect(plain.calls.at(-1)?.at(-1)).toBe(join(dir, "home-before-390-light.png"));
+  });
+
   test("refuses a collector whose options call was edited away", () => {
     expect(() => collectorScript([], "(() => 1)();")).toThrow("does not end with");
   });
 
   test("audits an existing session in place and leaves it open", async () => {
     const browser = recorder();
-    await auditScreen({ session: "review-1", viewport: { width: 1440, height: 900 }, run: browser.run });
+    await auditScreen({
+      session: "review-1",
+      viewports: [{ width: 1440, height: 900 }],
+      colorSchemes: ["light"],
+      run: browser.run,
+    });
     expect(browser.calls).toEqual([
       ["--session", "review-1", "set", "viewport", "1440", "900"],
+      ["--session", "review-1", "set", "media", "light"],
+      ["--session", "review-1", "wait", "--fn", SETTLED_EXPRESSION],
       ["--session", "review-1", "--json", "eval", "--stdin"],
     ]);
   });
 
   test("rejects ambiguous input and failed evaluations, still closing its own session", async () => {
-    const viewport = { width: 390, height: 800 };
-    await expect(auditScreen({ viewport })).rejects.toThrow("exactly one");
-    await expect(auditScreen({ url: "http://x/", session: "s", viewport })).rejects.toThrow("exactly one");
+    const viewports = [{ width: 390, height: 800 }];
+    await expect(auditScreen({ viewports })).rejects.toThrow("exactly one");
+    await expect(auditScreen({ url: "http://x/", session: "s", viewports })).rejects.toThrow("exactly one");
     const failing = recorder(JSON.stringify({ success: false, error: "boom" }));
-    await expect(auditScreen({ url: "http://x/", viewport, run: failing.run })).rejects.toThrow(
+    await expect(auditScreen({ url: "http://x/", viewports, run: failing.run })).rejects.toThrow(
       "page evaluation failed",
     );
     expect(failing.calls.at(-1)?.slice(2)).toEqual(["close"]);
     const malformed = recorder(JSON.stringify({ success: true, data: { result: { texts: [] } } }));
-    await expect(auditScreen({ session: "s", viewport, run: malformed.run })).rejects.toThrow("page evaluation failed");
+    await expect(auditScreen({ session: "s", viewports, run: malformed.run })).rejects.toThrow(
+      "page evaluation failed",
+    );
   });
 });
 
@@ -262,11 +347,16 @@ async function cli(...args: string[]): Promise<{ code: number; stdout: string; s
 }
 
 test("the CLI rejects bad usage", async () => {
-  expect((await cli("--url", "http://x/")).code).toBe(2);
+  expect((await cli("--viewport", "390x800")).code).toBe(2);
+  expect((await cli("--url", "http://x/", "--viewport", "390")).code).toBe(2);
   expect((await cli("--url", "http://x/", "--session", "s", "--viewport", "390x800")).code).toBe(2);
   expect((await cli("--session", "s", "--viewport", "390x800", "--color-scheme", "sepia")).code).toBe(2);
   expect((await cli("--session", "s", "--viewport", "390x800", "--tolerance=-1")).code).toBe(2);
   expect((await cli("--session", "s", "--viewport", "390x800", "--unknown")).code).toBe(2);
+  expect((await cli("--session", "s", "--shots", "/tmp/x")).code).toBe(2);
+  expect((await cli("--session", "s", "--shots", "/tmp/x", "--state", "Bad State")).code).toBe(2);
+  expect((await cli("--session", "s", "--state", "home")).code).toBe(2);
+  expect((await cli("--session", "s", "--shots", "/tmp/x", "--state", "home", "--phase", "during")).code).toBe(2);
   const help = await cli("--help");
   expect(help.code).toBe(0);
   expect(help.stdout).toContain("usage:");
@@ -288,20 +378,28 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
     server.stop(true);
   });
 
-  test("the CLI finds each planted defect in both themes and exits 1", async () => {
-    for (const scheme of ["light", "dark"]) {
-      const run = await cli(
-        "--url",
-        server.url.href,
-        "--viewport",
-        "390x800",
-        "--color-scheme",
-        scheme,
-        "--ignore",
-        ".dev-overlay",
-      );
-      expect(run.code).toBe(1);
-      const report = JSON.parse(run.stdout);
+  // The page's colors transition for 1.5 s and the dark cell is measured right after switching from light, so a
+  // measurement taken before the transitions end reports the wrong defects in dark.
+  test("the CLI waits out theme transitions, finds each planted defect in both themes, saves the frames and exits 1", async () => {
+    const shots = factory_testDirectory("audit-real");
+    const run = await cli(
+      "--url",
+      server.url.href,
+      "--viewport",
+      "390x800",
+      "--ignore",
+      ".dev-overlay",
+      "--shots",
+      shots,
+      "--state",
+      "fixture",
+    );
+    expect(run.code).toBe(1);
+    const output = JSON.parse(run.stdout);
+    expect(output.failing).toBe(2);
+    expect(readdirSync(shots).sort()).toEqual(["fixture-after-390-dark.png", "fixture-after-390-light.png"]);
+    for (const [index, scheme] of ["light", "dark"].entries()) {
+      const report = output.screens[index];
       expect(report.colorScheme).toBe(scheme);
       expect(report.textContrast.map((issue: { selector: string }) => issue.selector)).toEqual(
         scheme === "light" ? ["#faint"] : [],
@@ -315,7 +413,8 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
         "row-height",
         "stack-width",
       ]);
-      expect(report.unboundedActions.map((issue: { selector: string }) => issue.selector)).toEqual(["#ghost"]);
+      expect(report.borderlessText.map((issue: { selector: string }) => issue.selector)).toEqual(["#ghost"]);
+      expect(report.borderlessIcon.map((issue: { selector: string }) => issue.selector)).toEqual(["#close", "#masked"]);
     }
   }, 120000);
 
@@ -323,7 +422,7 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
     const closed = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("") });
     const url = closed.url.href;
     closed.stop(true);
-    const run = await cli("--url", url, "--viewport", "390x800");
+    const run = await cli("--url", url, "--viewport", "390x800", "--color-scheme", "light");
     expect(run.code).toBe(3);
     expect(run.stderr).toContain("agent-browser");
   }, 60000);

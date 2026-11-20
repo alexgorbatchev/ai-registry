@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { frameName, QA_THEMES, QA_VIEWPORTS, type Phase, type Theme } from "./matrix";
 
 export type Rgb = [number, number, number];
 
@@ -39,6 +40,10 @@ export interface ScreenSnapshot {
     inlineText: boolean;
     /** A native checkbox, radio or range whose drawn boundary styles do not describe. */
     nativeAppearance: boolean;
+    /** The control shows text (its rendered text or a button value). */
+    hasText: boolean;
+    /** The control draws an icon: svg, img, or a pseudo-element image. */
+    hasIcon: boolean;
     /** The color around the control; null when unresolved. */
     outside: Rgb | null;
     fill: Rgb | null;
@@ -65,14 +70,23 @@ export interface AuditReport {
   viewport: { width: number; height: number };
   colorScheme: "light" | "dark";
   /** Counts of the failing categories; the CLI exits 1 when any is non-zero. */
-  summary: { textContrast: number; controlBoundary: number; overflow: number; touchTargets: number; alignment: number };
+  summary: {
+    textContrast: number;
+    controlBoundary: number;
+    borderlessText: number;
+    overflow: number;
+    touchTargets: number;
+    alignment: number;
+  };
   textContrast: (ControlRef & { ratio: number; required: number; foreground: string; background: string })[];
   controlBoundary: (ControlRef & { kind: ControlKind; ratio: number; boundary: "border" | "fill"; outside: string })[];
   overflow: { scrollWidth: number; clientWidth: number; elements: ScreenSnapshot["overflowing"] };
   touchTargets: (ControlRef & { width: number; height: number })[];
   alignment: AlignmentIssue[];
-  /** Buttons with no border or fill distinct from their surroundings: check they still read as controls. Not a failure. */
-  unboundedActions: ControlRef[];
+  /** Buttons with text, no icon, and no border or fill distinct from their surroundings: they read as plain text. */
+  borderlessText: ControlRef[];
+  /** Borderless buttons that draw an icon: check the icon is a conventional one. Not a failure. */
+  borderlessIcon: ControlRef[];
   /** Text whose background could not be resolved (image, gradient, filter); check it by eye. Not a failure. */
   unresolved: ControlRef[];
 }
@@ -130,9 +144,12 @@ function textContrastIssues(snapshot: ScreenSnapshot): Pick<AuditReport, "textCo
   return { textContrast, unresolved };
 }
 
-function boundaryIssues(snapshot: ScreenSnapshot): Pick<AuditReport, "controlBoundary" | "unboundedActions"> {
+function boundaryIssues(
+  snapshot: ScreenSnapshot,
+): Pick<AuditReport, "controlBoundary" | "borderlessText" | "borderlessIcon"> {
   const controlBoundary: AuditReport["controlBoundary"] = [];
-  const unboundedActions: ControlRef[] = [];
+  const borderlessText: ControlRef[] = [];
+  const borderlessIcon: ControlRef[] = [];
   for (const control of snapshot.controls) {
     if (!["action", "field", "toggle"].includes(control.kind) || control.disabled || control.nativeAppearance) continue;
     if (!control.outside) continue;
@@ -143,7 +160,7 @@ function boundaryIssues(snapshot: ScreenSnapshot): Pick<AuditReport, "controlBou
       ...(control.fill ? [{ boundary: "fill" as const, ratio: contrast(control.fill, outside) }] : []),
     ].filter((candidate) => candidate.ratio > 1.02);
     if (candidates.length === 0) {
-      if (control.kind === "action") unboundedActions.push(ref(control));
+      if (control.kind === "action") (control.hasIcon ? borderlessIcon : borderlessText).push(ref(control));
       continue;
     }
     const best = candidates.reduce((a, b) => (b.ratio > a.ratio ? b : a));
@@ -157,7 +174,7 @@ function boundaryIssues(snapshot: ScreenSnapshot): Pick<AuditReport, "controlBou
       });
     }
   }
-  return { controlBoundary, unboundedActions };
+  return { controlBoundary, borderlessText, borderlessIcon };
 }
 
 const center = (rect: Box): [number, number] => [rect.x + rect.width / 2, rect.y + rect.height / 2];
@@ -267,7 +284,7 @@ function alignmentIssues(snapshot: ScreenSnapshot, tolerance: number): Alignment
 
 export function analyzeScreen(snapshot: ScreenSnapshot, tolerance = 1): AuditReport {
   const { textContrast, unresolved } = textContrastIssues(snapshot);
-  const { controlBoundary, unboundedActions } = boundaryIssues(snapshot);
+  const { controlBoundary, borderlessText, borderlessIcon } = boundaryIssues(snapshot);
   const touchTargets = touchTargetIssues(snapshot);
   const alignment = alignmentIssues(snapshot, tolerance);
   const pageOverflows = snapshot.page.scrollWidth > snapshot.page.clientWidth + 1;
@@ -283,6 +300,7 @@ export function analyzeScreen(snapshot: ScreenSnapshot, tolerance = 1): AuditRep
     summary: {
       textContrast: textContrast.length,
       controlBoundary: controlBoundary.length,
+      borderlessText: borderlessText.length,
       overflow: pageOverflows || snapshot.overflowing.length > 0 ? Math.max(1, snapshot.overflowing.length) : 0,
       touchTargets: touchTargets.length,
       alignment: alignment.length,
@@ -292,7 +310,8 @@ export function analyzeScreen(snapshot: ScreenSnapshot, tolerance = 1): AuditRep
     overflow,
     touchTargets,
     alignment,
-    unboundedActions,
+    borderlessText,
+    borderlessIcon,
     unresolved,
   };
 }
@@ -320,14 +339,26 @@ export interface AuditOptions {
   url?: string;
   /** Audit the current page of an existing agent-browser session, left open. */
   session?: string;
-  viewport: { width: number; height: number };
-  colorScheme?: "light" | "dark";
-  /** Elements inside these selectors (development overlays) are left out. */
+  /** Viewports to audit; defaults to the QA matrix's. */
+  viewports?: { width: number; height: number }[];
+  /** Color schemes to audit at each viewport; defaults to both. */
+  colorSchemes?: Theme[];
+  /** Elements inside these selectors (development overlays) are left out, and hidden in screenshots. */
   ignore?: string[];
   /** Pixels two aligned edges or sizes may differ by. */
   tolerance?: number;
+  /** Save a full-page screenshot of every audited cell as `<dir>/<state>-<phase>-<width>-<theme>.png`. */
+  shots?: { dir: string; state: string; phase: Phase };
   run?: BrowserRunner;
 }
+
+/**
+ * True once no finite animation or transition is running or pending. Reading the animations flushes style, so the
+ * transitions a color scheme or viewport change starts are already listed; endless animations (spinners) are ignored.
+ * Measuring before this holds reads colors mid-transition, such as a dark border still close to the light background.
+ */
+export const SETTLED_EXPRESSION =
+  'document.getAnimations().every((a) => (a.playState !== "running" && a.playState !== "pending") || a.effect?.getComputedTiming().iterations === Infinity)';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
@@ -359,25 +390,52 @@ export function collectorScript(ignore: string[], collector = COLLECTOR): string
   return `${collector.slice(0, at)}})(${JSON.stringify({ ignore })});\n`;
 }
 
-/** Sets the viewport and color scheme, collects the page in the browser, and analyses it. */
-export async function auditScreen(options: AuditOptions): Promise<AuditReport> {
+/** Hides development overlays so screenshots show only product UI. */
+export function hideScript(selectors: string[]): string {
+  return `for (const element of document.querySelectorAll(${JSON.stringify(selectors.join(", "))})) element.style.setProperty("visibility", "hidden", "important");\n`;
+}
+
+/**
+ * Audits the page at every viewport and color scheme: sets each, lets the layout settle, collects the page in the
+ * browser and analyses it, saving a screenshot of each cell when asked. Returns one report per cell.
+ */
+export async function auditScreen(options: AuditOptions): Promise<AuditReport[]> {
   if (Boolean(options.url) === Boolean(options.session)) throw new Error("pass exactly one of url or session");
   const run = options.run ?? runAgentBrowser;
   const session = options.session ?? `audit-screen-${process.pid}-${Date.now()}`;
   const at = ["--session", session];
+  const ignore = options.ignore ?? [];
+  const script = collectorScript(ignore);
+  const reports: AuditReport[] = [];
+  let opened = !options.url;
+  if (options.shots) mkdirSync(options.shots.dir, { recursive: true });
   try {
-    await run([...at, "set", "viewport", String(options.viewport.width), String(options.viewport.height)]);
-    if (options.colorScheme) await run([...at, "set", "media", options.colorScheme]);
-    if (options.url) {
-      await run([...at, "open", options.url]);
-      await run([...at, "wait", "--load", "networkidle"]);
+    for (const viewport of options.viewports ?? QA_VIEWPORTS) {
+      for (const scheme of options.colorSchemes ?? QA_THEMES) {
+        await run([...at, "set", "viewport", String(viewport.width), String(viewport.height)]);
+        await run([...at, "set", "media", scheme]);
+        if (!opened && options.url) {
+          await run([...at, "open", options.url]);
+          await run([...at, "wait", "--load", "networkidle"]);
+          opened = true;
+        }
+        await run([...at, "wait", "--fn", SETTLED_EXPRESSION]);
+        const output: unknown = JSON.parse(await run([...at, "--json", "eval", "--stdin"], script));
+        const snapshot = snapshotOf(output);
+        if (!snapshot) throw new Error(`page evaluation failed: ${JSON.stringify(output).slice(0, 500)}`);
+        reports.push(analyzeScreen(snapshot, options.tolerance));
+        if (options.shots) {
+          if (ignore.length > 0) await run([...at, "eval", "--stdin"], hideScript(ignore));
+          const { dir, state, phase } = options.shots;
+          await run([...at, "screenshot", "--full", join(dir, frameName(state, phase, viewport.width, scheme))]);
+        }
+      }
     }
-    const script = collectorScript(options.ignore ?? []);
-    const output: unknown = JSON.parse(await run([...at, "--json", "eval", "--stdin"], script));
-    const snapshot = snapshotOf(output);
-    if (!snapshot) throw new Error(`page evaluation failed: ${JSON.stringify(output).slice(0, 500)}`);
-    return analyzeScreen(snapshot, options.tolerance);
+    return reports;
   } finally {
     if (options.url) await run([...at, "close"]).catch(() => undefined);
   }
 }
+
+/** True when the report found anything the CLI fails on. */
+export const failed = (report: AuditReport): boolean => Object.values(report.summary).some((count) => count > 0);

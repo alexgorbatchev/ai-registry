@@ -1,0 +1,47 @@
+{
+  "product": "Reports",
+  "tracker": { "project": "acme/reports", "labels": ["enhancement", "ux"] },
+  "repository": {
+    "remote": "origin",
+    "targetBranch": "main",
+    "webUrl": "https://git.example/acme/reports/blob/main",
+    "commitSuffix": " (#{ticket})",
+    "land": "git push origin HEAD:main"
+  },
+  "instructions": ["AGENTS.md", "app/AGENTS.md"],
+  "design": {
+    "proposals": "app/docs/ux-flows/proposals",
+    "wireframes": "app/docs/ux-flows/wireframes",
+    "patterns": "app/docs/ux-flows/patterns.md",
+    "rules": ["docs/ui-library-usage.md"]
+  },
+  "source": { "frontend": "app/frontend", "backend": "app/backend" },
+  "worktree": {
+    "dir": ".workspaces",
+    "setup": ["just setup"],
+    "reinstall": "bun install --frozen-lockfile",
+    "caches": ["node_modules/.vite"]
+  },
+  "preview": {
+    "start": "just run --host {unit}",
+    "host": "reports-{unit}",
+    "guide": "docs/preview.md",
+    "overlays": ["#dev-toolbar"],
+    "seed": "`just seed` loads the demo workspace.",
+    "notes": "The preview prints its URL; open that URL, never a guessed one."
+  },
+  "checks": {
+    "targeted": ["`bun test <file>` for a changed module's tests", "`just story <name>` for one changed story"],
+    "final": "just verify",
+    "coverage": "just coverage"
+  },
+  "library": { "name": "@acme/ui", "repository": "../ui", "release": "the release recipe in its README.md" },
+  "deploy": {
+    "url": "https://reports.example",
+    "commands": ["just deploy reports"],
+    "where": "any machine with the deploy credentials described in docs/deploy.md"
+  },
+  "qa": { "screens": [{ "name": "home", "path": "/" }, { "name": "report", "path": "/reports/demo" }] },
+  "disk": { "volume": "/" },
+  "localDir": "~/.local/share/ux-flow-redesign/reports"
+}

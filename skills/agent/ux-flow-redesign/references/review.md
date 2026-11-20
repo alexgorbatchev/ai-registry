@@ -4,6 +4,7 @@
 - [Units and briefs](#units-and-briefs)
 - [Shared reviewer rules](#shared-reviewer-rules)
 - [Screenshots](#screenshots)
+- [Blind review](#blind-review)
 - [Findings file](#findings-file)
 - [Verification](#verification)
 - [Dedupe](#dedupe)
@@ -11,7 +12,7 @@
 - [Completeness](#completeness)
 - [Salvage](#salvage)
 
-Phase 2 detail. `<state>` is the run's committed record directory and `<local>` its machine-local directory (SKILL.md "Setup") and `<skill>` is this skill's directory; run scripts from the project root as `bun <skill>/scripts/<name>.ts`. [Orchestration](orchestration.md) owns unit sizing, checkpoints, skip lists and bounded pools; this file owns what reviewers and verifiers do and what a filed finding carries. Every ticket read or write goes through the `issue-tracker` skill (SKILL.md "Setup"). Each area runs as unit `review-<area>` with the stages `review`, `verify` and `deliver`, checkpointed at `<state>/units/review-<area>.json`; re-verifying a filed ticket runs as unit `verify-<ticket>`. Units never commit: the orchestrator publishes the files they write under the commit rules in [SKILL.md](../SKILL.md#execute-the-task) "Scope boundaries".
+Phase 2 detail. `<state>` is the run's committed record directory and `<local>` its machine-local directory (SKILL.md "Setup") and `<skill>` is this skill's directory; run scripts from the project root as `bun <skill>/scripts/<name>.ts`. [Orchestration](orchestration.md) owns unit sizing, checkpoints, skip lists and bounded pools; this file owns what reviewers and verifiers do and what a filed finding carries. Every ticket read or write goes through the `issue-tracker` skill (SKILL.md "Setup"). Each area runs as unit `review-<area>` with the stages `review`, `blind`, `verify` and `deliver`, checkpointed at `<state>/units/review-<area>.json`; re-verifying a filed ticket runs as unit `verify-<ticket>`. Units never commit: the orchestrator publishes the files they write under the commit rules in [SKILL.md](../SKILL.md#execute-the-task) "Scope boundaries".
 
 ## Preflight
 
@@ -31,7 +32,7 @@ Do these inline, in one context, before starting any parallel unit.
 
 - Partition the in-scope roster into areas, each a slice of roster features that one reviewer covers in about 30 minutes. Add 1–3 end-to-end journeys that cross areas, phrased as a user goal in the owner's words (illustrative: "a quarterly report is due tomorrow: gather the sources, clean them up, build the report, export and share it").
 - Every in-scope roster ID appears in at least one brief.
-- Add one `review-chrome` unit for the persistent chrome (headers, navigation, side panels, toolbars, dialog frames), briefed as the [fresh-eyes chrome review](visual-qa.md#fresh-eyes-chrome-review): its brief carries no roster IDs, flows, ticket digest or recent changes.
+- Add one `review-chrome` unit for the persistent chrome (headers, navigation, side panels, toolbars, dialog frames), run as the chrome review in the `ux-flow-implementation` skill's visual QA reference: clean captures of the main screens across the matrix, reviewed blind by a fresh reviewer with chrome scope against the design rules. Its brief carries no roster IDs, flows, ticket digest or recent changes.
 - Each brief states:
   - the area key (kebab-case; it prefixes finding IDs);
   - the roster IDs and the flows to exercise, with "exercise every flow in this brief";
@@ -69,12 +70,17 @@ Every reviewer gets the same rules block, the product direction and owner rules 
 
    Labels state the problem ("Selection bar pushes the table down 52px"), not the element name. Boxes are fixed to the viewport: scroll first, then mark, and clear and mark again after any scroll. They attach to the topmost open `<dialog>`, so they render above modals.
 4. Save to an absolute path, `<local>/shots/<area>/NN-short-slug.png`; browser tools can ignore or misresolve relative paths.
-5. Open the saved image and confirm it shows the problem legibly with correctly placed boxes; recapture otherwise. Never cite an image you have not opened. Check the whole frame under [visual QA](visual-qa.md), not only the boxed problem, and record what else it shows.
+5. Open the saved image and confirm it shows the problem legibly with correctly placed boxes; recapture otherwise. Never cite an image you have not opened. Check the whole frame against the whole-frame checklist (SKILL.md step 4), not only the boxed problem, and record what else it shows.
 6. Run `__uxr.clear()` before interacting again.
 
 - One focused image per problem; before and after pairs for interaction problems.
-- Default viewport 1600×1000; add 1280×800, 900×900, and light and dark themes where layout or contrast is part of the problem. Each screen the unit visits also gets the [visual QA](visual-qa.md#captures) pass at its widths and themes, with `audit-screen.ts`.
+- Default viewport 1600×1000; add 1280×800, 900×900, and light and dark themes where layout or contrast is part of the problem.
+- Each screen state the unit visits also gets clean, unannotated captures across the QA matrix, audited in the same command: `bun <impl-skill>/scripts/audit-screen.ts --session <session> --shots <local>/shots/<area>/matrix --state <state-slug> --phase after --ignore '<overlay selector>'`, where `<impl-skill>` is the `ux-flow-implementation` skill's directory. Audit failures are findings like any other. These frames feed the **Blind review**.
 - Each caption says what the numbered boxes show.
+
+## Blind review
+
+Each review unit has a `blind` stage between `review` and `verify`, run by the orchestrator as the `ux-flow-implementation` skill's visual QA reference "Blind review" describes, over the unit's `<local>/shots/<area>/matrix/` frames. A fresh reviewer gets only those frames and the design rules, never the brief, the findings or the unit's notes; the unit's reviewer and the orchestrator do not review them. Keep the manifest and review at `<state>/findings/<area>.blind-manifest.json` and `<area>.blind.json`. In triage, add each blind finding the findings file lacks to it as a finding of the area (validated, so the verifier checks it with the rest) and record `ticket` with that finding ID; record `duplicate` with the finding or existing ticket it repeats, or `rejected` with the owner rule or contract it contradicts. The verify stage starts once `review-frames.ts check --triaged` prints OK. When no fresh reviewer can run, the unit stays at `blind` with that blocker.
 
 ## Findings file
 

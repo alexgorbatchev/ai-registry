@@ -4,7 +4,7 @@ description: Use to retrieve prior project decisions, investigate work with shar
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-18 21:25
-  last_modified: 2026-11-19 10:17
+  last_modified: 2026-11-19 17:20
   status: current
 ---
 
@@ -14,4 +14,4 @@ At the start of relevant project work, look up notes on main using the repositor
 
 Record verified decisions, constraints and reusable findings as Note nodes. Key each note by `<project>/<topic>`; reserve `global/<topic>` for facts deliberately shared across projects. Include the evidence and revision in the text. Keep credentials and information restricted to a narrower audience out of this shared graph. Prefixes organize retrieval; every connected harness can read every prefix.
 
-For contributions, use a graph branch specific to the task. Inspect its diff, report the branch for review, and merge only when authorized. Keep ticket claims and active task status in their owning tracker.
+Save directly to `main` by default. Use a task branch only when the user asks to review memory changes before they publish; then report the branch and its diff, and merge it when the user approves. Keep ticket claims and active task status in their owning tracker.

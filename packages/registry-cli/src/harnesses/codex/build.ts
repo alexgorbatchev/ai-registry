@@ -10,7 +10,7 @@ import {
   type IUnifiedHarnessPlugin,
 } from "../../lib/harnessBuild";
 import { applySettingsChanges } from "../../lib/settingsSync/applySettingsChanges";
-import { getCommandSkillName } from "./getCommandSkillName";
+import { stageCommandSkills } from "../../lib/stageCommandSkills";
 import { CODEX_TRUSTED_DIRS_ENV, discoverTrustedProjects } from "./discoverTrustedProjects";
 
 const CODEX_OUTPUT_DIR_NAME = "codex";
@@ -113,26 +113,9 @@ async function stageHarnessRules(context: IHarnessBuildContext, codexOutputDir: 
 }
 
 // Commands become native skills that only explicit invocation can load.
-async function stageCommandSkills(context: IHarnessBuildContext, skillsDir: string): Promise<void> {
-  const commandSkillNames = new Set<string>();
-  for (const command of context.assets.commands) {
-    const sourcePath =
-      context.assets.commandSourcePaths[command] ?? join(context.templateContext.commands_dir, command);
-    const skillName = getCommandSkillName(command, await Bun.file(sourcePath).text());
-    if (commandSkillNames.has(skillName)) {
-      throw new Error(`Duplicate Codex command skill name: ${skillName}`);
-    }
-    commandSkillNames.add(skillName);
-
-    const skillDir = join(skillsDir, skillName);
-    if (existsSync(skillDir)) {
-      throw new Error(`Codex command skill ${skillName} collides with a skill of the same name.`);
-    }
-
-    await context.buildSupport.stageSourcePath(sourcePath, join(skillDir, "SKILL.md"));
-    await mkdir(join(skillDir, "agents"), { recursive: true });
-    await Bun.write(join(skillDir, "agents", "openai.yaml"), "policy:\n  allow_implicit_invocation: false\n");
-  }
+async function finishCommandSkill(skillDir: string): Promise<void> {
+  await mkdir(join(skillDir, "agents"), { recursive: true });
+  await Bun.write(join(skillDir, "agents", "openai.yaml"), "policy:\n  allow_implicit_invocation: false\n");
 }
 
 async function buildOutput(context: IHarnessBuildContext): Promise<void> {
@@ -145,7 +128,7 @@ async function buildOutput(context: IHarnessBuildContext): Promise<void> {
   await stageCodexHooks(context, codexOutputDir);
   await stageHarnessRules(context, codexOutputDir);
   await context.buildSupport.stageHarnessSkills(context, skillsDir);
-  await stageCommandSkills(context, skillsDir);
+  await stageCommandSkills(context, skillsDir, "Codex", finishCommandSkill);
   await assertNoSharedSkillCollisions(context, skillsDir, "codex");
 }
 

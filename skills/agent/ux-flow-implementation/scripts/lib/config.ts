@@ -66,7 +66,7 @@ export interface ProjectConfig {
   checks: {
     /** How to run targeted tests for changed code while iterating. */
     targeted: string[];
-    /** The project's full verification, run once as the final gate before landing. */
+    /** The final gate before landing: the tests the whole change affects against its base, run once. */
     final: string;
     /** The coverage command, when the final gate does not include it. */
     coverage?: string;

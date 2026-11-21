@@ -32,7 +32,7 @@ Hold project facts only: paths, commands, hosts and the deploy recipe. Policy li
 | `source` | Label to code path, such as frontend and backend |
 | `worktree` | Worktree directory, setup commands, the lockfile reinstall and caches to clear after copied dependencies |
 | `preview` | Start command and per-unit host (`{unit}` fills in), its guide, development overlay selectors, how to seed data, other facts about running it |
-| `checks` | Targeted test commands for iteration, the full final gate, coverage |
+| `checks` | Targeted test commands for iteration; the final gate, which runs the tests the unit's whole change affects against its base (such as `just test-affected`), not the full suite; coverage |
 | `library` | Shared component library: name, checkout and release recipe; omit when there is none |
 | `deploy` | Production URL, deploy commands, where they run, how a browser reaches production; omit when the project does not deploy from the run |
 | `qa.screens` | Main screens of the persistent chrome review, as paths under the app URL |

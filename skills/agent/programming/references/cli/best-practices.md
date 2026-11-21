@@ -209,6 +209,7 @@ Every project uses `just` with a `justfile` for its development tasks: running, 
 | --- | --- | --- |
 | `check` | Every project | Aggregate validation: formatting check, linting, type checking, unused-code analysis, and tests, as the toolchain provides them. Read-only, including every dependency. |
 | `test` | Every project | Runs the test suite. |
+| `test-affected base=<default-branch merge base>` | Every project | Runs only the tests whose transitive inputs differ from `base`, as defined in [testing and coverage](../testing-and-coverage.md#set-up-affected-test-selection), and prints the selection. Exits 0 with a message when no test is affected. |
 | `run *args` | Runnable projects | Runs the primary entrypoint, forwarding arguments. |
 | `run-ai *args` | CLI applications | Runs the CLI with `AGENT=1`, forwarding arguments. |
 

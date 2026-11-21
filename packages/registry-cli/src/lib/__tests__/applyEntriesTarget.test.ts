@@ -80,6 +80,15 @@ describe("applyEntriesTarget", () => {
     expect(await readFile(target.targetPath, "utf-8")).toBe(targetText);
   });
 
+  it("fills a target file the harness created empty", async () => {
+    const { target, statePath } = await createTarget();
+    await writeTestFile(target.sourcePath, '{ "mcpServers": { "private": { "url": "x" } } }\n');
+    await writeTestFile(target.targetPath, "");
+
+    expect((await applyEntriesTarget(target, statePath)).added).toEqual(["mcpServers.private"]);
+    expect(await readJson(target.targetPath)).toEqual({ mcpServers: { private: { url: "x" } } });
+  });
+
   it("creates no target file when the registry declares no entries", async () => {
     const { target, statePath } = await createTarget();
     await writeTestFile(target.sourcePath, '{ "mcpServers": {} }\n');

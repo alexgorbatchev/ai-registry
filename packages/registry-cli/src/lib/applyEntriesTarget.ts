@@ -65,8 +65,10 @@ export async function applyEntriesTarget(
   };
   const source = parseSettingsText(await Bun.file(target.sourcePath).text(), target.sourcePath);
   const applied = await readJsonObject(statePath);
-  const hasTargetFile = existsSync(target.targetPath);
-  const targetText = hasTargetFile ? await Bun.file(target.targetPath).text() : "{}\n";
+  // A harness can create its settings file empty, as Antigravity does with
+  // `mcp_config.json` on first launch; treat that like a missing file.
+  const existingText = existsSync(target.targetPath) ? await Bun.file(target.targetPath).text() : "";
+  const targetText = existingText.trim().length > 0 ? existingText : "{}\n";
   const live = parseSettingsText(targetText, target.targetPath);
   const changes: ISettingsChange[] = [];
   const nextApplied: IJsonObject = {};

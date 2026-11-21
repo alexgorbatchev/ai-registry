@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
 import { lstat, chmod, mkdir, mkdtemp, rename, rm, writeFile } from "fs/promises";
-import { dirname, join, relative, sep } from "path";
+import { basename, dirname, join, relative, sep } from "path";
 import { hostname } from "node:os";
 
 import { getRegistryPaths, type IRegistryPaths } from "../lib/getRegistryPaths";
@@ -48,6 +48,7 @@ import {
 
 // Statically import harness plugins
 import agentsPlugin from "../harnesses/agents/build";
+import antigravityPlugin from "../harnesses/antigravity/build";
 import claudeCodePlugin from "../harnesses/claude-code/build";
 import codexPlugin from "../harnesses/codex/build";
 import opencodePlugin from "../harnesses/opencode/build";
@@ -58,6 +59,7 @@ const unifiedHarnessPlugins: IUnifiedHarnessPlugin[] = [
   codexPlugin,
   opencodePlugin,
   piPlugin,
+  antigravityPlugin,
   agentsPlugin,
 ];
 
@@ -146,7 +148,10 @@ export async function syncBackModifiedFiles(
     };
     const reverseContent = (content: string, variables: Record<string, string> = context): string => {
       let recovered = reverseTemplateContent(content, variables);
-      if (isUserSkillPath(nextSource) && nextSource.endsWith("SKILL.md")) {
+      // User skills and commands packaged as skills carry an injected
+      // `disable-model-invocation` that their sources do not hold.
+      const isCommandSkill = basename(entry.path) === "SKILL.md" && !nextSource.endsWith("SKILL.md");
+      if ((isUserSkillPath(nextSource) && nextSource.endsWith("SKILL.md")) || isCommandSkill) {
         recovered = removeDisableModelInvocation(recovered);
       }
       const originalSkillName = nextSource.endsWith("SKILL.md") ? parseSkillName(originalSource) : null;

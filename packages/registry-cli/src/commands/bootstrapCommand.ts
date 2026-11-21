@@ -13,6 +13,7 @@ import { getRegistryPaths, type IRegistryPaths } from "../lib/getRegistryPaths";
 
 // We import the static harness plugins to retrieve their bootstrap targets
 import agentsPlugin from "../harnesses/agents/build";
+import antigravityPlugin from "../harnesses/antigravity/build";
 import claudeCodePlugin from "../harnesses/claude-code/build";
 import codexPlugin from "../harnesses/codex/build";
 import opencodePlugin from "../harnesses/opencode/build";
@@ -38,7 +39,7 @@ function getTimestamp(): string {
 function createDefaultDependencies(): IBootstrapDependencies {
   return {
     registryPaths: getRegistryPaths(),
-    plugins: [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin, agentsPlugin],
+    plugins: [claudeCodePlugin, codexPlugin, opencodePlugin, piPlugin, antigravityPlugin, agentsPlugin],
     publicBinDir: join(homedir(), ".local", "bin"),
     getTimestamp,
   };

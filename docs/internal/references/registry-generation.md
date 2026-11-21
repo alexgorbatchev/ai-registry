@@ -1,6 +1,6 @@
 ---
 created_on: 2026-11-10 11:33
-last_modified: 2026-11-17 15:34
+last_modified: 2026-11-20 16:27
 status: current
 ---
 
@@ -10,11 +10,11 @@ For agents modifying or diagnosing these contracts. Paths are relative to the re
 
 ## Unified Outputs
 
-The script generates final harness outputs in `.output/`. It writes one root per harness, `.output/opencode`, `.output/codex`, `.output/pi`, and `.output/claude-code`, plus the shared skills output `.output/agents/skills`. Every harness ships every registry command. Registry skills ship to the shared output, which bootstrap links as a whole to `~/.agents/skills` (so each skill there is a real folder) for Codex, Pi, and OpenCode, and to Claude Code, which does not read that folder; Codex, Pi, and OpenCode outputs carry only their harness-specific skills. Generated harness skills are merged flat from `skills/agent/`, `skills/user/`, overlay `skills/`, or `harnesses/<target>/skills/`, with build-time template tags resolved and `disable-model-invocation: true` automatically injected for user skills. Skills that are not authored by `alexgorbatchev` are emitted with their author prefix as `<author>-<skill>` in both directory name and frontmatter `name` across all harness outputs. They are copies rather than symbolic links so that EJS tags inside `SKILL.md` and bundled skill files reach the agent resolved; edits made to a generated skill are recovered through the generated-output drift and sync-back flow instead of writing straight through a link.
+The script generates final harness outputs in `.output/`. It writes one root per harness, `.output/opencode`, `.output/codex`, `.output/pi`, `.output/claude-code`, and `.output/antigravity`, plus the shared skills output `.output/agents/skills`. Every harness ships every registry command. Registry skills ship to the shared output, which bootstrap links as a whole to `~/.agents/skills` (so each skill there is a real folder) for Codex, Pi, and OpenCode, and to Claude Code and Antigravity, which do not read that folder; Codex, Pi, and OpenCode outputs carry only their harness-specific skills. Generated harness skills are merged flat from `skills/agent/`, `skills/user/`, overlay `skills/`, or `harnesses/<target>/skills/`, with build-time template tags resolved and `disable-model-invocation: true` automatically injected for user skills. Skills that are not authored by `alexgorbatchev` are emitted with their author prefix as `<author>-<skill>` in both directory name and frontmatter `name` across all harness outputs. They are copies rather than symbolic links so that EJS tags inside `SKILL.md` and bundled skill files reach the agent resolved; edits made to a generated skill are recovered through the generated-output drift and sync-back flow instead of writing straight through a link.
 
 ## Harness Skill Override Precedence
 
-Harness-specific skills under `harnesses/<target>/skills/` (grouped into `agent/` and `user/`), in the public source or any overlay, take precedence over global skills (`skills/` and overlay `skills/`) on name collision in Claude Code's output. Codex, Pi, and OpenCode load both their own skills folder and `~/.agents/skills`, so a harness-specific skill named like a global skill fails their build instead of overriding it; Codex command skills follow the same rule. Overlay harness skills stage after the public ones in overlay order, so the last overlay wins a name collision among them.
+Harness-specific skills under `harnesses/<target>/skills/` (grouped into `agent/` and `user/`), in the public source or any overlay, take precedence over global skills (`skills/` and overlay `skills/`) on name collision in Claude Code's and Antigravity's outputs. Codex, Pi, and OpenCode load both their own skills folder and `~/.agents/skills`, so a harness-specific skill named like a global skill fails their build instead of overriding it; Codex command skills follow the same rule. Overlay harness skills stage after the public ones in overlay order, so the last overlay wins a name collision among them.
 
 ## Hostname Skill Variants
 

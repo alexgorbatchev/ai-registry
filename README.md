@@ -18,7 +18,7 @@ The reusable source-of-truth layer.
 - **Writer skills**: `prompt-writer` applies whenever generating, writing, or revising AI agent instructions in any artifact. `skill-writer` adds skill-bundle routing, frontmatter, resources, and validation. `docs-writer` owns project documentation structure and ticket content; the externally maintained `issue-tracker` owns task storage and lifecycle; both relevant writers apply when documentation contains agent instructions.
 - **Matt Pocock skills**: All skills authored by `mattpocock` live under `skills/user/` and require explicit user invocation. These workflows may depend on other bundled user skills.
   Preserve third-party-authored skill content; keep local policies in registry-owned guidance and record unresolved upstream findings.
-- **`system/`**: Shared repo-level instruction fragments and persistent-memory guidance. `system/system.md` is the system prompt every generated harness ships: Codex `AGENTS.md`, Pi `APPEND_SYSTEM.md`, Claude Code `CLAUDE.md`, and OpenCode `instructions`.
+- **`system/`**: Shared repo-level instruction fragments and persistent-memory guidance. `system/system.md` is the system prompt every generated harness ships: Codex `AGENTS.md`, Pi `APPEND_SYSTEM.md`, Claude Code `CLAUDE.md`, Antigravity `AGENTS.md`, and OpenCode `instructions`.
   Models choose search and code-navigation tools according to the task and available capabilities; the registry does not mandate a search tool or tool ordering.
   Dependency investigation and library integration stay within the authorized task's required capabilities, using supported interfaces and intended usage patterns.
   Test selection and measured-duration reporting belong to `programming`: select checks by direct and transitive inputs, not file extensions, and use the smallest sufficient scope. Instruction-only changes with no affected application or test inputs run no application tests.
@@ -40,7 +40,7 @@ The final generated harness artifacts. The registry updates only the files and p
 
 ## Building and Usage
 
-This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that collects every skill and command and builds generated harness outputs directly from the checked-in source tree. Every harness ships every registry command. Registry skills ship once to `~/.agents/skills`, which Codex, Pi, and OpenCode read, and again to Claude Code, which does not.
+This repository includes a custom local compiler (`packages/registry-cli/src/bin/build.ts`) that collects every skill and command and builds generated harness outputs directly from the checked-in source tree. Every harness ships every registry command. Registry skills ship once to `~/.agents/skills`, which Codex, Pi, and OpenCode read, and again to Claude Code and Antigravity, which do not.
 
 Generated harness outputs are compiled by plugins at `packages/registry-cli/src/harnesses/<target>/build.ts`. The root build statically imports those plugins and calls each one's `buildOutput` hook to write that harness's output root.
 
@@ -171,11 +171,12 @@ That command:
 - builds the generated outputs
 - verifies the previous generated-output manifest before overwriting managed generated paths in `.output/`
 - automatically recovers supported harness-written generated-file edits into their mapped source and regenerates outputs when the manifest baseline confirms that source changes will not be overwritten; conflicts, unsupported recovery, or save failures preserve both versions and suspend output application, including with `-y`
-- syncs harness settings files (Claude Code and Pi `settings.json`, Pi `mcp.json`, Claude Code `keybindings.json`, OpenCode `opencode.jsonc` and `tui.json`, Codex `config.toml` and `hooks.json`) both ways instead of treating them as drift: changes the harness made are written back to `harnesses/<name>/` and committed when the file had no other uncommitted edits, and registry changes are applied to the live file
+- syncs harness settings files (Claude Code and Pi `settings.json`, Pi `mcp.json`, Claude Code `keybindings.json`, OpenCode `opencode.jsonc` and `tui.json`, Codex `config.toml` and `hooks.json`, Antigravity `mcp_config.json`) both ways instead of treating them as drift: changes the harness made are written back to `harnesses/<name>/` and committed when the file had no other uncommitted edits, and registry changes are applied to the live file
 - links the managed entries of `.output/opencode` into the real `${XDG_CONFIG_HOME:-~/.config}/opencode` directory
 - links the managed entries of `.output/codex` into the real `${CODEX_HOME:-~/.codex}` directory
 - links the managed entries of `.output/pi` into the real `${PI_CODING_AGENT_DIR:-~/.pi/agent}` directory
 - links the managed entries of `.output/claude-code` into the real `${CLAUDE_CONFIG_DIR:-~/.claude}` directory
+- links the managed entries of `.output/antigravity` into the real `~/.gemini/config` directory and writes its declared MCP servers into `~/.gemini/config/mcp_config.json`
 - symlinks every `air-*`, `pi-*`, and `cll` helper from `.output/bin` into `~/.local/bin`
 - removes broken public-wrapper symlinks from `~/.local/bin` before recreating the current links
 - backs up any existing conflicting target directories before replacing them
@@ -236,7 +237,7 @@ Run `just bootstrap` to symlink these wrappers into `~/.local/bin`. If you prefe
 
 These wrappers execute the checked-in Bun source from this repository, so the clone and its installed dependencies must remain available on disk.
 
-*Generated outputs are compiled by the harness build plugins under `packages/registry-cli/src/harnesses/<target>/build.ts`. Today that produces `.output/opencode`, `.output/codex`, and `.output/pi`.*
+*Generated outputs are compiled by the harness build plugins under `packages/registry-cli/src/harnesses/<target>/build.ts`. Today that produces `.output/opencode`, `.output/codex`, `.output/pi`, `.output/claude-code`, `.output/antigravity`, and the shared `.output/agents/skills`.*
 
 ### Installing a Skill with `npx skills`
 
@@ -302,6 +303,7 @@ The build script generates unified final outputs in `.output/` for the targets t
 - `.output/codex`: Codex home root with `AGENTS.md` from `system/system.md`, `config.toml`, `hooks.json`, `rules/`, and generated `skills/`, including every command packaged as a native skill that requires explicit invocation. Runtime files such as `auth.json` stay Codex-owned under `CODEX_HOME` instead of being registry-managed.
 - `.output/pi`: Pi agent root with `APPEND_SYSTEM.md` from `system/system.md`, `settings.json`, `prompts/`, and generated `skills/` (copied from source with template tags resolved). The Pi-specific shaping lives in `packages/registry-cli/src/harnesses/pi/build.ts`.
 - `.output/claude-code`: Claude Code config root matching the layout Claude Code expects at `CLAUDE_CONFIG_DIR`, with `CLAUDE.md` from `system/system.md`, `settings.json`, `keybindings.json`, `commands/`, and generated `skills/` (copied from source with template tags resolved). The Claude Code-specific shaping lives in `packages/registry-cli/src/harnesses/claude-code/build.ts`.
+- `.output/antigravity`: Antigravity global customization folder with `AGENTS.md` from `system/system.md`, `mcp_config.json`, and generated `skills/` holding every registry skill and every command packaged as a user-invoked skill. The Antigravity-specific shaping lives in `packages/registry-cli/src/harnesses/antigravity/build.ts`.
 - `.output/manifest.json`: SHA-256 manifest for managed generated files, directories, symlinks, mapped source paths, and source fingerprints under `.output/`, plus the checkout root the output was rendered for. Builds automatically recover supported harness edits when source fingerprints and fresh generated output match their recorded baselines and supported transformations reverse exactly. Recovery supports plain text, canonical raw path tags, and generated skill name/invocation metadata; EJS includes, expressions, control flow, and other transformations require source edits. Conflicts, missing baselines/mappings, or save failures preserve the edits and stop output application without an overwrite prompt. Existing drift in older manifests without source fingerprints must be reconciled into source before a clean generation can establish a fresh baseline; `-y` does not discard it. After recovery, a fresh generation pass updates all copies; further drift suspends application for reconciliation. Unmanaged files are preserved. Synced harness settings files are listed under `syncedFilePaths` instead of the managed entries and reconciled key by key with source, using previous merged values under `.state/settings-sync/`. Output rendered for another checkout root, such as one copied into a worktree, is replaced without recovering its edits or syncing its settings back; its settings files are kept under `.state/settings-sync/foreign/`.
 
 Local files outside version control live in three git-ignored directories. `.tmp/` holds disposable development artifacts such as test fixtures, build staging, coverage, and the bootstrap smoke home; anything in it may be deleted between sessions. `.state/` holds long-lived state: the settings-sync merge bases and the scheduled update's log, lock, and recovery marker. `.cache/` holds rebuildable caches.
@@ -318,6 +320,7 @@ Harness runtime state never lives in `.output/`. Each harness home is a real dir
 | Codex | `${CODEX_HOME:-~/.codex}` |
 | Pi | `${PI_CODING_AGENT_DIR:-~/.pi/agent}` |
 | OpenCode | `${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-~/.config}/opencode}` |
+| Antigravity | `~/.gemini/config` |
 
 - bootstrap links only the top-level entries the manifest records for the harness output, such as `CLAUDE.md`, `skills/`, `commands/`, and the synced settings file
 - sessions, transcripts, history, databases, logs, worktrees, installed plugins, and credentials stay where the harness writes them, in the home itself, so deleting `.output/` or moving the checkout never hides or splits them
@@ -376,6 +379,16 @@ Bootstrap also links generated Claude Code helpers into `~/.local/bin`:
 
 - `cll` launches Claude Code routed through LiteLLM (reading `ANTHROPIC_BASE_URL` or `LITELLM_BASE_URL`, and `ANTHROPIC_AUTH_TOKEN` or `LITELLM_API_KEY`), defaulting to `gemini-3.7-flash` (or a custom model name passed as the first argument)
 - no `claude` wrapper is generated, so the real `claude` binary stays on `PATH` untouched and reads `~/.claude`
+
+### Using with Antigravity
+
+The Antigravity harness compiles `.output/antigravity/`, which bootstrap applies to `~/.gemini/config`, the global customization folder the Antigravity CLI (`agy`), app, and IDE read.
+
+- `AGENTS.md` is a copy of `system/system.md`; Antigravity loads it as a global rule
+- `skills/` holds every registry skill, because Antigravity reads neither `~/.agents/skills` nor `~/.claude/skills`, plus Antigravity-only harness skills under `harnesses/antigravity/skills/`, which win a name collision
+- every command ships as a skill named like its Codex counterpart (`command-<filename>` or its frontmatter `name`) with `disable-model-invocation: true`; the CLI turns each skill into a slash command, so `--brain-dump.md` runs as `/command-brain-dump`
+- `mcp_config.json` syncs both ways with `harnesses/antigravity/mcp_config.json`, but bootstrap writes its `mcpServers` entries into the live `~/.gemini/config/mcp_config.json` instead of linking it, because `agy mcp add` replaces a symlinked file with a regular one; servers added with `agy mcp add` are kept, and their `headers` and `env` stay local
+- `~/.gemini/antigravity-cli/settings.json` and `~/.gemini/config/hooks.json` stay Antigravity-owned
 
 ### Bootstrap Overrides
 

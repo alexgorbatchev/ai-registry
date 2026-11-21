@@ -23,8 +23,9 @@ Each harness loads user skills from these folders (verified in their sources):
 - Codex: `${CODEX_HOME:-~/.codex}/skills` and `~/.agents/skills`. Roots are deduplicated by path, not by skill name.
 - Pi: `${PI_CODING_AGENT_DIR:-~/.pi/agent}/skills` and `~/.agents/skills`. A name collision keeps one skill and reports a collision diagnostic.
 - OpenCode: its own `skills/`, `~/.agents/skills`, and `~/.claude/skills`. Reading `.claude` skills stops only when `OPENCODE_DISABLE_CLAUDE_CODE` or `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS` is set in the environment; its config file has no equivalent.
+- Antigravity CLI: `~/.gemini/config/skills`, `~/.gemini/config/plugins/<plugin>/skills`, and, ahead of every other location, `~/.gemini/antigravity-cli/skills` and `~/.gemini/skills` (documented at antigravity.google/docs/skills). It reads neither `~/.agents/skills` nor `~/.claude/skills`.
 
-- Registry skills ship to the shared output `.output/agents/skills`, built by `packages/registry-cli/src/harnesses/agents/build.ts`, and to Claude Code, which does not read `~/.agents/skills`. Codex, Pi, and OpenCode outputs carry only their harness-specific skills (and Codex command skills). A harness-specific skill for those three that shares a name with a registry skill fails the build, because both folders load; it cannot override.
+- Registry skills ship to the shared output `.output/agents/skills`, built by `packages/registry-cli/src/harnesses/agents/build.ts`, and to Claude Code and Antigravity, which do not read `~/.agents/skills`. Codex, Pi, and OpenCode outputs carry only their harness-specific skills (and Codex command skills). A harness-specific skill for those three that shares a name with a registry skill fails the build, because both folders load; it cannot override.
 - Bootstrap links `~/.agents/skills` to the whole `.output/agents/skills` folder rather than linking each skill, so every skill there resolves to a real folder: Orca recognizes its bundled skills only as real folders holding just `SKILL.md`. An existing real `~/.agents/skills` moves to `~/.agents/skills.backup-<timestamp>`. Tools that write there, such as Orca updating its skills or `npx skills add -g`, write into the generated output; the next build recovers edits to managed skills into their source and leaves new entries unmanaged. Vendor external skills with `just skills-add` instead.
 
 Harnesses are only built into `.output/` when they provide `packages/registry-cli/src/harnesses/<name>/build.ts`.
@@ -92,6 +93,17 @@ Harnesses are only built into `.output/` when they provide `packages/registry-cl
 - `settings.json` is a synced settings file: model, theme, and thinking-level choices made in Pi flow back into `harnesses/pi/settings.json`. `lastChangelogVersion` and `extensionChangelogVersions` are live-only because Pi stamps them after Pi and extension updates.
 - `just bootstrap` applies `.output/pi/` to `${PI_CODING_AGENT_DIR:-~/.pi/agent}`.
 - Generate the `pi-install`, `pi-update`, and `pi-uninstall` helpers under `.output/bin/`. Do not generate a `pi` wrapper: the real `pi` binary already reads `${PI_CODING_AGENT_DIR:-~/.pi/agent}`, so nothing needs to shadow it.
+
+## Antigravity
+
+- Antigravity CLI (`agy`) is closed source; its reference is the documentation at antigravity.google/docs and `agy changelog`, so this harness has no `fetch-source.sh`. Verify undocumented behavior against the installed binary.
+- Keep the Antigravity unified-output plugin in `packages/registry-cli/src/harnesses/antigravity/build.ts`. Its output mirrors `~/.gemini/config`, the global customization folder the CLI, app, and IDE share. That folder also holds Antigravity runtime state (`projects/`, `.migrated`), so it stays a real directory and bootstrap links only managed entries into it.
+- Copy `system/system.md` to `AGENTS.md`, which Antigravity loads as a global rule. Stage every registry skill and Antigravity-only skills from `harnesses/antigravity/skills/` (grouped into `agent/` and `user/`) under `skills/`; harness skills override registry skills of the same name.
+- Package every registry command as a skill, named as for Codex, with `disable-model-invocation: true` injected into its frontmatter. The CLI turns every skill into a slash command and honors that key; it has no command files.
+- `mcp_config.json` is a synced settings file registered with `shouldLinkIntoHome: false`. `agy mcp add` writes it by renaming a new file over it, which replaces a symlink with a regular file, so bootstrap writes its `mcpServers` entries into the live `~/.gemini/config/mcp_config.json` the way Claude Code's `claude.json` reaches `.claude.json`. Remote servers use `serverUrl`; `headers` and `env` stay in the live file.
+- Leave `~/.gemini/antigravity-cli/settings.json` and `~/.gemini/config/hooks.json` Antigravity-owned. The CLI rewrites `settings.json` at startup; Antigravity hooks take a different payload from the Claude Code hooks under `harnesses/claude-code/hooks/`, and Orca writes its own entries into `hooks.json`.
+- The binary contains an `ANTIGRAVITY_GEMINI_DIR` string, but `agy mcp add` ignores it and still writes `~/.gemini/config` (CLI 1.5.12). Do not treat it as a home override until that changes.
+- `just bootstrap` applies `.output/antigravity/` to `~/.gemini/config`. Do not generate an `agy` wrapper.
 
 ## Local Source Code References
 

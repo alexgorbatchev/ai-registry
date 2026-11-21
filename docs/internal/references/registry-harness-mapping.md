@@ -1,6 +1,6 @@
 ---
 created_on: 2026-11-10 11:33
-last_modified: 2026-11-10 11:33
+last_modified: 2026-11-20 16:27
 status: current
 ---
 
@@ -23,6 +23,10 @@ The Pi harness writes `system/system.md` to `APPEND_SYSTEM.md`, maps registry co
 ## Claude Code Harness Mapping
 
 The Claude Code harness writes `system/system.md` to `CLAUDE.md`, maps registry commands to `commands/`, stages registry and Claude Code-only skills under `skills/`, and copies every file shipped under `harnesses/claude-code/` except `skills/` into the output root. No `claude` wrapper is generated, because the real `claude` binary already reads `~/.claude`. It generates the `cll` helper for launching Claude Code through an on-prem or remote LiteLLM proxy.
+
+## Antigravity Harness Mapping
+
+The Antigravity harness writes `system/system.md` to `AGENTS.md`, which Antigravity loads as a global rule, and stages every registry skill plus Antigravity-only skills from `harnesses/antigravity/skills/` under `skills/`; harness skills win a name collision, because Antigravity reads neither `~/.agents/skills` nor `~/.claude/skills`. It packages every registry command as a skill bundle named as for Codex, with `disable-model-invocation: true` injected into the frontmatter; the Antigravity CLI turns each skill into a slash command. A command skill named like any other skill fails the build. Sync-back strips the injected key before recovering an edited command skill into its command. `mcp_config.json` syncs with `harnesses/antigravity/mcp_config.json` but is not linked into `~/.gemini/config`; bootstrap writes its `mcpServers` entries into the live file, keeping `headers` and `env`. No `agy` wrapper is generated.
 
 ## OpenCode Harness Mapping
 

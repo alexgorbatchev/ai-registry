@@ -11,7 +11,7 @@ cargo test --workspace --locked
 cargo doc --workspace --no-deps --locked
 ```
 
-Ensure rustfmt and Clippy are installed for the selected toolchain. Use the repository's warning policy; do not silently rewrite unrelated code or blanket-allow warnings to make a check pass. `--locked` prevents dependency resolution from silently changing the lockfile; an intentional dependency update must update and review it separately.
+Ensure rustfmt and Clippy are installed for the selected toolchain. Use the repository's warning policy; do not blanket-allow warnings to make a check pass. `--locked` prevents dependency resolution from silently changing the lockfile; an intentional dependency update must update and review it separately.
 
 Use focused tests during implementation; expand to workspace checks only when impact or an applicable gate requires them. Test observable behavior, error propagation, boundary inputs, and regressions. Use real local integration boundaries when practical; isolate filesystem, clock, network, and process dependencies so tests remain reproducible. Do not introduce sleeps as synchronization.
 

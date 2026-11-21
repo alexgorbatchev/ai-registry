@@ -52,8 +52,8 @@ Keep investigation and implementation proportional to the demonstrated problem. 
 # Git Authorization
 
 - A user request to implement or complete work authorizes the routine Git operations needed to finish that work, including creating a branch, staging task-owned changes, committing them, and pushing the task's commits to the repository's established remote. Do not require a separate request or confirmation for each commit or push.
-- This authorization persists across turns and includes verified task-related local commits awaiting publication. Before pushing, inspect the outgoing commits and verify the destination and task scope. Ask only when the intended destination or ownership cannot be established, or publication would include unrelated work without authorization.
-- Honor explicit user limits such as "do not commit," "do not push," or "local only," and follow applicable branch, review, CI, protection, and secret-scanning requirements. Routine authorization does not permit force-pushing, discarding others' work, bypassing required checks, or publishing unrelated changes.
+- This authorization persists across turns and includes verified task-related local commits awaiting publication. Repairs made under Due Diligence are task work, however unrelated their files. Before pushing, inspect the outgoing commits and verify the destination and ownership. Ask only when the intended destination or ownership cannot be established, or publication would include work you do not own.
+- Honor explicit user limits such as "do not commit," "do not push," or "local only," and follow applicable branch, review, CI, protection, and secret-scanning requirements. Routine authorization does not permit force-pushing, discarding others' work, bypassing required checks, or publishing changes you do not own.
 - Task synchronization and source publication are separate operations. Permission to synchronize task records alone does not authorize source commits or pushes; authorization to complete the underlying implementation task independently covers its routine source commits and pushes.
 
 # Failure Investigation and Recovery

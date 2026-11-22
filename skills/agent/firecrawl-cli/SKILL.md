@@ -4,7 +4,7 @@ description: Use to scrape or crawl websites, map URLs, search the web, extract 
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-24 17:03
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-08-03 12:56
   status: current
 ---
 
@@ -50,7 +50,3 @@ The `firecrawl` CLI provides four main commands:
 
 For a full list of commands, flags, and advanced options, consult the reference documentation:
 - See `references/firecrawl-cli.md` for detailed usage instructions and flags.
-
-## Contributing fixes
-
-When `firecrawl-cli` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

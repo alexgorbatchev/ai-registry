@@ -4,7 +4,7 @@ description: Use when operating Charmbracelet VHS, writing or debugging .tape fi
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-02 04:35
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-10-02 04:47
   status: current
 ---
 
@@ -45,7 +45,3 @@ Copy [assets/demo.tape](assets/demo.tape) for a reproducible multi-format demo o
 - Use `Screenshot path.png` for a composed still image. `Output frames/` preserves raw text/cursor layers; `Output path.png` is routed as a raw-frame destination, not a single screenshot.
 - Keep screenshots visible and leave time after each request for the next capture frame. Do not request a screenshot while hidden or terminate immediately after requesting one.
 - Do not infer support from keyword names or the generated manual. `Home` and `End` are not executable tape commands in this version; use a verified application binding such as `Ctrl+A` or `Ctrl+E` where appropriate.
-
-## Contributing fixes
-
-When `vhs` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

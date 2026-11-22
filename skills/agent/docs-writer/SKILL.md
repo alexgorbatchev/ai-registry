@@ -4,7 +4,7 @@ description: Use when reading, writing, reviewing, reorganizing, or archiving pr
 author: alexgorbatchev
 metadata:
   created_on: 2026-06-04 11:44
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-11 09:14
   status: current
 ---
 
@@ -75,7 +75,3 @@ This skill owns README structure, tone, and content for every project, CLI or no
 -   **Libraries, packages, services, applications:** Read `references/readme-library.md`, use `assets/readme-library-template.md`
 
 Shared rules live only in `references/readme.md`. Never copy them into a variant file, another skill, or a project.
-
-## Contributing fixes
-
-When `docs-writer` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

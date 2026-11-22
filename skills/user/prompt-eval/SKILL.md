@@ -4,7 +4,7 @@ description: Use when asked to run paired evaluations of agent instructions, mea
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-19 15:03
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-19 15:03
   status: current
 ---
 
@@ -31,7 +31,3 @@ just reply-eval --regrade "$study/evidence-19-holdout/evidence-19-holdout-opus.j
 ```
 
 This reproduces the structural scores. The blind judgments for the same replies are in the round’s `judgments.json`.
-
-## Contributing fixes
-
-When `prompt-eval` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

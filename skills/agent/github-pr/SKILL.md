@@ -9,7 +9,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-01 21:08
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-16 13:37
   status: current
 ---
 
@@ -83,7 +83,3 @@ Example for a PR closed in favor of `#75`:
 - In text posted to GitHub, reference issues and PRs as `#123` or `owner/repo#123` and commits by SHA instead of pasting URLs; GitHub [autolinks these references](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls) in conversations and descriptions.
 - In reports to the user, give every referenced PR, issue, commit, or file a direct GitHub URL, because the user's terminal or chat does not autolink `#123`.
 - Do not use emojis, AI signatures, assistant attribution, or conversational filler in posted text. Reactions placed through the reactions API are not posted text.
-
-## Contributing fixes
-
-When `github-pr` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

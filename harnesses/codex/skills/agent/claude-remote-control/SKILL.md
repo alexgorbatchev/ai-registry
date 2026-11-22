@@ -4,7 +4,7 @@ description: Use when asked to start Claude Code for connection from the Claude 
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-22 08:50
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-10-22 08:50
   status: current
 ---
 
@@ -43,7 +43,3 @@ termctrl start claude-mobile-project --cwd "$project_dir" --cols 120 --rows 36 -
 Verify the running command includes `--permission-mode bypassPermissions` and the server displays `Connected` with its session URL. `--spawn session` serves one session and exits when it ends. Do not pass the global `--dangerously-skip-permissions` flag to this subcommand or assume global flags propagate to its spawned sessions; the exact flag belongs to the interactive launch above. Do not silently substitute `acceptEdits` or `--allow-dangerously-skip-permissions`, which do not enable the requested full bypass.
 
 Stop a terminal session with `termctrl stop <terminal-name>` only when the user requests stopping it or when cleaning up a disposable validation session. Use the [Terminal Control documentation](https://github.com/anomalyco/terminal-control) for lifecycle details.
-
-## Contributing fixes
-
-When `claude-remote-control` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

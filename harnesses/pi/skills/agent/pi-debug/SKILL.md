@@ -4,7 +4,7 @@ description: REQUIRED when diagnosing, troubleshooting, or debugging Pi Coding A
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-23 13:50
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-04 11:57
   status: current
 ---
 
@@ -130,7 +130,3 @@ For session structure and repair guidance, see [references/sessions-and-storage.
 - [references/extensions-and-mcp.md](references/extensions-and-mcp.md) — Extension discovery, `pi.dev` inspection, custom header injection, and MCP tools.
 - [references/sessions-and-storage.md](references/sessions-and-storage.md) — Session JSONL schemas, cached state clearing, and cross-provider history migration issues.
 - [references/common-errors.md](references/common-errors.md) — Comprehensive error-to-fix lookup matrix for all Pi error messages.
-
-## Contributing fixes
-
-When `pi-debug` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

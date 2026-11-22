@@ -4,7 +4,7 @@ description: If workflow-authoring skill is used, this skill must be used as wel
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-14 08:44
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-20 06:58
   status: current
 ---
 
@@ -51,7 +51,3 @@ Claims carry no worker identity, and every session claims as the same account. F
 ## Sizing
 
 - Run agents under the lane rule in the shared instructions: one agent at a time doing heavy work (builds, test suites, browsers, dev servers), and at most one other agent beside it doing only basic work such as reading or editing text. Log any coverage the workflow drops or caps.
-
-## Contributing fixes
-
-When `workflow-authoring-addendum` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

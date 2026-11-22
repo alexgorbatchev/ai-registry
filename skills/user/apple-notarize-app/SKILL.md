@@ -4,7 +4,7 @@ description: Sign, notarize, staple, and verify a macOS app for distribution out
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-26 14:46
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-10-26 14:55
   status: current
 ---
 
@@ -71,7 +71,3 @@ Require successful ticket validation and Gatekeeper acceptance as `Notarized Dev
 4. After an authorized upload, verify remote asset metadata and the downloaded artifact's checksum. Report the verified artifact path or download link, submission status, stapling and Gatekeeper results, and any remaining blocker. Never claim another app or release is notarized based on this submission.
 
 Consult [Apple's custom workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow) for DMG, PKG, and nested installer distribution; ZIPs cannot carry stapled tickets themselves. Preserve the requested distribution format and apply its format-specific signing and stapling requirements.
-
-## Contributing fixes
-
-When `apple-notarize-app` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

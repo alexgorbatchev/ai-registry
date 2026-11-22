@@ -43,11 +43,9 @@
     },
     "issue-tracker": {
       "source": "alexgorbatchev/issue-tracker-cli",
-      "commit": "82751992792560adaa528f47459bf0d5762cb874",
       "sourceType": "github",
       "skillPath": "skills/issue-tracker/SKILL.md",
-      "computedHash": "aa8d5ea76d6788bd17a3129758ed01bc773ce06d258f3064281aa09cb128fd30",
-      "installMode": "copy"
+      "computedHash": ""
     },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",

@@ -4,7 +4,7 @@ description: Use when reading, creating, organizing, or reviewing Penpot designs
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-12 16:45
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-12 20:33
   status: current
 ---
 
@@ -65,7 +65,3 @@ Before creating or reorganizing assets meant for reuse by other files, read [reu
 
    Check image rectangles for `fillImage` when exports are too small to judge. Some self-hosted exporters render every web font as a fallback; when exported text does not match the font in the shape data, verify fonts through `fontId`, `fontFamily`, `fontVariantId`, and `tokens`, and report the exporter limitation instead of changing fonts.
 3. Report what was created or updated, what was skipped and why, and any decision still needed from the user.
-
-## Contributing fixes
-
-When `penpot` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

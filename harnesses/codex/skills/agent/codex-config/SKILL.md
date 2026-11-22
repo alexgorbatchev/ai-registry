@@ -4,7 +4,7 @@ description: Configure Codex local clients, project `.codex/` layers, profiles, 
 author: alexgorbatchev
 metadata:
   created_on: 2026-09-28 13:58
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-04 11:57
   status: current
 ---
 
@@ -51,7 +51,3 @@ Use this skill for Codex configuration work rather than generic prompting or ski
 
 - `references/configuration.md` — comprehensive configuration guide organized by layer, key family, security model, override scope, and admin policy.
 - `references/harness-maintenance.md` — repo-local workflow for Codex harness policies, exec rules, and Codex-only skills under `<%- repo_root %>/harnesses/codex/`.
-
-## Contributing fixes
-
-When `codex-config` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

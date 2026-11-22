@@ -4,7 +4,7 @@ description: Use when designing, implementing, debugging, refactoring, testing, 
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-15 16:55
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-20 17:30
   status: current
 ---
 
@@ -117,7 +117,3 @@ If the CLI is missing or authentication fails, report the exact error and the re
 3. Inspect the final diff for unintended changes and applicable reference requirements. Finish authorized integration under the applicable Git and release policies; an unmerged branch is not completed delivery when integration is required. Record the verified revision and integration result in the task record immediately.
 4. Complete task-owned cleanup: stop temporary processes after their last consumer, remove disposable artifacts under **Development artifacts**, and retire owned branches/worktrees under [Git integration](references/git-integration.md). Preserve unpublished work, retained evidence, durable state, and resources still needed by other workers. Record any outstanding cleanup, its ownership and prerequisites; resume from actual repository/process state after interruption. Reconcile the ticket under **Work tracking** only against verified results. Continue with the next task only when queue execution is authorized.
 5. Report the resulting behavior or artifact, executed checks and results, measured test-command durations, checks left unrun, and material limitations or blockers. Include any remaining test artifacts or processes and follow-up work. Distinguish reference walkthroughs from executed checks, and do not claim completion while required work remains blocked. Apply the POC reporting rule when its marker is present.
-
-## Contributing fixes
-
-When `programming` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

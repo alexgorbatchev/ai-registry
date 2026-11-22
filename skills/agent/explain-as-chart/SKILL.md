@@ -8,7 +8,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-10 15:30
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-10 15:30
   status: current
 ---
 
@@ -32,7 +32,3 @@ Draw a flow with both only when the user needs structure and ordering; render th
 2. Render the checked page inline with the measured content height.
 3. Without such a tool, write the page to a scratch `.html` file and give its absolute path. Do not substitute ASCII art for a requested diagram.
 4. In the reply, add only what the diagram cannot show, such as open questions or decisions; do not restate the diagram.
-
-## Contributing fixes
-
-When `explain-as-chart` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

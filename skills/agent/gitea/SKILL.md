@@ -4,7 +4,7 @@ description: Create and manage Gitea repositories and inspect Gitea Actions usin
 author: alexgorbatchev
 metadata:
   created_on: 2026-05-06 11:40
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-04 12:10
   status: current
 ---
 # gitea
@@ -204,7 +204,3 @@ State clearly:
 - whether `origin` was added or reused
 - whether the branch was pushed successfully
 - any blockers that still require user action
-
-## Contributing fixes
-
-When `gitea` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

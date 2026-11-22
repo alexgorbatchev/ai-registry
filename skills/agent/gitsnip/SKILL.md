@@ -6,7 +6,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-15 21:48
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-10-31 18:50
   status: current
 ---
 
@@ -109,7 +109,3 @@ the repository name.
 Read [references/help.md](references/help.md) for the captured 0.2.1 help and version
 output. The current CLI uses `--version`; the old provider flag and completion/version
 subcommands are absent from this interface.
-
-## Contributing fixes
-
-When `gitsnip` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

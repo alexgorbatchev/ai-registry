@@ -4,7 +4,7 @@ description: Use when reviewing an application's user experience across many fea
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-15 07:14
-  last_modified: 2026-11-22 14:19
+  last_modified: 2026-11-20 11:51
   status: current
 ---
 
@@ -206,7 +206,3 @@ Run them with Bun from the project root as `bun <skill>/scripts/<name>.ts`, wher
 - When the owner flags a wireframe problem or asks whether pages are consistent, read [design language](references/design-language.md#drawing-errors-and-proposal-errors) "Drawing errors and proposal errors" before answering.
 - Verification coverage stated honestly: which pages had visual inspection and which passed automated checks only, and whether each claim about runtime behavior rests on reading code or on running it. Before confirming behavior that depends on a measurement (a detector, scorer or classifier), run it on inputs with known answers. Correct earlier claims explicitly, by their IDs, when evidence changes them.
 - Keep private hostnames, credentials and personal data out of tracked files; derive local URLs from the running service.
-
-## Contributing fixes
-
-When `ux-flow-redesign` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

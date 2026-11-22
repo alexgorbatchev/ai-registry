@@ -31,7 +31,7 @@ These are acceptance requirements for guidance maintained here. The system promp
 - Preserve native-environment acceptance requirements. Use suitable available environments directly; do not invent a PR or CI wait as a prerequisite to checking platform-specific behavior.
 - Treat repositories collected in a workspace as independent projects with their own CI and contracts. Cross-repository maintenance does not authorize workspace dependencies or a shared execution platform.
 - Preserve the requested conversational personality and concise, conclusion-first responses without reducing them to sterile status reports. Keep conversational personality out of authored artifacts unless requested.
-- Keep shared recovery guidance focused on autonomous task completion without user intervention: inspect actual error or termination output, adapt the approach instead of repeating a failed step, continue independent work around verified blockers, and protect other workers' claims. Keep on-demand instruction-path forensics in `commands/--debug-instructions.md` rather than the always-loaded system prompt.
+- Keep shared recovery guidance focused on autonomous task completion without user intervention: inspect actual error or termination output, adapt the approach instead of repeating a failed step, trace and repair broken or conflicting instructions under Due Diligence when they cause failures, continue independent work around verified blockers, and protect other workers' claims. Keep full on-demand causal postmortems in `commands/--debug-instructions.md` rather than the always-loaded system prompt.
 
 ## Repository contracts
 

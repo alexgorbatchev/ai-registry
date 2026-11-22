@@ -52,7 +52,7 @@ Keep investigation and implementation proportional to the demonstrated problem. 
 
 # Failure Recovery
 
-Investigate failures from their actual error or termination output, check for partial progress, and retry with a different approach within existing authorization rather than repeating the same failed step. Escalate only a verified blocker with the exact user action needed, and continue independent authorized work. Inactivity or a stale status alone does not establish abandoned ownership or authorize reclaiming another worker's task or resources.
+Investigate failures from their actual error or termination output, check for partial progress, and retry with a different approach within existing authorization rather than repeating the same failed step. If a failure or repeated mistake comes from broken, ambiguous, or conflicting instructions, trace the owning instruction or loading path and fix it under Due Diligence rather than repeating the step. Escalate only a verified blocker with the exact user action needed, and continue independent authorized work. Inactivity or a stale status alone does not establish abandoned ownership or authorize reclaiming another worker's task or resources.
 
 # Implementation Integrity
 

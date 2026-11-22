@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-22 08:49
+  last_modified: 2026-11-22 09:06
   status: current
 ---
 
@@ -29,7 +29,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Before changing asset placement, generation, state synchronization/bootstrap, or harness output contracts, follow the task-specific reference routing in root `AGENTS.md` beneath the repo_root token. Detailed contracts live under `docs/internal/references/`; preserve their loading routes when reorganizing guidance.
 
 - Automatically record explicit standing user instructions in the narrowest applicable `AGENTS.md` or existing policy file without requiring a separate request to save them. Update superseded wording in place; keep one-task directions and session history out of policy files. Ask only when the intended scope or resolution of a material conflict is unclear.
-- Do not conflict with a harness's built-in system instructions or augment its tool-calling heuristics (tool ordering, shell-command splitting or chaining, async-wait or turn-ending workarounds, or tool-specific stop rules), and do not paper over harness or host runtime bugs in shared instructions. Keep execution mechanics in owning skills and on-demand instruction forensics in commands.
+- Do not conflict with a harness's built-in system instructions or augment its tool-calling heuristics (tool ordering, shell-command splitting or chaining, async-wait or turn-ending workarounds, or tool-specific stop rules), and do not paper over harness or host runtime bugs in shared instructions. Keep execution mechanics in owning agent skills; `commands/` and `skills/user/` are user-invokable only and must never be relied on for autonomous agent workflows.
 - Keep dependency investigation and library integration within the authorized task's required capabilities. Follow the library guidance in `skills/agent/programming/SKILL.md` beneath the repo_root token.
 - Keep instruction-maintenance tasks, including their commits and merges, within their authorized scope. Record newly specified but unimplemented enforcement as follow-up work rather than making its implementation a prerequisite. Run existing checks applicable to the actual changes, preserve existing gates and behavior-change testing requirements, and report missing enforcement without claiming compliance. A user-deferred generation or application step suspends only that step and its actual dependents; continue independent validation and authorized source integration.
 - For executable behavior changes, add or update meaningful behavioral tests and follow the root `AGENTS.md` testing and coverage policy beneath the repo_root token: at least 90% line and 90% function coverage across each affected first-party package's non-test source, including unexecuted files and excluding `scripts/` directories. Document and configure the command, source scope, metrics, and exclusions; reproduce blocking baseline failures on the untouched base and make the smallest necessary prerequisite repair. Do not weaken gates or make token test edits.
@@ -123,7 +123,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 - Keep PR-writing and PR review-feedback guidance in the `github-pr` skill under `<%- skills_dir %>/agent/github-pr/`, with one bundled reference per mode; do not recreate a duplicate PR command. PR descriptions, comments, and replies posted from the user's account use the account owner's first-person voice (`I`, `me`, `my`), with actions and approvals grounded in actual work and authorization. Do not refer to that account owner as `the user` or narrate an assistant intermediary. Separate bot reviews speak for the bot's identity.
 - Create the command under the commands_dir token.
-- Use commands for slash-command prompts, reusable task blueprints, and prompt templates.
+- Use commands for manual, user-invokable-only slash-command prompts, reusable task blueprints, and prompt templates. Commands are never invoked autonomously by agents.
 - Keep the command self-contained rather than relying on unstated repo context.
 - Every harness ships every registry command; there is no per-command selection.
 - For Codex, include YAML frontmatter with a non-empty `description`. Every command becomes a native skill bundle in the Codex `skills/` directory, with `policy.allow_implicit_invocation: false` in `agents/openai.yaml`; do not emit deprecated `prompts/` files. Invoke with `$<skill-name>` or `/skills`. An explicit `name` is honored; otherwise the build derives `command-<filename>` with leading hyphens removed and repeated hyphens collapsed. Use lowercase kebab-case names of at most 64 characters and avoid collisions with skill names.
@@ -204,8 +204,8 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 
 ## Quick Routing
 
-- Add reusable agent behavior under the skills_dir token.
-- Add reusable slash command or prompt under the commands_dir token.
+- Add agent-invokable skills under `skills/agent/` and user-invokable-only skills under `skills/user/` beneath the skills_dir token.
+- Add user-invokable-only slash commands or prompts under the commands_dir token.
 - Add harness-specific shipped config under `harnesses/<target>/` beneath the repo_root token.
 - Add a publishable standalone package under `packages/<package-name>/` beneath the repo_root token.
 - Add a vendored third-party code package for a harness under `vendor/<name>/` beneath the repo_root token.

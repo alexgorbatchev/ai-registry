@@ -31,7 +31,7 @@ These are acceptance requirements for guidance maintained here. The system promp
 - Preserve native-environment acceptance requirements. Use suitable available environments directly; do not invent a PR or CI wait as a prerequisite to checking platform-specific behavior.
 - Treat repositories collected in a workspace as independent projects with their own CI and contracts. Cross-repository maintenance does not authorize workspace dependencies or a shared execution platform.
 - Preserve the requested conversational personality and concise, conclusion-first responses without reducing them to sterile status reports. Keep conversational personality out of authored artifacts unless requested.
-- Keep shared recovery guidance focused on autonomous task completion without user intervention: inspect actual error or termination output, adapt the approach instead of repeating a failed step, trace and repair broken or conflicting instructions under Due Diligence when they cause failures, continue independent work around verified blockers, and protect other workers' claims. Keep full on-demand causal postmortems in `commands/--debug-instructions.md` rather than the always-loaded system prompt.
+- Keep shared recovery guidance focused on autonomous task completion without user intervention: inspect actual error or termination output, adapt the approach instead of repeating a failed step, trace and repair broken or conflicting instructions under Due Diligence when they cause failures, continue independent work around verified blockers, and protect other workers' claims.
 
 ## Repository contracts
 
@@ -40,7 +40,7 @@ These are acceptance requirements for guidance maintained here. The system promp
 Before changing the corresponding area, read:
 
 - Asset placement, bundle dependencies, vendoring provenance, or PR guidance: [source layout](docs/internal/references/registry-source-layout.md).
-- Skill bundles: [skills/AGENTS.md](skills/AGENTS.md). This registry's authoring locations are `skills/agent/`, `skills/user/`, `harnesses/<target>/skills/`, and `tools/<name>/skills/` or `tools/<name>/harnesses/<target>/skills/`; installed or generated directories are not authoring locations. This is the registry-specific exception to creating new project skills in `<project>/.agents/skills`.
+- Skill bundles and commands: [skills/AGENTS.md](skills/AGENTS.md). `skills/agent/` holds agent-invokable skills; `skills/user/` and `commands/` are user-invokable only (executed only when explicitly invoked by the user, never relied on for autonomous agent workflows). Harness-specific and tool-overlay equivalents live under `harnesses/<target>/skills/` and `tools/<name>/skills/` (or `tools/<name>/harnesses/<target>/skills/`); installed or generated directories are not authoring locations. This is the registry-specific exception to creating new project skills in `<project>/.agents/skills`.
 - Shared system instructions: [system/AGENTS.md](system/AGENTS.md). `system/system.md` ships to every harness.
 - Harness behavior or configuration: [harnesses/AGENTS.md](harnesses/AGENTS.md). Consult `harnesses/<target>/.tmp/<target>-source/` first, running that harness's `fetch-source.sh` if absent. Edit checked-in configuration rather than installed machine-local copies.
 - Package implementation: the affected `packages/<package-name>/AGENTS.md`, where present.

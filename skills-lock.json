@@ -1,62 +1,70 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
+    "agent-auth": {
+      "source": "alexgorbatchev/agent-auth-cli",
+      "commit": "7f05dac26336fe7a52ac6271b2344ac2ac2187f9",
+      "sourceType": "github",
+      "skillPath": "skills/agent-auth/SKILL.md",
+      "computedHash": "79a5257365c64bad09465e7c94d9809a5251e638da6542bef88e89e4eac9d7c8",
+      "installMode": "copy"
+    },
     "archify": {
       "source": "alexgorbatchev/archify",
       "ref": "f5f28195f7b48d1d9e3407f47caf49533dfcbde8",
       "sourceType": "github",
       "skillPath": "archify/SKILL.md",
-      "computedHash": "24c0ea26e93173ff77bf142f923ab435d9baf7c2eb3de31a1b1937493788540f"
+      "computedHash": ""
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/diagnosing-bugs/SKILL.md",
-      "computedHash": "ede7254edbd22fcab97a0941511f7d440d8f9a249348fea97c50987ad5501674"
+      "computedHash": ""
     },
     "domain-modeling": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
-      "computedHash": "b3eb40152b81f0c98fd2095a023c019452dbdce56f7540cc67fece2972db8369"
+      "computedHash": ""
     },
     "grilling": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "computedHash": "ef1641a2047b71b60f1942cd35efb47d3afc9d584dff5a0b01f8c7db923aaa08"
+      "computedHash": ""
     },
     "hunk-review": {
       "source": "modem-dev/hunk",
       "ref": "v0.22.0",
       "sourceType": "github",
       "skillPath": "packages/hunk/skills/hunk-review/SKILL.md",
-      "computedHash": "ebad9a743f1835959a61d61b49c7e783419833d01f6c29de225932605f2765c5"
+      "computedHash": ""
     },
     "issue-tracker": {
       "source": "alexgorbatchev/issue-tracker-cli",
       "sourceType": "github",
       "skillPath": "skills/issue-tracker/SKILL.md",
-      "computedHash": "0ec11ad0cd39262813cb890cd91365919e726d9a20573793466757dd32bf272b"
+      "computedHash": ""
     },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
-      "computedHash": "1d35d0afa3ded88c9324d38db08b2cff91cd03e0e11d64786bee41385cd7b9fb"
+      "computedHash": ""
     },
     "thermo-nuclear-code-quality-review": {
       "source": "cursor/plugins",
       "ref": "main",
       "sourceType": "github",
       "skillPath": "cursor-team-kit/skills/thermo-nuclear-code-quality-review/SKILL.md",
-      "computedHash": "9052b01b46b1d8dbf94c45f9313ec1983443f9a460e83d49cdc7fe0f640ca476"
+      "computedHash": ""
     },
     "triage": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/triage/SKILL.md",
-      "computedHash": "a683e69163e23630f39c05a50fb9d83a3795a6a6fbd317357669e082cd43a158"
+      "computedHash": ""
     }
   }
 }

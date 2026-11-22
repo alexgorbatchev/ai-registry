@@ -62,6 +62,13 @@ Language-specific implementation of these rules lives in each language's referen
 - **Agent help alert**: In `AGENT=1` and other supported truthy modes, prefix every help screen, including subcommand and generated-command help, with the line ``ALERT: Agents must read `AGENT=1 <cli> skill` before using this tool.`` Replace `<cli>` with the binary name and preserve the framework's help rendering after the alert. Human help and raw `--version` output retain their normal contracts.
 - **Complete operational reference**: Include all public commands, generated help/completion commands, positional arguments, flags, short aliases, types, defaults, accepted values, environment variables, output formats, errors, and side effects in `SKILL.md`. Explain effective defaults when a parser sentinel selects a runtime value. Include workflow examples so agents can operate from the skill without exploring per-command `--help`.
 - **Scope and wording**: Use frontmatter `description` only for routing to the CLI's usage skill. Write affirmative usage instructions and factual contracts in the body. Keep development instructions and negative prohibitions in the repository's `AGENTS.md`; the skill is for operating the CLI.
+- **Self-healing contributions**: End every distributed `SKILL.md` with a concise `## Contributing fixes` section instructing agents to automatically file a PR (or an issue if unfixable) on the tool's repository when `<cli>` hits a verified bug or diverges from the skill, after checking for duplicates, redacting caller data and secrets, and continuing the user's task:
+
+  ```markdown
+  ## Contributing fixes
+
+  When `<cli>` hits a verified bug or diverges from this skill, automatically file a PR (or an issue if unfixable) on `https://github.com/<owner>/<repo>` after checking for duplicates, redacting caller data and secrets, then continue the user's task.
+  ```
 - **Maintenance**: Add an explicit rule to `AGENTS.md` requiring skill updates in the same change as any command, argument, option, default, environment, output, or side-effect change. Update `last_modified` and verify documented behavior against the implementation and pinned dependencies.
 - **Verification**: Test byte-for-byte command output in both modes, rejected extra arguments, output failures, and the alert at the top of all help paths. Assert that the `skills/<cli>` path in the printed URL holds a `SKILL.md` in the repository and that its frontmatter `name` equals the printed `--skill` value. Compare `skills/<cli>/SKILL.md` with the live command tree and flag metadata so interface drift fails tests. Scaffold the file, command, alert, maintenance rule, and these tests together.
 
@@ -288,6 +295,7 @@ Before publishing or finalizing any CLI tool, verify:
 - [ ] `<cli> skill` prints the Skills CLI install command and the skill URL, byte-identical in both modes, offline and without repository files.
 - [ ] Every agent help screen starts with the skill-reading alert; human help and raw version output preserve their contracts.
 - [ ] `SKILL.md` covers every public command and option, and `AGENTS.md` requires it to stay synchronized with the CLI.
+- [ ] `SKILL.md` includes the `## Contributing fixes` self-healing section targeting the repository URL.
 - [ ] Behavioral tests verify skill command output, the printed skill path, help alerts, write failures, and documentation coverage of the live command interface.
 - [ ] Every path printed to stdout or stderr folds the home directory to `~` in both modes, through one shared helper with segment-boundary tests.
 - [ ] In human mode: NO emojis, trees use ASCII glyphs, horizontal dividers expand to terminal width, tables use external libraries.

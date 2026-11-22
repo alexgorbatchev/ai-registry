@@ -4,7 +4,7 @@ description: Use when operating or testing interactive terminal applications, in
 author: alexgorbatchev
 metadata:
   created_on: 2026-10-08 13:49
-  last_modified: 2026-11-04 12:10
+  last_modified: 2026-11-22 14:19
   status: current
 ---
 
@@ -61,3 +61,7 @@ termctrl video .tmp/termctrl/demo.termctrl --out .tmp/termctrl/demo.mp4
 Create the `done` marker after verifying the desired screen during the live session. Video export requires `ffmpeg`; consult `video --help` for marker-based edit plans and pointer overlays. Recordings retain terminal output and input; avoid recording secrets and inspect artifacts before sharing.
 
 Report the observed outcome, method used, artifact paths, and any failed wait, unsupported operation, or deferred required check. Distinguish completed checks from checks awaiting a tool, session, or access. Do not claim a workflow passed solely because commands ran, or declare completion while required verification remains deferred.
+
+## Contributing fixes
+
+When `termctrl` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

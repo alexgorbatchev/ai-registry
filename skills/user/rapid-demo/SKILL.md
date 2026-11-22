@@ -5,7 +5,7 @@ description: >-
 author: alexgorbatchev
 metadata:
   created_on: 2026-08-20 14:15
-  last_modified: 2026-10-16 09:45
+  last_modified: 2026-11-22 14:19
   status: current
 ---
 
@@ -61,3 +61,7 @@ When executing an explicitly requested rapid local demo or practice problem:
 3. **Final Delivery Format**:
    - Provide start and test commands.
    - Summarize verified acceptance-check results and known gaps. Identify unfinished work, blockers, failed or unrun checks, and the next action needed to resume; do not assign a completion score.
+
+## Contributing fixes
+
+When `rapid-demo` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

@@ -4,7 +4,7 @@ description: Use when creating, reviewing, or modifying skills, commands, the sh
 author: alexgorbatchev
 metadata:
   created_on: 2026-04-17 21:08
-  last_modified: 2026-11-22 09:06
+  last_modified: 2026-11-22 14:19
   status: current
 ---
 
@@ -217,3 +217,7 @@ Maintain the registry interactively with agent assistance. Reusable guidance may
 - Codex docs snapshots, build logic, and Codex-only shipped skills live under `harnesses/codex/` beneath the repo_root token.
 - Pi shared settings seed plus harness-local prompts, extensions, and skills live under `harnesses/pi/` beneath the repo_root token.
 - Claude Code shared `settings.json` plus harness-local config surfaces and skills live under `harnesses/claude-code/` beneath the repo_root token.
+
+## Contributing fixes
+
+When `ai-registry-integration` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

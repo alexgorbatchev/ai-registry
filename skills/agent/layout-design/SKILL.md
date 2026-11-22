@@ -4,7 +4,7 @@ description: Use when redesigning, optimizing, or reviewing interface layouts, i
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-11 14:59
-  last_modified: 2026-11-11 14:59
+  last_modified: 2026-11-22 14:19
   status: current
 ---
 
@@ -60,3 +60,7 @@ For review-only work, report concrete defects and proposed corrections without e
 ## Deliver the reviewed result
 
 Show the final comparable visual evidence through the project's delivery workflow, with stable variant names and the chosen baseline identified. Explain the few decisions that materially improve the layout and any remaining tradeoff. State whether the result is a visual study or implemented behavior, and distinguish visual inspection from executed functional checks. Do not bury a screenshot behind a claim that it was reviewed; make it available for the user to judge.
+
+## Contributing fixes
+
+When `layout-design` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

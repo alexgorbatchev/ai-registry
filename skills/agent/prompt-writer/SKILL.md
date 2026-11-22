@@ -4,7 +4,7 @@ description: Use whenever asked to generate, write, rewrite, or improve instruct
 author: alexgorbatchev
 metadata:
   created_on: 2026-07-22 08:45
-  last_modified: 2026-11-10 18:24
+  last_modified: 2026-11-22 14:19
   status: current
 ---
 
@@ -58,3 +58,7 @@ Review the resulting instructions against these checks:
 Walk through a normal task, missing required information, and a conflicting or out-of-scope request. For ongoing workflows, also check interruption after integration but before cleanup, a blocked task with other eligible work, and a review-only request. State the expected action for each; use actual execution where available. A textual walkthrough is not proof of runtime behavior.
 
 Use at most two review-and-fix rounds. Finish when these checks and required artifact validation pass. If a required check still fails, preserve the work, report the specific blocker without claiming completion, and continue independent authorized work. Do not assign numerical quality scores or iterate for stylistic perfection.
+
+## Contributing fixes
+
+When `prompt-writer` hits a verified issue or diverges from actual behavior, automatically file a PR (or an issue if unfixable) on `https://github.com/alexgorbatchev/ai-registry` after checking for duplicates, redacting caller data and secrets, then continue the user's task.

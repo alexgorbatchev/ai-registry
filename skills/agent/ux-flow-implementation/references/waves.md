@@ -11,7 +11,7 @@ The orchestrator selects tickets, starts units, reviews what they return, deploy
 
 ## Lanes and capacity
 
-- Lanes follow the lane rule in your system instructions. An implementation unit is heavy work (builds, a dev server, browser captures, the final gate), so units run one at a time; the orchestrator's basic work (reviewing returns, triaging reviews, editing tickets) may run beside it, and so may a blind reviewer, which only reads finished screenshots.
+- An implementation unit is heavy work (builds, a dev server, browser captures, the final gate), so units run one at a time; the orchestrator's basic work (reviewing returns, triaging reviews, editing tickets) may run beside it, and so may a blind reviewer, which only reads finished screenshots.
 - Before starting each unit, run `bun <skill>/scripts/capacity.ts --path <worktree volume> --floor-gib <floor>`, where the floor is 8 GiB, raised to one unit's measured peak footprint (worktree, installed dependencies, build output, browser). Start the unit only when it exits 0, no other heavy lane runs on the machine, and the previous unit has landed or checkpointed and released. When it exits 1, start nothing and measure again later. Record each reading and the decision in the run log.
 - Run units as workers whose lifetime does not depend on the orchestrator's conversation turn (a delegated task or detached run), so ending or compacting the turn does not kill them or strip their tools.
 

@@ -2,7 +2,7 @@
 
 You implement {{product}} tickets {{tickets}}, in that order, in the repository at `{{repo}}`. Work autonomously: decide everything the tickets, proposals and pattern reference leave open, record each decision on its ticket, and continue. Never ask the owner about priority, order, naming or other bookkeeping. A product call that would change behavior the pattern reference settled goes into your return for the orchestrator, and you continue with work that does not depend on it. Do the work yourself; start no subagents.
 
-You are the heavy lane under the lane rule in your system instructions: you may run builds, the dev server, browser captures, targeted tests and the final gate.
+You are the heavy lane: you may run builds, the dev server, browser captures, targeted tests and the final gate.
 
 Your checkpoint is `{{checkpoint}}`. Read it first and continue from the first stage it does not record; never redo a recorded stage. Rewrite it whole after each stage, recording the stage name with `worktree` (absolute path) and `revision` once known. Stages: `claimed`, `baseline`, `built`, `verified`, `landed`, `commented`, `cleaned`. If you cannot finish, set `"status": "blocked"` with `blocker` (cause and evidence) and `unblock` (exact condition and next action) before returning.
 

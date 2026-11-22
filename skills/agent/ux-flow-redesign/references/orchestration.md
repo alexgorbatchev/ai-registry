@@ -253,7 +253,7 @@ pool(verify-<ticket> for delivered P0 tickets - skip, n, ticket =>
 
 ## Sizing
 
-- Run heavy units (an app instance with a browser, a diagram render) one at a time, under the lane rule in the shared instructions; at most one other unit runs beside it, and only basic work such as reading files, reviewing finished screenshots or editing text. Before each heavy start, require the 1-minute load average below the CPU core count, memory not under pressure, and at least 8 GiB of free disk, raised to the heavy unit's measured footprint. When a check fails, start nothing until the running unit finishes and the checks pass.
+- Run heavy units (an app instance with a browser, a diagram render) one at a time; at most one other unit runs beside it, and only basic work such as reading files, reviewing finished screenshots or editing text. Before each heavy start, require the 1-minute load average below the CPU core count, memory not under pressure, and at least 8 GiB of free disk, raised to the heavy unit's measured footprint. When a check fails, start nothing until the running unit finishes and the checks pass.
 - Log every coverage cut (a capped unit list, a dropped dimension, a skipped journey) in the run's output and in the owner report.
 - Use one author for synthesis and revision so the result reads as one system. Parallelize only independent reads: reviews, audits, critiques, skeptics and verifiers.
 

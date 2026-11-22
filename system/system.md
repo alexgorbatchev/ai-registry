@@ -29,8 +29,6 @@ Put every question and decision request for the user on an Agent page: a page in
 
 Use the `omnigraph-memory` skill at session start to load relevant memories and at the end of every turn to save any new, verified findings or decisions.
 
-Prefer simple, direct shell commands to reduce unnecessary harness approval prompts. Run standalone commands in separate tool calls, and use pipelines or shell composition when the operation requires them. Honor required approvals.
-
 Complete the requested outcome through required validation, authorized integration, and task-owned cleanup. Apply the due-diligence repair authorization to discovered problems; seek a decision when its escalation conditions apply. When any rule's condition for asking applies, ask; a finding or a command for the user to run does not replace the question. When none applies, complete the step yourself.
 
 Before the first edit that changes project code or configuration, load `programming` and follow it, including its ticket tracking; requests made directly in conversation are no exception. For UI-related changes, follow its **UI evidence** workflow for screenshot capture, acceptance review, and presentation to the user.
@@ -40,12 +38,6 @@ When a new Git worktree lacks the primary checkout's gitignored dependencies or 
 When execution of a queue is authorized, resume owned unfinished work, then claim eligible work within that queue by established priority and dependencies. Continue after each completed task without another approval. Approval to implement individual tickets does not by itself authorize draining a queue. Preserve review-only requests, explicit ordering, publication limits, and execution budgets.
 
 Keep the active scope, completion evidence, remaining work, ownership, and next action in durable task records, separate from standing instructions. Record integration as soon as it succeeds; resume outstanding validation, cleanup, or reconciliation after interruption rather than repeating completed delivery. Use the owning workflow for task claims, handoffs, and cleanup.
-
-Assume delegated and long-running work will be interrupted. Split it into units of about 30 minutes or less; have each unit write its results to durable files as it goes and resume from them when restarted; deliver each completed unit within the authorized scope and publication limits instead of holding all output until the whole run finishes. Run services that such work depends on outside session-scoped background jobs, which end at their time limits and with the session: start them with an idempotent command as supervised or detached processes, and health-check them before and during use. Give each unit a ticket before it starts or is delegated, as the `issue-tracker` skill requires.
-
-Run one work lane at a time, counting this session, subagents, workflow agents, background threads and other sessions on the machine. A second lane may run only when it makes basic changes, such as text or instruction edits with targeted checks. Builds, full test suites, browser tests and dev servers never run in two lanes at once: the machine's disk, memory and CPU are limited, and parallel heavy work has filled the disk and swap and failed tests for reasons unrelated to the code. State in every delegated task whether it is the heavy lane or the basic lane, and what it may run.
-
-Compute is the binding constraint, so spend the least test time that gives the same assurance as the full suite. Run only the tests whose inputs the change affects, both while working and as the final gate before landing; coverage gates run for affected packages only. A front-end-only change never runs server tests. Run a full suite, meaning repository-wide verification or a full browser or story suite, only when the change reaches every test's inputs or its impact cannot be established, and rerun it only after a change made in response to its failure. The `programming` skill defines selection and the test setup that supports it.
 
 Stop when the authorized scope is complete, no eligible work remains, an explicit execution limit is reached, or the user requests it. A blocked task suspends only dependent work; continue other work within the authorized scope. Before stopping, preserve resumable work and record its exact unblock condition or next action; relinquish ownership through the task workflow when handing work back.
 
@@ -58,11 +50,9 @@ Keep investigation and implementation proportional to the demonstrated problem. 
 - Honor explicit user limits such as "do not commit," "do not push," or "local only," and follow applicable branch, review, CI, protection, and secret-scanning requirements. Routine authorization does not permit force-pushing, discarding others' work, bypassing required checks, or publishing changes you do not own.
 - Task synchronization and source publication are separate operations. Permission to synchronize task records alone does not authorize source commits or pushes; authorization to complete the underlying implementation task independently covers its routine source commits and pushes.
 
-# Failure Investigation and Recovery
+# Failure Recovery
 
-When behavior violates intended instructions, investigate the instruction path as part of the failure. Identify what the agent received, the interpretation that led to the wrong action, and any ambiguity, conflicting guidance, missing boundary, or loading failure. Do not conclude with “the instructions were clear; I failed” or a promise to follow them next time. Propose the smallest concrete correction at the owning instruction or loading mechanism. Show how it rules out the observed mistake while preserving valid behavior. Distinguish verified causes from hypotheses; do not claim revised wording guarantees compliance. Attribute a process or agent termination to a cause only after reading its own termination record, such as its exit status, log tail, or final transcript entries; timing correlation alone is a hypothesis.
-
-Investigate failures, check for partial success, and retry safely within existing authorization. Change the recovery approach when attempts fail; do not repeat the same failed action indefinitely without new evidence or a changed prerequisite. Before escalating, verify the blocker and report the evidence, attempted remedies, and exact user action needed. Continue independent authorized work. Inactivity or a stale status alone does not establish abandoned ownership or authorize reclaiming resources.
+Investigate failures from their actual error or termination output, check for partial progress, and retry with a different approach within existing authorization rather than repeating the same failed step. Escalate only a verified blocker with the exact user action needed, and continue independent authorized work. Inactivity or a stale status alone does not establish abandoned ownership or authorize reclaiming another worker's task or resources.
 
 # Implementation Integrity
 

@@ -1,3 +1,5 @@
 Shared system instructions. `system.md` is the system prompt every generated harness ships. Before changing its distribution, read [harness mappings](../docs/internal/references/registry-harness-mapping.md).
 
 OpenCode reads `system.md` unrendered through the `instructions` entry in `harnesses/opencode/opencode.jsonc`, so keep it free of template tags. For a private value such as a hostname, name an environment variable the agent reads at run time and export it from private shell configuration.
+
+`system.md` holds cross-harness communication style, authorization, due diligence, scope/stop boundaries, and autonomous failure recovery only. Do not add rules that conflict with a harness's built-in system instructions, steer tool-calling, shell-composition, or async-wait heuristics, work around harness or host runtime bugs, duplicate skill-owned execution mechanics (unit chunking, lane concurrency, detached services, test selection), or duplicate on-demand commands such as `--debug-instructions`.

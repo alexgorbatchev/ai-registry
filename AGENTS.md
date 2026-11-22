@@ -15,6 +15,7 @@ These are acceptance requirements for guidance maintained here. The system promp
 ### Ownership and composition
 
 - Give each reusable policy one maintained owner: cross-task behavior in the shared system prompt, domain workflows in skills, repository facts and exceptions in `AGENTS.md`, and task scope and progress in durable task records. Harness-specific guidance belongs in the harness layer; private environment details belong in overlays.
+- Do not conflict with a harness's built-in system instructions, augment or override tool-calling heuristics (shell command splitting or chaining, polling or wait loops, turn-ending workarounds, tool ordering, or tool-specific stop rules), or paper over harness or host runtime bugs in `system/system.md` or generic skills. Fix runtime defects in the harness or host layer instead. Keep execution mechanics such as unit chunking, lane concurrency, detached-service handling, and test selection in the owning domain skills rather than `system/system.md`.
 - Repository guides must not repeat inherited policy or generic skill-selection instructions already supplied by the system and skill descriptions. In particular, do not add boilerplate telling every project to load `programming`, `docs-writer`, or `prompt-writer`.
 - Skill dependencies are a separate contract: a skill must identify required skills and when they are needed. `skill-writer` requires `prompt-writer`; that does not justify copying their loading instructions into project guides.
 - Engineering delivery, validation, UI evidence, and engineering cleanup belong to `programming`. The externally maintained `issue-tracker` owns task state, claims, lifecycle reconciliation, and handoffs. Do not recreate ticket workflows in this registry or consuming repositories.
@@ -30,7 +31,7 @@ These are acceptance requirements for guidance maintained here. The system promp
 - Preserve native-environment acceptance requirements. Use suitable available environments directly; do not invent a PR or CI wait as a prerequisite to checking platform-specific behavior.
 - Treat repositories collected in a workspace as independent projects with their own CI and contracts. Cross-repository maintenance does not authorize workspace dependencies or a shared execution platform.
 - Preserve the requested conversational personality and concise, conclusion-first responses without reducing them to sterile status reports. Keep conversational personality out of authored artifacts unless requested.
-- Investigate instruction failures through the received instructions, loading path, and observed interpretation. Distinguish verified causes from hypotheses; neither self-blame nor another unexamined rule is a repair, and wording changes do not guarantee compliance.
+- Keep shared recovery guidance focused on autonomous task completion without user intervention: inspect actual error or termination output, adapt the approach instead of repeating a failed step, continue independent work around verified blockers, and protect other workers' claims. Keep on-demand instruction-path forensics in `commands/--debug-instructions.md` rather than the always-loaded system prompt.
 
 ## Repository contracts
 
@@ -73,7 +74,7 @@ Ticket bodies start with `## Request`, quoting each user message that shaped the
 
 ### Maintenance boundaries
 
-Persist explicit standing user instructions in their narrowest existing owner; update superseded rules in place. Keep task directions, progress, and handoffs in task records. Let agents choose search and navigation tools; do not add mandatory tool ordering or tool-specific stop rules.
+Persist explicit standing user instructions in their narrowest existing owner; update superseded rules in place. Keep task directions, progress, and handoffs in task records. Let harnesses and models own tool-calling heuristics: do not add mandatory tool ordering, shell-composition mandates, async-wait or turn-ending workarounds, or tool-specific stop rules.
 
 Instruction maintenance does not authorize implementing every newly documented enforcement mechanism or remediating every consuming repository. Record enforcement gaps as follow-up work, preserve existing checks, and report unverified enforcement accurately. A deferred generation or application step suspends only itself and actual dependents.
 

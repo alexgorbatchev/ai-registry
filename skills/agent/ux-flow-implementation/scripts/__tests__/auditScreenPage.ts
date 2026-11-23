@@ -99,3 +99,32 @@ export const PINNED_BARS_PAGE = `<!doctype html>
   <footer></footer>
 </body>
 </html>`;
+
+/**
+ * A page whose theme follows the color scheme from script, as apps with a theme provider do: a media query listener
+ * sets `data-theme` 100 ms after the scheme changes, and the colors then transition for 1.5 s. Faint text fails
+ * contrast in light only.
+ */
+export const SCRIPTED_THEME_PAGE = `<!doctype html>
+<html>
+<head>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; font: 16px sans-serif; background: #fff; color: #111; transition: color 1.5s linear, background-color 1.5s linear; }
+  #faint { color: #aaa; transition: color 1.5s linear; }
+  html[data-theme="dark"] body { background: #1a1a1a; color: #eee; }
+  html[data-theme="dark"] #faint { color: #ccc; }
+</style>
+<script>
+  const query = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => { document.documentElement.dataset.theme = query.matches ? "dark" : "light"; };
+  apply();
+  query.addEventListener("change", () => setTimeout(apply, 100));
+</script>
+</head>
+<body>
+  <p id="ok">Readable text</p>
+  <p id="faint">Faint text</p>
+</body>
+</html>
+`;

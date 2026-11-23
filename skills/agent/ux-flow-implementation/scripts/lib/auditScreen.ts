@@ -459,13 +459,37 @@ export interface AuditOptions {
   run?: BrowserRunner;
 }
 
+/** How long the page must hold still, in milliseconds, before a cell is measured or a frame saved. */
+export const SETTLE_MS = 200;
+
 /**
- * True once no finite animation or transition is running or pending. Reading the animations flushes style, so the
- * transitions a color scheme or viewport change starts are already listed; endless animations (spinners) are ignored.
- * Measuring before this holds reads colors mid-transition, such as a dark border still close to the light background.
+ * A `wait --fn` expression that holds once the page shows `scheme` and has stood still for `SETTLE_MS`: the media
+ * query matches, no finite animation or transition is running or pending (endless ones, such as spinners, are
+ * ignored), and the root's and body's colors and theme attributes have not changed. The browser applies an emulated
+ * color scheme a moment after the switch, and apps that follow it from script (a `data-theme` set from a media query
+ * listener and a render) change later still, so the animations alone can read as settled before the switch has
+ * started; measuring then reads the other theme's colors, or colors mid-transition. `wait` numbers this wait, so its
+ * stillness is timed from its own first check and never carried over from an earlier wait.
  */
-export const SETTLED_EXPRESSION =
-  'document.getAnimations().every((a) => (a.playState !== "running" && a.playState !== "pending") || a.effect?.getComputedTiming().iterations === Infinity)';
+export function settledExpression(scheme: Theme, wait: number): string {
+  return `(() => {
+  const root = document.documentElement;
+  const rootStyle = getComputedStyle(root);
+  const bodyStyle = document.body ? getComputedStyle(document.body) : rootStyle;
+  const sample = [root.className, root.getAttribute("data-theme"), rootStyle.color, rootStyle.backgroundColor, bodyStyle.color, bodyStyle.backgroundColor].join("|");
+  const still =
+    matchMedia("(prefers-color-scheme: ${scheme})").matches &&
+    document.getAnimations().every((a) => (a.playState !== "running" && a.playState !== "pending") || a.effect?.getComputedTiming().iterations === Infinity);
+  const now = performance.now();
+  const last = window.__auditScreenSettle;
+  if (!still || !last || last.wait !== ${wait} || last.sample !== sample) {
+    window.__auditScreenSettle = { wait: ${wait}, sample, since: still ? now : Infinity };
+    return false;
+  }
+  if (last.since === Infinity) last.since = now;
+  return now - last.since >= ${SETTLE_MS};
+})()`;
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
@@ -588,6 +612,7 @@ async function captureFrames(
   shots: NonNullable<AuditOptions["shots"]>,
   width: number,
   scheme: Theme,
+  nextWait: () => number,
 ): Promise<void> {
   const output: unknown = JSON.parse(await run([...at, "--json", "eval", "--stdin"], scrollMetricsScript(ignore)));
   const page = scrollOf(output);
@@ -596,12 +621,12 @@ async function captureFrames(
   const path = (stop: Stop) => join(shots.dir, frameName(shots.state, shots.phase, width, scheme, stop));
   for (const [i, top] of stops.entries()) {
     await run([...at, "eval", "--stdin"], scrollToScript(top));
-    await run([...at, "wait", "--fn", SETTLED_EXPRESSION]);
+    await run([...at, "wait", "--fn", settledExpression(scheme, nextWait())]);
     await run([...at, "screenshot", path({ index: i + 1, count: stops.length })]);
   }
   if (shots.fullPage) {
     await run([...at, "eval", "--stdin"], `${scrollToScript(0)}${pinScript(ignore)}`);
-    await run([...at, "wait", "--fn", SETTLED_EXPRESSION]);
+    await run([...at, "wait", "--fn", settledExpression(scheme, nextWait())]);
     try {
       await run([...at, "screenshot", "--full", path("full-static")]);
     } finally {
@@ -623,6 +648,8 @@ export async function auditScreen(options: AuditOptions): Promise<AuditReport[]>
   const ignore = options.ignore ?? [];
   const script = collectorScript(ignore, COLLECTOR, options.content);
   const reports: AuditReport[] = [];
+  let waits = 0;
+  const nextWait = () => ++waits;
   let opened = !options.url;
   if (options.shots) mkdirSync(options.shots.dir, { recursive: true });
   try {
@@ -635,14 +662,14 @@ export async function auditScreen(options: AuditOptions): Promise<AuditReport[]>
           await run([...at, "wait", "--load", "networkidle"]);
           opened = true;
         }
-        await run([...at, "wait", "--fn", SETTLED_EXPRESSION]);
+        await run([...at, "wait", "--fn", settledExpression(scheme, nextWait())]);
         const output: unknown = JSON.parse(await run([...at, "--json", "eval", "--stdin"], script));
         const snapshot = snapshotOf(output);
         if (!snapshot) throw new Error(`page evaluation failed: ${JSON.stringify(output).slice(0, 500)}`);
         reports.push(analyzeScreen(snapshot, options.tolerance, options.gapLimit));
         if (options.shots) {
           if (ignore.length > 0) await run([...at, "eval", "--stdin"], hideScript(ignore));
-          await captureFrames(run, at, ignore, options.shots, viewport.width, scheme);
+          await captureFrames(run, at, ignore, options.shots, viewport.width, scheme, nextWait);
         }
       }
     }

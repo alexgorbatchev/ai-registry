@@ -9,8 +9,8 @@
 // last viewport and color scheme audited. --shots also saves viewport frames of every cell at its scroll stops (top,
 // one per screenful, bottom) as <dir>/<state>-<phase>-<width>-<theme>-<NN>of<NN>.png, so sticky and fixed bars sit
 // where a reader sees them, with the --ignore elements hidden; --full-page adds the whole page with sticky and fixed
-// elements laid out in place, as ...-full-static.png. Each cell is measured once no finite
-// animation or transition is running, so theme switches are not read mid-transition. Prints JSON with one report per cell:
+// elements laid out in place, as ...-full-static.png. Each cell is measured once the page has held still in its
+// color scheme for 200 ms (see settledExpression), so theme switches are never read early. Prints JSON with one report per cell:
 // text contrast (4.5:1, 3:1 large), control boundary contrast (3:1), text-only buttons with no boundary, horizontal
 // overflow, touch targets under 24 px, and sibling controls whose heights, centres, left edges or widths differ.
 // Each report also measures the content's density (inside --content, else the visible main, else the body without its

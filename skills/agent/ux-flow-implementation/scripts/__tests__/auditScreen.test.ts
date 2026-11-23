@@ -15,13 +15,21 @@ import {
   pinScript,
   scrollMetricsScript,
   scrollToScript,
-  SETTLED_EXPRESSION,
+  SETTLE_MS,
+  settledExpression,
   UNPIN_SCRIPT,
   type BrowserRunner,
   type ScreenSnapshot,
 } from "../lib/auditScreen";
 import { QA_THEMES, QA_VIEWPORTS } from "../lib/matrix";
-import { AUDIT_FIXTURE_PAGE, DENSITY_PAGE, PINNED_BARS_PAGE, PINNED_PAGE, WIDE_GUTTER_PAGE } from "./auditScreenPage";
+import {
+  AUDIT_FIXTURE_PAGE,
+  DENSITY_PAGE,
+  PINNED_BARS_PAGE,
+  PINNED_PAGE,
+  SCRIPTED_THEME_PAGE,
+  WIDE_GUTTER_PAGE,
+} from "./auditScreenPage";
 import { factory_testDirectory, SCRIPTS } from "./fixtures";
 import { readPng, rowsOfColor } from "./png";
 
@@ -276,6 +284,75 @@ describe("measureDensity", () => {
   });
 });
 
+interface ISettlePage {
+  scheme: "light" | "dark";
+  theme: string;
+  color: string;
+  animating: boolean;
+  now: number;
+}
+
+/** Evaluates a settle expression against a stubbed page, as `wait --fn` evaluates it on each poll. */
+function factory_settleProbe(page: ISettlePage): (expression: string) => boolean {
+  const window = {};
+  const style = () => ({ color: page.color, backgroundColor: page.color });
+  const document = {
+    documentElement: { className: "", getAttribute: () => page.theme },
+    body: {},
+    getAnimations: () =>
+      page.animating ? [{ playState: "running", effect: { getComputedTiming: () => ({ iterations: 1 }) } }] : [],
+  };
+  const matchMedia = (query: string) => ({ matches: query === `(prefers-color-scheme: ${page.scheme})` });
+  const performance = { now: () => page.now };
+  return (expression) =>
+    new Function("window", "document", "getComputedStyle", "matchMedia", "performance", `return ${expression};`)(
+      window,
+      document,
+      style,
+      matchMedia,
+      performance,
+    );
+}
+
+describe("settledExpression", () => {
+  test("holds only after the page has shown the requested scheme, still, for the settle time", () => {
+    const page: ISettlePage = { scheme: "light", theme: "light", color: "#111", animating: false, now: 0 };
+    const check = factory_settleProbe(page);
+    // Just after a switch to dark the browser still reports light, with nothing animating: not settled.
+    expect(check(settledExpression("dark", 1))).toBe(false);
+    page.now = 500;
+    expect(check(settledExpression("dark", 1))).toBe(false);
+    // The scheme applies; the app's theme follows a render later and its colors transition.
+    page.scheme = "dark";
+    expect(check(settledExpression("dark", 1))).toBe(false);
+    page.now = 520;
+    page.theme = "dark";
+    page.animating = true;
+    expect(check(settledExpression("dark", 1))).toBe(false);
+    page.now = 2000;
+    page.animating = false;
+    page.color = "#eee";
+    expect(check(settledExpression("dark", 1))).toBe(false);
+    page.now = 2000 + SETTLE_MS - 1;
+    expect(check(settledExpression("dark", 1))).toBe(false);
+    page.now = 2000 + SETTLE_MS;
+    expect(check(settledExpression("dark", 1))).toBe(true);
+  });
+
+  test("times each wait from its own first check", () => {
+    const page: ISettlePage = { scheme: "dark", theme: "dark", color: "#eee", animating: false, now: 0 };
+    const check = factory_settleProbe(page);
+    expect(check(settledExpression("dark", 1))).toBe(false);
+    page.now = SETTLE_MS;
+    expect(check(settledExpression("dark", 1))).toBe(true);
+    // A later wait on an unchanged page still waits out its own settle time.
+    page.now = 10000;
+    expect(check(settledExpression("dark", 2))).toBe(false);
+    page.now = 10000 + SETTLE_MS;
+    expect(check(settledExpression("dark", 2))).toBe(true);
+  });
+});
+
 describe("auditScreen browser steps", () => {
   const envelope = JSON.stringify({ success: true, data: { result: snapshot() } });
   const page = { scrollHeight: 2000, viewportHeight: 844, topCover: 0, bottomCover: 64, scrollTop: 120 };
@@ -312,11 +389,11 @@ describe("auditScreen browser steps", () => {
       ["set", "media", "light"],
       ["open", "http://127.0.0.1:1/"],
       ["wait", "--load", "networkidle"],
-      ["wait", "--fn", SETTLED_EXPRESSION],
+      ["wait", "--fn", settledExpression("light", 1)],
       ["--json", "eval", "--stdin"],
       ["set", "viewport", "320", "640"],
       ["set", "media", "dark"],
-      ["wait", "--fn", SETTLED_EXPRESSION],
+      ["wait", "--fn", settledExpression("dark", 2)],
       ["--json", "eval", "--stdin"],
       ["close"],
     ]);
@@ -367,13 +444,13 @@ describe("auditScreen browser steps", () => {
       ["eval", "--stdin"],
       ["--json", "eval", "--stdin"],
       ["eval", "--stdin"],
-      ["wait", "--fn", SETTLED_EXPRESSION],
+      ["wait", "--fn", settledExpression("dark", 2)],
       ["screenshot", frame("01of03")],
       ["eval", "--stdin"],
-      ["wait", "--fn", SETTLED_EXPRESSION],
+      ["wait", "--fn", settledExpression("dark", 3)],
       ["screenshot", frame("02of03")],
       ["eval", "--stdin"],
-      ["wait", "--fn", SETTLED_EXPRESSION],
+      ["wait", "--fn", settledExpression("dark", 4)],
       ["screenshot", frame("03of03")],
       ["eval", "--stdin"],
     ]);
@@ -463,7 +540,7 @@ describe("auditScreen browser steps", () => {
     expect(browser.calls).toEqual([
       ["--session", "review-1", "set", "viewport", "1440", "900"],
       ["--session", "review-1", "set", "media", "light"],
-      ["--session", "review-1", "wait", "--fn", SETTLED_EXPRESSION],
+      ["--session", "review-1", "wait", "--fn", settledExpression("light", 1)],
       ["--session", "review-1", "--json", "eval", "--stdin"],
     ]);
   });
@@ -524,7 +601,13 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
       fetch: (request) => {
         const path = new URL(request.url).pathname;
         const page =
-          path === "/pinned" ? PINNED_BARS_PAGE : path === "/density" ? WIDE_GUTTER_PAGE : AUDIT_FIXTURE_PAGE;
+          path === "/pinned"
+            ? PINNED_BARS_PAGE
+            : path === "/density"
+              ? WIDE_GUTTER_PAGE
+              : path === "/scripted-theme"
+                ? SCRIPTED_THEME_PAGE
+                : AUDIT_FIXTURE_PAGE;
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8" } });
       },
     });
@@ -574,6 +657,32 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
       ]);
       expect(report.borderlessText.map((issue: { selector: string }) => issue.selector)).toEqual(["#ghost"]);
       expect(report.borderlessIcon.map((issue: { selector: string }) => issue.selector)).toEqual(["#close", "#masked"]);
+    }
+  }, 120000);
+
+  // The page's theme flips from script 100 ms after each scheme switch, so right after a switch nothing animates yet
+  // and the old theme still shows. Measured then, a dark cell reports the light theme's faint text and a light cell
+  // misses it; across two viewports the cells run light, dark, light, dark.
+  test("the CLI measures every cell in its own theme when the page follows the scheme from script", async () => {
+    const run = await cli(
+      "--url",
+      new URL("/scripted-theme", server.url).href,
+      "--viewport",
+      "390x800",
+      "--viewport",
+      "400x800",
+    );
+    const output = JSON.parse(run.stdout);
+    expect(output.screens.map((report: { colorScheme: string }) => report.colorScheme)).toEqual([
+      "light",
+      "dark",
+      "light",
+      "dark",
+    ]);
+    for (const report of output.screens) {
+      expect(report.textContrast.map((issue: { selector: string }) => issue.selector)).toEqual(
+        report.colorScheme === "light" ? ["#faint"] : [],
+      );
     }
   }, 120000);
 

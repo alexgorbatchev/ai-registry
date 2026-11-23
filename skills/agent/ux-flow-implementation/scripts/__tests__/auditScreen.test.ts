@@ -15,6 +15,7 @@ import {
   pinScript,
   scrollMetricsScript,
   scrollToScript,
+  UNMARK_SCROLLER_SCRIPT,
   SETTLE_MS,
   settledExpression,
   UNPIN_SCRIPT,
@@ -26,6 +27,8 @@ import {
   AUDIT_FIXTURE_PAGE,
   DENSITY_PAGE,
   PINNED_BARS_PAGE,
+  APP_SHELL_PAGE,
+  SIDE_PANEL_PAGE,
   PINNED_PAGE,
   SCRIPTED_THEME_PAGE,
   WIDE_GUTTER_PAGE,
@@ -429,7 +432,7 @@ describe("auditScreen browser steps", () => {
     const dir = join(factory_testDirectory("audit-shots"), "unit");
     const browser = recorder();
     const ignore = ["#dev-toolbar", ".badge"];
-    await auditScreen({
+    const [report] = await auditScreen({
       session: "impl-1-after",
       viewports: [{ width: 390, height: 844 }],
       colorSchemes: ["dark"],
@@ -437,6 +440,7 @@ describe("auditScreen browser steps", () => {
       shots: { dir, state: "comments-panel", phase: "after" },
       run: browser.run,
     });
+    expect(report.frames).toEqual({ scroller: "document", stops: 3, fullPage: false });
     expect(existsSync(dir)).toBe(true);
     const frame = (stop: string) => join(dir, `comments-panel-after-390-dark-${stop}.png`);
     // 2000 px tall, 844 visible with a 64 px bottom bar: steps of 780 to the bottom at 1156.
@@ -460,9 +464,10 @@ describe("auditScreen browser steps", () => {
       scrollToScript(0),
       scrollToScript(780),
       scrollToScript(1156),
-      scrollToScript(120),
+      `${scrollToScript(120)}${UNMARK_SCROLLER_SCRIPT}`,
     ]);
     expect(hideScript(["#a"])).toContain('document.querySelectorAll("#a")');
+    expect(scrollMetricsScript([], "#doc")).toContain('document.querySelector("#doc")');
     expect(scrollMetricsScript(ignore)).toContain('element.closest("#dev-toolbar, .badge")');
 
     const full = recorder(
@@ -480,12 +485,29 @@ describe("auditScreen browser steps", () => {
       [join(dir, "home-before-390-light-01of01.png")],
       ["--full", join(dir, "home-before-390-light-full-static.png")],
     ]);
+
+    // Content that scrolls inside a container never reaches a full-page image, so none is taken.
+    const shell = recorder(
+      envelope,
+      JSON.stringify({ success: true, data: { result: { ...page, scrollHeight: 500, scroller: "main.shell" } } }),
+    );
+    const [shellReport] = await auditScreen({
+      session: "s",
+      viewports: [{ width: 390, height: 844 }],
+      colorSchemes: ["light"],
+      shots: { dir, state: "shell", phase: "before", fullPage: true },
+      run: shell.run,
+    });
+    expect(shellReport.frames).toEqual({ scroller: "main.shell", stops: 1, fullPage: false });
+    expect(shell.calls.filter((args) => args.includes("screenshot")).map((args) => args.slice(3))).toEqual([
+      [join(dir, "shell-before-390-light-01of01.png")],
+    ]);
     expect(full.scripts.slice(1)).toEqual([
       scrollMetricsScript([]),
       scrollToScript(0),
       `${scrollToScript(0)}${pinScript([])}`,
       UNPIN_SCRIPT,
-      scrollToScript(120),
+      `${scrollToScript(120)}${UNMARK_SCROLLER_SCRIPT}`,
     ]);
   });
 
@@ -603,11 +625,15 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
         const page =
           path === "/pinned"
             ? PINNED_BARS_PAGE
-            : path === "/density"
-              ? WIDE_GUTTER_PAGE
-              : path === "/scripted-theme"
-                ? SCRIPTED_THEME_PAGE
-                : AUDIT_FIXTURE_PAGE;
+            : path === "/shell"
+              ? APP_SHELL_PAGE
+              : path === "/side-panel"
+                ? SIDE_PANEL_PAGE
+                : path === "/density"
+                  ? WIDE_GUTTER_PAGE
+                  : path === "/scripted-theme"
+                    ? SCRIPTED_THEME_PAGE
+                    : AUDIT_FIXTURE_PAGE;
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8" } });
       },
     });
@@ -736,6 +762,52 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
     near(rowsOfColor(full, MAGENTA)?.last, 1);
     near(rowsOfColor(full, CYAN)?.first, (height - footer - end) / height);
     near(rowsOfColor(full, BLUE)?.last, (2 * header) / height);
+  }, 120000);
+
+  // Viewport 390x844 with a 48 px fixed header above a main that scrolls inside the remaining 796 px: the band between
+  // the header and main's 64 px sticky footer is 732 px, so main's stops are 0, 732 and its bottom at 1408 (2204 - 796).
+  test("the CLI captures frames at the stops of a container that scrolls the content when the document does not scroll", async () => {
+    const shots = factory_testDirectory("audit-shell");
+    const run = await cli(
+      "--url",
+      new URL("/shell", server.url).href,
+      "--viewport",
+      "390x844",
+      "--color-scheme",
+      "light",
+      "--shots",
+      shots,
+      "--state",
+      "shell",
+      "--full-page",
+    );
+    expect(run.stderr).toBe("");
+    expect(run.code).toBe(0);
+    const frames = ["01of03", "02of03", "03of03"].map((stop) => `shell-after-390-light-${stop}.png`);
+    expect(readdirSync(shots).sort()).toEqual(frames);
+    expect(JSON.parse(run.stdout).screens[0].frames).toEqual({ scroller: "main.shell", stops: 3, fullPage: false });
+    const CYAN: [number, number, number] = [0, 255, 255];
+    const MAGENTA: [number, number, number] = [255, 0, 255];
+    const near = (actual: number | undefined, expected: number) => expect(actual).toBeCloseTo(expected, 2);
+    const { end, footer } = PINNED_PAGE;
+    for (const [index, name] of frames.entries()) {
+      const png = readPng(join(shots, name));
+      near(rowsOfColor(png, MAGENTA)?.first, (844 - footer) / 844);
+      const pageEnd = rowsOfColor(png, CYAN);
+      if (index < 2) expect(pageEnd).toBeNull();
+      else near(pageEnd?.first, (844 - footer - end) / 844);
+    }
+  }, 120000);
+
+  // With no main, the wide column's 2100 px scroll in 844 visible px: stops 0, 844 and its bottom at 1256. The narrow
+  // side panel scrolls further but is not the content.
+  test("the CLI scrolls the widest container when nothing marks the content and the document does not scroll", async () => {
+    const shots = factory_testDirectory("audit-side-panel");
+    const url = new URL("/side-panel", server.url).href;
+    const args = ["--url", url, "--viewport", "390x844", "--color-scheme", "light"];
+    const run = await cli(...args, "--shots", shots, "--state", "side");
+    expect(run.stderr).toBe("");
+    expect(JSON.parse(run.stdout).screens[0].frames).toEqual({ scroller: "section.column", stops: 3, fullPage: false });
   }, 120000);
 
   // main spans 240-1440 with 24 px padding: the column takes 264-864 and the badge 1376-1416, leaving a 512 px gutter.

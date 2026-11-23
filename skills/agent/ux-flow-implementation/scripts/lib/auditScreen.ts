@@ -136,6 +136,8 @@ export interface AuditReport {
   wideGaps: Gap[];
   /** Buttons with text, no icon, and no border or fill distinct from their surroundings: they read as plain text. */
   borderlessText: ControlRef[];
+  /** Where the frames came from, when `shots` saved them. */
+  frames?: FrameCapture;
   /** Borderless buttons that draw an icon: check the icon is a conventional one. Not a failure. */
   borderlessIcon: ControlRef[];
   /** Text whose background could not be resolved (image, gradient, filter); check it by eye. Not a failure. */
@@ -521,14 +523,27 @@ interface PageScroll extends ScrollMetrics {
   scrollTop: number;
 }
 
-function scrollOf(output: unknown): PageScroll | null {
+/** One cell's saved frames: what scrolled between them, how many there are, and whether a full-page image was saved. */
+export interface FrameCapture {
+  /** `document`, or the container that holds the content, such as `main.overflow-y-auto`. */
+  scroller: string;
+  stops: number;
+  /** False when the content scrolls inside a container: a full-page image would show only its first screen. */
+  fullPage: boolean;
+}
+
+function scrollOf(output: unknown): (PageScroll & { scroller: string }) | null {
   const result = resultOf(output);
   if (!isRecord(result)) return null;
   const fields = ["scrollHeight", "viewportHeight", "topCover", "bottomCover", "scrollTop"] as const;
   if (!fields.every((field) => typeof result[field] === "number" && Number.isFinite(result[field]))) return null;
   const [scrollHeight, viewportHeight, topCover, bottomCover, scrollTop] = fields.map((field) => Number(result[field]));
-  return { scrollHeight, viewportHeight, topCover, bottomCover, scrollTop };
+  const scroller = typeof result.scroller === "string" ? result.scroller : "document";
+  return { scrollHeight, viewportHeight, topCover, bottomCover, scrollTop, scroller };
 }
+
+/** Marks the element the frames scroll, between the measurement and the restore. */
+const SCROLLER_ATTRIBUTE = "data-audit-screen-scroller";
 
 /** In-page loop over visible fixed and sticky elements, skipping development overlays. */
 const pinnedLoop = (ignore: string[], body: string): string =>
@@ -540,31 +555,66 @@ const pinnedLoop = (ignore: string[], body: string): string =>
 }`;
 
 /**
- * Measures the document's scroll height, the visible height, and the bands that bars stuck to the top and bottom
- * edges cover. Elements taller than half the viewport (side panels, app shells) are not bars.
+ * Finds what scrolls the content and measures its scroll height, its visible height, and the bands that bars stuck to
+ * the top and bottom edges of its box cover. Elements taller than half the box (side panels, app shells) are not bars.
+ *
+ * The content scrolls inside a container when the nearest scrolling ancestor of the content (`content`, else `main`)
+ * is one, even when the document scrolls too. When the document does not scroll, the widest scrolling element taller
+ * than half the viewport scrolls it: inside the content when there is one, else anywhere on the page, so a side
+ * panel loses to the page's column. Otherwise the document scrolls. The script marks a container for
+ * `scrollToScript` and reports which one it found.
  */
-export function scrollMetricsScript(ignore: string[]): string {
+export function scrollMetricsScript(ignore: string[], content?: string): string {
+  const anchor = JSON.stringify(content ?? "");
   return `(() => {
-const root = document.scrollingElement ?? document.documentElement;
+const page = document.scrollingElement ?? document.documentElement;
+const scrolls = (element) =>
+  /^(auto|scroll|overlay)$/.test(getComputedStyle(element).overflowY) && element.scrollHeight > element.clientHeight + 1;
+const anchor = (${anchor} && document.querySelector(${anchor})) || document.querySelector("main");
+let inner = null;
+for (let element = anchor; element && element !== document.body && element !== document.documentElement; element = element.parentElement) {
+  if (scrolls(element)) { inner = element; break; }
+}
+const widest = (root) => {
+  let found = null;
+  for (const element of root.querySelectorAll("*")) {
+    if (!scrolls(element) || element.clientHeight <= innerHeight / 2) continue;
+    if (!found || element.clientWidth > found.clientWidth) found = element;
+  }
+  return found;
+};
+if (!inner && page.scrollHeight <= page.clientHeight + 1) inner = (anchor && widest(anchor)) || widest(document.body);
+for (const element of document.querySelectorAll("[${SCROLLER_ATTRIBUTE}]")) element.removeAttribute("${SCROLLER_ATTRIBUTE}");
+if (inner) inner.setAttribute("${SCROLLER_ATTRIBUTE}", "");
+const root = inner ?? page;
 const height = root.clientHeight;
+const top = inner ? inner.getBoundingClientRect().top + inner.clientTop : 0;
+const bottom = top + height;
 let topCover = 0;
 let bottomCover = 0;
 ${pinnedLoop(
   ignore,
   `if (style.visibility === "hidden" || style.display === "none") continue;
   const rect = element.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0 || rect.height > height / 2 || rect.bottom <= 0 || rect.top >= height) continue;
-  if (rect.top <= 1) topCover = Math.max(topCover, rect.bottom);
-  else if (rect.bottom >= height - 1) bottomCover = Math.max(bottomCover, height - rect.top);`,
+  if (rect.width === 0 || rect.height === 0 || rect.height > height / 2 || rect.bottom <= top || rect.top >= bottom) continue;
+  if (rect.top <= top + 1) topCover = Math.max(topCover, rect.bottom - top);
+  else if (rect.bottom >= bottom - 1) bottomCover = Math.max(bottomCover, bottom - rect.top);`,
 )}
-return { scrollHeight: root.scrollHeight, viewportHeight: height, topCover, bottomCover, scrollTop: root.scrollTop };
+const scroller = inner
+  ? inner.tagName.toLowerCase() + (inner.id ? "#" + inner.id : "") + [...inner.classList].slice(0, 3).map((name) => "." + name).join("")
+  : "document";
+return { scrollHeight: root.scrollHeight, viewportHeight: height, topCover, bottomCover, scrollTop: root.scrollTop, scroller };
 })();
 `;
 }
 
+/** Scrolls what `scrollMetricsScript` found: the marked container, else the document. */
 export function scrollToScript(top: number): string {
-  return `(document.scrollingElement ?? document.documentElement).scrollTo({ top: ${top}, left: 0, behavior: "instant" });\n`;
+  return `(document.querySelector("[${SCROLLER_ATTRIBUTE}]") ?? document.scrollingElement ?? document.documentElement).scrollTo({ top: ${top}, left: 0, behavior: "instant" });\n`;
 }
+
+/** Removes the mark `scrollMetricsScript` left on a scrolling container. */
+export const UNMARK_SCROLLER_SCRIPT = `for (const element of document.querySelectorAll("[${SCROLLER_ATTRIBUTE}]")) element.removeAttribute("${SCROLLER_ATTRIBUTE}");\n`;
 
 /** Lays fixed and sticky elements out in place, keeping their inline position for `unpinScript` to restore. */
 export function pinScript(ignore: string[]): string {
@@ -600,21 +650,25 @@ export function hideScript(selectors: string[]): string {
 }
 
 /**
- * Saves one cell's frames: a viewport screenshot at each scroll stop, so sticky and fixed bars appear where a reader
- * sees them, then optionally the full page with those bars laid out in place. A full-page screenshot of the live page
- * would paint them at their first-viewport position, over unrelated content halfway down a tall page. Restores the
- * page's scroll position afterwards.
+ * Saves one cell's frames: a viewport screenshot at each stop of whatever scrolls the content, the document or a
+ * container, so sticky and fixed bars appear where a reader sees them; then optionally the full page with those bars
+ * laid out in place. A full-page screenshot of the live page would paint them at their first-viewport position, over
+ * unrelated content halfway down a tall page. A container's content never reaches a full-page image, so none is saved
+ * then. Restores the scroll position afterwards.
  */
 async function captureFrames(
   run: BrowserRunner,
   at: string[],
   ignore: string[],
+  content: string | undefined,
   shots: NonNullable<AuditOptions["shots"]>,
   width: number,
   scheme: Theme,
   nextWait: () => number,
-): Promise<void> {
-  const output: unknown = JSON.parse(await run([...at, "--json", "eval", "--stdin"], scrollMetricsScript(ignore)));
+): Promise<FrameCapture> {
+  const output: unknown = JSON.parse(
+    await run([...at, "--json", "eval", "--stdin"], scrollMetricsScript(ignore, content)),
+  );
   const page = scrollOf(output);
   if (!page) throw new Error(`page scroll measurement failed: ${JSON.stringify(output).slice(0, 500)}`);
   const stops = scrollStops(page);
@@ -624,7 +678,8 @@ async function captureFrames(
     await run([...at, "wait", "--fn", settledExpression(scheme, nextWait())]);
     await run([...at, "screenshot", path({ index: i + 1, count: stops.length })]);
   }
-  if (shots.fullPage) {
+  const fullPage = Boolean(shots.fullPage) && page.scroller === "document";
+  if (fullPage) {
     await run([...at, "eval", "--stdin"], `${scrollToScript(0)}${pinScript(ignore)}`);
     await run([...at, "wait", "--fn", settledExpression(scheme, nextWait())]);
     try {
@@ -633,7 +688,8 @@ async function captureFrames(
       await run([...at, "eval", "--stdin"], UNPIN_SCRIPT);
     }
   }
-  await run([...at, "eval", "--stdin"], scrollToScript(page.scrollTop));
+  await run([...at, "eval", "--stdin"], `${scrollToScript(page.scrollTop)}${UNMARK_SCROLLER_SCRIPT}`);
+  return { scroller: page.scroller, stops: stops.length, fullPage };
 }
 
 /**
@@ -666,10 +722,20 @@ export async function auditScreen(options: AuditOptions): Promise<AuditReport[]>
         const output: unknown = JSON.parse(await run([...at, "--json", "eval", "--stdin"], script));
         const snapshot = snapshotOf(output);
         if (!snapshot) throw new Error(`page evaluation failed: ${JSON.stringify(output).slice(0, 500)}`);
-        reports.push(analyzeScreen(snapshot, options.tolerance, options.gapLimit));
+        const report = analyzeScreen(snapshot, options.tolerance, options.gapLimit);
+        reports.push(report);
         if (options.shots) {
           if (ignore.length > 0) await run([...at, "eval", "--stdin"], hideScript(ignore));
-          await captureFrames(run, at, ignore, options.shots, viewport.width, scheme, nextWait);
+          report.frames = await captureFrames(
+            run,
+            at,
+            ignore,
+            options.content,
+            options.shots,
+            viewport.width,
+            scheme,
+            nextWait,
+          );
         }
       }
     }

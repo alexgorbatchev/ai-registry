@@ -101,6 +101,53 @@ export const PINNED_BARS_PAGE = `<!doctype html>
 </html>`;
 
 /**
+ * An app shell whose document does not scroll: a fixed header (blue) above a `main` that scrolls its own content, an
+ * end marker (cyan) and a sticky footer (magenta) inside it, as an app's page column does on a wide layout.
+ */
+export const APP_SHELL_PAGE = `<!doctype html>
+<html>
+<head>
+<style>
+  body { margin: 0; height: 100vh; overflow: hidden; background: #fff; }
+  header { position: fixed; top: 0; left: 0; right: 0; height: ${PINNED_PAGE.header}px; background: #0000ff; }
+  main { position: fixed; top: ${PINNED_PAGE.header}px; left: 0; right: 0; bottom: 0; overflow-y: auto; }
+  .content { height: ${PINNED_PAGE.content}px; background: #dddddd; }
+  .end { height: ${PINNED_PAGE.end}px; background: #00ffff; }
+  footer { position: sticky; bottom: 0; height: ${PINNED_PAGE.footer}px; background: #ff00ff; }
+</style>
+</head>
+<body>
+  <header></header>
+  <main class="shell">
+    <div class="content"></div>
+    <div class="end"></div>
+    <footer></footer>
+  </main>
+</body>
+</html>`;
+
+/**
+ * An app shell with no `main` whose document does not scroll: a narrow side panel and a wide column each scroll their
+ * own content, as a sidebar and a page column do.
+ */
+export const SIDE_PANEL_PAGE = `<!doctype html>
+<html>
+<head>
+<style>
+  body { margin: 0; height: 100vh; overflow: hidden; display: flex; background: #fff; }
+  aside { width: 120px; overflow-y: auto; }
+  section { flex: 1; overflow-y: auto; }
+  .panel { height: 3000px; background: #eeeeee; }
+  .content { height: ${PINNED_PAGE.content}px; background: #dddddd; }
+</style>
+</head>
+<body>
+  <aside class="panel-box"><div class="panel"></div></aside>
+  <section class="column"><div class="content"></div></section>
+</body>
+</html>`;
+
+/**
  * A page whose theme follows the color scheme from script, as apps with a theme provider do: a media query listener
  * sets `data-theme` 100 ms after the scheme changes, and the colors then transition for 1.5 s. Faint text fails
  * contrast in light only.

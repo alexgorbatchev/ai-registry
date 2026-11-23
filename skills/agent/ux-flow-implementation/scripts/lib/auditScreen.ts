@@ -482,7 +482,7 @@ export function settledExpression(scheme: Theme, wait: number): string {
   const sample = [root.className, root.getAttribute("data-theme"), rootStyle.color, rootStyle.backgroundColor, bodyStyle.color, bodyStyle.backgroundColor].join("|");
   const still =
     matchMedia("(prefers-color-scheme: ${scheme})").matches &&
-    document.getAnimations().every((a) => (a.playState !== "running" && a.playState !== "pending") || a.effect?.getComputedTiming().iterations === Infinity || !(a.timeline instanceof DocumentTimeline));
+    document.getAnimations().every((a) => (a.playState !== "running" && a.playState !== "pending") || a.effect?.getComputedTiming().iterations === Infinity || a.timeline !== document.timeline);
   const now = performance.now();
   const last = window.__auditScreenSettle;
   if (!still || !last || last.wait !== ${wait} || last.sample !== sample) {

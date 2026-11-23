@@ -4,7 +4,7 @@ description: If workflow-authoring skill is used, this skill must be used as wel
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-14 08:44
-  last_modified: 2026-11-20 06:58
+  last_modified: 2026-11-23 15:34
   status: current
 ---
 
@@ -44,7 +44,7 @@ Claims carry no worker identity, and every session claims as the same account. F
 
 ## Services
 
-- Start servers and browsers that agents need outside the session's background tasks, which stop at their time limit and with the session. Use an idempotent start as a detached or supervised process, such as a devhost stack's detached start, and health-check it before launching agents.
+- Keep servers and browsers that workflow agents need alive across the run, and health-check them before launching agents. Prefer an idempotent detached or supervised process (such as a devhost stack's detached start) when the environment allows it, because session background tasks end at their time limit and when the session closes; if the environment forbids detached processes, use the runtime's supported background task mechanism and health-check or restart services on resume.
 - Tell agents how to detect an unavailable service and to report it as an environment problem rather than recording outage behavior as findings.
 - Give each concurrent browser agent its own browser session. When agents share persisted application state, such as saved selections or view preferences, give each its own isolated application instance.
 

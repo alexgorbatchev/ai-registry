@@ -13,7 +13,7 @@ The orchestrator selects tickets, starts units, reviews what they return, deploy
 
 - An implementation unit is heavy work (builds, a dev server, browser captures, the final gate), so units run one at a time; the orchestrator's basic work (reviewing returns, triaging reviews, editing tickets) may run beside it, and so may a blind reviewer, which only reads finished screenshots.
 - Before starting each unit, run `bun <skill>/scripts/capacity.ts --path <worktree volume> --floor-gib <floor>`, where the floor is 8 GiB, raised to one unit's measured peak footprint (worktree, installed dependencies, build output, browser). Start the unit only when it exits 0, no other heavy lane runs on the machine, and the previous unit has landed or checkpointed and released. When it exits 1, start nothing and measure again later. Record each reading and the decision in the run log.
-- Run units as workers whose lifetime does not depend on the orchestrator's conversation turn (a delegated task or detached run), so ending or compacting the turn does not kill them or strip their tools.
+- Prefer workers whose lifetime outlives the orchestrator's conversation turn (a delegated task or detached run) when the runtime supports them, so ending or compacting the turn does not interrupt an in-flight unit. Otherwise run units with the runtime's normal subagent or sequential execution and rely on unit checkpoints to resume after interruptions.
 
 ## Units
 
@@ -37,7 +37,7 @@ Merge duplicates as they appear: close the later ticket as a duplicate of the su
 
 The orchestrator owns these, when the project deploys from the run (the config has `deploy`) and its policy requires or authorizes deployment:
 
-1. Deploy the wave's accepted, landed tickets together with the config's deploy commands, from where the config says they run. Use a disposable worktree at the target branch's fetched tip and remove it afterwards; never deploy from a unit's worktree or the main checkout.
+1. Deploy the wave's accepted, landed tickets together with the config's deploy commands, from where the config says they run. Use a disposable worktree at the target branch's fetched tip when the runtime allows writing outside the current checkout (otherwise a clean checkout of that tip) and remove it afterwards; never deploy from a unit's unlanded worktree.
 2. Verify in production: each ticket's changed states, plus audit-screen over the config's `qa.screens` across the matrix. A regression blocks closing its ticket and becomes a ticket of its own or a fix in the next wave.
 3. Close each verified ticket through `issue-tracker` with the deployed revision. Close a redesign ticket when all its slice tickets are closed and its acceptance criteria are verified in production; close the findings it resolves with it.
 4. When deployment is blocked by infrastructure, record the blocker and its unblock condition on the epic, ask the owner when the fix needs their approval, and keep landing units; deploy the waiting tickets together once it clears. When deployment is not authorized, report the tickets as landed and awaiting deployment.

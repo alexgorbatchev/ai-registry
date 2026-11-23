@@ -4,7 +4,7 @@ description: Use when delivering filed UX flow redesigns as working software, in
 author: alexgorbatchev
 metadata:
   created_on: 2026-11-20 07:04
-  last_modified: 2026-11-20 08:19
+  last_modified: 2026-11-23 15:34
   status: current
 ---
 
@@ -22,7 +22,7 @@ Product calls that the proposals and the pattern reference do not settle go to t
 Read [project config and state](references/project-config.md) before writing or changing any record. It defines `<state>` (the redesign run's state directory) and `<local>`, the config's fields and the slice plan.
 
 1. Write `<state>/implementation/config.json` from [the example](assets/config.example.json) with the project's facts, and validate it with `render-brief.ts --check`.
-2. Fetch the target branch and work from its tip; never edit the main checkout.
+2. Fetch the target branch and work from its tip in an isolated worktree when the runtime allows writing outside the current checkout; otherwise work on a dedicated task branch in the active workspace.
 
 ## Deliver
 

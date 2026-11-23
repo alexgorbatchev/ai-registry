@@ -466,12 +466,13 @@ export const SETTLE_MS = 200;
 
 /**
  * A `wait --fn` expression that holds once the page shows `scheme` and has stood still for `SETTLE_MS`: the media
- * query matches, no finite animation or transition is running or pending (endless ones, such as spinners, are
- * ignored), and the root's and body's colors and theme attributes have not changed. The browser applies an emulated
- * color scheme a moment after the switch, and apps that follow it from script (a `data-theme` set from a media query
- * listener and a render) change later still, so the animations alone can read as settled before the switch has
- * started; measuring then reads the other theme's colors, or colors mid-transition. `wait` numbers this wait, so its
- * stillness is timed from its own first check and never carried over from an earlier wait.
+ * query matches, no finite animation or transition is running or pending (endless ones, such as spinners, and
+ * scroll-driven ones, which run as long as the page is open, are ignored), and the root's and body's colors and
+ * theme attributes have not changed. The browser applies an emulated color scheme a moment after the switch, and apps
+ * that follow it from script (a `data-theme` set from a media query listener and a render) change later still, so the
+ * animations alone can read as settled before the switch has started; measuring then reads the other theme's colors,
+ * or colors mid-transition. `wait` numbers this wait, so its stillness is timed from its own first check and never
+ * carried over from an earlier wait.
  */
 export function settledExpression(scheme: Theme, wait: number): string {
   return `(() => {
@@ -481,7 +482,7 @@ export function settledExpression(scheme: Theme, wait: number): string {
   const sample = [root.className, root.getAttribute("data-theme"), rootStyle.color, rootStyle.backgroundColor, bodyStyle.color, bodyStyle.backgroundColor].join("|");
   const still =
     matchMedia("(prefers-color-scheme: ${scheme})").matches &&
-    document.getAnimations().every((a) => (a.playState !== "running" && a.playState !== "pending") || a.effect?.getComputedTiming().iterations === Infinity);
+    document.getAnimations().every((a) => (a.playState !== "running" && a.playState !== "pending") || a.effect?.getComputedTiming().iterations === Infinity || !(a.timeline instanceof DocumentTimeline));
   const now = performance.now();
   const last = window.__auditScreenSettle;
   if (!still || !last || last.wait !== ${wait} || last.sample !== sample) {

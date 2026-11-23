@@ -148,6 +148,25 @@ export const SIDE_PANEL_PAGE = `<!doctype html>
 </html>`;
 
 /**
+ * A box whose edges fade by a scroll-driven animation, which runs for as long as the page is open: it never finishes
+ * the way a transition does.
+ */
+export const SCROLL_ANIMATION_PAGE = `<!doctype html>
+<html>
+<head>
+<style>
+  @keyframes fade { from { opacity: 0.5; } to { opacity: 1; } }
+  body { margin: 0; font: 16px sans-serif; background: #fff; color: #111; }
+  .box { width: 200px; overflow-x: auto; animation: fade linear both; animation-timeline: scroll(self inline); }
+  .wide { width: 600px; height: 40px; background: #ddd; }
+</style>
+</head>
+<body>
+  <main><div class="box"><div class="wide"></div></div></main>
+</body>
+</html>`;
+
+/**
  * A page whose theme follows the color scheme from script, as apps with a theme provider do: a media query listener
  * sets `data-theme` 100 ms after the scheme changes, and the colors then transition for 1.5 s. Faint text fails
  * contrast in light only.

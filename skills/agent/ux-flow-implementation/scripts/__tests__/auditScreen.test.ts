@@ -31,6 +31,7 @@ import {
   SIDE_PANEL_PAGE,
   PINNED_PAGE,
   SCRIPTED_THEME_PAGE,
+  SCROLL_ANIMATION_PAGE,
   WIDE_GUTTER_PAGE,
 } from "./auditScreenPage";
 import { factory_testDirectory, SCRIPTS } from "./fixtures";
@@ -633,7 +634,9 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
                   ? WIDE_GUTTER_PAGE
                   : path === "/scripted-theme"
                     ? SCRIPTED_THEME_PAGE
-                    : AUDIT_FIXTURE_PAGE;
+                    : path === "/scroll-animation"
+                      ? SCROLL_ANIMATION_PAGE
+                      : AUDIT_FIXTURE_PAGE;
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8" } });
       },
     });
@@ -710,6 +713,14 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
         report.colorScheme === "light" ? ["#faint"] : [],
       );
     }
+  }, 120000);
+
+  // A scroll-driven animation runs as long as the page is open, so a wait for every running animation to end never holds.
+  test("the CLI settles on a page with a scroll-driven animation", async () => {
+    const url = new URL("/scroll-animation", server.url).href;
+    const run = await cli("--url", url, "--viewport", "390x844", "--color-scheme", "light");
+    expect(run.stderr).toBe("");
+    expect(JSON.parse(run.stdout).screens).toHaveLength(1);
   }, 120000);
 
   // Viewport 390x844 over a page 48 + 2100 + 40 + 64 = 2252 px tall: the visible band between the 48 px header and

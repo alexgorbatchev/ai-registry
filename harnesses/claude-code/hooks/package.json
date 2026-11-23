@@ -11,7 +11,7 @@
     "@types/shell-quote": "^1.7.5",
     "oxfmt": "^0.76.0",
     "oxlint": "^1.91.0",
-    "ts-unused": "^3.7.2",
-    "typescript": "rc"
+    "ts-unused": "5.0.2",
+    "typescript": "7.1.0-beta"
   }
 }

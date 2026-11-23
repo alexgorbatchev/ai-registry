@@ -1,0 +1,6 @@
+[mcp_servers.rea]
+command = "bun"
+args = ["x", "rea-agents@6.10.1", "mcp"]
+env_vars = ["GHIDRA_INSTALL_DIR", "JAVA_HOME"]
+startup_timeout_sec = 60
+tool_timeout_sec = 450

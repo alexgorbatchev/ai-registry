@@ -47,6 +47,15 @@
       "skillPath": "skills/issue-tracker/SKILL.md",
       "computedHash": ""
     },
+    "reverse-engineer-anything": {
+      "source": "morluto/rea",
+      "ref": "rea-agents-6.10.1",
+      "commit": "8bb01b514ac766c0c3ecc8f362bd38186eaec9c2",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/reverse-engineer-anything/SKILL.md",
+      "computedHash": "4de4afff51f97b62611a10f0c2c6dd9376774c8310f04fbd15e534c4a164762e",
+      "installMode": "copy"
+    },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
       "sourceType": "github",

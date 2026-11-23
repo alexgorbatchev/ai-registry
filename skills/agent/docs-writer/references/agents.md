@@ -14,7 +14,7 @@ Load `prompt-writer` before composing or reviewing instructions. It owns wording
 
 ## Placement
 
-- Root: commands and checks selected by task, repository-wide constraints, cross-component contracts, and routes to specialized guidance. For public repositories, include the `## Contributing fixes` provision from [structure options](../assets/agents-templates.md). Inherit shared execution policy; record only local queue, integration, cleanup, and handoff requirements or exceptions. Verify that the shared owner is available in the target environment; use explicit routing where needed.
+- Root: commands and checks selected by task, repository-wide constraints, cross-component contracts, and routes to specialized guidance. Inherit shared execution policy; record only local queue, integration, cleanup, and handoff requirements or exceptions. Verify that the shared owner is available in the target environment; use explicit routing where needed.
 - Nested `AGENTS.md`: local commands, exceptions, and contracts that apply to that subtree. Add one when the local rules differ; avoid repeating inherited rules.
 - References: detailed contracts or workflows needed only for particular tasks. Link each from the applicable instruction file with a condition that loads it before the affected decision. A link without a loading condition does not preserve an obligation.
 - Domain skills: reusable workflows. Require their owner before dependent work; keep only project-specific requirements locally. `skill-writer` applies when editing skill bundles, not merely because `AGENTS.md` contains agent instructions.

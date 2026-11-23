@@ -1,7 +1,7 @@
 import { factory_testRoot } from "./fixtures";
 import { afterAll, afterEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, chmod } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { delimiter, join, relative, resolve } from "node:path";
 
 import { scheduledUpdate } from "../scheduledUpdate";
 import { REPOSITORY_ROOT, readTimestampedLog } from "./helpers";
@@ -79,6 +79,7 @@ afterEach(async () => {
   for (const directory of testDirectories.splice(0)) {
     await rm(directory, { recursive: true, force: true });
   }
+  delete process.env.AI_REGISTRY_OVERLAY;
 });
 
 afterAll(async () => {
@@ -97,6 +98,7 @@ describe("scheduledUpdate", () => {
       "packages/registry-cli/src/lib/pruneScheduledUpdateLog.ts",
       "packages/registry-cli/src/lib/writeTimestampedOutput.ts",
       "packages/registry-cli/src/lib/scheduledUpdate.ts",
+      "packages/registry-cli/src/lib/getRegistryPaths.ts",
       "packages/registry-cli/src/lib/pullWithRebase.ts",
       "packages/registry-cli/src/lib/pushScheduledCommits.ts",
       "packages/registry-cli/src/lib/getErrorMessage.ts",
@@ -151,6 +153,120 @@ describe("scheduledUpdate", () => {
     expect(await scheduledUpdate(repositoryPath, process.execPath)).toBe("bootstrapped");
     expect(await Bun.file(join(repositoryPath, ".tmp/cron-enable")).text()).toBe("approved\n");
     expect(await Bun.file(join(repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
+  });
+
+  it("pulls every overlay before bootstrap, resolving relative paths and repeated repository subdirectories", async () => {
+    const primary = await createRepository();
+    const first = await createRepository();
+    const second = await createRepository();
+    const nested = join(first.repositoryPath, ".tmp", "overlay");
+    await mkdir(nested, { recursive: true });
+    const overlayFiles = [first.repositoryPath, second.repositoryPath].map((path) => join(path, "content.txt"));
+    const bootstrapFile = Bun.file(join(primary.remotePath, "bootstrap.ts"));
+    await Bun.write(
+      bootstrapFile,
+      `${await bootstrapFile.text()}\nawait Bun.write(".tmp/overlays.json", JSON.stringify(await Promise.all(${JSON.stringify(overlayFiles)}.map(path => Bun.file(path).text()))));\n`,
+    );
+    await run(primary.remotePath, ["git", "commit", "-am", "observe overlays during bootstrap"]);
+    await advanceRemote(first.remotePath);
+    await advanceRemote(second.remotePath);
+    process.env.AI_REGISTRY_OVERLAY = [
+      relative(primary.repositoryPath, first.repositoryPath),
+      second.repositoryPath,
+      nested,
+      first.repositoryPath,
+      primary.repositoryPath,
+    ].join(delimiter);
+    const pulls: string[] = [];
+    expect(
+      await scheduledUpdate(
+        primary.repositoryPath,
+        process.execPath,
+        async (cmd, _capture, cwd = primary.repositoryPath) => {
+          pulls.push(...cmd.filter((argument) => argument === "pull").map(() => cwd));
+          return run(cwd, cmd);
+        },
+      ),
+    ).toBe("bootstrapped");
+    expect(await Bun.file(join(primary.repositoryPath, ".tmp/overlays.json")).json()).toEqual([
+      "updated\n",
+      "updated\n",
+    ]);
+    expect(pulls).toEqual([primary.repositoryPath, second.repositoryPath, first.repositoryPath]);
+  });
+
+  it("updates clean overlays while preserving dirty primary and overlay checkouts", async () => {
+    const primary = await createRepository();
+    const dirty = await createRepository();
+    const clean = await createRepository();
+    await Bun.write(join(primary.repositoryPath, "local.txt"), "primary edit\n");
+    await Bun.write(join(dirty.repositoryPath, "local.txt"), "overlay edit\n");
+    await advanceRemote(dirty.remotePath);
+    await advanceRemote(clean.remotePath);
+    const dirtyHead = await run(dirty.repositoryPath, ["git", "rev-parse", "HEAD"]);
+    process.env.AI_REGISTRY_OVERLAY = [dirty.repositoryPath, clean.repositoryPath].join(delimiter);
+
+    expect(await scheduledUpdate(primary.repositoryPath, process.execPath)).toBe("bootstrapped-without-pull");
+    expect(await run(dirty.repositoryPath, ["git", "rev-parse", "HEAD"])).toBe(dirtyHead);
+    expect(await Bun.file(join(dirty.repositoryPath, "local.txt")).text()).toBe("overlay edit\n");
+    expect(await Bun.file(join(primary.repositoryPath, "local.txt")).text()).toBe("primary edit\n");
+    expect(await Bun.file(join(clean.repositoryPath, "content.txt")).text()).toBe("updated\n");
+    expect(await Bun.file(join(primary.repositoryPath, ".tmp/bootstrap-count")).text()).toBe("1");
+  });
+
+  it("does not bootstrap or push the primary after an overlay pull fails", async () => {
+    const primary = await createRepository();
+    const overlay = await createRepository();
+    const remoteHead = await run(primary.remotePath, ["git", "rev-parse", "HEAD"]);
+    await run(primary.repositoryPath, [
+      "git",
+      "-c",
+      "user.name=Test",
+      "-c",
+      "user.email=test@example.invalid",
+      "commit",
+      "--allow-empty",
+      "-m",
+      "local",
+    ]);
+    await run(overlay.repositoryPath, ["git", "remote", "set-url", "origin", join(overlay.repositoryPath, "missing")]);
+    process.env.AI_REGISTRY_OVERLAY = overlay.repositoryPath;
+
+    await expect(scheduledUpdate(primary.repositoryPath, process.execPath)).rejects.toThrow(
+      "Update failed and was rolled back:",
+    );
+    expect(await Bun.file(join(primary.repositoryPath, ".tmp/bootstrap-count")).exists()).toBe(false);
+    expect(await run(primary.remotePath, ["git", "rev-parse", "HEAD"])).toBe(remoteHead);
+    expect(await Bun.file(join(overlay.repositoryPath, ".state/scheduled-update-recovery.json")).exists()).toBe(false);
+  });
+
+  it("rebases overlay commits without pushing them", async () => {
+    const primary = await createRepository();
+    const overlay = await createRepository();
+    await advanceRemote(overlay.remotePath);
+    const incoming = await run(overlay.remotePath, ["git", "rev-parse", "HEAD"]);
+    await run(overlay.repositoryPath, ["git", "config", "user.name", "Test"]);
+    await run(overlay.repositoryPath, ["git", "config", "user.email", "test@example.invalid"]);
+    await run(overlay.repositoryPath, ["git", "commit", "--allow-empty", "-m", "local overlay"]);
+    process.env.AI_REGISTRY_OVERLAY = overlay.repositoryPath;
+
+    expect(await scheduledUpdate(primary.repositoryPath, process.execPath)).toBe("bootstrapped");
+    expect(await run(overlay.repositoryPath, ["git", "rev-parse", "HEAD^"])).toBe(incoming);
+    expect(await run(overlay.remotePath, ["git", "rev-parse", "HEAD"])).toBe(incoming);
+  });
+
+  it("blocks bootstrap when an overlay has an interrupted update", async () => {
+    const primary = await createRepository();
+    const overlay = await createRepository();
+    const recoveryPath = join(overlay.repositoryPath, ".state/scheduled-update-recovery.json");
+    await Bun.write(recoveryPath, JSON.stringify({ before: "interrupted" }));
+    process.env.AI_REGISTRY_OVERLAY = overlay.repositoryPath;
+
+    await expect(scheduledUpdate(primary.repositoryPath, process.execPath)).rejects.toThrow(
+      `An interrupted update needs recovery. Inspect ${recoveryPath} before retrying.`,
+    );
+    expect(await Bun.file(join(primary.repositoryPath, ".tmp/bootstrap-count")).exists()).toBe(false);
+    expect(await Bun.file(recoveryPath).json()).toEqual({ before: "interrupted" });
   });
 
   it("leaves the schedule approval alone when the pull does not change .cronrc", async () => {

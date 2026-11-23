@@ -86,8 +86,7 @@ export function listToolOverlays(toolsDir: string): string[] {
   });
 }
 
-export function getRegistryPaths(): IRegistryPaths {
-  const root = resolveRepoRoot();
+export function getRegistryOverlays(root: string): string[] {
   const rawOverlays = (process.env.AI_REGISTRY_OVERLAY ?? "").split(delimiter);
   const resolvedOverlays = rawOverlays.filter((entry) => entry.trim()).map((entry) => resolvePathWithHome(entry, root));
   const overlays: string[] = [];
@@ -100,6 +99,12 @@ export function getRegistryPaths(): IRegistryPaths {
       overlays.push(resolvedOverlay);
     }
   }
+  return overlays;
+}
+
+export function getRegistryPaths(): IRegistryPaths {
+  const root = resolveRepoRoot();
+  const overlays = getRegistryOverlays(root);
 
   return {
     root,

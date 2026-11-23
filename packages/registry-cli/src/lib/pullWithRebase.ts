@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { getErrorMessage } from "./getErrorMessage";
 import { getScheduledUpdatePaths } from "./getScheduledUpdatePaths";
 
-export type IScheduledUpdateRunner = (cmd: string[], shouldCapture?: boolean) => Promise<string>;
+export type IScheduledUpdateRunner = (cmd: string[], shouldCapture?: boolean, cwd?: string) => Promise<string>;
 
 async function hasRebase(gitDirectory: string): Promise<boolean> {
   const states = await Promise.all(

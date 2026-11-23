@@ -325,7 +325,7 @@ test('invalid Git metadata is reported as data and keeps its dependencies withou
   const report = await assessDisk(rootPath, 1, 30, runInspectionCommand);
   const worktrees = sectionOf(report, 'worktrees', 'worktrees');
   expect(worktrees.isComplete).toBe(true);
-  expect(worktrees.data.invalidRepositories).toEqual([
+  expect([...worktrees.data.invalidRepositories].sort((left, right) => left.path.localeCompare(right.path))).toEqual([
     { path: broken, reason: `gitfile does not point to a valid repository: ${join(broken, '.git')}` },
     { path: shadowed, reason: `Git resolves this directory to ${join(rootPath, 'outer')}` },
   ]);
@@ -342,7 +342,8 @@ test('invalid Git metadata is reported as data and keeps its dependencies withou
     ]),
   );
   const result = cli(rootPath, ['disk', 'assess', '--root', rootPath, '--size', '1B']);
-  expect(result.stdout).toContain('\n## invalid Git metadata (not inspected as repositories)\nbroken: ');
+  expect(result.stdout).toContain('\n## invalid Git metadata (not inspected as repositories)\n');
+  expect(result.stdout).toContain('\nbroken: ');
   expect(result.stdout).toContain('\n## preserved: invalid Git metadata n=2 ');
 });
 

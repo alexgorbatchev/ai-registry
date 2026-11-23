@@ -32,6 +32,7 @@ import {
   PINNED_PAGE,
   SCRIPTED_THEME_PAGE,
   SCROLL_ANIMATION_PAGE,
+  SHORT_MAIN_PAGE,
   WIDE_GUTTER_PAGE,
 } from "./auditScreenPage";
 import { factory_testDirectory, SCRIPTS } from "./fixtures";
@@ -636,7 +637,9 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
                     ? SCRIPTED_THEME_PAGE
                     : path === "/scroll-animation"
                       ? SCROLL_ANIMATION_PAGE
-                      : AUDIT_FIXTURE_PAGE;
+                      : path === "/short-main"
+                        ? SHORT_MAIN_PAGE
+                        : AUDIT_FIXTURE_PAGE;
         return new Response(page, { headers: { "Content-Type": "text/html; charset=utf-8" } });
       },
     });
@@ -819,6 +822,25 @@ describe.skipIf(!Bun.which("agent-browser"))("in a real browser", () => {
     const run = await cli(...args, "--shots", shots, "--state", "side");
     expect(run.stderr).toBe("");
     expect(JSON.parse(run.stdout).screens[0].frames).toEqual({ scroller: "section.column", stops: 3, fullPage: false });
+  }, 120000);
+
+  test("the CLI leaves content that fits in main with the document, though a sidebar beside it scrolls", async () => {
+    const shots = factory_testDirectory("audit-short-main");
+    const url = new URL("/short-main", server.url).href;
+    const run = await cli(
+      "--url",
+      url,
+      "--viewport",
+      "390x844",
+      "--color-scheme",
+      "light",
+      "--shots",
+      shots,
+      "--state",
+      "short",
+    );
+    expect(run.stderr).toBe("");
+    expect(JSON.parse(run.stdout).screens[0].frames).toEqual({ scroller: "document", stops: 1, fullPage: false });
   }, 120000);
 
   // main spans 240-1440 with 24 px padding: the column takes 264-864 and the badge 1376-1416, leaving a 512 px gutter.

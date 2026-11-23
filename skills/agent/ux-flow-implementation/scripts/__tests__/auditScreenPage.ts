@@ -147,6 +147,23 @@ export const SIDE_PANEL_PAGE = `<!doctype html>
 </body>
 </html>`;
 
+/** Short content in a `main` beside a sidebar that scrolls a long list, in a document that does not scroll. */
+export const SHORT_MAIN_PAGE = `<!doctype html>
+<html>
+<head>
+<style>
+  body { margin: 0; height: 100vh; overflow: hidden; display: flex; background: #fff; }
+  nav { width: 120px; overflow-y: auto; }
+  .list { height: 3000px; background: #eeeeee; }
+  main { flex: 1; }
+</style>
+</head>
+<body>
+  <nav><div class="list"></div></nav>
+  <main><p>Short content.</p></main>
+</body>
+</html>`;
+
 /**
  * A box whose edges fade by a scroll-driven animation, which runs for as long as the page is open: it never finishes
  * the way a transition does.

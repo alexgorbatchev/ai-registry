@@ -561,8 +561,9 @@ const pinnedLoop = (ignore: string[], body: string): string =>
  *
  * The content scrolls inside a container when the nearest scrolling ancestor of the content (`content`, else `main`)
  * is one, even when the document scrolls too. When the document does not scroll, the widest scrolling element taller
- * than half the viewport scrolls it: inside the content when there is one, else anywhere on the page, so a side
- * panel loses to the page's column. Otherwise the document scrolls. The script marks a container for
+ * than half the viewport scrolls it: inside the content, or anywhere on a page that marks none, so a side panel loses
+ * to the page's column. Content that fits stays with the document, however far a sidebar beside it scrolls.
+ * Otherwise the document scrolls. The script marks a container for
  * `scrollToScript` and reports which one it found.
  */
 export function scrollMetricsScript(ignore: string[], content?: string): string {
@@ -584,7 +585,7 @@ const widest = (root) => {
   }
   return found;
 };
-if (!inner && page.scrollHeight <= page.clientHeight + 1) inner = (anchor && widest(anchor)) || widest(document.body);
+if (!inner && page.scrollHeight <= page.clientHeight + 1) inner = widest(anchor ?? document.body);
 for (const element of document.querySelectorAll("[${SCROLLER_ATTRIBUTE}]")) element.removeAttribute("${SCROLLER_ATTRIBUTE}");
 if (inner) inner.setAttribute("${SCROLLER_ATTRIBUTE}", "");
 const root = inner ?? page;

@@ -1,6 +1,7 @@
 {
   "mcpServers": {
     "rea": {
+      "disabled": true,
       "command": "bun",
       "args": ["x", "rea-agents@6.10.1", "mcp"]
     }

@@ -1,9 +1,3 @@
 {
-  "mcpServers": {
-    "rea": {
-      "type": "stdio",
-      "command": "bun",
-      "args": ["x", "rea-agents@6.10.1", "mcp"]
-    }
-  }
+  "mcpServers": {}
 }

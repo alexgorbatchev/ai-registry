@@ -1,4 +1,5 @@
 [mcp_servers.rea]
+enabled = false
 command = "bun"
 args = ["x", "rea-agents@6.10.1", "mcp"]
 env_vars = ["GHIDRA_INSTALL_DIR", "JAVA_HOME"]

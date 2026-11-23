@@ -3,7 +3,7 @@
     "rea": {
       "type": "local",
       "command": ["bun", "x", "rea-agents@6.10.1", "mcp"],
-      "enabled": true,
+      "enabled": false,
       "timeout": 450000
     }
   }

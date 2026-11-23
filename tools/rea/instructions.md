@@ -1,0 +1,3 @@
+REA is shared and intentionally off by default. Enable it only for the requested reverse-engineering work; do not run `setup`, install project dependencies, or register another permanent server to repair this intentional state.
+
+For analysis, load `morluto-reverse-engineer-anything` and follow its evidence and provider guidance. If unavailable, stop the dependent analysis and report the missing skill. For an occasional operation, use `bun x rea-agents@6.10.1 --help` and its CLI instead of starting MCP. Bun retrieves the pinned package; REA runs under a supported Node version, not Bun's runtime. An MCP connection does not establish Ghidra or other native-provider readiness.

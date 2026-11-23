@@ -117,6 +117,8 @@ Harness edits reach a tool overlay only inside what it defines, or when they bel
 
 Tool overlays are public. Settings sync writes the home directory back as `<%- env('HOME') %>`, and other machine paths need template tokens; keep private details in a private overlay.
 
+The [REA overlay](tools/rea/README.md) shares its installation across projects and supplies a harness-specific `use-rea` skill. Its MCP server is opt-in, so ordinary agent sessions do not start it.
+
 #### Adding a tool
 
 1. Create `tools/<name>/tool.json` before running the tool's setup. Set `owns` to text that appears only in the tool's settings values, usually its install directory such as `".example-tool/"`, and `requires` to a file the tool's own installer creates, such as the script its hooks run. A tool with `owns` captures entries into a settings file it has no copy of yet.

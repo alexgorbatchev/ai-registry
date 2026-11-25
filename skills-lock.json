@@ -56,6 +56,14 @@
       "computedHash": "4de4afff51f97b62611a10f0c2c6dd9376774c8310f04fbd15e534c4a164762e",
       "installMode": "copy"
     },
+    "rust-anything": {
+      "source": "erkamyaman/rust-anything",
+      "commit": "7f35f4d73e1fd9cbfd1260224192feae5f8152f4",
+      "sourceType": "github",
+      "skillPath": "skills/rust-anything/SKILL.md",
+      "computedHash": "de9a9f51961cf5527cea175b439287785700a6638b8c1320f274acee100ac4ab",
+      "installMode": "copy"
+    },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
       "sourceType": "github",

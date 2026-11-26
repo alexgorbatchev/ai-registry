@@ -11,10 +11,12 @@
     },
     "archify": {
       "source": "alexgorbatchev/archify",
-      "ref": "f5f28195f7b48d1d9e3407f47caf49533dfcbde8",
+      "ref": "105162017de8d24e15f438ae3ba3f516a808c444",
+      "commit": "105162017de8d24e15f438ae3ba3f516a808c444",
       "sourceType": "github",
       "skillPath": "archify/SKILL.md",
-      "computedHash": ""
+      "computedHash": "24729711e4323488eea4c3dddf272e2cbde809d6618195440a4c1595c7c32f1e",
+      "installMode": "copy"
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",

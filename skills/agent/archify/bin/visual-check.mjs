@@ -1563,6 +1563,12 @@ export class ChromeVisualBrowser {
       await this.cdp.ready;
       const context = await this.cdp.send('Target.createBrowserContext', { disposeOnDetach: true });
       this.browserContextId = context.browserContextId;
+      // Deny downloads in the private context, including pages created by
+      // resetPage, before loading an artifact whose exports could leave
+      // partial files behind (#1371).
+      await this.cdp.send('Browser.setDownloadBehavior', {
+        behavior: 'deny', browserContextId: this.browserContextId,
+      });
       target = await this.cdp.send('Target.createTarget', {
         url: 'about:blank', browserContextId: this.browserContextId,
       });
@@ -1573,6 +1579,10 @@ export class ChromeVisualBrowser {
       const targets = await this.cdp.send(
         'Target.getTargets', {}, undefined, this.startupTimeoutMs,
       );
+      // Deny downloads across this browser, including pages created by resetPage.
+      // If the browser rejects the policy, stop before loading an artifact whose
+      // exports could leave partial files in the user's Downloads folder (#1371).
+      await this.cdp.send('Browser.setDownloadBehavior', { behavior: 'deny' });
       target = targets.targetInfos?.find((item) => item.type === 'page');
       if (!target) {
         const created = await this.cdp.send('Target.createTarget', { url: 'about:blank' });
@@ -1792,8 +1802,9 @@ export class ChromeVisualBrowser {
         scrollWidth: Math.ceil(document.documentElement.scrollWidth),
         // Bottom notes and index are reading material below the fold; the
         // Reader excludes them from the one-screen fit, and so does this check.
+        // The feedback footer always sits last, below the fold, for the same reason.
         scrollHeight: Math.max(window.innerHeight, Math.ceil(document.documentElement.scrollHeight - (
-          notesBelowFold ? outerHeight(reader.querySelector('.reader-rail')) : 0))),
+          notesBelowFold ? outerHeight(reader.querySelector('.reader-rail')) : 0) - outerHeight(document.querySelector('.page-feedback')))),
         resolvedTheme: document.documentElement.getAttribute('data-theme') || '',
         readerLayout: document.documentElement.getAttribute('data-reader-layout') || null,
         readerOverflow: document.documentElement.getAttribute('data-reader-overflow') || null,

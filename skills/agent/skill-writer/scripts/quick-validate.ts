@@ -66,7 +66,9 @@ function linkedRelativePaths(body: string): string[] {
       continue;
     }
     if (fenced) continue;
-    for (const match of line.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
+    // Inline code spans show link syntax as examples, not as links.
+    const prose = line.replace(/(`+)[\s\S]*?\1/g, "");
+    for (const match of prose.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
       const target = match[1]!;
       if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith("#") || target.startsWith("/")) continue;
       paths.push(target.split("#")[0]!);
